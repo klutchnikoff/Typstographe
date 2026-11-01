@@ -14,6 +14,7 @@ export interface Preferences {
   personal: Record<string, string[]>
   editor_fraction: number
   spelling_enabled: boolean
+  sidebar_expanded?: boolean
 }
 
 export function preferencesPanel(

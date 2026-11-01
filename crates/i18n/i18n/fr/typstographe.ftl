@@ -1124,3 +1124,15 @@ web-comparison-context-42 = Vérifier la composition
 web-comparison-context-43 = Proposition refusée. Le document est inchangé.
 web-comparison-context-44 = Proposition terminée sans modification.
 web-comparison-context-45 = Document courant conservé.
+
+# Sidebar modes and reusable record cards.
+web-rail-panels = Panneaux de l’application
+web-rail-hide-labels = Masquer les libellés
+web-rail-show-labels = Afficher les libellés
+web-rail-toggle-labels = Afficher / masquer les libellés de la barre latérale
+web-record-reorder = Réordonner · { "{name}" }
+web-record-order-changed = La liste a changé. Recommencez le déplacement.
+web-record-reorder-help = Glisser pour réordonner. Au clavier : Espace, flèches, puis Entrée ou Échap.
+web-record-reorder-cancelled = Déplacement annulé.
+web-record-reorder-position = Nouvelle position : { "{position}" } sur { "{count}" }.
+web-record-reorder-started = Déplacement activé. Utilisez les flèches, puis Entrée ou Échap.

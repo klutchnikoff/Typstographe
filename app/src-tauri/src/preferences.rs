@@ -18,6 +18,7 @@ pub struct Preferences {
     pub recent: Vec<String>,
     pub editor_fraction: f64,
     pub spelling_enabled: bool,
+    pub sidebar_expanded: bool,
 }
 impl Default for Preferences {
     fn default() -> Self {
@@ -31,6 +32,7 @@ impl Default for Preferences {
             recent: vec![],
             editor_fraction: 0.5,
             spelling_enabled: true,
+            sidebar_expanded: true,
         }
     }
 }
@@ -125,11 +127,27 @@ pub fn preferences_save(app: tauri::AppHandle, preferences: Preferences) -> Resu
 mod tests {
     use super::*;
     #[test]
+    fn adding_sidebar_mode_keeps_existing_profile_and_appearance() {
+        let preferences: Preferences = serde_json::from_value(serde_json::json!({
+            "appearance": "dark",
+            "profile": { "sender.name": "Camille Martin" }
+        }))
+        .unwrap();
+        assert!(preferences.sidebar_expanded);
+        let directory = tempfile::tempdir().unwrap();
+        preferences.save(directory.path()).unwrap();
+        let reopened = Preferences::load(directory.path()).unwrap();
+        assert_eq!(reopened.profile["sender.name"], "Camille Martin");
+        assert_eq!(reopened.appearance, "dark");
+        assert!(reopened.sidebar_expanded);
+    }
+    #[test]
     fn preferences_roundtrip_and_reject_invalid_column_widths() {
         let directory = tempfile::tempdir().unwrap();
         let mut preferences = Preferences {
             editor_fraction: 0.63,
             spelling_enabled: false,
+            sidebar_expanded: false,
             ..Default::default()
         };
         preferences
@@ -139,6 +157,7 @@ mod tests {
         let restored = Preferences::load(directory.path()).unwrap();
         assert_eq!(restored.editor_fraction, 0.63);
         assert!(!restored.spelling_enabled);
+        assert!(!restored.sidebar_expanded);
         assert_eq!(restored.personal["fr"], vec!["Typst"]);
         preferences.editor_fraction = 0.99;
         assert!(preferences.save(directory.path()).is_err());

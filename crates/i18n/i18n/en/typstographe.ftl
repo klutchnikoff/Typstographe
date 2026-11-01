@@ -1122,3 +1122,15 @@ web-comparison-context-42 = Review the composition
 web-comparison-context-43 = The proposal was rejected. The document is unchanged.
 web-comparison-context-44 = The proposal was completed without changes.
 web-comparison-context-45 = The current document was kept.
+
+# Sidebar modes and reusable record cards.
+web-rail-panels = Application panels
+web-rail-hide-labels = Hide labels
+web-rail-show-labels = Show labels
+web-rail-toggle-labels = Show / hide sidebar labels
+web-record-reorder = Reorder · { "{name}" }
+web-record-order-changed = The list changed. Start moving the item again.
+web-record-reorder-help = Drag to reorder. Keyboard: Space, arrows, then Enter or Escape.
+web-record-reorder-cancelled = Move cancelled.
+web-record-reorder-position = New position: { "{position}" } of { "{count}" }.
+web-record-reorder-started = Move started. Use the arrows, then Enter or Escape.

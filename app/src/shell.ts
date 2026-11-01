@@ -29,6 +29,7 @@ import { commandPalette } from './command-palette'
 import { searchPanel, navigateSearch } from './search-panel'
 import { preferencesPanel, type Preferences } from './preferences-panel'
 import { preferencesWriter } from './preferences-writer'
+import { railButton, sideRailMode } from './side-rail'
 import { tr } from './i18n'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import * as Y from 'yjs'
@@ -190,8 +191,9 @@ export async function mountShell(s: Shell) {
 
   const side = document.createElement('aside')
   side.className = 'side-rail'
-  side.setAttribute('aria-label', 'Panneaux de l’application')
+  side.setAttribute('aria-label', tr('Panneaux de l’application'))
   workspace.append(side)
+  const railMode = sideRailMode(side, () => runCommand(commands.get('ui.sidebar_labels')!))
   navigationGroup(side, { axis: 'vertical' })
   const panel = document.createElement('aside')
   panel.className = 'side-panel'
@@ -696,6 +698,7 @@ export async function mountShell(s: Shell) {
     searchPanel(showPanel(tr('Rechercher et remplacer')), editor)
   }
   function applyPreferences() {
+    railMode.update(preferences.sidebar_expanded !== false)
     document.dispatchEvent(
       new CustomEvent('editor:resize', { detail: (preferences.editor_fraction ?? 0.5) * 100 }),
     )
@@ -842,6 +845,13 @@ export async function mountShell(s: Shell) {
     },
   )
   add('ui.preferences', tr('Préférences'), prefs, 'Mod+,')
+  add('ui.sidebar_labels', tr('Afficher / masquer les libellés de la barre latérale'), () =>
+    guarded(async () => {
+      preferences.sidebar_expanded = preferences.sidebar_expanded === false
+      railMode.update(preferences.sidebar_expanded)
+      await persistPreferences()
+    }),
+  )
   add('ui.palette', tr('Palette de commandes'), palette, 'Mod+Shift+P')
   add('ui.find', tr('Rechercher et remplacer'), search, 'Mod+F')
   add(
@@ -1016,10 +1026,7 @@ export async function mountShell(s: Shell) {
     [tr('Versions'), 'history', 'ui.versions'],
     [tr('Préférences'), 'settings-2', 'ui.preferences'],
   ] as const) {
-    const button = document.createElement('button')
-    button.innerHTML = icon(name)
-    button.title = label
-    button.setAttribute('aria-label', label)
+    const button = railButton(label, name)
     button.dataset.command = action
     button.onclick = () => {
       runCommand(commands.get(action)!)
@@ -1181,9 +1188,7 @@ export async function mountShell(s: Shell) {
   }
   add('ui.recovered', tr('Saisies à reprendre'), showRecoveredItems)
   requiresDocument.add('ui.recovered')
-  const recoveredButton = document.createElement('button')
-  recoveredButton.innerHTML = icon('history')
-  recoveredButton.setAttribute('aria-label', tr('Saisies à reprendre'))
+  const recoveredButton = railButton(tr('Saisies à reprendre'), 'history')
   recoveredButton.onclick = showRecoveredItems
   side.prepend(recoveredButton)
   if (provider.recoveredName) {
@@ -1307,6 +1312,7 @@ export async function mountShell(s: Shell) {
   applyPreferences()
   if (s.initialPath) guarded(() => open(s.initialPath!))
   mountAssistance(provider, transport, editor, showPanel, s.message, s.isTauri)
+  side.append(railMode.control)
   mountProofing(
     editor,
     s.bands,

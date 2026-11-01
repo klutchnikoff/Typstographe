@@ -995,18 +995,45 @@ main {
   position: absolute;
   top: 0;
   right: 0;
-  width: 36px;
+  width: var(--side-rail-width, 36px);
   bottom: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
-  padding-top: 10px;
+  padding: 10px 3px 6px;
   background: var(--bg);
   border-left: 1px solid var(--border);
 }
 .side-rail button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 30px;
+  text-align: left;
   padding: 7px;
+}
+.side-rail button svg {
+  flex: 0 0 16px;
+}
+.side-rail-label {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.3;
+}
+.side-rail[data-expanded='false'] .side-rail-label {
+  display: none;
+}
+.side-rail[data-expanded='false'] button {
+  justify-content: center;
+}
+.side-rail .side-rail-toggle {
+  margin-top: auto;
+  color: var(--muted);
+}
+.side-rail[data-expanded='false'] .side-rail-toggle svg {
+  transform: rotate(180deg);
 }
 .side-rail button:has(.icon-monogram) {
   padding: 6px;
@@ -1018,14 +1045,15 @@ main {
   stroke: none;
 }
 .preview {
-  margin-right: 36px;
+  margin-right: var(--side-rail-width, 36px);
 }
 .side-panel {
   position: absolute;
-  right: 36px;
+  right: var(--side-rail-width, 36px);
   top: 0;
   bottom: 0;
   width: min(420px, 40vw);
+  max-width: calc(100% - var(--side-rail-width, 36px));
   background: var(--bg);
   border-left: 1px solid var(--border);
   z-index: 20;

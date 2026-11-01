@@ -4,6 +4,7 @@ import type { Catalogue } from './shell'
 import { actionRow } from './keyboard-navigation'
 import { tr } from './i18n'
 import { icon } from './icons'
+import { railButton } from './side-rail'
 import { type Editor, type JSONContent } from '@tiptap/core'
 
 import type { Provider, Transport } from './provider'
@@ -23,10 +24,7 @@ export function mountAssistance(
   message: (text: string, error?: boolean) => void,
   isTauri: boolean,
 ) {
-  const button = document.createElement('button')
-  button.innerHTML = icon('pen-line')
-  button.title = tr('Assistance à la rédaction')
-  button.setAttribute('aria-label', tr('Assistance à la rédaction'))
+  const button = railButton(tr('Assistance à la rédaction'), 'pen-line')
   document.querySelector('.side-rail')!.prepend(button)
   let currentContent: HTMLElement | undefined
   let request = 0

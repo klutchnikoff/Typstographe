@@ -446,5 +446,15 @@
   "Vérifier la composition": "web-comparison-context-42",
   "Proposition refusée. Le document est inchangé.": "web-comparison-context-43",
   "Proposition terminée sans modification.": "web-comparison-context-44",
-  "Document courant conservé.": "web-comparison-context-45"
+  "Document courant conservé.": "web-comparison-context-45",
+  "Panneaux de l’application": "web-rail-panels",
+  "Masquer les libellés": "web-rail-hide-labels",
+  "Afficher les libellés": "web-rail-show-labels",
+  "Afficher / masquer les libellés de la barre latérale": "web-rail-toggle-labels",
+  "Réordonner · {name}": "web-record-reorder",
+  "La liste a changé. Recommencez le déplacement.": "web-record-order-changed",
+  "Glisser pour réordonner. Au clavier : Espace, flèches, puis Entrée ou Échap.": "web-record-reorder-help",
+  "Déplacement annulé.": "web-record-reorder-cancelled",
+  "Nouvelle position : {position} sur {count}.": "web-record-reorder-position",
+  "Déplacement activé. Utilisez les flèches, puis Entrée ou Échap.": "web-record-reorder-started"
 }
