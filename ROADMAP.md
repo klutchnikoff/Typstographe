@@ -110,8 +110,9 @@ restent un seul type. Une lettre de motivation est un Courrier. Le Projet de
 recherche vise notamment demandes de financement et projets doctoraux ; il ne
 désigne pas le fichier-projet `.typsto`. La fiche Document libre reste ouverte.
 
-Compléter le parcours de création avec les **vignettes Typst des modèles**,
-produites depuis un contenu représentatif commun à chaque type. Aucun type
+Le parcours de création présente les groupes en filtres cumulables, les types
+en tuiles et les modèles en **vignettes Typst**, dans la grande modale décrite
+au [catalogue](docs/document-type-catalogue.md#parcours-de-création). Aucun type
 annoncé ne devient créable sans contrat validé et modèle réellement utilisable.
 
 Pour chaque type : définir les métadonnées, leurs genres, les groupes d’en-tête,

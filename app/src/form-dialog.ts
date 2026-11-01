@@ -1,4 +1,5 @@
 import { contextPanel } from './context-panel'
+import { returnFocusOnClose } from './dialog-focus'
 import { tr } from './i18n'
 
 /** Reusable modal shell. Field rendering and draft publication belong to its caller. */
@@ -26,17 +27,7 @@ export function formDialog(options: {
     event.preventDefault()
     options.cancel()
   })
-  // WebKit releases native modality after close(). Restore focus once that
-  // lifecycle has finished, including when the original add button disappeared.
-  element.addEventListener('close', () => {
-    const target = options.returnFocus()
-    if (
-      target?.isConnected &&
-      !document.querySelector('dialog[open]') &&
-      (document.activeElement === document.body || element.contains(document.activeElement))
-    )
-      target.focus({ preventScroll: true })
-  })
+  returnFocusOnClose(element, options.returnFocus)
   return Object.assign(form, {
     dialog: element,
     open() {

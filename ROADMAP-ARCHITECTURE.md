@@ -57,8 +57,10 @@ contrats exécutables : disponibilité dérivée des modèles, aucune extension
 factice de l’énumération des types. Un type peut appartenir à plusieurs groupes.
 Un seul type Mémoire et thèse ; la lettre de motivation reste un Courrier.
 Valider le contrat de chaque fiche avant son développement, puis fournir un
-premier modèle utilisable. Compléter ensuite les noms de modèles par des
-vignettes issues du rendu Typst, sans modifier le contenu au changement de modèle.
+premier modèle utilisable. La galerie de création réutilise ces registres :
+filtres cumulables, tuiles et vignettes de modèles calculées à la demande par
+Typst, indépendamment du document ouvert. Garder le contenu inchangé au
+changement de modèle.
 
 Préciser le schéma de chaque type, les genres de valeurs, les groupes de champs,
 les capacités et les signatures à implémenter. La note

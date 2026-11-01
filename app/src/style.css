@@ -2050,45 +2050,109 @@ li:has(.interline-band-gap[data-marker])::marker {
   color: var(--accent);
 }
 
-/* Planned document types remain inspectable, but cannot enable creation. */
+/* New document: a fixed model gallery and footer surround the scrolling type grid. */
 .app-dialog:has(.document-type-picker) {
-  width: min(880px, 90vw);
-  max-height: 90vh;
-  overflow: auto;
+  box-sizing: border-box;
+  width: 94vw;
+  height: 94vh;
+  min-width: 0;
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
 }
-.document-type-picker > label {
+.app-dialog[open]:has(.document-type-picker) {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
 }
-.document-type-picker select {
-  width: auto;
-  max-width: 100%;
+.app-dialog:has(.document-type-picker)::backdrop {
+  background: rgb(15 23 32 / 22%);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+.new-document-heading {
+  flex: none;
+  padding: 22px 24px 12px;
+}
+.new-document-heading h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+.new-document-heading p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.document-type-picker {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+.type-group-filters {
+  display: flex;
+  flex-wrap: wrap;
+  flex: none;
+  gap: 6px;
+  padding: 0 24px 16px;
+}
+.type-group-filters button {
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+.type-group-filters button[aria-pressed='true'] {
+  background: var(--soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.type-card-scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 24px 18px;
 }
 .type-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
-  gap: 10px;
-  max-height: 42vh;
-  overflow: auto;
-  padding: 4px;
-  margin: 12px -4px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 .type-card {
   display: flex;
   flex-direction: column;
   align-items: start;
-  gap: 6px;
-  padding: 12px;
+  aspect-ratio: 3 / 2;
+  min-width: 0;
+  overflow: hidden;
+  gap: 10px;
+  padding: 14px;
   text-align: left;
+  white-space: normal;
   color: var(--text);
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
 }
-.type-card span {
-  font-size: 0.9em;
-  line-height: 1.4;
+.type-card strong {
+  flex-shrink: 0;
+  max-width: 100%;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+.type-card-description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  min-height: 0;
+  max-width: 100%;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 .type-card.planned {
   color: var(--muted);
@@ -2097,12 +2161,168 @@ li:has(.interline-band-gap[data-marker])::marker {
 .type-card[aria-pressed='true'] {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
+  background: var(--soft);
 }
 .type-card small {
+  flex-shrink: 0;
   margin-top: auto;
+  font-size: 11px;
+  color: var(--accent);
   font-weight: 600;
 }
+.type-card.planned small {
+  color: var(--muted);
+}
+.type-model-band {
+  flex: none;
+  padding: 12px 24px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+}
 .type-choice-description {
-  font-size: 0.9em;
-  line-height: 1.45;
+  margin: 0;
+  min-height: 125px;
+  max-width: 65ch;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.model-card-gallery {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 3px;
+  margin: -3px;
+}
+.model-card {
+  flex: 0 0 146px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+}
+.model-card:hover,
+.model-card:active,
+.model-card[aria-pressed='true'] {
+  background: transparent;
+  color: var(--text);
+}
+.model-thumbnail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 118px;
+  height: 168px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: white;
+  color: #52606d;
+  box-shadow: 0 2px 5px #0001;
+}
+.model-thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+/* Passive floating page: no layout shift, focus change or extra rendering. */
+.image-preview {
+  position: fixed;
+  z-index: 50;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: white;
+  box-shadow: 0 8px 32px #0004;
+}
+.image-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.model-thumbnail-status {
+  padding: 6px;
+  font-size: 11px;
+  text-align: center;
+}
+.model-selected {
+  display: none;
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.model-selected svg {
+  width: 14px;
+  height: 14px;
+}
+.model-card[aria-pressed='true'] .model-selected {
+  display: flex;
+}
+.model-card[aria-pressed='true'] .model-thumbnail {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.model-card-name {
+  max-width: 100%;
+  white-space: normal;
+  font-size: 12px;
+  line-height: 1.3;
+}
+.app-dialog:has(.document-type-picker) > .panel-actions {
+  flex: none;
+  margin: 0;
+  padding: 12px 24px;
+  border-top: 1px solid var(--border);
+}
+@media (hover: hover) and (pointer: fine) {
+  .type-card:hover,
+  .type-group-filters button:hover,
+  .model-card:hover .model-thumbnail {
+    border-color: var(--accent);
+  }
+}
+@media (max-width: 1050px) {
+  .type-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .type-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .type-card {
+    padding: 10px;
+    gap: 6px;
+  }
+  .type-card-description {
+    -webkit-line-clamp: 3;
+  }
+  .new-document-heading {
+    padding: 16px 16px 10px;
+  }
+  .type-group-filters {
+    padding: 0 16px 12px;
+  }
+  .type-card-scroller {
+    padding: 4px 16px 12px;
+  }
+  .type-model-band {
+    padding: 10px 16px;
+  }
 }

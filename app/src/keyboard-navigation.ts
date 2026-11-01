@@ -34,6 +34,7 @@ function consume(event: KeyboardEvent) {
 let nextId = 0
 interface NavigationOptions {
   axis: 'vertical' | 'horizontal' | 'both'
+  columns?: () => number
   items?: string | (() => HTMLElement[])
   input?: HTMLInputElement
   roving?: boolean
@@ -155,6 +156,9 @@ function createNavigation(root: HTMLElement, options: NavigationOptions) {
       return
     }
     const backwards = ['ArrowUp', 'ArrowLeft'].includes(event.key)
+    const step = ['ArrowUp', 'ArrowDown'].includes(event.key)
+      ? Math.min(choices.length, Math.max(1, options.columns?.() || 1))
+      : 1
     const next =
       event.key === 'Home'
         ? 0
@@ -164,7 +168,7 @@ function createNavigation(root: HTMLElement, options: NavigationOptions) {
             ? backwards
               ? choices.length - 1
               : 0
-            : (index + (backwards ? -1 : 1) + choices.length) % choices.length
+            : (index + (backwards ? -step : step) + choices.length) % choices.length
     const item = choices[next]
     select(item, true, true)
     if (!options.input) item.focus({ preventScroll: true })

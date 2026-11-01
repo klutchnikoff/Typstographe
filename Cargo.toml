@@ -63,6 +63,21 @@ debug = 0
 [profile.test]
 debug = 0
 
+# Keep macOS unwind tables below the compact-unwind offset limit while retaining
+# panic unwinding, debug assertions and overflow checks in development.
+[profile.dev.package.typstographe]
+opt-level = 1
+
+[profile.dev.package.typstographe-core]
+opt-level = 1
+
+# Tests inherit dev settings; keep their original code generation for coverage.
+[profile.test.package.typstographe]
+opt-level = 0
+
+[profile.test.package.typstographe-core]
+opt-level = 0
+
 # Keep preview rendering fast in development as well as release.
 [profile.dev.package.png]
 opt-level = 3

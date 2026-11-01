@@ -209,7 +209,23 @@ export function shellDocuments(
     setActive(true)
     metadata.render()
   }
-  const create = () => newDocumentDialog(layout.overlay, catalogue, createDocument)
+  const thumbnails = new Map<string, Promise<string>>()
+  const create = () =>
+    newDocumentDialog(
+      layout.overlay,
+      catalogue,
+      createDocument,
+      (model) => {
+        let preview = thumbnails.get(model.id)
+        if (!preview) {
+          preview = transport.invoke<string>('model_thumbnail', { modelId: model.id })
+          thumbnails.set(model.id, preview)
+          void preview.catch(() => thumbnails.delete(model.id))
+        }
+        return preview
+      },
+      () => (state.active ? editor.view.dom : byId('create-document')),
+    )
   const openChosen = () => confirmDiscard(() => ctx.guarded(() => open()))
   const createChosen = () => confirmDiscard(create)
 

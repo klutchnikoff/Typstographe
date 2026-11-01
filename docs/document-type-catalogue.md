@@ -57,15 +57,52 @@ explicitement séparées des capacités réellement disponibles.
 
 ## Parcours de création
 
-La fenêtre Nouveau document permet de parcourir les tuiles par groupe, puis de
-choisir un modèle du type actif. Les types à venir sont grisés mais consultables ;
-leur sélection désactive Créer. Le même type n’est jamais dupliqué dans les données.
-La description explique les possibilités actuelles pour les types disponibles
-et l’usage prévu pour les autres.
+La fenêtre Nouveau document occupe 94 % de la largeur et de la hauteur de
+l’application, avec l’arrière-plan atténué et légèrement flouté. Elle présente :
 
-Les **vignettes des modèles**, produites par Typst depuis un contenu représentatif
-commun à un même type, restent à réaliser. La sélection actuelle conserve les noms
-des modèles disponibles : aucun faux aperçu ni modèle factice n’est ajouté.
+- une ligne de boutons de groupes sélectionnables/désélectionnables ; plusieurs
+  groupes forment une union, sans doublonner les types ; « Tous les types »
+  réinitialise les filtres, et aucun groupe sélectionné signifie tous les types ;
+- des tuiles de types au rapport largeur/hauteur 3:2, dans une grille défilante,
+  avec nom, description confinée dans la tuile et statut ;
+- un bandeau fixe sous la grille, avec les vignettes des modèles du type choisi
+  et leur nom sous chaque vignette ;
+- les actions Annuler et Créer à droite, toujours accessibles, même en petite
+  fenêtre. Échap ferme la modale et restitue le focus au déclencheur ou à
+  l’éditeur. Les groupes, les types et les modèles utilisent la navigation
+  clavier commune ; les flèches haut/bas suivent les rangées de la grille.
+
+Les types à venir sont grisés mais consultables ; leur sélection désactive
+Créer. Une sélection masquée par les filtres est effacée pour éviter une
+création implicite ; le dernier modèle choisi pour chaque type reste mémorisé
+pendant l’ouverture de la modale. Un modèle disponible reste sélectionnable
+pendant le chargement de sa vignette, ou si celle-ci échoue.
+
+Les **vignettes sont de véritables premières pages rendues par Typst**, depuis
+un contenu représentatif commun à tous les modèles d’un même type et des
+métadonnées d’exemple. Elles ne lisent ni le profil personnel ni le document
+ouvert. La commande graphique `model_thumbnail` ne reçoit qu’un identifiant
+du registre des modèles fournis. Le calcul est réalisé à la demande sur un
+worker avec un monde Typst distinct du rendu courant, puis conservé en mémoire
+pour la durée du processus. Les PNG font 512 pixels de large afin de rester
+nets dans l’agrandissement. Aucun fichier ni modification du projet n’est
+produit pour cette galerie.
+
+Un survol de 600 ms, ou le focus clavier sur un modèle, ouvre une page flottante
+à deux fois la largeur et la hauteur de sa vignette. Elle réutilise la même
+image, sans compilation supplémentaire, sans déplacement des cartes ni prise
+de focus. Elle se place au-dessus si possible et reste dans la fenêtre. Le
+pointeur peut passer de la vignette à l’aperçu ; quitter les deux zones ferme
+l’agrandissement, de même que quitter le focus clavier. Échap ferme d’abord
+l’aperçu, puis la modale au second appui. Un changement de type ou la fermeture
+de la modale annule aussi toute ouverture en attente.
+
+Le spécimen Article comprend un résumé d’environ 95 mots, cinq mots-clés et
+une introduction fictive développée, sans sommaire.
+
+La disponibilité des types et des modèles continue à dériver des registres
+communs, sans catalogue parallèle dans l’interface. Aucun modèle factice n’est
+ajouté pour remplir la galerie.
 
 ## Suite du chantier
 

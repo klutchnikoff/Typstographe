@@ -342,6 +342,9 @@ fn dispatch(
             serde_json::to_value(session.synchronization()).map_err(CommandError::from)
         }
         "content_catalogue" => Ok(catalogue::content_catalogue()),
+        "model_thumbnail" => Ok(serde_json::json!(crate::model_thumbnails::model_thumbnail(
+            args["modelId"].as_str().ok_or("modelId missing")?.into()
+        )?)),
         "validate_model" => {
             let snapshot: Snapshot = serde_json::from_value(args["snapshot"].clone())?;
             let session = bridge.session()?;

@@ -1,5 +1,10 @@
 import { tr } from './i18n'
-import { documentTypePicker, type CreationCatalogue } from './document-type-picker'
+import { returnFocusOnClose } from './dialog-focus'
+import {
+  documentTypePicker,
+  type CreationCatalogue,
+  type ModelThumbnail,
+} from './document-type-picker'
 import { actionRow } from './keyboard-navigation'
 import type { Preferences } from './preferences-panel'
 import type { DocumentType, Model } from './shell'
@@ -27,10 +32,21 @@ export function newDocumentDialog(
   overlay: HTMLDialogElement,
   catalogue: CreationCatalogue,
   submit: (type: DocumentType, model: Model) => void,
+  thumbnail?: ModelThumbnail,
+  returnFocus?: () => HTMLElement | undefined,
 ) {
+  const previous =
+    document.activeElement instanceof HTMLElement ? document.activeElement : undefined
   overlay.replaceChildren()
   const heading = document.createElement('h2')
   heading.textContent = tr('Nouveau document')
+  heading.id = 'new-document-title'
+  overlay.setAttribute('aria-labelledby', heading.id)
+  const header = document.createElement('div')
+  header.className = 'new-document-heading'
+  const instruction = document.createElement('p')
+  instruction.textContent = tr('Choisissez ce que vous souhaitez rédiger, puis sa présentation.')
+  header.append(heading, instruction)
   const controls = actionRow()
   const cancel = document.createElement('button')
   cancel.textContent = tr('Annuler')
@@ -40,14 +56,28 @@ export function newDocumentDialog(
   confirm.dataset.default = ''
   confirm.textContent = tr('Créer')
   let choice: { type: DocumentType; model: Model } | null = null
-  const picker = documentTypePicker(catalogue, (value) => {
-    choice = value
-    confirm.disabled = value === null
-  })
+  const picker = documentTypePicker(
+    catalogue,
+    (value) => {
+      choice = value
+      confirm.disabled = value === null
+    },
+    thumbnail,
+  )
   confirm.onclick = () => {
     if (choice) submit(choice.type, choice.model)
   }
   controls.append(cancel, confirm)
-  overlay.append(heading, picker, controls)
+  overlay.append(header, picker, controls)
+  const detachFocus = returnFocusOnClose(overlay, () => returnFocus?.() || previous)
+  overlay.addEventListener(
+    'close',
+    () => {
+      detachFocus()
+      picker.destroy()
+      overlay.removeAttribute('aria-labelledby')
+    },
+    { once: true },
+  )
   overlay.showModal()
 }

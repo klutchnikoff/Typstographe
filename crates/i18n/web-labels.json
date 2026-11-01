@@ -462,5 +462,10 @@
   "Groupe de documents": "type-picker-group",
   "Tous les types": "type-picker-all",
   "À venir": "type-picker-planned",
-  "Ce type est prévu mais ne peut pas encore être créé.": "type-picker-unavailable"
+  "Ce type est prévu mais ne peut pas encore être créé.": "type-picker-unavailable",
+  "Choisissez ce que vous souhaitez rédiger, puis sa présentation.": "type-picker-instruction",
+  "Choisissez un type de document.": "type-picker-empty",
+  "Disponible": "type-picker-available",
+  "Aperçu indisponible": "type-picker-preview-unavailable",
+  "Aperçu agrandi · {name}": "type-picker-enlarged-preview"
 }
