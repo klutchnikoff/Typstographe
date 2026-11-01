@@ -60,3 +60,13 @@ Voir le [contrat structuré](structured-contract.md), les
 [contextes](structured-editing-contexts.md) et les
 [adaptateurs et recettes](structured-adapters.md). Le contrat egui reste
 [archivé](archive/interface-contract-egui.md), sans exemple compilé dans le cœur.
+
+
+## Hébergement des panneaux latéraux
+
+La présentation appartient à Tauri, sans nouvel état documentaire : mode compact
+avec panneau superposé au rendu, ou mode développé avec panneau intégré sous la
+rubrique active. Un seul hôte de contenu est déplacé ; un changement de mode ne
+recrée ni formulaire ni contrôleur et ne modifie pas l’historique du document.
+Mode et largeur sont des préférences globales. Le redimensionnement des panneaux
+et des colonnes partage les règles de capture, validation et annulation du geste.

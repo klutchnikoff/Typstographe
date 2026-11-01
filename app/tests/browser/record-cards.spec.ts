@@ -117,7 +117,7 @@ test('sidebar labels collapse, remain accessible and persist without changing th
   await rail.getByRole('button', { name: 'Masquer les libellés', exact: true }).click()
   await saved
   await expect(rail.getByText('Commandes', { exact: true })).toBeHidden()
-  await expect(page.locator('.preview')).toHaveCSS('margin-right', '36px')
+  await expect(rail).toHaveCSS('width', '36px')
   await rail.getByRole('button', { name: 'Préférences', exact: true }).click()
   await expect(page.locator('.side-panel')).toHaveCSS('right', '36px')
   await page.reload()
@@ -127,6 +127,6 @@ test('sidebar labels collapse, remain accessible and persist without changing th
   await toggle.press('Enter')
   await expect(rail).toHaveAttribute('data-expanded', 'true')
   await expect(rail.getByText('Commandes', { exact: true })).toBeVisible()
-  await expect(page.locator('.preview')).toHaveCSS('margin-right', '172px')
+  await expect(rail).toHaveCSS('width', '320px')
   await expect(rail.locator('.side-rail-toggle')).toBeFocused()
 })
