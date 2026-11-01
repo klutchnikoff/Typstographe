@@ -1193,3 +1193,10 @@ type-picker-group = Groupe de documents
 type-picker-all = Tous les types
 type-picker-planned = À venir
 type-picker-unavailable = Ce type est prévu mais ne peut pas encore être créé.
+
+# New document gallery
+type-picker-instruction = Choisissez ce que vous souhaitez rédiger, puis sa présentation.
+type-picker-empty = Choisissez un type de document.
+type-picker-models = Modèles · { "{type}" }
+type-picker-available = Disponible
+type-picker-preview-unavailable = Aperçu indisponible

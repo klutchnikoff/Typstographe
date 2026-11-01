@@ -392,7 +392,7 @@ test('accueil sans document et création depuis les types et modèles disponible
   await expect(page.locator('dialog .type-card:not(.planned)')).toHaveCount(2)
   await expect(page.locator('dialog .type-card.planned')).toHaveCount(12)
   await expect(
-    page.getByRole('dialog').getByLabel('Modèle', { exact: true }).locator('option'),
+    page.getByRole('dialog').getByLabel('Modèle', { exact: true }).locator('[data-model]'),
   ).toHaveCount(1)
   await confirmNewDocument(page)
   await expect(page.locator('main')).toBeVisible()

@@ -156,8 +156,8 @@ it('keeps planned cards inspectable but submits only the selected executable typ
   )
   expect(overlay.showModal).toHaveBeenCalled()
   expect(overlay.querySelectorAll('[data-type]')).toHaveLength(3)
-  const model = overlay.querySelector<HTMLSelectElement>('[aria-label="Modèle"]')!
-  expect([...model.options].map((o) => o.value)).toEqual(['personal', 'free'])
+  const models = () => [...overlay.querySelectorAll<HTMLButtonElement>('[data-model]')]
+  expect(models().map((button) => button.dataset.model)).toEqual(['personal', 'free'])
   overlay.querySelector<HTMLButtonElement>('[data-type="hidden"]')!.click()
   const confirm = overlay.querySelector<HTMLButtonElement>('[data-default]')!
   expect(confirm.disabled).toBe(true)
@@ -165,12 +165,11 @@ it('keeps planned cards inspectable but submits only the selected executable typ
   expect(submit).not.toHaveBeenCalled()
   overlay.querySelector<HTMLButtonElement>('[data-type="rapport"]')!.click()
   expect(confirm.disabled).toBe(false)
-  expect([...model.options].map((o) => o.value)).toEqual(['report'])
+  expect(models().map((button) => button.dataset.model)).toEqual(['report'])
   confirm.click()
   expect(submit).toHaveBeenLastCalledWith(report, report.models[0])
   overlay.querySelector<HTMLButtonElement>('[data-type="courrier"]')!.click()
-  model.value = 'free'
-  model.dispatchEvent(new Event('change'))
+  overlay.querySelector<HTMLButtonElement>('[data-model="free"]')!.click()
   confirm.click()
   expect(submit).toHaveBeenLastCalledWith(letter, letter.models[1])
 })

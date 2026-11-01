@@ -174,7 +174,7 @@ test('dialogue de création : Tab atteint les actions et les flèches ne créent
   await page.locator('[data-command="document.new"]').click()
   const dialog = page.locator('dialog.app-dialog')
   await expect(dialog).toBeVisible()
-  const model = dialog.getByRole('combobox', { name: 'Modèle', exact: true })
+  const model = dialog.getByRole('group', { name: 'Modèle', exact: true }).locator('[data-model]')
   await model.focus()
   await model.press('Tab')
   const cancel = dialog.getByRole('button', { name: 'Annuler', exact: true })
