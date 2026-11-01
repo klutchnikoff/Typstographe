@@ -50,7 +50,7 @@ le texte et son retour simple sont conservés dans le même paragraphe. Entrée 
 `¶`, au début du paragraphe suivant ou sur cette ligne encore vide ne multiplie
 pas les lignes. Une sélection étendue continue à désigner le contenu réel.
 
-Retour arrière au début du paragraphe rejoint `¶`. Sur `¶`, il supprime la
+Retour arrière au début du paragraphe ou sur `¶` supprime directement la
 séparation tout en conservant un retour simple entre les deux textes. Un second
 Retour arrière peut retirer ce retour simple. Les frontières des widgets,
 annotations et cellules restent protégées. Ces règles s'appliquent au corps et

@@ -34,8 +34,6 @@ for (const profile of ['document', 'rich-text'] as const) {
     press(e, 'Enter')
     expect(e.getJSON()).toEqual(before)
     press(e, 'Backspace')
-    expect(e.state.selection).toBeInstanceOf(ParagraphSelection)
-    press(e, 'Backspace')
     expect(e.state.doc.firstChild!.content.content.map((n) => n.type.name)).toEqual([
       'text',
       'softBreak',

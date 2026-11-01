@@ -100,7 +100,8 @@ export const ParagraphFlow = Extension.create({
             const boundary = backwards ? $head.before() : $head.after()
             const $boundary = view.state.doc.resolve(boundary)
             if (!paragraphBoundary($boundary)) return false
-            if (event.key === 'Backspace' && !selection.empty) return false
+            if (event.key === 'Backspace')
+              return selection.empty ? joinParagraphs(editor, true, false) : false
             const next = event.shiftKey
               ? TextSelection.create(
                   view.state.doc,
