@@ -315,7 +315,7 @@ pub(super) fn schema() -> serde_json::Value {
             {"key":"name","label_key":"field-reference-file","kind":"text","default":""},
             {"key":"contents","label_key":"field-reference-source","kind":"source","default":""}
         ]},
-        {"field":"article.authors","parameter":"authors","label_key":"field-article-authors","item_label_key":"article-author","title_key":"name","summary":["email","corresponding"],
+        {"field":"article.authors","parameter":"authors","label_key":"field-article-authors","item_label_key":"article-author","title_key":"name","summary":["corresponding"],
          "schema":schemars::schema_for!(Vec<Author>), "fields":[
             {"key":"name","label_key":"field-full-name","kind":"text","default":""},
             {"key":"email","label_key":"field-email","kind":"text","default":""},

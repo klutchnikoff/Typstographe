@@ -1560,10 +1560,10 @@ li:has(.interline-band-gap[data-marker])::marker {
   flex: 1;
   text-align: left;
 }
-.collection-card-open .metadata-record-caption,
-.collection-card-open .metadata-record-detail {
-  white-space: normal;
-  overflow-wrap: anywhere;
+.collection-card-open .metadata-record-caption {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .collection-card-heading .panel-actions {
   margin: 0;

@@ -476,8 +476,18 @@ export function metadataCollections(
       caption.textContent = definition.language_key
         ? catalogue.languages.find((item) => item.value === value)?.label || definition.itemLabel
         : String(value || definition.itemLabel)
+      detail.textContent = (definition.summary || [])
+        .map((key) => {
+          const field = definition.fields.find((item) => item.key === key)
+          const value = record.get(key)
+          return field?.kind === 'boolean' ? (value ? field.label : '') : String(value || '')
+        })
+        .filter(Boolean)
+        .join(' · ')
+      if (card && detail.textContent) caption.textContent += ` (${detail.textContent})`
       caption.title = caption.textContent
       if (card) {
+        card.open.title = caption.textContent
         card.open.setAttribute(
           'aria-label',
           `${tr('Modifier')} · ${definition.itemLabel} · ${caption.textContent}`,
@@ -487,15 +497,7 @@ export function metadataCollections(
           tr('Réordonner · {name}', { name: caption.textContent }),
         )
       }
-      detail.textContent = (definition.summary || [])
-        .map((key) => {
-          const field = definition.fields.find((item) => item.key === key)
-          const value = record.get(key)
-          return field?.kind === 'boolean' ? (value ? field.label : '') : String(value || '')
-        })
-        .filter(Boolean)
-        .join(' · ')
-      detail.hidden = !detail.textContent
+      detail.hidden = !!card || !detail.textContent
       const ids = recordIds(provider, definition),
         index = ids.indexOf(id)
       if (up) up.disabled = index === 0

@@ -89,8 +89,13 @@ test('dialogue réutilisable : clavier, fond flouté, brouillon, annulation et v
   await name(page).press('ControlOrMeta+Enter')
   await expect(dialog(page)).toHaveCount(0)
   await expect(trigger).toBeFocused()
-  await expect(records(page, 'authors')).toContainText('camille@example.org')
+  await expect(records(page, 'authors').locator('.metadata-record-caption')).toHaveText(
+    'Camille Durand (Auteur correspondant)',
+  )
   const saved = await data(page)
+  expect(
+    Object.values(saved.authors).some((author: any) => author.email === 'camille@example.org'),
+  ).toBe(true)
   expect(Object.keys(saved.authors)).toEqual(Object.keys(before.authors))
   const body = page.getByRole('textbox', { name: 'Corps du document', exact: true })
   await body.focus()
