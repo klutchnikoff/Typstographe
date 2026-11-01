@@ -88,7 +88,7 @@ it('ignores a late thumbnail when the selected type has changed and tolerates pr
   picker.querySelector<HTMLButtonElement>('[data-type="planned"]')!.click()
   resolve('data:image/png;base64,late')
   await Promise.resolve()
-  expect(picker.querySelector('img')).toBeNull()
+  expect(picker.querySelector('.model-card-gallery img')).toBeNull()
   expect(changed).toHaveBeenLastCalledWith(null)
   const failed = documentTypePicker(catalogue, changed, () => Promise.reject(new Error('offline')))
   await vi.waitFor(() => expect(failed.textContent).toContain('Aperçu indisponible'))

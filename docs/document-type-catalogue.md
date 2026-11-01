@@ -84,8 +84,21 @@ métadonnées d’exemple. Elles ne lisent ni le profil personnel ni le document
 ouvert. La commande graphique `model_thumbnail` ne reçoit qu’un identifiant
 du registre des modèles fournis. Le calcul est réalisé à la demande sur un
 worker avec un monde Typst distinct du rendu courant, puis conservé en mémoire
-pour la durée du processus. Les PNG font 320 pixels de large. Aucun fichier
-ni modification du projet n’est produit pour cette galerie.
+pour la durée du processus. Les PNG font 512 pixels de large afin de rester
+nets dans l’agrandissement. Aucun fichier ni modification du projet n’est
+produit pour cette galerie.
+
+Un survol de 600 ms, ou le focus clavier sur un modèle, ouvre une page flottante
+à deux fois la largeur et la hauteur de sa vignette. Elle réutilise la même
+image, sans compilation supplémentaire, sans déplacement des cartes ni prise
+de focus. Elle se place au-dessus si possible et reste dans la fenêtre. Le
+pointeur peut passer de la vignette à l’aperçu ; quitter les deux zones ferme
+l’agrandissement, de même que quitter le focus clavier. Échap ferme d’abord
+l’aperçu, puis la modale au second appui. Un changement de type ou la fermeture
+de la modale annule aussi toute ouverture en attente.
+
+Le spécimen Article comprend un résumé d’environ 95 mots, cinq mots-clés et
+une introduction fictive développée, sans sommaire.
 
 La disponibilité des types et des modèles continue à dériver des registres
 communs, sans catalogue parallèle dans l’interface. Aucun modèle factice n’est

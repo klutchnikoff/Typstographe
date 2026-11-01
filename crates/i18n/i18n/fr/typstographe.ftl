@@ -1199,3 +1199,4 @@ type-picker-instruction = Choisissez ce que vous souhaitez rédiger, puis sa pr�
 type-picker-empty = Choisissez un type de document.
 type-picker-available = Disponible
 type-picker-preview-unavailable = Aperçu indisponible
+type-picker-enlarged-preview = Aperçu agrandi · { "{name}" }

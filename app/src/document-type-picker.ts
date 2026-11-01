@@ -1,5 +1,6 @@
 import { tr } from './i18n'
 import { icon } from './icons'
+import { imagePreview } from './image-preview'
 import { navigationGroup } from './keyboard-navigation'
 import type { Catalogue, DocumentType, Model } from './shell'
 
@@ -63,6 +64,7 @@ export function documentTypePicker(
     notify()
   }
   function renderModels() {
+    enlargement.reset()
     models.replaceChildren()
     const available = selected?.canCreate ? currentType()?.models || [] : []
     modelId =
@@ -185,9 +187,14 @@ export function documentTypePicker(
   })
   const modelNavigation = navigationGroup(models, { axis: 'horizontal', roving: true })
   root.append(filters, scroller, band)
+  const enlargement = imagePreview(models, root, {
+    trigger: '.model-card',
+    frame: '.model-thumbnail',
+  })
   render()
   return Object.assign(root, {
     destroy() {
+      enlargement.destroy()
       filterNavigation.destroy()
       navigation.destroy()
       modelNavigation.destroy()

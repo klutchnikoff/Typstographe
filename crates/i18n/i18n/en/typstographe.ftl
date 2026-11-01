@@ -1197,3 +1197,4 @@ type-picker-instruction = Choose what you want to write, then its presentation.
 type-picker-empty = Choose a document type.
 type-picker-available = Available
 type-picker-preview-unavailable = Preview unavailable
+type-picker-enlarged-preview = Enlarged preview · { "{name}" }

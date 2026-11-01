@@ -466,5 +466,6 @@
   "Choisissez ce que vous souhaitez rédiger, puis sa présentation.": "type-picker-instruction",
   "Choisissez un type de document.": "type-picker-empty",
   "Disponible": "type-picker-available",
-  "Aperçu indisponible": "type-picker-preview-unavailable"
+  "Aperçu indisponible": "type-picker-preview-unavailable",
+  "Aperçu agrandi · {name}": "type-picker-enlarged-preview"
 }
