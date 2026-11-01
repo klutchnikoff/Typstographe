@@ -10,6 +10,7 @@ import { icon } from './icons'
 import { formDialog } from './form-dialog'
 import { navigationGroup } from './keyboard-navigation'
 import { tr } from './i18n'
+import { errorText } from './command-error'
 /** Temporary queue. Reusing a form never consumes the durable source merely on open/cancel. */
 export function recoveredPanel(
   content: HTMLElement,
@@ -91,7 +92,7 @@ export function recoveredPanel(
                 form.destroy()
                 refresh()
               })
-              .catch((error) => (form.error.textContent = String(error)))
+              .catch((error) => (form.error.textContent = errorText(error)))
           },
         })
         form.action({ label: tr('Annuler'), primary: true, run: close })
@@ -156,7 +157,7 @@ export function recoveredPanel(
             .then((path) =>
               path ? provider.transport.invoke('work_export', { id: item.id, path }) : undefined,
             )
-            .catch((error) => (form.error.textContent = String(error)))
+            .catch((error) => (form.error.textContent = errorText(error)))
         },
       })
     form.action({ label: tr('Fermer'), primary: true, run: close })

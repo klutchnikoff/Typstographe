@@ -1,5 +1,6 @@
 //! A historical composition must be reviewed against the captured current document.
 use super::*;
+use crate::error::CommandError;
 use typstographe_core::content::{archive::Archive, comparison::PreparedDecision};
 
 pub struct Preparation {
@@ -14,15 +15,14 @@ pub struct PreparedReview {
     plan: Comparison,
 }
 impl Preparation {
-    pub fn prepare(self) -> Result<PreparedReview, String> {
+    pub fn prepare(self) -> Result<PreparedReview, CommandError> {
         let decision = self.snapshot.prepare()?;
         let plan = Comparison::new(
             self.current,
             decision.archive().clone(),
             SourceSide::After,
             self.guard,
-        )
-        .map_err(crate::owner::error)?;
+        )?;
         Ok(PreparedReview {
             parent: self.parent,
             decision,
@@ -41,7 +41,7 @@ pub fn capture(
     peer: &str,
     id: &str,
     choices: &[SourceSide],
-) -> Result<Preparation, String> {
+) -> Result<Preparation, CommandError> {
     let snapshot = commit::capture(s, a, peer, id, choices)?;
     if s.comparisons[id].context != Context::Historical {
         return Err(error("web-comparison-unavailable"));
@@ -58,7 +58,7 @@ pub fn finish(
     a: &AgentState,
     peer: &str,
     prepared: PreparedReview,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     authorized(s, a, peer, &prepared.parent)?;
     let parent = s.comparisons[&prepared.parent].clone();
     if parent.context != Context::Historical {
@@ -91,19 +91,13 @@ pub async fn comparison_prepare(
     state: State<'_, Bridge>,
     id: String,
     choices: Vec<SourceSide>,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     let session = state.session.clone();
     let agent = state.agent.clone();
     let renderer = state.renderer.clone();
     let peer = window.label().to_string();
     tauri::async_runtime::spawn_blocking(move || {
-        let snapshot = capture(
-            &mut *session.lock().map_err(|e| e.to_string())?,
-            &*agent.lock().map_err(|e| e.to_string())?,
-            &peer,
-            &id,
-            &choices,
-        )?;
+        let snapshot = capture(&mut *session.lock()?, &*agent.lock()?, &peer, &id, &choices)?;
         let ready = snapshot.prepare()?;
         let archive = ready.archive();
         renderer.validate(
@@ -114,13 +108,7 @@ pub async fn comparison_prepare(
                 dependencies: archive.dependencies.clone(),
             },
         )?;
-        finish(
-            &mut *session.lock().map_err(|e| e.to_string())?,
-            &*agent.lock().map_err(|e| e.to_string())?,
-            &peer,
-            ready,
-        )
+        finish(&mut *session.lock()?, &*agent.lock()?, &peer, ready)
     })
-    .await
-    .map_err(|e| e.to_string())?
+    .await?
 }

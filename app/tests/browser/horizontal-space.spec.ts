@@ -12,7 +12,7 @@ for (const profile of ['body', 'title', 'abstract']) {
     if (profile !== 'body') {
       await page.getByRole('button', { name: 'Fichier', exact: true }).click()
       await page.locator('[data-command="document.new"]').click()
-      await page.locator('dialog select').first().selectOption('article')
+      await page.locator('dialog [data-type="article"]').click()
       await confirmNewDocument(page)
       await page.locator(`#metadata-tab-${profile === 'title' ? 'titles' : 'abstracts'}`).click()
     }

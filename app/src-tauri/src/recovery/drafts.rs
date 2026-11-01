@@ -1,4 +1,5 @@
 //! Per-window recovery envelopes. Private input is stored, never published or compiled.
+use crate::error::CommandError;
 use crate::session::{Checkpoint, Resource, Session};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -49,7 +50,7 @@ pub struct Record {
     pub rejected_edition: Option<Value>,
 }
 
-fn directory(root: &Path, generation: &str) -> Result<PathBuf, String> {
+fn directory(root: &Path, generation: &str) -> Result<PathBuf, CommandError> {
     if uuid::Uuid::parse_str(generation)
         .map(|id| id.to_string())
         .as_deref()
@@ -73,13 +74,13 @@ fn directory(root: &Path, generation: &str) -> Result<PathBuf, String> {
                 builder.mode(0o700);
                 builder
             };
-            builder.create(&path).map_err(|e| e.to_string())?;
+            builder.create(&path)?;
         }
     }
     Ok(path)
 }
 
-pub fn path(root: &Path, generation: &str, window: &str) -> Result<PathBuf, String> {
+pub fn path(root: &Path, generation: &str, window: &str) -> Result<PathBuf, CommandError> {
     if window.is_empty() || window.len() > 128 {
         return Err("recovery_invalid_window".into());
     }
@@ -90,17 +91,12 @@ pub fn path(root: &Path, generation: &str, window: &str) -> Result<PathBuf, Stri
     Ok(directory(root, generation)?.join(format!("{name}.json")))
 }
 
-pub fn read(path: &Path) -> Result<Record, String> {
-    if path
-        .symlink_metadata()
-        .map_err(|e| e.to_string())?
-        .file_type()
-        .is_symlink()
-    {
+pub fn read(path: &Path) -> Result<Record, CommandError> {
+    if path.symlink_metadata()?.file_type().is_symlink() {
         return Err("recovery_invalid_file".into());
     }
     let bytes = crate::project::read_recovery_file(path)?;
-    let record: Record = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+    let record: Record = serde_json::from_slice(&bytes)?;
     validate_input(&record.input)?;
     if record.format != FORMAT {
         return Err("recovery_unknown_format".into());
@@ -137,15 +133,15 @@ pub(super) fn private(record: &Record) -> bool {
         || shared.verify(&State::new(document, settings)).is_err()
 }
 
-fn validate_input(input: &Input) -> Result<(), String> {
-    if serde_json::to_vec(input).map_err(|e| e.to_string())?.len() as u64 > MAX_DOCUMENT_BYTES {
+fn validate_input(input: &Input) -> Result<(), CommandError> {
+    if serde_json::to_vec(input)?.len() as u64 > MAX_DOCUMENT_BYTES {
         return Err("recovery_too_large".into());
     }
     Ok(())
 }
-pub(super) fn write(path: &Path, record: &Record) -> Result<(), String> {
+pub(super) fn write(path: &Path, record: &Record) -> Result<(), CommandError> {
     validate_input(&record.input)?;
-    let bytes = serde_json::to_vec(record).map_err(|e| e.to_string())?;
+    let bytes = serde_json::to_vec(record)?;
     if bytes.len() as u64 > crate::project::MAX_RECOVERY_BYTES {
         return Err("recovery_too_large".into());
     }
@@ -157,9 +153,9 @@ pub(super) fn write(path: &Path, record: &Record) -> Result<(), String> {
         options.mode(0o600);
         options
     };
-    let mut file = options.open(path).map_err(|e| e.to_string())?;
-    file.write_all(&bytes).map_err(|e| e.to_string())?;
-    file.commit().map_err(|e| e.to_string())
+    let mut file = options.open(path)?;
+    file.write_all(&bytes)?;
+    file.commit().map_err(CommandError::from)
 }
 
 /// Called only after an explicit successful save/abandon. Unreadable copies are retained.
@@ -180,9 +176,13 @@ pub fn clean_confirmed(root: &Path, generation: &str) {
 }
 
 impl Session {
-    pub fn open_private_recovery(&mut self, window: &str, generation: &str) -> Result<u64, String> {
+    pub fn open_private_recovery(
+        &mut self,
+        window: &str,
+        generation: &str,
+    ) -> Result<u64, CommandError> {
         self.check_peer(window, generation)?;
-        fs::create_dir_all(&self.root).map_err(|e| e.to_string())?;
+        fs::create_dir_all(&self.root)?;
         // A reloaded view cannot silently consume private input that it has not
         // restored. Keep that envelope for the explicit recovery decision.
         let file = path(&self.root, generation, window)?;
@@ -195,14 +195,14 @@ impl Session {
             && read(&file).map_or(true, |record| record.input.epoch != 0 && private(&record))
         {
             let retained = file.with_file_name(format!("retained-{}.json", uuid::Uuid::new_v4()));
-            fs::rename(&file, retained).map_err(|e| e.to_string())?;
+            fs::rename(&file, retained)?;
         }
         let version = self.draft_epochs.entry(window.into()).or_default();
         version.0 += 1;
         version.1 = 0;
         Ok(version.0)
     }
-    pub fn conserve_private(&mut self, window: &str, input: Input) -> Result<bool, String> {
+    pub fn conserve_private(&mut self, window: &str, input: Input) -> Result<bool, CommandError> {
         self.check_peer(window, &input.generation)?;
         let current = self
             .draft_epochs
@@ -214,7 +214,7 @@ impl Session {
         if input.sequence <= current.1 {
             return Ok(false);
         }
-        SharedDocument::from_update(&input.update).map_err(crate::owner::error)?;
+        SharedDocument::from_update(&input.update)?;
         if input.forms.len() > 128
             || input.fields.len() > 1024
             || input.resources.len() > 4096
@@ -248,18 +248,13 @@ impl Session {
         let owner = self.ensure_owner()?;
         let state = owner.state().clone();
         let update = owner.update_bytes();
-        let rejected_edition = owner
-            .draft(window)?
-            .map(serde_json::to_value)
-            .transpose()
-            .map_err(|e| e.to_string())?;
+        let rejected_edition = owner.draft(window)?.map(serde_json::to_value).transpose()?;
         let record = Record {
             format: FORMAT.into(),
             name: self.recovered_name.clone(),
             window: window.into(),
             saved_at: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map_err(|e| e.to_string())?
+                .duration_since(std::time::UNIX_EPOCH)?
                 .as_secs(),
             file_path: self
                 .file_lease
@@ -278,7 +273,7 @@ impl Session {
             input,
             rejected_edition,
         };
-        fs::create_dir_all(&self.root).map_err(|e| e.to_string())?;
+        fs::create_dir_all(&self.root)?;
         let path = path(&self.root, &record.input.generation, window)?;
         if path
             .symlink_metadata()
@@ -288,7 +283,7 @@ impl Session {
         }
         if self.clean_revision == Some(self.revision) && !private(&record) {
             if path.exists() {
-                fs::remove_file(&path).map_err(|e| e.to_string())?;
+                fs::remove_file(&path)?;
             }
             if let Some(store) = &self.recovery {
                 store.clear()?;
@@ -321,11 +316,9 @@ pub fn open_private_recovery(
     window: tauri::WebviewWindow,
     state: tauri::State<crate::Bridge>,
     generation: String,
-) -> Result<u64, String> {
+) -> Result<u64, CommandError> {
     state
-        .session
-        .lock()
-        .map_err(|e| e.to_string())?
+        .session()?
         .open_private_recovery(window.label(), &generation)
 }
 #[tauri::command(async)]
@@ -333,12 +326,8 @@ pub fn conserve_private(
     window: tauri::WebviewWindow,
     state: tauri::State<crate::Bridge>,
     input: Input,
-) -> Result<bool, String> {
-    state
-        .session
-        .lock()
-        .map_err(|e| e.to_string())?
-        .conserve_private(window.label(), input)
+) -> Result<bool, CommandError> {
+    state.session()?.conserve_private(window.label(), input)
 }
 
 #[cfg(test)]

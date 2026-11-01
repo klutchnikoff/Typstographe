@@ -1150,3 +1150,44 @@ web-sidebar-width = Sidebar width
 
 web-preview-single-page = Preview ({ "{count}" } page)
 web-preview-multiple-pages = Preview ({ "{count}" } pages)
+
+# Document type discovery: product profiles, independent of executable contracts.
+type-group-administration = Correspondence and administration
+type-group-research = Research and publications
+type-group-careers = Careers and applications
+type-group-teaching = Teaching
+type-group-publishing = Books and communication
+type-group-general = General purpose
+type-card-courrier = Letter
+type-card-courrier-description = Write personal or professional correspondence with recipient details, signature and attachment mentions.
+type-card-compte-rendu = Meeting minutes
+type-card-compte-rendu-description = Record a meeting, its participants, discussions and decisions.
+type-card-note = Note
+type-card-note-description = Present information, a short analysis or a recommendation to identified recipients.
+type-card-report = Report
+type-card-report-description = Structure an activity report, a study or an internship report with appendices and references when needed.
+type-card-article = Scientific article
+type-card-article-description = Write an article with authors, affiliations, multilingual abstracts, citations and an automatic bibliography.
+type-card-thesis = Dissertation and thesis
+type-card-thesis-description = Compose a long academic work with chapters, references, appendices and examination information.
+type-card-research-project = Research proposal
+type-card-research-project-description = Present a doctoral project or funding application: objectives, methods, schedule and resources.
+type-card-poster = Scientific poster
+type-card-poster-description = Present research, key findings and references visually on a large page.
+type-card-cv = CV
+type-card-cv-description = Organize experience, education and skills for an application.
+type-card-course = Course material
+type-card-course-description = Write structured teaching material with explanations, examples, illustrations and references.
+type-card-exercises = Exercises and assessments
+type-card-exercises-description = Prepare exercises, assignments or examinations with instructions and optional solutions.
+type-card-presentation = Presentation
+type-card-presentation-description = Prepare slides for a meeting, a class or a scientific talk.
+type-card-book = Book
+type-card-book-description = Organize a book into parts and chapters with contents, notes and appendices.
+type-card-free-document = Free document
+type-card-free-document-description = Write a structured document without a specialized header; scope remains to be defined.
+
+type-picker-group = Document group
+type-picker-all = All types
+type-picker-planned = Coming later
+type-picker-unavailable = This type is planned and cannot be created yet.

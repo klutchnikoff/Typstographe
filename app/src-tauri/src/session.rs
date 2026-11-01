@@ -1,3 +1,4 @@
+use crate::error::CommandError;
 use crate::schema::{self, Node};
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
@@ -18,13 +19,13 @@ pub struct Resource {
     pub data: String,
 }
 impl Resource {
-    pub fn decoded(&self) -> Result<Vec<u8>, String> {
+    pub fn decoded(&self) -> Result<Vec<u8>, CommandError> {
         if !assets::valid_path(&self.path) {
             return Err("Chemin de ressource invalide.".into());
         }
-        let bytes = STANDARD.decode(&self.data).map_err(|e| e.to_string())?;
+        let bytes = STANDARD.decode(&self.data)?;
         assets::decode(&bytes, self.path.rsplit('.').next().unwrap_or(""))
-            .map_err(|e| e.to_string())?;
+            .map_err(CommandError::message)?;
         Ok(bytes)
     }
 }
@@ -144,13 +145,12 @@ impl Session {
         }
     }
     #[cfg(any(test, feature = "recipe-driver"))]
-    pub fn open(root: PathBuf) -> Result<Self, String> {
+    pub fn open(root: PathBuf) -> Result<Self, CommandError> {
         let mut session = Self::fresh(root);
         let path = session.root.join("session.json");
         if path.exists() {
             let bytes = crate::project::read_recovery_file(&path)?;
-            let checkpoint: Checkpoint =
-                serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+            let checkpoint: Checkpoint = serde_json::from_slice(&bytes)?;
             session = Self::from_checkpoint(session.root.clone(), checkpoint)?;
         } else {
             session.assets.insert(
@@ -162,7 +162,7 @@ impl Session {
         }
         Ok(session)
     }
-    pub fn from_checkpoint(root: PathBuf, checkpoint: Checkpoint) -> Result<Self, String> {
+    pub fn from_checkpoint(root: PathBuf, checkpoint: Checkpoint) -> Result<Self, CommandError> {
         let mut session = Self::fresh(root);
         if checkpoint.schema != SCHEMA
             || checkpoint.update.is_empty()
@@ -183,7 +183,7 @@ impl Session {
         );
         state
             .validate(&session.assets)
-            .map_err(|e| typstographe_i18n::content_error(&e))?;
+            .map_err(CommandError::localized_content)?;
         session.bytes = checkpoint.update.len();
         typstographe_core::content::shared::SharedDocument::from_update(&checkpoint.update)
             .and_then(|shared| {
@@ -192,7 +192,7 @@ impl Session {
                     checkpoint.settings.clone(),
                 ))
             })
-            .map_err(|e| typstographe_i18n::content_error(&e))?;
+            .map_err(CommandError::localized_content)?;
         session.settings = checkpoint.settings;
         let base = checkpoint
             .project
@@ -224,7 +224,7 @@ impl Session {
         session.fixture = session.restored.clone();
         Ok(session)
     }
-    pub fn managed(base: PathBuf) -> Result<Self, String> {
+    pub fn managed(base: PathBuf) -> Result<Self, CommandError> {
         let recovery = crate::recovery::Store::new(base)?;
         let mut session = Self::fresh(recovery.directory.clone());
         session.fixture = Some(
@@ -236,12 +236,12 @@ impl Session {
         session.recovery = Some(recovery);
         Ok(session)
     }
-    pub fn mark_clean(&mut self) -> Result<(), String> {
+    pub fn mark_clean(&mut self) -> Result<(), CommandError> {
         if let Some(transition) = &self.transition {
             for window in &transition.abandon {
                 let file = crate::recovery::drafts::path(&self.root, &self.generation, window)?;
                 if file.exists() {
-                    std::fs::remove_file(file).map_err(|e| e.to_string())?;
+                    std::fs::remove_file(file)?;
                 }
             }
         }
@@ -287,10 +287,15 @@ impl Session {
         }
     }
     #[cfg(test)]
-    pub fn relay(&mut self, peer: &str, update: &[u8]) -> Result<u64, String> {
+    pub fn relay(&mut self, peer: &str, update: &[u8]) -> Result<u64, CommandError> {
         Ok(self.relay_group(peer, update, None, true)?.revision)
     }
-    pub fn connection(&mut self, peer: &str, generation: &str, online: bool) -> Result<(), String> {
+    pub fn connection(
+        &mut self,
+        peer: &str,
+        generation: &str,
+        online: bool,
+    ) -> Result<(), CommandError> {
         self.check_peer(peer, generation)?;
         let changed = if online {
             self.offline.remove(peer)
@@ -336,7 +341,7 @@ impl Session {
         peer: &str,
         generation: &str,
         enabled: bool,
-    ) -> Result<Synchronization, String> {
+    ) -> Result<Synchronization, CommandError> {
         self.check_peer(peer, generation)?;
         if self.offline.contains(peer) {
             return Err("synchronization_offline".into());
@@ -355,7 +360,7 @@ impl Session {
         peer: &str,
         generation: &str,
         version: u64,
-    ) -> Result<bool, String> {
+    ) -> Result<bool, CommandError> {
         self.check_peer(peer, generation)?;
         Ok(self.synchronization_enabled
             && self.synchronization_version == version
@@ -374,22 +379,21 @@ impl Session {
             revision: self.revision,
         }
     }
-    pub fn check_peer(&self, peer: &str, generation: &str) -> Result<(), String> {
+    pub fn check_peer(&self, peer: &str, generation: &str) -> Result<(), CommandError> {
         if !self.peers.contains(peer) {
             return Err("Fenêtre non inscrite.".into());
         }
         if generation != self.generation {
-            return Err(crate::owner::error(
+            return Err(CommandError::from(
                 typstographe_core::content::contract::Error::WrongDocument,
             ));
         }
         Ok(())
     }
-    pub fn ensure_owner(&mut self) -> Result<&mut crate::owner::Owner, String> {
+    pub fn ensure_owner(&mut self) -> Result<&mut crate::owner::Owner, CommandError> {
         if self.owner.is_none() {
             let shared =
-                typstographe_core::content::shared::SharedDocument::from_updates(&self.updates)
-                    .map_err(crate::owner::error)?;
+                typstographe_core::content::shared::SharedDocument::from_updates(&self.updates)?;
             self.owner = Some(crate::owner::Owner::open(
                 self.guard(),
                 &shared.update(),
@@ -402,7 +406,7 @@ impl Session {
         &mut self,
         peer: &str,
         update: Vec<u8>,
-    ) -> Result<crate::owner::Receipt, String> {
+    ) -> Result<crate::owner::Receipt, CommandError> {
         let history = self.ensure_owner()?.snapshot(peer)?;
         Ok(crate::owner::Receipt {
             revision: self.revision,
@@ -445,7 +449,7 @@ impl Session {
         update: &[u8],
         group: Option<u64>,
         capture: bool,
-    ) -> Result<crate::owner::Receipt, String> {
+    ) -> Result<crate::owner::Receipt, CommandError> {
         self.relay_view(peer, update, group, capture, None)
     }
     pub fn relay_view(
@@ -455,10 +459,10 @@ impl Session {
         group: Option<u64>,
         capture: bool,
         view: Option<crate::owner::HistoryViewRequest>,
-    ) -> Result<crate::owner::Receipt, String> {
+    ) -> Result<crate::owner::Receipt, CommandError> {
         self.check_peer(peer, &self.generation)?;
         if update.is_empty() || update.len() > 4 * 1024 * 1024 {
-            return Err(crate::owner::error(
+            return Err(CommandError::from(
                 typstographe_core::content::contract::Error::StateLimitExceeded,
             ));
         }
@@ -489,12 +493,12 @@ impl Session {
         &mut self,
         peer: &str,
         direction: typstographe_core::content::editing::Direction,
-    ) -> Result<crate::owner::Receipt, String> {
+    ) -> Result<crate::owner::Receipt, CommandError> {
         let publication = self.ensure_owner()?.history(peer, direction)?;
         self.record(&publication);
         self.receipt(peer, publication.update)
     }
-    pub fn lifecycle(&self, revision: u64) -> Result<(), String> {
+    pub fn lifecycle(&self, revision: u64) -> Result<(), CommandError> {
         if self.transition.as_ref().is_some_and(|t| {
             !t.ready() || t.revision != self.revision || t.generation != self.generation
         }) {
@@ -544,16 +548,16 @@ impl Session {
         self.assets = assets;
         self.opened = true;
     }
-    pub fn validate(&self, snapshot: &Snapshot) -> Result<String, String> {
+    pub fn validate(&self, snapshot: &Snapshot) -> Result<String, CommandError> {
         if snapshot.revision != self.revision {
             return Err("stale".into());
         }
         let settings = snapshot.settings.as_ref().unwrap_or(&self.settings);
         settings
             .validate()
-            .map_err(|e| typstographe_i18n::content_error(&e))?;
+            .map_err(CommandError::localized_content)?;
         typstographe_core::bibliography::validate_document(&snapshot.document, &settings.metadata)?;
-        schema::source(&snapshot.document, &self.assets)
+        schema::source(&snapshot.document, &self.assets).map_err(CommandError::Message)
     }
     pub fn resources(&self) -> Vec<Resource> {
         self.assets
@@ -564,7 +568,11 @@ impl Session {
             })
             .collect()
     }
-    pub fn checkpoint(&self, snapshot: &Snapshot, update: Vec<u8>) -> Result<Checkpoint, String> {
+    pub fn checkpoint(
+        &self,
+        snapshot: &Snapshot,
+        update: Vec<u8>,
+    ) -> Result<Checkpoint, CommandError> {
         let source = self.validate(snapshot)?;
         if update.is_empty() || update.len() > MAX_UPDATES {
             return Err("État Yjs invalide.".into());
@@ -590,7 +598,7 @@ impl Session {
                     .unwrap_or_else(|| self.settings.clone()),
             ))
         };
-        verify().map_err(|e| typstographe_i18n::content_error(&e))?;
+        verify().map_err(CommandError::localized_content)?;
         Ok(Checkpoint {
             project: self.project_recovery(
                 typstographe_core::content::contract::State::new(
@@ -613,7 +621,7 @@ impl Session {
                 .unwrap_or_else(|| self.settings.clone()),
         })
     }
-    pub fn save(&self, snapshot: &Snapshot, update: Vec<u8>) -> Result<PathBuf, String> {
+    pub fn save(&self, snapshot: &Snapshot, update: Vec<u8>) -> Result<PathBuf, CommandError> {
         let checkpoint = self.checkpoint(snapshot, update)?;
         if let Some(store) = &self.recovery {
             if self.clean_revision == Some(snapshot.revision) {
@@ -627,20 +635,20 @@ impl Session {
                 .unwrap_or_else(|| "Sans titre".into());
             return store.write(checkpoint, name);
         }
-        let bytes = serde_json::to_vec(&checkpoint).map_err(|e| e.to_string())?;
+        let bytes = serde_json::to_vec(&checkpoint)?;
         if bytes.len() as u64 > crate::project::MAX_RECOVERY_BYTES {
             return Err("Session trop volumineuse.".into());
         }
-        std::fs::create_dir_all(&self.root).map_err(|e| e.to_string())?;
+        std::fs::create_dir_all(&self.root)?;
         let path = self.root.join("session.json");
         atomic(&path, &bytes)?;
         Ok(path)
     }
 }
-fn atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {
-    let mut file = atomic_write_file::AtomicWriteFile::open(path).map_err(|e| e.to_string())?;
-    file.write_all(bytes).map_err(|e| e.to_string())?;
-    file.commit().map_err(|e| e.to_string())
+fn atomic(path: &Path, bytes: &[u8]) -> Result<(), CommandError> {
+    let mut file = atomic_write_file::AtomicWriteFile::open(path)?;
+    file.write_all(bytes)?;
+    file.commit().map_err(CommandError::from)
 }
 
 #[cfg(test)]
@@ -699,7 +707,8 @@ mod tests {
         assert!(s.should_broadcast("main"));
         assert_eq!(
             s.set_synchronization("main", &initial.generation, false)
-                .unwrap_err(),
+                .unwrap_err()
+                .to_string(),
             "synchronization_other_windows"
         );
         s.connection("peer", &initial.generation, false).unwrap();

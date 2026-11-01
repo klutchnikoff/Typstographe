@@ -1,5 +1,6 @@
 //! Undoable publication of a human-composed comparison; saving remains explicit.
 use super::*;
+use crate::error::CommandError;
 use typstographe_core::content::{
     comparison::{Decision, PreparedDecision},
     shared::Publication,
@@ -13,16 +14,15 @@ pub struct Preparation {
     choices: Vec<SourceSide>,
 }
 impl Preparation {
-    pub fn prepare(self) -> Result<PreparedDecision, String> {
+    pub fn prepare(self) -> Result<PreparedDecision, CommandError> {
         let engine = typstographe_core::content::editing::EditingSession::open(
             self.guard,
             &self.update,
             self.assets,
-        )
-        .map_err(crate::owner::error)?;
+        )?;
         self.plan
             .prepare_choices(&engine, &self.choices)
-            .map_err(|e| typstographe_i18n::content_error(&e))
+            .map_err(CommandError::localized_content)
     }
 }
 pub fn capture(
@@ -31,11 +31,11 @@ pub fn capture(
     peer: &str,
     id: &str,
     choices: &[SourceSide],
-) -> Result<Preparation, String> {
+) -> Result<Preparation, CommandError> {
     authorized(s, a, peer, id)?;
     let plan = s.comparisons[id].plan.clone();
     let guard = s.guard();
-    plan.guard().check(&guard).map_err(crate::owner::error)?;
+    plan.guard().check(&guard)?;
     let owner = s.ensure_owner()?;
     Ok(Preparation {
         plan,
@@ -52,7 +52,7 @@ pub fn prepare(
     peer: &str,
     id: &str,
     choices: &[SourceSide],
-) -> Result<PreparedDecision, String> {
+) -> Result<PreparedDecision, CommandError> {
     capture(s, a, peer, id, choices)?.prepare()
 }
 pub fn apply(
@@ -61,7 +61,7 @@ pub fn apply(
     peer: &str,
     id: &str,
     prepared: PreparedDecision,
-) -> Result<(Value, Publication), String> {
+) -> Result<(Value, Publication), CommandError> {
     authorized(s, a, peer, id)?;
     // Keep choices and the frozen pair available if publication is refused.
     let mut review = s.comparisons[id].clone();
@@ -103,18 +103,18 @@ pub async fn comparison_apply(
     state: State<'_, Bridge>,
     id: String,
     choices: Vec<SourceSide>,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     let session = state.session.clone();
     let agent = state.agent.clone();
     let renderer = state.renderer.clone();
     let peer = window.label().to_string();
     tauri::async_runtime::spawn_blocking(move || {
-        let snapshot = capture(&mut *session.lock().map_err(|e| e.to_string())?, &*agent.lock().map_err(|e| e.to_string())?, &peer, &id, &choices)?;
+        let snapshot = capture(&mut *session.lock()?, &*agent.lock()?, &peer, &id, &choices)?;
         let ready = snapshot.prepare()?;
         let archive = ready.archive();
         renderer.validate(&archive.validate().map_err(crate::project::error)?, &archive.assets, crate::rendering::RenderContext { settings: &archive.state().settings, dependencies: archive.dependencies.clone() })?;
-        let (mut report, publication) = apply(&mut *session.lock().map_err(|e| e.to_string())?, &mut *agent.lock().map_err(|e| e.to_string())?, &peer, &id, ready)?;
-        report["publication"] = serde_json::to_value(&publication).map_err(|e| e.to_string())?;
+        let (mut report, publication) = apply(&mut *session.lock()?, &mut *agent.lock()?, &peer, &id, ready)?;
+        report["publication"] = serde_json::to_value(&publication)?;
         for resource in &publication.resources {
             let _ = app.emit("web-editor:asset", json!({"generation":publication.guard.document,"path":resource.path,"data":base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &resource.data)}));
         }
@@ -122,5 +122,5 @@ pub async fn comparison_apply(
         let _ = app.emit("comparison:changed", json!({"id":id}));
         let _ = app.emit("agent:changed", ());
         Ok(report)
-    }).await.map_err(|e| e.to_string())?
+    }).await?
 }

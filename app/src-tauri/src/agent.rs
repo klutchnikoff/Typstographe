@@ -1,4 +1,5 @@
 //! Assistance locale : découverte et propositions, jamais d'édition directe.
+use crate::error::CommandError;
 mod approval;
 mod invitation;
 mod transport;
@@ -64,20 +65,19 @@ fn proposal(state: &mut AgentState, session: &Session) -> Option<Proposal> {
     state.proposal.clone()
 }
 #[tauri::command]
-pub fn agent_state(state: State<Bridge>) -> Result<Value, String> {
-    let session = state.session.lock().map_err(|e| e.to_string())?;
-    let mut agent = state.agent.lock().map_err(|e| e.to_string())?;
-    Ok(json!({"connected":agent.token.is_some(),"proposal":proposal(&mut agent,&session)}))
+pub fn agent_state(state: State<Bridge>) -> Result<Value, CommandError> {
+    let session = state.session()?;
+    let mut agent = state.agent.lock()?;
+    let proposal = proposal(&mut agent, &session);
+    Ok(json!({"connected":agent.token.is_some(),"proposal":proposal}))
 }
 #[tauri::command]
-pub fn agent_revoke(app: tauri::AppHandle, state: State<Bridge>) -> Result<(), String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
-    let mut agent = state.agent.lock().map_err(|e| e.to_string())?;
-    revoke(&mut session, &mut agent)?;
+pub fn agent_revoke(app: tauri::AppHandle, state: State<Bridge>) -> Result<(), CommandError> {
+    revoke(&mut *state.session()?, &mut *state.agent.lock()?)?;
     let _ = app.emit("agent:changed", ());
     Ok(())
 }
-fn revoke(session: &mut Session, agent: &mut AgentState) -> Result<(), String> {
+fn revoke(session: &mut Session, agent: &mut AgentState) -> Result<(), CommandError> {
     if let Some(owner) = &mut session.owner {
         owner.close(&agent_peer(agent))?;
     }
@@ -92,10 +92,19 @@ pub fn agent_reject(
     app: tauri::AppHandle,
     state: State<Bridge>,
     id: String,
-) -> Result<(), String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
-    let mut agent = state.agent.lock().map_err(|e| e.to_string())?;
-    session.check_peer(window.label(), &session.generation)?;
+) -> Result<(), CommandError> {
+    let review = reject_review(&state, window.label(), &id)?;
+    if let Some(review) = review {
+        let _ = app.emit("comparison:changed", json!({"id":review}));
+    }
+    let _ = app.emit("agent:changed", ());
+    Ok(())
+}
+/// Refuse the proposal under both locks; returns the review whose comparison changed.
+fn reject_review(state: &Bridge, peer: &str, id: &str) -> Result<Option<String>, CommandError> {
+    let mut session = state.session()?;
+    let mut agent = state.agent.lock()?;
+    session.check_peer(peer, &session.generation)?;
     let review = agent
         .proposal
         .as_ref()
@@ -119,18 +128,16 @@ pub fn agent_reject(
                 .get_mut(&review)
                 .unwrap()
                 .plan
-                .refuse(&groups)
-                .map_err(crate::owner::error)?;
+                .refuse(&groups)?;
         }
-        reject(&mut agent, &id)?;
-        let _ = app.emit("comparison:changed", json!({"id":review}));
+        reject(&mut agent, id)?;
+        Ok(Some(review))
     } else {
-        reject(&mut agent, &id)?;
+        reject(&mut agent, id)?;
+        Ok(None)
     }
-    let _ = app.emit("agent:changed", ());
-    Ok(())
 }
-fn reject(agent: &mut AgentState, id: &str) -> Result<(), String> {
+fn reject(agent: &mut AgentState, id: &str) -> Result<(), CommandError> {
     let p = agent
         .proposal
         .as_mut()
@@ -147,8 +154,8 @@ pub fn agent_input(
     window: tauri::WebviewWindow,
     state: State<Bridge>,
     composing: bool,
-) -> Result<(), String> {
-    let mut agent = state.agent.lock().map_err(|e| e.to_string())?;
+) -> Result<(), CommandError> {
+    let mut agent = state.agent.lock()?;
     if composing {
         agent.busy.insert(window.label().into());
     } else {
@@ -162,7 +169,7 @@ pub async fn agent_accept(
     app: tauri::AppHandle,
     state: State<'_, Bridge>,
     id: String,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     let session = state.session.clone();
     let agent = state.agent.clone();
     let renderer = state.renderer.clone();
@@ -174,7 +181,7 @@ pub async fn agent_accept(
             &id,
             &peer,
             |candidate, assets| {
-                let context = session.lock().map_err(|e| e.to_string())?.render_context(&candidate.settings);
+                let context = session.lock()?.render_context(&candidate.settings);
                 renderer.validate(
                     &crate::schema::source(&candidate.after, assets)?,
                     assets,
@@ -186,19 +193,18 @@ pub async fn agent_accept(
                     "web-editor:change",
                     json!({"from":"agent","acceptedBy":peer,
                         "generation":publication.guard.document,"revision":publication.guard.revision,"update":publication.update}),
-                ).map_err(|e| e.to_string())?;
-                app.emit("agent:changed", ()).map_err(|e| e.to_string())
+                )?;
+                app.emit("agent:changed", ()).map_err(CommandError::from)
             },
         ).map(|_| ())
     })
-    .await
-    .map_err(|e| e.to_string())?
+    .await?
 }
 
 #[tauri::command]
-pub fn agent_invite(app: tauri::AppHandle, state: State<Bridge>) -> Result<Value, String> {
+pub fn agent_invite(app: tauri::AppHandle, state: State<Bridge>) -> Result<Value, CommandError> {
     let root = crate::preferences::root(&app)?;
-    let listener = TcpListener::bind("127.0.0.1:0").map_err(|e| e.to_string())?;
+    let listener = TcpListener::bind("127.0.0.1:0")?;
     let invitation = Invitation {
         address: listener.local_addr().unwrap().to_string(),
         token: uuid::Uuid::new_v4().simple().to_string(),
@@ -209,7 +215,7 @@ pub fn agent_invite(app: tauri::AppHandle, state: State<Bridge>) -> Result<Value
     let agent = state.agent.clone();
     let token = invitation.token.clone();
     let endpoint = invitation.address.clone();
-    let binary = std::env::current_exe().map_err(|e| e.to_string())?;
+    let binary = std::env::current_exe()?;
     std::thread::spawn(move || {
         let connections = agent.clone();
         accept_while_invited(&listener, &connections, &token, |stream| {
@@ -259,25 +265,21 @@ fn serve_connection(
     });
 }
 
-fn validate_step(step: &Call) -> Result<(), String> {
+fn validate_step(step: &Call) -> Result<(), CommandError> {
     if !typstographe_mcp::attached_step(step) {
         return Err("Capability unavailable in attached body proposals".into());
     }
-    api::check_params(&step.id, &step.params)
-        .map_err(|e| serde_json::to_string(&api::error_value(&e)).unwrap())
+    api::check_params(&step.id, &step.params).map_err(CommandError::Protocol)
 }
 fn reference(session: &Session) -> Value {
     json!({"id":session.generation,"guard":session.guard()})
 }
-fn check_reference(session: &Session, params: &Value) -> Result<(), String> {
+fn check_reference(session: &Session, params: &Value) -> Result<(), CommandError> {
     if params["document"]["id"] != session.generation {
         return Err("Foreign document reference".into());
     }
-    let guard: Guard =
-        serde_json::from_value(params["document"]["guard"].clone()).map_err(|e| e.to_string())?;
-    guard
-        .check(&session.guard())
-        .map_err(|e| serde_json::to_string(&e).unwrap())
+    let guard: Guard = serde_json::from_value(params["document"]["guard"].clone())?;
+    guard.check(&session.guard()).map_err(CommandError::Content)
 }
 fn agent_peer(state: &AgentState) -> String {
     format!("agent:{}", state.token.as_deref().unwrap_or("diagnostic"))
@@ -287,7 +289,7 @@ pub(crate) fn commit_accepted(
     state: &mut AgentState,
     id: &str,
     peer: &str,
-) -> Result<typstographe_core::content::shared::Publication, String> {
+) -> Result<typstographe_core::content::shared::Publication, CommandError> {
     session.check_peer(peer, &session.generation)?;
     if !state.busy.is_empty() {
         return Err("Composition IME en cours.".into());
@@ -303,7 +305,7 @@ pub(crate) fn commit_accepted(
         })
         .ok_or("Proposition périmée.")?;
     if p.review.is_some() {
-        return Err(typstographe_i18n::text("web-comparison-use-review"));
+        return Err(typstographe_i18n::text("web-comparison-use-review").into());
     }
     let guard = session.guard();
     let mut plan = typstographe_core::content::comparison::Comparison::new(
@@ -311,8 +313,7 @@ pub(crate) fn commit_accepted(
         p.candidate.clone(),
         typstographe_core::content::comparison::SourceSide::After,
         guard.clone(),
-    )
-    .map_err(crate::owner::error)?;
+    )?;
     let ids = plan
         .report(&guard)
         .groups
@@ -331,10 +332,9 @@ pub(crate) fn commit_accepted(
     p.status = "accepted".into();
     Ok(publication)
 }
-fn validate_request(method: &str, params: &Value) -> Result<(), String> {
+fn validate_request(method: &str, params: &Value) -> Result<(), CommandError> {
     if method != "resource.read" {
-        typstographe_mcp::validate_request(true, method, params)
-            .map_err(|e| serde_json::to_string(&api::error_value(&e)).unwrap())?;
+        typstographe_mcp::validate_request(true, method, params)?;
     } else if params
         .as_object()
         .is_none_or(|p| p.len() != 1 || !p.get("uri").is_some_and(Value::is_string))
@@ -343,7 +343,7 @@ fn validate_request(method: &str, params: &Value) -> Result<(), String> {
     }
     Ok(())
 }
-fn authorize(state: &AgentState, token: Option<&str>) -> Result<(), String> {
+fn authorize(state: &AgentState, token: Option<&str>) -> Result<(), CommandError> {
     if state.token.is_none() || state.token.as_deref() != token {
         Err("Invitation absente ou révoquée.".into())
     } else {
@@ -355,7 +355,7 @@ pub(crate) fn dispatch(
     state: &mut AgentState,
     method: &str,
     params: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     validate_request(method, params)?;
     if state
         .proposal
@@ -377,7 +377,7 @@ fn dispatch_outcome(
     state: &mut AgentState,
     method: &str,
     params: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     if method == "proposals.get" || method == "proposals.cancel" {
         let mut p = proposal(state, session)
             .filter(|p| params["proposal"] == p.id)
@@ -392,7 +392,7 @@ fn dispatch_outcome(
         return Ok(api::types());
     }
     if method == "document_types.describe" {
-        let kind = serde_json::from_value(params["type"].clone()).map_err(|e| e.to_string())?;
+        let kind = serde_json::from_value(params["type"].clone())?;
         return Ok(api::type_description(kind));
     }
     if method == "commands.list" {
@@ -460,10 +460,8 @@ fn dispatch_outcome(
         {
             return Err("Editing context is busy".into());
         }
-        let selection =
-            serde_json::from_value(params["selection"].clone()).map_err(|e| e.to_string())?;
-        let styles =
-            serde_json::from_value(params["typing_styles"].clone()).map_err(|e| e.to_string())?;
+        let selection = serde_json::from_value(params["selection"].clone())?;
+        let styles = serde_json::from_value(params["typing_styles"].clone())?;
         let guard = session.guard();
         return session
             .ensure_owner()?
@@ -477,7 +475,7 @@ fn dispatch_outcome(
             .ok_or("request_id attendu")?;
         let fingerprint = {
             use sha2::{Digest, Sha256};
-            Sha256::digest(serde_json::to_vec(params).map_err(|e| e.to_string())?)
+            Sha256::digest(serde_json::to_vec(params)?)
                 .iter()
                 .map(|b| format!("{b:02x}"))
                 .collect::<String>()
@@ -506,8 +504,7 @@ fn dispatch_outcome(
         {
             return Err("Limite de propositions atteinte ou lot en attente.".into());
         }
-        let steps: Vec<Call> =
-            serde_json::from_value(params["steps"].clone()).map_err(|e| e.to_string())?;
+        let steps: Vec<Call> = serde_json::from_value(params["steps"].clone())?;
         if steps.is_empty() || steps.len() > 128 {
             return Err("Lot limité à 128 étapes.".into());
         }
@@ -555,7 +552,7 @@ fn dispatch_outcome(
             decisions: vec![],
             working_revision: None,
         };
-        if serde_json::to_vec(&p).map_err(|e| e.to_string())?.len() > 8 * 1024 * 1024 {
+        if serde_json::to_vec(&p)?.len() > 8 * 1024 * 1024 {
             return Err("Proposal exceeds review size limit".into());
         }
         if let Some(previous) = &state.proposal
@@ -580,10 +577,8 @@ fn dispatch_outcome(
     p.as_object_mut()
         .ok_or("Expected parameters")?
         .remove("document");
-    api::check_params(method, &p)
-        .map_err(|e| serde_json::to_string(&api::error_value(&e)).unwrap())?;
-    api::query_state(&confirmed, &session.assets, method, &p)
-        .map_err(|e| serde_json::to_string(&e).unwrap())
+    api::check_params(method, &p)?;
+    api::query_state(&confirmed, &session.assets, method, &p).map_err(CommandError::Content)
 }
 
 pub fn serve(path: PathBuf) -> Result<(), Box<dyn std::error::Error>> {

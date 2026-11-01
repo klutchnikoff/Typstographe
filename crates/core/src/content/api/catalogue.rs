@@ -1,15 +1,24 @@
 use super::super::{catalogue as capabilities, commands};
-use crate::document_types::{DocumentType, Metadata};
+use crate::document_types::{DocumentType, Metadata, discovery};
 use serde_json::{Value, json};
 pub fn type_description(kind: DocumentType) -> Value {
     let metadata = Metadata::blank(kind);
     json!({"id":kind,"can_create":kind.can_create(),"metadata":metadata,
+        "profile":discovery::catalogue().types.iter().find(|p|p.runtime_type==Some(kind)).map(discovery::describe),
         "fields":metadata.field_values(),"structured_metadata":kind.structured_metadata(),
         "capabilities":capabilities::for_type(kind).map(|c|describe(c.id).unwrap()).collect::<Vec<_>>(),
         "models":kind.models().map(|m|json!({"id":m.model.id(),"name":m.name,"description":m.description,"keywords":m.keywords})).collect::<Vec<_>>()})
 }
+pub fn describe_type(id: &str) -> Option<Value> {
+    let profile = discovery::find(id)?;
+    Some(if let Some(kind) = profile.runtime_type {
+        type_description(kind)
+    } else {
+        json!({"id":id,"can_create":false,"profile":discovery::describe(profile),"metadata":null,"capabilities":[],"models":[]})
+    })
+}
 pub fn types() -> Value {
-    json!({"types":DocumentType::ALL.map(type_description)})
+    json!({"types":DocumentType::ALL.map(type_description), "discovery":discovery::describe_all()})
 }
 const QUERIES: &[(&str, &str)] = &[
     (
@@ -22,11 +31,11 @@ const QUERIES: &[(&str, &str)] = &[
     ),
     (
         "document_types.list",
-        "List built-in document types and their interchangeable visual models.",
+        "List integrated document contracts and models, plus grouped product profiles. Discovery entries marked planned cannot be created; capability needs in profiles are intentions, not supported operations.",
     ),
     (
         "document_types.describe",
-        "Describe metadata, rich header collections and capabilities of one type.",
+        "Describe one type by ID. Integrated types include their actual metadata, capabilities and models; types without an implemented contract return only a product profile. Always check can_create.",
     ),
     (
         "commands.list",

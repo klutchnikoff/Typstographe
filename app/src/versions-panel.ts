@@ -6,6 +6,7 @@ import type { VersionAPI, VersionCatalogue } from './version-types'
 import type { Catalogue } from './shell'
 import { tr } from './i18n'
 import { icon } from './icons'
+import { errorText } from './command-error'
 
 export function versionsPanel(
   root: HTMLElement,
@@ -153,7 +154,7 @@ export function versionsPanel(
             }
           })
           .catch((reason) => {
-            form.error.textContent = String(reason)
+            form.error.textContent = errorText(reason)
           })
           .finally(() => {
             busy = false

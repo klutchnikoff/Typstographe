@@ -1,0 +1,397 @@
+{
+  "groups": [
+    {
+      "id": "administration",
+      "label_key": "type-group-administration",
+      "name": "Correspondence and administration"
+    },
+    {
+      "id": "research",
+      "label_key": "type-group-research",
+      "name": "Research and publications"
+    },
+    {
+      "id": "careers",
+      "label_key": "type-group-careers",
+      "name": "Careers and applications"
+    },
+    {
+      "id": "teaching",
+      "label_key": "type-group-teaching",
+      "name": "Teaching"
+    },
+    {
+      "id": "publishing",
+      "label_key": "type-group-publishing",
+      "name": "Books and communication"
+    },
+    {
+      "id": "general",
+      "label_key": "type-group-general",
+      "name": "General purpose"
+    }
+  ],
+  "types": [
+    {
+      "id": "courrier",
+      "label_key": "type-card-courrier",
+      "description_key": "type-card-courrier-description",
+      "groups": [
+        "administration",
+        "careers"
+      ],
+      "runtime_type": "courrier",
+      "information": [
+        "Sender and recipient contact details",
+        "Subject, reference, place and optional fixed date",
+        "Optional signature image"
+      ],
+      "capability_needs": [
+        "Rich text, headings, lists, links, images and tables",
+        "Postscript and attachment mentions"
+      ],
+      "first_model": "A restrained personal letter, including the layout for a window envelope.",
+      "open_questions": [
+        "A cover letter is a use of Letter, not a separate document type."
+      ],
+      "profile": "docs/type-profiles/courrier.md",
+      "name": "Letter",
+      "description": "Write personal or professional correspondence with recipient details, signature and attachment mentions."
+    },
+    {
+      "id": "compte-rendu",
+      "label_key": "type-card-compte-rendu",
+      "description_key": "type-card-compte-rendu-description",
+      "groups": [
+        "administration"
+      ],
+      "runtime_type": "compte-rendu",
+      "information": [
+        "Meeting title, date and place or remote meeting information",
+        "Writer, participants and apologies"
+      ],
+      "capability_needs": [
+        "Rich text, lists, quotations, images and tables",
+        "Decisions and action items when their contract is agreed"
+      ],
+      "first_model": "Readable personal meeting minutes with clear meeting information.",
+      "open_questions": [
+        "Decide whether decisions and actions need dedicated structured records."
+      ],
+      "profile": "docs/type-profiles/compte-rendu.md",
+      "name": "Meeting minutes",
+      "description": "Record a meeting, its participants, discussions and decisions."
+    },
+    {
+      "id": "note",
+      "label_key": "type-card-note",
+      "description_key": "type-card-note-description",
+      "groups": [
+        "administration"
+      ],
+      "runtime_type": null,
+      "information": [
+        "Title, writer, date and intended recipients",
+        "Optional subject and reference"
+      ],
+      "capability_needs": [
+        "Headings, lists, quotations, images, tables and footnotes"
+      ],
+      "first_model": "A concise internal note with a clear heading.",
+      "open_questions": [
+        "Keep memo and briefing note as uses of one type unless their contracts diverge."
+      ],
+      "profile": "docs/type-profiles/note.md",
+      "name": "Note",
+      "description": "Present information, a short analysis or a recommendation to identified recipients."
+    },
+    {
+      "id": "report",
+      "label_key": "type-card-report",
+      "description_key": "type-card-report-description",
+      "groups": [
+        "administration",
+        "research",
+        "publishing"
+      ],
+      "runtime_type": null,
+      "information": [
+        "Title, subtitle, writers, organization and date",
+        "Optional reporting period and summary"
+      ],
+      "capability_needs": [
+        "Sections, contents, figures, tables, footnotes and bibliography",
+        "Appendices and cross-references"
+      ],
+      "first_model": "A sober one-column report suitable for everyday professional use.",
+      "open_questions": [
+        "Keep activity, study and internship reports together initially.",
+        "Distinguish its heading and contract from Article and Thesis."
+      ],
+      "profile": "docs/type-profiles/report.md",
+      "name": "Report",
+      "description": "Structure an activity report, a study or an internship report with appendices and references when needed."
+    },
+    {
+      "id": "article",
+      "label_key": "type-card-article",
+      "description_key": "type-card-article-description",
+      "groups": [
+        "research"
+      ],
+      "runtime_type": "article",
+      "information": [
+        "Titles, subtitles and short titles by language",
+        "Authors, free-text affiliations, corresponding author and optional ORCID",
+        "Abstracts and keywords by language",
+        "Bibliography settings and optional contents"
+      ],
+      "capability_needs": [
+        "Rich text, sections, lists, quotations, images, tables and footnotes",
+        "Bibliographic citations and automatic bibliography"
+      ],
+      "first_model": "A restrained one-column working article.",
+      "open_questions": [
+        "All Article models remain interchangeable.",
+        "Models may leave presentation options free, restrict them or impose them without changing content."
+      ],
+      "profile": "docs/type-profiles/article.md",
+      "name": "Scientific article",
+      "description": "Write an article with authors, affiliations, multilingual abstracts, citations and an automatic bibliography."
+    },
+    {
+      "id": "thesis",
+      "label_key": "type-card-thesis",
+      "description_key": "type-card-thesis-description",
+      "groups": [
+        "research"
+      ],
+      "runtime_type": null,
+      "information": [
+        "Titles, author, institution, qualification and discipline",
+        "Supervisors, optional examination panel and defense date",
+        "Abstracts and keywords by language"
+      ],
+      "capability_needs": [
+        "Chapters, contents, figures and tables with captions",
+        "Footnotes, citations, bibliography, appendices and cross-references"
+      ],
+      "first_model": "A neutral academic manuscript with a title page and readable chapters.",
+      "open_questions": [
+        "One type covers both dissertation and thesis initially.",
+        "Agree front matter and optional examination information before implementation."
+      ],
+      "profile": "docs/type-profiles/thesis.md",
+      "name": "Dissertation and thesis",
+      "description": "Compose a long academic work with chapters, references, appendices and examination information."
+    },
+    {
+      "id": "research-project",
+      "label_key": "type-card-research-project",
+      "description_key": "type-card-research-project-description",
+      "groups": [
+        "research",
+        "careers"
+      ],
+      "runtime_type": null,
+      "information": [
+        "Project title, optional acronym and summary",
+        "Applicants, partners and institutions",
+        "Call or target program, duration and requested resources"
+      ],
+      "capability_needs": [
+        "Structured sections, citations, bibliography, figures and tables",
+        "Schedule, work packages and budget if their need is confirmed"
+      ],
+      "first_model": "A sober proposal suitable for a doctoral project or funding application.",
+      "open_questions": [
+        "Use one type initially; validate the shared core of doctoral and funding proposals.",
+        "Distinguish optional fields from requirements imposed by a funding call.",
+        "This document type is not the .typsto project container."
+      ],
+      "profile": "docs/type-profiles/research-project.md",
+      "name": "Research proposal",
+      "description": "Present a doctoral project or funding application: objectives, methods, schedule and resources."
+    },
+    {
+      "id": "poster",
+      "label_key": "type-card-poster",
+      "description_key": "type-card-poster-description",
+      "groups": [
+        "research",
+        "publishing"
+      ],
+      "runtime_type": null,
+      "information": [
+        "Title, authors, affiliations and optional event",
+        "Optional contact details and acknowledgements"
+      ],
+      "capability_needs": [
+        "Semantic sections, figures, tables, equations and bibliography",
+        "A model-controlled multi-column composition"
+      ],
+      "first_model": "A restrained scientific poster with a clear reading order.",
+      "open_questions": [
+        "Define the relationship between sections and model-controlled spatial composition.",
+        "Agree useful page sizes and accessible reading order."
+      ],
+      "profile": "docs/type-profiles/poster.md",
+      "name": "Scientific poster",
+      "description": "Present research, key findings and references visually on a large page."
+    },
+    {
+      "id": "cv",
+      "label_key": "type-card-cv",
+      "description_key": "type-card-cv-description",
+      "groups": [
+        "careers"
+      ],
+      "runtime_type": null,
+      "information": [
+        "Identity, professional headline and contact details",
+        "Experiences, education and skills",
+        "Optional languages, publications and other activities"
+      ],
+      "capability_needs": [
+        "Repeatable dated records with rich descriptions",
+        "Optional publication list and links"
+      ],
+      "first_model": "A restrained readable CV usable for a professional or academic application.",
+      "open_questions": [
+        "Agree the common record structure before adding specialist academic variants.",
+        "Decide which personal details are optional; never require a photograph."
+      ],
+      "profile": "docs/type-profiles/cv.md",
+      "name": "CV",
+      "description": "Organize experience, education and skills for an application."
+    },
+    {
+      "id": "course",
+      "label_key": "type-card-course",
+      "description_key": "type-card-course-description",
+      "groups": [
+        "teaching"
+      ],
+      "runtime_type": null,
+      "information": [
+        "Title, author, institution and teaching unit",
+        "Optional audience, academic year and learning objectives"
+      ],
+      "capability_needs": [
+        "Sections, contents, figures, tables, notes and bibliography",
+        "Examples, callouts, equations and code when needed"
+      ],
+      "first_model": "A clear printable course handout.",
+      "open_questions": [
+        "Decide whether syllabus information is an optional part of this type or warrants a separate contract."
+      ],
+      "profile": "docs/type-profiles/course.md",
+      "name": "Course material",
+      "description": "Write structured teaching material with explanations, examples, illustrations and references."
+    },
+    {
+      "id": "exercises",
+      "label_key": "type-card-exercises",
+      "description_key": "type-card-exercises-description",
+      "groups": [
+        "teaching"
+      ],
+      "runtime_type": null,
+      "information": [
+        "Title, teaching unit, author and optional date",
+        "Optional duration, permitted materials and marking information"
+      ],
+      "capability_needs": [
+        "Exercises, questions and nested question parts",
+        "Optional solutions, equations, figures and tables"
+      ],
+      "first_model": "A readable exercise sheet with optional solutions.",
+      "open_questions": [
+        "Decide the shared contract for exercises and assessments.",
+        "Solutions are content; their inclusion in a particular output must be an explicit choice."
+      ],
+      "profile": "docs/type-profiles/exercises.md",
+      "name": "Exercises and assessments",
+      "description": "Prepare exercises, assignments or examinations with instructions and optional solutions."
+    },
+    {
+      "id": "presentation",
+      "label_key": "type-card-presentation",
+      "description_key": "type-card-presentation-description",
+      "groups": [
+        "administration",
+        "research",
+        "teaching",
+        "publishing"
+      ],
+      "runtime_type": null,
+      "information": [
+        "Title, speakers and affiliations",
+        "Optional event, date and contact details"
+      ],
+      "capability_needs": [
+        "Slides, sections, figures, tables, equations and citations",
+        "Speaker notes if their need is confirmed"
+      ],
+      "first_model": "A sober slide deck with clear titles and large readable text.",
+      "open_questions": [
+        "Define semantic slide boundaries without exposing layout code.",
+        "Distinguish slide content, speaker notes and model-specific composition."
+      ],
+      "profile": "docs/type-profiles/presentation.md",
+      "name": "Presentation",
+      "description": "Prepare slides for a meeting, a class or a scientific talk."
+    },
+    {
+      "id": "book",
+      "label_key": "type-card-book",
+      "description_key": "type-card-book-description",
+      "groups": [
+        "research",
+        "publishing"
+      ],
+      "runtime_type": null,
+      "information": [
+        "Titles, authors or editors and language",
+        "Optional publication information, dedication and acknowledgements"
+      ],
+      "capability_needs": [
+        "Parts, chapters, contents, figures, tables, notes and cross-references",
+        "Bibliography and appendices; index and glossary to assess"
+      ],
+      "first_model": "A restrained long-form book manuscript.",
+      "open_questions": [
+        "Agree parts, front matter and back matter before implementation.",
+        "Distinguish a book from a thesis through its editorial metadata and contract."
+      ],
+      "profile": "docs/type-profiles/book.md",
+      "name": "Book",
+      "description": "Organize a book into parts and chapters with contents, notes and appendices."
+    },
+    {
+      "id": "free-document",
+      "label_key": "type-card-free-document",
+      "description_key": "type-card-free-document-description",
+      "groups": [
+        "general"
+      ],
+      "runtime_type": null,
+      "information": [
+        "Optional title, author and date",
+        "General document settings"
+      ],
+      "capability_needs": [
+        "Core rich text, sections, lists, images, tables and footnotes",
+        "Assess optional bibliography without inheriting all specialist capabilities"
+      ],
+      "first_model": "A neutral document with no required specialized heading.",
+      "open_questions": [
+        "Clarify its difference from Report.",
+        "Free means freedom of structure, not arbitrary page-layout controls."
+      ],
+      "profile": "docs/type-profiles/free-document.md",
+      "name": "Free document",
+      "description": "Write a structured document without a specialized header; scope remains to be defined."
+    }
+  ]
+}

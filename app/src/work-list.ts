@@ -3,6 +3,7 @@ import { tr } from './i18n'
 import { icon } from './icons'
 import { formDialog } from './form-dialog'
 import { navigationGroup } from './keyboard-navigation'
+import { errorText } from './command-error'
 export interface WorkEntry {
   id: string
   name: string
@@ -109,7 +110,7 @@ export async function workList(
                 })
                 .catch((error) => {
                   busy = false
-                  form.error.textContent = String(error)
+                  form.error.textContent = errorText(error)
                 })
             },
           })

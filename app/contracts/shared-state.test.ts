@@ -404,7 +404,7 @@ it('publishes a validated differential readable by Yjs, and rejects an obsolete 
       expected: guard,
       updates,
     }),
-  ).rejects.toContain('stale_revision')
+  ).rejects.toMatchObject({ code: 'stale_revision' })
 })
 
 it('executes one native multizone batch in the actual editor, preserving identities and one undo step', async () => {

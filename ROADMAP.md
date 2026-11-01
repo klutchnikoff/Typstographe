@@ -1,6 +1,6 @@
 # Feuille de route de typstOgraphe
 
-Révisée le **31 octobre 2026**. Objectif : transformer le prototype validé en une
+Révisée le **1er novembre 2026**. Objectif : transformer le prototype validé en une
 application de rédaction utilisable au quotidien, pour l’administration,
 l’enseignement et la recherche en sciences humaines et sociales.
 
@@ -91,15 +91,28 @@ ci-dessous portent les fonctionnalités restantes et leurs arbitrages.
 
 ## B — Définir les types utiles et leurs contrats
 
-Partir de la proposition [Types, modèles et libertés](docs/types-modeles-libertes.md),
-puis arrêter ensemble le catalogue et sa matrice de capacités. Les groupes
-ci-dessous sont une proposition d’ordre, pas sept développements lancés d’un coup.
+Le [catalogue validé et les fiches par type](docs/document-type-catalogue.md)
+guident ce chantier. Les groupes sont des portes d’entrée, pas des types ni des
+contraintes de modèle ; un type peut appartenir à plusieurs groupes.
 
-| Groupe proposé | Types candidats | Usage à éprouver |
-| --- | --- | --- |
-| Premier périmètre administratif | Courrier ; compte-rendu de réunion ; note/mémo | Correspondre, restituer une réunion, diffuser une information courte |
-| Recherche SHS | Article ; rapport/mémoire | Auteurs, résumé, notes, références, bibliographie et documents longs |
-| Enseignement | Support de cours ; syllabus | Structurer un cours, ses objectifs et ses modalités |
+| Groupe validé | Types |
+| --- | --- |
+| Correspondance et administration | Courrier ; compte rendu ; note ; rapport ; présentation |
+| Recherche et publications | Article scientifique ; mémoire et thèse ; projet de recherche ; poster ; rapport ; livre ; présentation |
+| Parcours et candidatures | CV ; projet de recherche ; courrier (dont lettre de motivation) |
+| Enseignement | Support de cours ; exercices et évaluations ; présentation |
+| Livres et communication | Livre ; présentation ; rapport ; poster |
+| Transversal | Document libre — périmètre à définir |
+
+Courrier et Article sont disponibles ; les autres fiches décrivent des **types
+à venir**, sans promettre des commandes déjà exécutables. Mémoire et thèse
+restent un seul type. Une lettre de motivation est un Courrier. Le Projet de
+recherche vise notamment demandes de financement et projets doctoraux ; il ne
+désigne pas le fichier-projet `.typsto`. La fiche Document libre reste ouverte.
+
+Compléter le parcours de création avec les **vignettes Typst des modèles**,
+produites depuis un contenu représentatif commun à chaque type. Aucun type
+annoncé ne devient créable sans contrat validé et modèle réellement utilisable.
 
 Pour chaque type : définir les métadonnées, leurs genres, les groupes d’en-tête,
 les champs obligatoires à l’export, les capacités autorisées et les contrats

@@ -389,8 +389,11 @@ test('accueil sans document et création depuis les types et modèles disponible
   await expect(page.locator('main')).toBeHidden()
   await page.locator('#create-document').click()
   await expect(page.locator('dialog')).toBeVisible()
-  await expect(page.locator('dialog select').first().locator('option')).toHaveCount(2)
-  await expect(page.locator('dialog select').nth(1).locator('option')).toHaveCount(1)
+  await expect(page.locator('dialog .type-card:not(.planned)')).toHaveCount(2)
+  await expect(page.locator('dialog .type-card.planned')).toHaveCount(12)
+  await expect(
+    page.getByRole('dialog').getByLabel('Modèle', { exact: true }).locator('option'),
+  ).toHaveCount(1)
   await confirmNewDocument(page)
   await expect(page.locator('main')).toBeVisible()
   await expect(page.locator('.tiptap')).not.toContainText('Valmont')

@@ -17,6 +17,7 @@ import {
 import { tr } from './i18n'
 import { documentContent } from './shared-inline-marks'
 import { applyObjectEdit, inlineTarget, treeTarget } from './object-commands'
+import { errorText } from './command-error'
 
 /** Citation content owns only its fields; placement, focus, Escape and actions use the shared band. */
 export function citationPanel(
@@ -122,7 +123,7 @@ export function citationPanel(
       panel.error.textContent = entries.length ? '' : tr('Aucune référence ne correspond.')
       bands.reveal()
     } catch (error) {
-      if (current === ticket && opened) panel.error.textContent = String(error)
+      if (current === ticket && opened) panel.error.textContent = errorText(error)
     }
   }
   function renderChosen() {
@@ -207,7 +208,7 @@ export function citationPanel(
       panel.committed()
       bands.close(true, editor.state.selection.getBookmark())
     } catch (error) {
-      if (opened === state) panel.error.textContent = String(error)
+      if (opened === state) panel.error.textContent = errorText(error)
     } finally {
       pending = false
       apply.disabled = false

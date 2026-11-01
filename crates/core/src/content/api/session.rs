@@ -265,6 +265,9 @@ impl Session {
         match id {
             "document_types.list" => return Ok(super::types()),
             "document_types.describe" => {
+                if let Some(profile) = super::describe_type(params["type"].as_str().unwrap_or("")) {
+                    return Ok(profile);
+                }
                 return Ok(super::type_description(decode(params["type"].clone())?));
             }
             "commands.list" => return Ok(super::catalogue()),

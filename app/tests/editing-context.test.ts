@@ -213,7 +213,7 @@ it('ignores late responses from another zone and never quarantines a refused nav
       return await new Promise((resolve) => {
         answer = resolve
       })
-    if (calls.length === 2) throw JSON.stringify({ code: 'stale_revision' })
+    if (calls.length === 2) throw { code: 'stale_revision' }
     return history(args!.request) as any
   })
   p.updateEditingContext({}, () => view(1))

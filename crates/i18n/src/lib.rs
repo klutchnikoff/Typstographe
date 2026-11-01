@@ -318,6 +318,12 @@ mod tests {
                 .into_iter()
                 .map(|kind| kind.label_key())
                 .collect();
+            for group in &document_types::discovery::catalogue().groups {
+                keys.push(&group.label_key);
+            }
+            for profile in &document_types::discovery::catalogue().types {
+                keys.extend([profile.label_key.as_str(), profile.description_key.as_str()]);
+            }
             keys.extend(
                 crate::document::PaperFormat::ALL
                     .into_iter()
