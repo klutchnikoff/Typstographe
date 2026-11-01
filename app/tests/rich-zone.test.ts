@@ -134,6 +134,25 @@ it('la lecture du curseur conserve les styles si la sélection ne change pas et 
   expect(editor.state.selection).toBe(selection)
   expect(editor.state.storedMarks?.map((mark) => mark.type.name)).toEqual(['bold'])
 })
+it.each(['document', 'rich-text', 'inline-text'] as const)(
+  '%s keeps the pre-edit selection when ProseMirror replays native Backspace',
+  async (profile) => {
+    const editor = await create(profile, { content: '<p>Texte</p>' })
+    editor.view.focus()
+    editor.commands.setTextSelection(2)
+    const selection = editor.state.selection
+    const text = editor.view.dom.querySelector('p')!.firstChild!
+    // The browser has deleted T, but the DOM observer has not read that edit yet.
+    text.textContent = 'exte'
+    document.getSelection()!.collapse(text, 0)
+    const replay = new KeyboardEvent('keydown', { key: 'Backspace', keyCode: 8 })
+    expect(replay.target).toBeNull()
+    const handled = editor.view.someProp('handleKeyDown', (handler) => handler(editor.view, replay))
+    expect(handled).not.toBe(true)
+    expect(editor.state.selection).toBe(selection)
+    expect(editor.state.doc.textContent).toBe('Texte')
+  },
+)
 it('la lecture du curseur ne transforme ni les sélections structurelles ni une composition IME', async () => {
   const editor = await create('document', {
     content: '<p>Avant</p><table><tbody><tr><td><p>Cellule</p></td></tr></tbody></table>',

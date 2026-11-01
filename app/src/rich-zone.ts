@@ -390,7 +390,11 @@ export function createRichZone(options: RichZoneOptions): Editor {
       },
       handleKeyDown: (view, event) => {
         if (event.isComposing || view.composing) return false
-        syncNativeTextSelection(editor)
+        // ProseMirror also calls this handler with undispatched key events while
+        // reading an already-mutated DOM (e.g. after native Backspace). Only a
+        // dispatched event has a target: its caret still belongs to the old doc.
+        // Reading the post-edit DOM against that old doc would swallow the edit.
+        if (event.target) syncNativeTextSelection(editor)
         const owner = editor
         if (policy.widgets) {
           if (inlineObjectKey(owner, event, properties || (() => {}))) return true
