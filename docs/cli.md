@@ -50,8 +50,8 @@ Resource data is base64 in `resource.add`; models use their pure Typst source in
 | `document.structure` | query | Read trees and all typed text zones; paths are revision-relative, offsets UTF-16. |
 | `document.text` | query | Read plain text of the body or a typed text target. |
 | `document.validate` | query | Validate the structured draft and report export readiness separately. |
-| `document_types.describe` | query | Describe metadata, rich header collections and capabilities of one type. |
-| `document_types.list` | query | List built-in document types and their interchangeable visual models. |
+| `document_types.describe` | query | Describe one type by ID. Integrated types include their actual metadata, capabilities and models; types without an implemented contract return only a product profile. Always check can_create. |
+| `document_types.list` | query | List integrated document contracts and models, plus grouped product profiles. Discovery entries marked planned cannot be created; capability needs in profiles are intentions, not supported operations. |
 | `edit.redo` | session | Redo this participant's contribution. |
 | `edit.undo` | session | Undo this participant's last confirmed contribution. |
 | `inline.replace` | edit | Replace one typed rich range with a footnote, citation, softBreak (a Typst space) or hardBreak (forced line break). Breaks are unavailable in single-line header fields and plain fields. A break is one UTF-16 unit; paragraph separation uses block.split. No implicit CR/LF interpretation in text.insert. Discover objects via capabilities.describe. |

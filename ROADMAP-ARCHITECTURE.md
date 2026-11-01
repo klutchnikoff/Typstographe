@@ -50,6 +50,16 @@ livré ne figure plus comme tâche à faire dans ces roadmaps.
 
 ## B. Types, paramètres et manifestes — P1
 
+**Catalogue validé le 1er novembre 2026 :**
+[groupes et fiches](docs/document-type-catalogue.md), avec un registre de
+découverte commun aux adaptateurs. Garder les profils prévus séparés des
+contrats exécutables : disponibilité dérivée des modèles, aucune extension
+factice de l’énumération des types. Un type peut appartenir à plusieurs groupes.
+Un seul type Mémoire et thèse ; la lettre de motivation reste un Courrier.
+Valider le contrat de chaque fiche avant son développement, puis fournir un
+premier modèle utilisable. Compléter ensuite les noms de modèles par des
+vignettes issues du rendu Typst, sans modifier le contenu au changement de modèle.
+
 Préciser le schéma de chaque type, les genres de valeurs, les groupes de champs,
 les capacités et les signatures à implémenter. La note
 [Types, modèles et libertés](docs/types-modeles-libertes.md) est une proposition,

@@ -19,6 +19,12 @@ externe ou préférence personnelle n’est exposé. stdout est réservé au pro
 
 1. `document_types.list`, puis `document_types.describe {"type":"article"}` :
    métadonnées initiales, champs et collections, capacités et fiches de modèles.
+   Le champ `discovery` ajoute les groupes et les résumés des profils de types à venir.
+   La fiche complète est obtenue à la demande avec `document_types.describe`.
+   Un profil `planned` n’est pas créable ; ses `capability_needs` décrivent
+   des besoins envisagés, jamais des opérations garanties. Par exemple,
+   `document_types.describe {"type":"cv"}` expose sa fiche sans contrat
+   de métadonnées ni modèle exécutable. Voir le [catalogue](document-type-catalogue.md).
 2. `commands.list` et `tools/list` : opérations réelles et schémas d’entrée.
 3. `capabilities.describe {"id":"insert.footnote"}` : signature sémantique,
    présentation et **étapes exécutables** (`inline.replace` dans ce cas).

@@ -1152,3 +1152,44 @@ web-sidebar-width = Largeur de la barre latérale
 
 web-preview-single-page = Aperçu ({ "{count}" } page)
 web-preview-multiple-pages = Aperçu ({ "{count}" } pages)
+
+# Document type discovery: product profiles, independent of executable contracts.
+type-group-administration = Correspondance et administration
+type-group-research = Recherche et publications
+type-group-careers = Parcours et candidatures
+type-group-teaching = Enseignement
+type-group-publishing = Livres et communication
+type-group-general = Transversal
+type-card-courrier = Courrier
+type-card-courrier-description = Rédiger une correspondance personnelle ou professionnelle, avec destinataire, signature et pièces jointes mentionnées.
+type-card-compte-rendu = Compte rendu
+type-card-compte-rendu-description = Restituer une réunion, ses participants, ses échanges et ses décisions.
+type-card-note = Note
+type-card-note-description = Présenter une information, une analyse courte ou une recommandation à des destinataires identifiés.
+type-card-report = Rapport
+type-card-report-description = Structurer un bilan d’activité, une étude ou un rapport de stage avec annexes et références si nécessaire.
+type-card-article = Article scientifique
+type-card-article-description = Rédiger un article avec auteurs, affiliations, résumés multilingues, citations et bibliographie automatique.
+type-card-thesis = Mémoire et thèse
+type-card-thesis-description = Composer un travail universitaire long, avec chapitres, références, annexes et informations de soutenance.
+type-card-research-project = Projet de recherche
+type-card-research-project-description = Présenter un projet doctoral ou une demande de financement : objectifs, méthode, calendrier et moyens.
+type-card-poster = Poster scientifique
+type-card-poster-description = Présenter visuellement une recherche, ses principaux résultats et ses références sur une grande page.
+type-card-cv = CV
+type-card-cv-description = Organiser son parcours, ses expériences, ses formations et ses compétences pour une candidature.
+type-card-course = Support de cours
+type-card-course-description = Rédiger un support pédagogique structuré avec explications, exemples, illustrations et références.
+type-card-exercises = Exercices et évaluations
+type-card-exercises-description = Préparer des exercices, devoirs ou sujets d’examen, avec consignes et corrigés facultatifs.
+type-card-presentation = Présentation
+type-card-presentation-description = Préparer un diaporama pour une réunion, un cours ou une communication scientifique.
+type-card-book = Livre
+type-card-book-description = Organiser un ouvrage en parties et chapitres, avec sommaire, notes et annexes.
+type-card-free-document = Document libre
+type-card-free-document-description = Rédiger un document structuré sans en-tête spécialisé ; périmètre à définir.
+
+type-picker-group = Groupe de documents
+type-picker-all = Tous les types
+type-picker-planned = À venir
+type-picker-unavailable = Ce type est prévu mais ne peut pas encore être créé.
