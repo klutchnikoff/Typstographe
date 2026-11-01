@@ -25,6 +25,7 @@ import { previewController } from './preview'
 import { requestPreview } from './preview-frame'
 import { renderQueue } from './render-queue'
 import { withCurrentSnapshot } from './snapshot-operation'
+import { resizableSeparator } from './resizable-separator'
 import { installMenus } from './menus'
 import { BandHost } from './band-layout'
 import { propertyPanel } from './properties'
@@ -307,44 +308,19 @@ function resize(fraction: number, persist = true) {
 document.addEventListener('editor:resize', (event) =>
   resize((event as CustomEvent<number>).detail, false),
 )
-let resizingPointer: number | undefined
-splitter.addEventListener('pointerdown', (event) => {
-  if (event.button !== 0 || !event.isPrimary || resizingPointer !== undefined) return
-  event.preventDefault()
-  resizingPointer = event.pointerId
-  splitter.focus({ preventScroll: true })
-  splitter.setPointerCapture(event.pointerId)
-  document.documentElement.classList.add('resizing-columns')
-  const move = (e: PointerEvent) => {
-    if (e.pointerId === event.pointerId) resize((e.clientX / window.innerWidth) * 100, false)
-  }
-  const finish = () => {
-    splitter.removeEventListener('pointermove', move)
-    splitter.removeEventListener('pointerup', end)
-    splitter.removeEventListener('pointercancel', end)
-    splitter.removeEventListener('lostpointercapture', end)
-    window.removeEventListener('blur', finish)
-    document.documentElement.classList.remove('resizing-columns')
-    resizingPointer = undefined
-    if (splitter.hasPointerCapture(event.pointerId)) splitter.releasePointerCapture(event.pointerId)
-    resize(Number(splitter.getAttribute('aria-valuenow')))
-  }
-  const end = (e: PointerEvent) => {
-    if (e.pointerId === event.pointerId) finish()
-  }
-  splitter.addEventListener('pointermove', move)
-  splitter.addEventListener('pointerup', end)
-  splitter.addEventListener('pointercancel', end)
-  splitter.addEventListener('lostpointercapture', end)
-  window.addEventListener('blur', finish)
+resizableSeparator(splitter, {
+  value: () => Number(splitter.getAttribute('aria-valuenow')),
+  bounds: () => ({ min: 10, max: 90 }),
+  pointer: (event) => {
+    const workspace = document.querySelector('main')!
+    const box = workspace.getBoundingClientRect()
+    const available = box.width - parseFloat(getComputedStyle(workspace).paddingRight || '0')
+    return ((event.clientX - box.left) / available) * 100
+  },
+  change: resize,
+  step: 2,
+  defaultValue: 50,
 })
-splitter.addEventListener('keydown', (event) => {
-  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-    event.preventDefault()
-    resize(Number(splitter.getAttribute('aria-valuenow')) + (event.key === 'ArrowLeft' ? -2 : 2))
-  }
-})
-splitter.addEventListener('dblclick', () => resize(50))
 
 async function start() {
   if (!isTauri && !(recipeBuild && window.__SPIKE_TRANSPORT__) && !browserHost)
