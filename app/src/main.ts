@@ -25,6 +25,7 @@ import { previewController } from './preview'
 import { requestPreview } from './preview-frame'
 import { renderQueue } from './render-queue'
 import { withCurrentSnapshot } from './snapshot-operation'
+import { resizableSeparator } from './resizable-separator'
 import { installMenus } from './menus'
 import { BandHost } from './band-layout'
 import { propertyPanel } from './properties'
@@ -57,7 +58,7 @@ app.innerHTML = `
     <div class="document-info"><span>Courrier personnel</span><span>Français · A4 · Modèle local</span></div>
     <div id="editor-scroll"><div id="editor"></div></div>
   </section><div class="splitter" role="separator" tabindex="0" aria-label="Largeur des colonnes" aria-orientation="vertical" aria-valuemin="10" aria-valuemax="90" aria-valuenow="50"></div>
-  <section class="preview" aria-label="Aperçu Typst"><div class="preview-title"><strong>Aperçu Typst</strong><span id="render-status" role="status">Préparation…</span></div><div id="pages"><p class="empty">Le rendu du document apparaîtra ici.</p></div></section></main>
+  <section class="preview" aria-label="Aperçu"><div class="preview-title"><strong id="preview-heading" role="status">Aperçu</strong><span id="render-status" role="status">Préparation…</span></div><div id="pages"><p class="empty">Le rendu du document apparaîtra ici.</p></div></section></main>
   <footer><span id="statistics">Chargement…</span><span id="presence"></span><button id="synchronization" type="button" aria-pressed="false"></button><span id="message" role="status"></span></footer>
   <input id="image-file" type="file" accept="image/png,image/jpeg,image/svg+xml" hidden>
 `
@@ -93,7 +94,6 @@ let properties: ReturnType<typeof propertyPanel> | undefined
 let citations: ReturnType<typeof citationPanel> | undefined
 let tables: ReturnType<typeof tablePanel> | undefined
 const rendering = renderQueue(render)
-let scheduledAt = 0
 let onPreview: ((revision: number) => void) | undefined
 let restoringError = false
 let stopping = false
@@ -180,7 +180,7 @@ function schedule() {
   if (stopping) return
   version++
   preview?.invalidate()
-  scheduledAt = performance.now()
+  element('render-status').hidden = false
   if (!provider.online) {
     element('render-status').textContent = tr('Modifications locales · hors connexion')
     return
@@ -191,25 +191,27 @@ function schedule() {
 async function render() {
   if (!editor || !provider.online || provider.composing || restoringError) return
   const localVersion = version
-  const inputTime = scheduledAt
   try {
     await provider.flush()
     if (localVersion !== version) return
     const { result } = await requestPreview(host.transport, snapshot())
     if (localVersion !== version) return
     if (!(await preview?.show(result, localVersion)) || localVersion !== version) return
-    const pages = result.pages
-    element('render-status').textContent =
-      `${pages.length} page${pages.length > 1 ? 's' : ''} · ${Math.round(result.elapsedMs)} ms`
+    const count = result.pages.length
+    element('preview-heading').textContent = tr(
+      count === 1 ? 'Aperçu ({count} page)' : 'Aperçu ({count} pages)',
+      { count },
+    )
+    element('render-status').textContent = ''
+    element('render-status').hidden = true
     element('render-status').classList.remove('error')
-    element('render-status').title =
-      `${Math.round(performance.now() - inputTime)} ms · édition → publication`
     onPreview?.(result.revision)
   } catch (error) {
     if (String(error) === 'stale') {
       rendering.request()
       return
     }
+    element('render-status').hidden = false
     element('render-status').textContent = tr('Contenu à corriger · dernier rendu conservé')
     element('render-status').classList.add('error')
     message(String(error), true)
@@ -307,44 +309,19 @@ function resize(fraction: number, persist = true) {
 document.addEventListener('editor:resize', (event) =>
   resize((event as CustomEvent<number>).detail, false),
 )
-let resizingPointer: number | undefined
-splitter.addEventListener('pointerdown', (event) => {
-  if (event.button !== 0 || !event.isPrimary || resizingPointer !== undefined) return
-  event.preventDefault()
-  resizingPointer = event.pointerId
-  splitter.focus({ preventScroll: true })
-  splitter.setPointerCapture(event.pointerId)
-  document.documentElement.classList.add('resizing-columns')
-  const move = (e: PointerEvent) => {
-    if (e.pointerId === event.pointerId) resize((e.clientX / window.innerWidth) * 100, false)
-  }
-  const finish = () => {
-    splitter.removeEventListener('pointermove', move)
-    splitter.removeEventListener('pointerup', end)
-    splitter.removeEventListener('pointercancel', end)
-    splitter.removeEventListener('lostpointercapture', end)
-    window.removeEventListener('blur', finish)
-    document.documentElement.classList.remove('resizing-columns')
-    resizingPointer = undefined
-    if (splitter.hasPointerCapture(event.pointerId)) splitter.releasePointerCapture(event.pointerId)
-    resize(Number(splitter.getAttribute('aria-valuenow')))
-  }
-  const end = (e: PointerEvent) => {
-    if (e.pointerId === event.pointerId) finish()
-  }
-  splitter.addEventListener('pointermove', move)
-  splitter.addEventListener('pointerup', end)
-  splitter.addEventListener('pointercancel', end)
-  splitter.addEventListener('lostpointercapture', end)
-  window.addEventListener('blur', finish)
+resizableSeparator(splitter, {
+  value: () => Number(splitter.getAttribute('aria-valuenow')),
+  bounds: () => ({ min: 10, max: 90 }),
+  pointer: (event) => {
+    const workspace = document.querySelector('main')!
+    const box = workspace.getBoundingClientRect()
+    const available = box.width - parseFloat(getComputedStyle(workspace).paddingRight || '0')
+    return ((event.clientX - box.left) / available) * 100
+  },
+  change: resize,
+  step: 2,
+  defaultValue: 50,
 })
-splitter.addEventListener('keydown', (event) => {
-  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-    event.preventDefault()
-    resize(Number(splitter.getAttribute('aria-valuenow')) + (event.key === 'ArrowLeft' ? -2 : 2))
-  }
-})
-splitter.addEventListener('dblclick', () => resize(50))
 
 async function start() {
   if (!isTauri && !(recipeBuild && window.__SPIKE_TRANSPORT__) && !browserHost)
@@ -361,7 +338,8 @@ async function start() {
     ['export', 'Exporter'],
   ])
     element(id).textContent = tr(label)
-  document.querySelector('.preview-title strong')!.textContent = tr('Aperçu Typst')
+  element('preview-heading').textContent = tr('Aperçu')
+  document.querySelector('.preview')!.setAttribute('aria-label', tr('Aperçu'))
   const presentations = widgetPresentations(contentCatalogue.entries)
   const schema = getSchema(
     richZoneExtensions('document', { imageURL: (path) => provider.imageURL(path), presentations }),
@@ -601,7 +579,14 @@ async function start() {
   )
   if (recipeBuild && isTauri) {
     const mode = diagnosticMode
-    if (mode?.startsWith('synchronization') && synchronizationMeter) {
+    if (mode?.startsWith('paragraph-input')) {
+      void (await import('./paragraph-input-diagnostic')).paragraphInputDiagnostic(
+        mode,
+        host.transport,
+        provider,
+        editor,
+      )
+    } else if (mode?.startsWith('synchronization') && synchronizationMeter) {
       void (await import('./synchronization-performance')).synchronizationPerformance(
         host.transport,
         provider,

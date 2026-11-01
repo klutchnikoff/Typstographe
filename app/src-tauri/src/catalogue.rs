@@ -62,8 +62,18 @@ fn document_type(kind: DocumentType) -> Value {
             for (key, localized) in [("label_key", "label"), ("item_label_key", "itemLabel")] {
                 collection[localized] = json!(text(collection[key].as_str().unwrap()));
             }
+            if let Some(key) = collection["removal_notice_key"].as_str() {
+                collection["removalNotice"] = json!(text(key));
+            }
             for field in collection["fields"].as_array_mut().unwrap() {
                 field["label"] = json!(text(field["label_key"].as_str().unwrap()));
+            }
+        }
+        if let Some(panels) = schema["panels"].as_array_mut() {
+            for panel in panels {
+                if let Some(key) = panel["item_label_key"].as_str() {
+                    panel["itemLabel"] = json!(text(key));
+                }
             }
         }
     }

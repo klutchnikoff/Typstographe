@@ -26,12 +26,14 @@ export interface RecordField {
     | 'source'
   default: unknown
   references?: string
+  statistics?: boolean
 }
 export interface RecordCollection {
   field: string
   parameter: string
   label: string
   itemLabel: string
+  removalNotice?: string
   title_key: string
   summary?: string[]
   language_key?: string
@@ -42,6 +44,8 @@ export interface MetadataPanel {
   collection: string
   fields?: string[]
   editing?: 'dialog'
+  summary?: string[]
+  itemLabel?: string
 }
 export interface BibliographyDescriptor {
   tab: string
@@ -59,6 +63,21 @@ export type StructuredMetadata = {
 export type RecordStore = Pick<Provider, 'doc'>
 export type RecordData = Record<string, unknown> & { id: string }
 export type SharedRecord = Y.Map<unknown>
+
+/** Plain card text from shared fields: formatting and markup never become labels. */
+export function recordSummary(value: unknown): string {
+  if (value instanceof Y.XmlText)
+    return value
+      .toDelta()
+      .map((part: { insert: unknown }) => (typeof part.insert === 'string' ? part.insert : ''))
+      .join('')
+  if (value instanceof Y.XmlElement)
+    return ['softBreak', 'hardBreak'].includes(value.nodeName)
+      ? ' '
+      : value.toArray().map(recordSummary).join('')
+  if (value instanceof Y.XmlFragment) return value.toArray().map(recordSummary).join(' ')
+  return value == null ? '' : String(value)
+}
 
 function collections(provider: RecordStore) {
   return provider.doc.getMap('settings').get('collections') as

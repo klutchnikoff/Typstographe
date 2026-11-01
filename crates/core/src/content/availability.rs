@@ -216,6 +216,19 @@ impl<'a> Target<'a> {
                     root,
                 })
             }
+            Selection::ParagraphBoundary { before } => {
+                let root = root(state, &before.root)?;
+                Some(Self {
+                    body: before.root == TreeRoot::Body,
+                    from: before.path.clone(),
+                    to: before.path.clone(),
+                    empty: true,
+                    linked: false,
+                    text: false,
+                    inline_selection: false,
+                    root,
+                })
+            }
         }
     }
     fn top_level(&self) -> bool {

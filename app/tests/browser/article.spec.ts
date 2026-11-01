@@ -1,3 +1,4 @@
+import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { confirmNewDocument } from './document-lifecycle'
 import { recordSelection } from './selection-diagnostic'
 import { expect, test, type Page } from '@playwright/test'
@@ -64,12 +65,14 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
     console.error(error.stack)
   })
   await create(page)
+  await openRecordCard(page)
   const title = page.getByRole('textbox', { name: 'Titre', exact: true })
   await title.fill('Travail universitaire et institutions')
   await expect(title).toBeFocused()
   await page
     .getByRole('textbox', { name: 'Titre court', exact: true })
     .fill('Travail universitaire')
+  await confirmRecordDialog(page)
   await expect(page.getByRole('textbox', { name: 'Résumé', exact: true })).toHaveCount(0)
   await tab(page, 'affiliations')
   const affiliations = section(page, 'affiliations')
@@ -88,25 +91,26 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   await draft(page).getByLabel('Nom complet', { exact: true }).fill('Camille Martin')
   await draft(page).getByLabel(official, { exact: true }).check()
   await confirm(page)
-  await authors
-    .locator('details')
-    .nth(1)
-    .getByRole('button', { name: 'Monter · Auteur', exact: true })
-    .click()
+  const handle = authors.locator('.collection-card-handle').nth(1)
+  await handle.press('Space')
+  await page.keyboard.press('ArrowUp')
+  await page.keyboard.press('Enter')
   await page.evaluate(() => window.__spike!.provider.flush())
-  await authors.locator('summary').first().click()
+  await authors.locator('[data-record-open]').first().click()
   await expect(draft(page).getByLabel('Auteur correspondant')).not.toBeChecked()
   await page.keyboard.press('Escape')
   await tab(page, 'abstracts')
   const locales = section(page, 'localizations')
-  await locales
+  await locales.locator('[data-record-open]').first().click()
+  await draft(page)
     .getByRole('textbox', { name: 'Résumé', exact: true })
     .fill('Un résumé précis et lisible.')
-  await locales
+  await draft(page)
     .getByLabel('Mots-clés', { exact: true })
     .fill('enseignement supérieur\norganisation du travail')
+  await confirm(page)
   await tab(page, 'titles')
-  await add(page, 'Ensemble linguistique')
+  await add(page, 'Titre')
   await expect(draft(page).getByLabel('Langue', { exact: true })).toHaveValue('en')
   await draft(page)
     .getByRole('textbox', { name: 'Titre', exact: true })
@@ -114,13 +118,13 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   await draft(page).getByRole('textbox', { name: 'Titre court', exact: true }).fill('Academic work')
   await confirm(page)
   await tab(page, 'abstracts')
-  const english = locales.locator('details').nth(1)
-  await english.locator('summary').click()
+  await locales.locator('[data-record-open]').nth(1).click()
+  const english = draft(page)
   await english
     .getByRole('textbox', { name: 'Résumé', exact: true })
     .fill('A concise English abstract.')
   await english.getByLabel('Mots-clés', { exact: true }).fill('higher education\nacademic work')
-  // Rich-zone undo uses the document history, and survives closing the tab.
+  // Rich-zone undo remains inside the private draft until confirmation.
   const abstract = english.getByRole('textbox', { name: 'Résumé', exact: true })
   await abstract.press('ControlOrMeta+a')
   await expect
@@ -136,14 +140,17 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   await abstract.press('ControlOrMeta+z')
   await expect(abstract.locator('em')).toHaveCount(0)
   await abstract.press('ControlOrMeta+k')
-  const link = page.locator('#metadata-content .context-band:not([hidden])')
+  const link = page.locator('dialog .context-band:not([hidden])')
   await link.locator('[id$=parameter-url]').fill('https://example.org/recherche')
   await link.getByRole('button', { name: 'Valider', exact: true }).click()
   await expect(abstract.locator('a')).toHaveAttribute('href', 'https://example.org/recherche')
   await expect(abstract).toHaveText('A concise English abstract.')
   await expect(abstract).toBeFocused()
+  await confirm(page)
   await tab(page, 'titles')
+  await openRecordCard(page)
   await expect(title).toHaveText('Travail universitaire et institutions')
+  await confirmRecordDialog(page)
   // Removing a used affiliation is explicit and undo restores its associations.
   await tab(page, 'affiliations')
   await affiliations.getByRole('button', { name: 'Supprimer · Affiliation', exact: true }).click()
@@ -152,30 +159,32 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   await expect(removal).toContainText('Cette affiliation est utilisée')
   await removal.getByRole('checkbox').check()
   await removal.getByRole('button', { name: 'Supprimer', exact: true }).click()
-  await expect(affiliations.locator('details')).toHaveCount(0)
+  await expect(affiliations.locator('.collection-card')).toHaveCount(0)
   await page.getByRole('button', { name: 'Annuler', exact: true }).click()
-  await expect(affiliations.locator('details')).toHaveCount(1)
+  await expect(affiliations.locator('.collection-card')).toHaveCount(1)
   await tab(page, 'authors')
-  await authors.locator('summary').first().click()
+  await authors.locator('[data-record-open]').first().click()
   await expect(draft(page).getByLabel(official, { exact: true }).first()).toBeChecked()
   await page.keyboard.press('Escape')
   await tab(page, 'general')
   await page.getByLabel('Langue du document', { exact: true }).selectOption('en')
   await tab(page, 'titles')
+  await openRecordCard(page, 1)
   await expect(title).toHaveText('Academic work and institutions')
+  await confirmRecordDialog(page)
   // Independent peer changes refresh references without disturbing the active author field.
   const peer = await context.newPage()
   await ready(peer, `article-peer-${Date.now()}`)
   await tab(peer, 'affiliations')
   await tab(page, 'authors')
   await authors
-    .locator('details')
+    .locator('.collection-card')
     .first()
-    .getByRole('button', { name: 'Modifier · Auteur', exact: true })
+    .getByRole('button', { name: /^Modifier · Auteur/ })
     .click()
   const name = draft(page).getByLabel('Nom complet', { exact: true })
   await name.focus()
-  await section(peer, 'affiliations').locator('details summary').click()
+  await section(peer, 'affiliations').locator('[data-record-open]').click()
   await draft(peer)
     .getByLabel('Signature officielle', { exact: true })
     .fill(official + ' (signature officielle)')
@@ -199,9 +208,11 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   errors.length = 0
   await expect(body(page)).toContainText('Le corps de cet article')
   await tab(page, 'titles')
+  await openRecordCard(page, 1)
   await expect(title).toHaveText('Academic work and institutions')
+  await confirmRecordDialog(page)
   await tab(page, 'authors')
-  await expect(authors.locator('details')).toHaveCount(2)
+  await expect(authors.locator('.collection-card')).toHaveCount(2)
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.export"]').click()
   await expect(page.locator('#message')).toContainText('sources Typst exportés', {
@@ -218,14 +229,17 @@ test('les zones riches partagent les raccourcis Typst et la sémantique des reto
   page,
 }, info) => {
   await create(page)
+  await openRecordCard(page)
   const title = page.getByRole('textbox', { name: 'Titre', exact: true })
   await title.fill('Un titre')
   await title.press('End')
   await title.press('Enter')
   await expect(title.locator('p')).toHaveCount(1)
   await expect(title).toHaveText('Un titre')
+  await confirmRecordDialog(page)
   await tab(page, 'abstracts')
-  const abstract = section(page, 'localizations').getByRole('textbox', {
+  await section(page, 'localizations').locator('[data-record-open]').first().click()
+  const abstract = draft(page).getByRole('textbox', {
     name: 'Résumé',
     exact: true,
   })
@@ -248,7 +262,9 @@ test('les zones riches partagent les raccourcis Typst et la sémantique des reto
   await expect(abstract.locator('p')).toHaveCount(3)
   await expect(abstract.locator('ul')).toHaveCount(0)
   await expect(abstract).toContainText('- ')
+  await confirm(page)
   await tab(page, 'titles')
+  await openRecordCard(page)
   const diagnostic = process.env.TOG_SELECTION_DIAGNOSTIC
     ? await recordSelection(page, 'Titre')
     : undefined
@@ -269,9 +285,9 @@ test('les ajouts par + restent provisoires et Échap restaure le focus sans annu
   await expect(page.locator('#metadata-tabs button')).toHaveText([
     'Général',
     'Titres',
+    'Résumés',
     'Affiliations',
     'Auteurs',
-    'Résumés',
     'Bibliographie',
   ])
   await tab(page, 'authors')
@@ -282,22 +298,22 @@ test('les ajouts par + restent provisoires et Échap restaure le focus sans annu
   await input.fill('Premier auteur')
   await input.press('Enter')
   await expect(draft(page)).toHaveCount(0)
-  await expect(authors.locator('summary').first()).toContainText('Premier auteur')
+  await expect(authors.locator('[data-record-open]').first()).toContainText('Premier auteur')
   const plus = authors.getByRole('button', { name: 'Ajouter · Auteur', exact: true })
   await expect(plus).toBeFocused()
   expect(await plus.textContent()).toBe('')
   const box = await plus.boundingBox()
-  const row = await authors.locator('summary').first().boundingBox()
-  expect(box!.x + box!.width).toBeCloseTo(row!.x + row!.width, 0)
+  const row = await authors.locator('.collection-card').first().boundingBox()
+  expect(box!.x + box!.width / 2).toBeCloseTo(row!.x + row!.width / 2, 0)
   // A draft is absent from the shared document and does not erase a peer's intervening edit.
   const peer = await context.newPage()
   await ready(peer, `article-draft-peer-${Date.now()}`)
   await tab(peer, 'authors')
   await add(page, 'Auteur')
   await input.fill('Auteur provisoire')
-  await expect(section(peer, 'authors').locator('details')).toHaveCount(1)
+  await expect(section(peer, 'authors').locator('.collection-card')).toHaveCount(1)
   await section(peer, 'authors')
-    .getByRole('button', { name: 'Modifier · Auteur', exact: true })
+    .getByRole('button', { name: /^Modifier · Auteur/ })
     .click()
   await draft(peer)
     .getByLabel('Nom complet', { exact: true })
@@ -309,14 +325,20 @@ test('les ajouts par + restent provisoires et Échap restaure le focus sans annu
   await expect(draft(page)).toHaveCount(0)
   await expect(page.locator('#metadata-content')).toBeVisible()
   await expect(plus).toBeFocused()
-  await expect(authors.locator('summary')).toContainText('Auteur modifié par une collègue')
-  // Insert after the selected row, not necessarily at the end.
+  await expect(authors.locator('[data-record-open]')).toContainText(
+    'Auteur modifié par une collègue',
+  )
+  // New cards append; the shared handle can position them anywhere.
   await add(page, 'Auteur')
   await input.fill('Dernier auteur')
   await confirm(page)
-  await add(page, 'Auteur', 0)
+  await add(page, 'Auteur')
   await input.fill('Auteur intermédiaire')
   await confirm(page)
+  const reorder = authors.locator('.collection-card-handle').last()
+  await reorder.press('Space')
+  await page.keyboard.press('ArrowUp')
+  await page.keyboard.press('Enter')
   await expect(authors.locator('.metadata-record-caption')).toHaveText([
     'Auteur modifié par une collègue',
     'Auteur intermédiaire',
@@ -330,7 +352,7 @@ test('les ajouts par + restent provisoires et Échap restaure le focus sans annu
   await address.fill('Affiliation à annuler')
   await address.press('Escape')
   await expect(draft(page)).toHaveCount(0)
-  await expect(section(page, 'affiliations').locator('details')).toHaveCount(0)
+  await expect(section(page, 'affiliations').locator('.collection-card')).toHaveCount(0)
   await expect(
     page.getByRole('button', { name: 'Ajouter · Affiliation', exact: true }),
   ).toBeFocused()
@@ -340,13 +362,13 @@ test('les ajouts par + restent provisoires et Échap restaure le focus sans annu
   await add(page, 'Affiliation')
   await address.fill('Une seconde affiliation')
   await address.press('Escape')
-  await expect(section(page, 'affiliations').locator('details')).toHaveCount(1)
-  await expect(section(page, 'affiliations').locator('summary')).toContainText(official)
+  await expect(section(page, 'affiliations').locator('.collection-card')).toHaveCount(1)
+  await expect(section(page, 'affiliations').locator('[data-record-open]')).toContainText(official)
   // Keyboard navigation between tabs keeps the shared horizontal navigation contract.
   await page.locator('#metadata-tab-affiliations').focus()
   await page.keyboard.press('ArrowRight')
   await expect(page.locator('#metadata-tab-authors')).toBeFocused()
-  await expect(authors.locator('details')).toHaveCount(3)
+  await expect(authors.locator('.collection-card')).toHaveCount(3)
   await page.setViewportSize({ width: 920, height: 740 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,

@@ -15,11 +15,12 @@ function create(content: string, profile: RichZoneProfile = 'document') {
   editor.commands.setTextSelection(1)
   return editor
 }
+// These tests exercise the merge plan itself. Keyboard navigation to ¶ is
+// covered separately by paragraph-flow and browser recipes.
 function press(editor: Editor, key: string) {
-  return editor.view.someProp('handleKeyDown', (handler) =>
-    handler(editor.view, new KeyboardEvent('keydown', { key })),
-  )
+  return joinParagraphs(editor, key === 'Backspace', true)
 }
+
 it.each(['Backspace', 'Delete'])(
   'conserve un retour simple entre paragraphes, le type gauche et les marques (%s)',
   (key) => {

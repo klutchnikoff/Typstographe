@@ -1,3 +1,4 @@
+import { richFieldStatistics } from './rich-field-statistics'
 import { registerRecoveryOpener } from './form-recovery'
 import { editingProvider } from './editing-history'
 import { bindFormOwner, formOwner } from './form-drafts'
@@ -14,6 +15,7 @@ import { icon } from './icons'
 import { navigationGroup } from './keyboard-navigation'
 import { tr } from './i18n'
 import type { Catalogue } from './shell'
+import type { Transport } from './provider'
 
 /** Named rich zone: Yjs binding, shared undo owner, and the existing link band. */
 export function metadataRich(
@@ -25,6 +27,7 @@ export function metadataRich(
   catalogue: Catalogue,
   language: string,
   target: RecordRoot,
+  statistics?: Pick<Transport, 'invoke'>,
 ) {
   const inline = !richZoneProfiles[profile].multiline
   const root = document.createElement('div')
@@ -88,7 +91,9 @@ export function metadataRich(
   })
   const recoveryOwner = editingProvider(main) || formOwner(main)
   if (recoveryOwner) bindFormOwner(editor, recoveryOwner)
-  const bands = new BandHost(editor, parent.closest<HTMLElement>('#metadata-content')!, input, main)
+  if (statistics) richFieldStatistics(editor, title, label, statistics)
+  const host = parent.closest<HTMLElement>('dialog, #metadata-content') || parent
+  const bands = new BandHost(editor, host, input, main)
   properties = propertyPanel(editor, bands, catalogue, () => {}, `metadata-${crypto.randomUUID()}-`)
   if (recoveryOwner)
     registerRecoveryOpener(recoveryOwner, editor, (pos, draft) => {

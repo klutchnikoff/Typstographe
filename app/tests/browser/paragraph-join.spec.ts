@@ -24,18 +24,24 @@ for (const key of ['Backspace', 'Delete']) {
     await body.focus()
     const original = key === 'Backspace' ? 10 : 8
     const seam = key === 'Backspace' ? 9 : 8
-    await page.evaluate((pos) => window.__spike!.editor.commands.setTextSelection(pos), original)
+    await page.evaluate(
+      (pos) => window.__spike!.editor.commands.setTextSelection(pos),
+      key === 'Backspace' ? 10 : original,
+    )
     await page.keyboard.press(key)
-    await expect(body).toContainText('Avant😀Après')
+    await expect
+      .poll(() => page.evaluate(() => window.__spike!.editor.state.doc.textContent))
+      .toBe('Avant😀Après')
     await expect
       .poll(() => page.evaluate(() => window.__spike!.editor.state.selection.from))
       .toBe(seam)
     await page.evaluate(async () => {
       await window.__spike!.provider.flush()
     })
-    await expect(
-      peer.getByRole('textbox', { name: 'Corps du document', exact: true }),
-    ).toContainText('Avant😀Après')
+    // Collaborator caret labels are UI decorations, not authored text.
+    await expect
+      .poll(() => peer.evaluate(() => window.__spike!.editor.state.doc.textContent))
+      .toBe('Avant😀Après')
     await page.keyboard.press('ControlOrMeta+z')
     await expect(body.locator('p')).toHaveCount(3)
     await expect(body.locator('p').nth(1)).toHaveText('Après')
@@ -54,7 +60,9 @@ for (const key of ['Backspace', 'Delete']) {
     await expect
       .poll(() => page.evaluate(() => window.__spike!.editor.state.selection.from))
       .toBe(8)
-    await expect(body.locator('p').first()).toHaveText('Avant😀Après')
+    await expect
+      .poll(() => page.evaluate(() => window.__spike!.editor.state.doc.firstChild!.textContent))
+      .toBe('Avant😀Après')
     await peer.close()
   })
 }
@@ -67,6 +75,7 @@ test('la même fusion et son historique restent dans le résumé riche actif', a
   await page.locator('dialog select').first().selectOption('article')
   await confirmNewDocument(page)
   await page.locator('#metadata-tab-abstracts').click()
+  await page.locator('[data-section=localizations] [data-record-open]').first().click()
   const abstract = page.getByRole('textbox', { name: 'Résumé', exact: true })
   await abstract.fill('Avant')
   await abstract.press('End')
@@ -74,13 +83,16 @@ test('la même fusion et son historique restent dans le résumé riche actif', a
   await abstract.press('Enter')
   await page.keyboard.type('Après')
   await expect(abstract.locator('p')).toHaveCount(2)
-  await page.evaluate(async () => {
-    await window.__spike!.provider.clearHistory()
-  })
-  // Home scrolls without moving the caret in macOS WebKit. Exercise the
-  // boundary using actual, portable cursor movement in both engines.
-  for (let i = 0; i < 'Après'.length; i++) await abstract.press('ArrowLeft')
-  await expect.poll(() => page.evaluate(() => document.getSelection()?.focusOffset)).toBe(0)
+  // Establish a capture boundary in this private draft, independent of native history.
+  await page.getByLabel('Mots-clés', { exact: true }).focus()
+  await abstract.focus()
+  // Establish the same exact structural boundary as the body tests above;
+  // native Home/End and select-all endpoints differ between browser engines.
+  await abstract.evaluate((node) =>
+    (
+      node as HTMLElement & { editor: import('@tiptap/core').Editor }
+    ).editor.commands.setTextSelection(8),
+  )
   await abstract.press('Backspace')
   await expect(abstract.locator('p')).toHaveCount(1)
   await expect(abstract).toHaveText('AvantAprès')
@@ -90,12 +102,13 @@ test('la même fusion et son historique restent dans le résumé riche actif', a
   await expect(abstract).toBeFocused()
   await expect
     .poll(() =>
-      page.evaluate(() => {
-        const s = document.getSelection()
-        return { text: s?.focusNode?.textContent, offset: s?.focusOffset }
-      }),
+      abstract.evaluate((node) =>
+        (
+          node as HTMLElement & { editor: import('@tiptap/core').Editor }
+        ).editor.state.selection.toJSON(),
+      ),
     )
-    .toEqual({ text: 'Après', offset: 0 })
+    .toEqual({ type: 'text', anchor: 8, head: 8 })
   await abstract.press('ControlOrMeta+Shift+z')
   await expect(abstract.locator('p')).toHaveCount(1)
   await expect(abstract).toHaveText('AvantAprès')

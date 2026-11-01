@@ -1,3 +1,4 @@
+import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { confirmNewDocument } from './document-lifecycle'
 import { expect, test, type Page } from '@playwright/test'
 
@@ -148,15 +149,14 @@ test('le profil reste global, puis sa signature est incorporée explicitement ou
   const preferences = await page.evaluate(() =>
     window.__spike!.provider.transport.invoke<{ signature: { path: string } }>('preferences_load'),
   )
-  await page.locator('#close-side').click()
+  await page.getByRole('button', { name: 'Préférences', exact: true }).click()
   await page.locator('#metadata-tab-sender').click()
   await page.getByRole('button', { name: 'Signature des préférences', exact: true }).click()
   await flush(page)
   expect(await ownerResources(page)).toContain(preferences.signature.path)
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.new"]').click()
-  const discard = page.getByRole('button', { name: 'Abandonner', exact: true })
-  if (await discard.isVisible()) await discard.click()
+  await page.getByRole('button', { name: 'Fermer sans enregistrer', exact: true }).click()
   const generation = await page.evaluate(() => window.__spike!.provider.generation)
   await confirmNewDocument(page)
   await page.waitForFunction(
@@ -207,7 +207,9 @@ test('changer de modèle garde les fragments Article et entre dans l’historiqu
     setup.generation,
   )
   await page.locator('#metadata-tab-titles').click()
+  await openRecordCard(page)
   await page.getByRole('textbox', { name: 'Titre', exact: true }).fill('Un titre conservé')
+  await confirmRecordDialog(page)
   await flush(page)
   await page.evaluate(async () => {
     const { provider } = window.__spike!
@@ -252,6 +254,7 @@ test('changer de modèle garde les fragments Article et entre dans l’historiqu
     }),
   ).toBe(true)
   await page.locator('#metadata-tab-titles').click()
+  await openRecordCard(page)
   await expect(page.getByRole('textbox', { name: 'Titre', exact: true })).toHaveText(
     'Un titre conservé',
   )

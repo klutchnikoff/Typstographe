@@ -1,3 +1,5 @@
+import { expectPreviewReady } from './preview-assertions'
+import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { confirmNewDocument } from './document-lifecycle'
 import { expect, test, type Page } from '@playwright/test'
 const bib =
@@ -25,7 +27,9 @@ async function create(page: Page) {
   await page.locator('dialog select').first().selectOption('article')
   await confirmNewDocument(page)
   await tab(page, 'titles')
+  await openRecordCard(page)
   await page.getByRole('textbox', { name: 'Titre', exact: true }).fill('Article bibliographique')
+  await confirmRecordDialog(page)
   await tab(page, 'bibliography')
   await files(page).setInputFiles(file('livres.bib', bib))
   await expect(page.locator('.bibliography-file-row')).toHaveCount(1)
@@ -89,7 +93,7 @@ test('bibliothèque multi-format, recherche fuzzy, badge, clavier et rendu natif
   expect(citation.form).toBe('prose')
   expect(citation.items).toHaveLength(2)
   expect(citation.items[0].supplement).toBe('p. 23–25')
-  await expect(page.locator('#render-status')).toContainText('page')
+  await expectPreviewReady(page)
   await expect(page.locator('#render-status')).not.toHaveClass(/error/)
   // Cancellation and deletion use the same protected inline object path as footnotes.
   await body(page).press('Backspace')

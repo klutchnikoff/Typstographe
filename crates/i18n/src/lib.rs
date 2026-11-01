@@ -145,14 +145,20 @@ mod tests {
             let loader = requested(&[language]);
             let keys: std::collections::BTreeMap<String, String> =
                 serde_json::from_str(include_str!("../web-labels.json")).unwrap();
-            for source in ["Reprendre {count} passages", "Choisir dans « {name} »"] {
+            for source in [
+                "Aperçu ({count} page)",
+                "Aperçu ({count} pages)",
+                "Reprendre {count} passages",
+                "Choisir dans « {name} »",
+                "Réordonner · {name}",
+                "Nouvelle position : {position} sur {count}.",
+            ] {
                 let translated = loader.get(&keys[source]);
-                let marker = if source.contains("{count}") {
-                    "{count}"
-                } else {
-                    "{name}"
-                };
-                assert!(translated.contains(marker), "{language}: {translated}");
+                for marker in ["{name}", "{count}", "{position}"] {
+                    if source.contains(marker) {
+                        assert!(translated.contains(marker), "{language}: {translated}");
+                    }
+                }
             }
         }
     }

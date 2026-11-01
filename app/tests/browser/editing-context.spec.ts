@@ -1,3 +1,4 @@
+import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { confirmNewDocument } from './document-lifecycle'
 import { expect, test, type Page } from '@playwright/test'
 const body = (page: Page) => page.getByRole('textbox', { name: 'Corps du document', exact: true })
@@ -96,7 +97,7 @@ test('deux fenêtres conservent leurs styles et leur sélection sans déplacemen
   await expect(body(page).locator('strong')).toContainText('Premier')
   await peer.close()
 })
-test('les zones riches d’en-tête partagent le contexte, les brouillons détachés restent privés', async ({
+test('les modales d’en-tête ne déplacent jamais le contexte d’édition du document', async ({
   page,
 }) => {
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
@@ -104,19 +105,16 @@ test('les zones riches d’en-tête partagent le contexte, les brouillons détac
   await page.locator('dialog select').first().selectOption('article')
   await confirmNewDocument(page)
   await page.locator('#metadata-tab-titles').click()
+  const before = await snapshot(page)
+  await openRecordCard(page)
   const title = page.getByRole('textbox', { name: 'Titre', exact: true })
   await title.fill('Titre japonais 日本')
   await title.press('End')
   await title.press('ControlOrMeta+i')
+  expect(await snapshot(page)).toEqual(before)
+  await confirmRecordDialog(page)
   const s = await snapshot(page)
-  expect(s.selection.kind).toBe('text')
-  expect(s.selection.head.zone).toMatchObject({
-    kind: 'record',
-    collection: 'localizations',
-    field: 'title',
-    path: [0],
-  })
-  expect(s.typing_styles).toEqual([{ type: 'italic' }])
+  expect(s.selection).toEqual(before.selection)
   await page.locator('#metadata-tab-authors').click()
   await page.getByRole('button', { name: 'Ajouter · Auteur', exact: true }).last().click()
   const draft = page.locator('.metadata-record-draft')

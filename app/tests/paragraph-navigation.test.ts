@@ -35,7 +35,11 @@ it.each([
   const before = editor.getJSON()
   editor.commands.setTextSelection(first + 5)
   expect(press(editor, 'ArrowRight')).toBe(true)
+  expect(editor.state.selection.from).toBe(second - 1)
+  expect(press(editor, 'ArrowRight')).toBe(true)
   expect(editor.state.selection.from).toBe(second)
+  expect(press(editor, 'ArrowLeft')).toBe(true)
+  expect(editor.state.selection.from).toBe(second - 1)
   expect(press(editor, 'ArrowLeft')).toBe(true)
   expect(editor.state.selection.from).toBe(first + 5)
 

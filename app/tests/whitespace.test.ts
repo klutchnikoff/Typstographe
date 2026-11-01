@@ -82,15 +82,17 @@ it('ne réécrit pas les espaces du document pendant la composition IME', () => 
   expect(children(editor).map((p) => p.textContent)).toEqual(['にほん', ''])
 })
 
-it('réutilise aussi la frontière du paragraphe suivant sans créer de ligne vide intermédiaire', () => {
+it('ouvre une ligne de rédaction avant la séparation existante sans sauter au paragraphe suivant', () => {
   const editor = create('<p>Avant</p><p>Après</p>')
   editor.commands.setTextSelection(6)
   const before = editor.getJSON()
   editor.view.someProp('handleKeyDown', (handler) =>
     handler(editor.view, new KeyboardEvent('keydown', { key: 'Enter' })),
   )
+  expect(editor.state.doc.firstChild!.lastChild!.type.name).toBe('softBreak')
+  expect(editor.state.selection.from).toBe(7)
+  editor.commands.setTextSelection(9)
   expect(editor.getJSON()).toEqual(before)
-  expect(editor.state.selection.from).toBe(8)
 })
 
 it.each(['Enter', 'Shift-Enter'])(

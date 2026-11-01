@@ -6,6 +6,7 @@
     "app"
   ],
   "scripts": {
+    "postinstall": "patch-package --error-on-fail",
     "start": "npm run tauri --workspace @typstographe/app -- dev",
     "dev": "npm start --",
     "tauri": "npm run tauri --workspace @typstographe/app --",
@@ -16,6 +17,7 @@
     "test:browser": "npm run test:browser --workspace @typstographe/app --",
     "test:browser:smoke": "npm run test:browser:smoke --workspace @typstographe/app --",
     "test:native": "npm run test:native --workspace @typstographe/app --",
+    "test:paragraph-input-native": "node app/scripts/paragraph-input-recipe.mjs",
     "test:preview-native": "npm run test:preview-native --workspace @typstographe/app --",
     "check:format": "npm run check:format --workspace @typstographe/app",
     "check:rust": "cargo clippy --locked -p typstographe --all-targets -- -D warnings",
@@ -26,5 +28,8 @@
     "test:publication-native": "npm run test:publication-native --workspace @typstographe/app --",
     "build:recipe": "node app/scripts/build-recipe.mjs",
     "check:distribution": "node app/scripts/check-distribution.mjs"
+  },
+  "devDependencies": {
+    "patch-package": "8.0.1"
   }
 }

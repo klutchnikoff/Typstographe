@@ -1,3 +1,4 @@
+import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { confirmNewDocument } from './document-lifecycle'
 import { recordSelection } from './selection-diagnostic'
 import { expect, test } from '@playwright/test'
@@ -30,7 +31,7 @@ test('un titre dans une citation est indisponible dans la barre, la palette et a
 })
 
 test(
-  'la palette agit dans le titre riche actif et ne modifie jamais le corps',
+  'la modale de titre garde la mise en forme privée et bloque la palette du document',
   { tag: '@smoke' },
   async ({ page }, info) => {
     await page.getByRole('button', { name: 'Fichier', exact: true }).click()
@@ -38,6 +39,7 @@ test(
     await page.locator('dialog select').first().selectOption('article')
     await confirmNewDocument(page)
     await page.locator('#metadata-tab-titles').click()
+    await openRecordCard(page)
     const title = page.getByRole('textbox', { name: 'Titre', exact: true })
     const diagnostic = process.env.TOG_SELECTION_DIAGNOSTIC
       ? await recordSelection(page, 'Titre')
@@ -45,11 +47,11 @@ test(
     await title.fill('Titre à relire')
     await title.press('ControlOrMeta+a')
     const before = await page.evaluate(() => window.__spike!.editor.getJSON())
-    await expect(page.locator('[data-command="block.quote"]')).toBeDisabled()
     await title.press('ControlOrMeta+Shift+P')
-    const input = page.getByRole('combobox', { name: 'Rechercher une commande', exact: true })
-    await input.fill('Gras')
-    await input.press('Enter')
+    await expect(
+      page.getByRole('combobox', { name: 'Rechercher une commande', exact: true }),
+    ).toBeHidden()
+    await title.press('ControlOrMeta+b')
     await expect(title.locator('strong')).toHaveText('Titre à relire')
     try {
       await expect(title).toBeFocused()
@@ -57,14 +59,8 @@ test(
       await diagnostic?.(info)
     }
     expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
-    await page.evaluate(() => window.__spike!.provider.flush())
-    await expect
-      .poll(() =>
-        page.evaluate(
-          () => window.__spike!.provider.historyState.availability?.['insert.footnote'].reason,
-        ),
-      )
-      .toBe('body_required')
+    await confirmRecordDialog(page)
+    expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
   },
 )
 

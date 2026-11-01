@@ -10,8 +10,11 @@ import {
   richZoneOwnsShortcut,
   type RichZoneProfile,
 } from '../src/rich-zone'
+import { contextPanel } from '../src/context-panel'
+import { editingProvider, historyFor } from '../src/editing-history'
 import { documentWhitespaceKey } from '../src/document-whitespace'
 import { syncNativeTextSelection } from '../src/native-selection'
+import { ParagraphSelection } from '../src/paragraph-selection'
 import { AllSelection, NodeSelection } from '@tiptap/pm/state'
 import { CellSelection } from '@tiptap/pm/tables'
 
@@ -132,6 +135,25 @@ it('la lecture du curseur conserve les styles si la sélection ne change pas et 
   expect(editor.state.selection).toBe(selection)
   expect(editor.state.storedMarks?.map((mark) => mark.type.name)).toEqual(['bold'])
 })
+it.each(['document', 'rich-text', 'inline-text'] as const)(
+  '%s keeps the pre-edit selection when ProseMirror replays native Backspace',
+  async (profile) => {
+    const editor = await create(profile, { content: '<p>Texte</p>' })
+    editor.view.focus()
+    editor.commands.setTextSelection(2)
+    const selection = editor.state.selection
+    const text = editor.view.dom.querySelector('p')!.firstChild!
+    // The browser has deleted T, but the DOM observer has not read that edit yet.
+    text.textContent = 'exte'
+    document.getSelection()!.collapse(text, 0)
+    const replay = new KeyboardEvent('keydown', { key: 'Backspace', keyCode: 8 })
+    expect(replay.target).toBeNull()
+    const handled = editor.view.someProp('handleKeyDown', (handler) => handler(editor.view, replay))
+    expect(handled).not.toBe(true)
+    expect(editor.state.selection).toBe(selection)
+    expect(editor.state.doc.textContent).toBe('Texte')
+  },
+)
 it('la lecture du curseur ne transforme ni les sélections structurelles ni une composition IME', async () => {
   const editor = await create('document', {
     content: '<p>Avant</p><table><tbody><tr><td><p>Cellule</p></td></tr></tbody></table>',
@@ -234,6 +256,8 @@ it('fermer et recréer une zone riche conserve l’historique du document et ann
     binding: { kind: 'fragment', fragment, historyOwner: owner },
   })
   expect(Y.encodeStateVector(doc)).toEqual(beforeMount)
+  expect(historyFor(field)).toBe(history)
+  expect(editingProvider(field)).toBeUndefined()
   const body = owner.getJSON()
   history.clear()
   field.commands.setTextSelection(7)
@@ -333,4 +357,70 @@ it('deux zones riches montées fusionnent leurs saisies et chaque historique pr�
     expect(fieldA.state.doc.textContent).toBe('Résumé')
     expect(fieldB.getJSON()).toEqual(fieldA.getJSON())
   })
+})
+
+it.each(['rich-text', 'inline-text'] as const)(
+  '%s délègue la validation au formulaire avant la capture Entrée de ProseMirror',
+  async (profile) => {
+    const editor = await create(profile, { content: '<p>Texte</p>' })
+    const panel = contextPanel({
+      id: 'private-record',
+      close: vi.fn(),
+      closeLabel: 'Cancel',
+      canConfirm: () => true,
+      modal: true,
+    })
+    document.body.append(panel.element)
+    panel.element.hidden = false
+    panel.body.append(editor.view.dom.parentElement!)
+    const submit = vi.fn()
+    panel.action({ label: 'Confirm', primary: true, run: submit })
+    editor.view.dom.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        keyCode: 13,
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    )
+    expect(submit).toHaveBeenCalledOnce()
+    expect(editor.getJSON()).toEqual(rich('Texte'))
+  },
+)
+
+it('l’historique privé du résumé restaure sa sélection sans déplacer le corps propriétaire', async () => {
+  const doc = new Y.Doc()
+  docs.push(doc)
+  const fragment = new Y.XmlFragment()
+  doc.getMap('settings').set('abstract', fragment)
+  prosemirrorJSONToYXmlFragment(
+    getSchema(richZoneExtensions('rich-text')),
+    {
+      type: 'doc',
+      content: [...rich('Avant').content, ...rich('Après').content],
+    },
+    fragment,
+  )
+  const owner = await create('document', { binding: { kind: 'document', document: doc } })
+  const field = await create('rich-text', {
+    binding: { kind: 'fragment', fragment, historyOwner: owner },
+  })
+  const history = historyFor(field)!
+  history.clear()
+  field.view.dispatch(
+    field.state.tr.setSelection(new ParagraphSelection(field.state.doc.resolve(7))),
+  )
+  history.stopCapturing()
+  field.commands.keyboardShortcut('Backspace')
+  expect(paragraphs(field)).toEqual(['AvantAprès'])
+  const seam = field.state.selection.from
+  field.commands.undo()
+  expect(paragraphs(field)).toEqual(['Avant', 'Après'])
+  expect(field.state.selection).toBeInstanceOf(ParagraphSelection)
+  expect(field.state.selection.from).toBe(7)
+  field.commands.redo()
+  expect(paragraphs(field)).toEqual(['AvantAprès'])
+  expect(field.state.selection.from).toBe(seam)
+  expect(owner.state.doc.textContent).toBe('')
 })

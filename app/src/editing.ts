@@ -2,12 +2,12 @@ import { historyFor } from './editing-history'
 import { Extension, Node, markInputRule, type Editor, type JSONContent } from '@tiptap/core'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { Plugin, TextSelection } from '@tiptap/pm/state'
-import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { widgetTarget, widgetAnnotation, resumeAfterWidget } from './widgets'
 import { lineBreak } from './document-whitespace'
 import { runObjectEdit } from './object-commands'
 import { joinParagraphs } from './paragraph-join'
 import { listKey } from './list-transforms'
+import { temporaryParagraphLine } from './paragraph-flow'
 
 /** Shared Typst-style inline input, also used by named editorial zones. */
 export const TypstInlineInput = Extension.create({
@@ -168,21 +168,12 @@ export function insertQuote(editor: Editor) {
     content: [...(content.length ? content : [paragraph()]), { type: 'quoteAttribution' }],
   })
 }
-/** Reuse an existing line on either side of a paragraph boundary as well as inline. */
+/** Reuse only inline line breaks; a paragraph boundary is a separate caret stop. */
 function lineAhead(editor: Editor) {
   const { empty, $from } = editor.state.selection
   if (!empty) return null
   if (lineBreak($from.nodeAfter)) return $from.pos + $from.nodeAfter!.nodeSize
-  if (!$from.parent.isTextblock || $from.parentOffset !== $from.parent.content.size) return null
-  const parent = $from.node($from.depth - 1)
-  if (!['doc', 'quote', 'tableCell', 'tableHeader'].includes(parent.type.name)) return null
-  const index = $from.index($from.depth - 1) + 1,
-    next = parent.maybeChild(index)
-  if (next?.type.name !== 'paragraph') return null
-  // The final resume paragraph is a placeholder: a first return must remain a Typst space.
-  if (parent.type.name === 'doc' && index === parent.childCount - 1 && !next.content.size)
-    return null
-  return $from.after() + 1
+  return null
 }
 function atDocumentStart(editor: Editor) {
   const { empty, $from } = editor.state.selection
@@ -244,13 +235,19 @@ export const DocumentInput = Extension.create({
         if ($from.parent.type.name !== 'paragraph') return false
         const parent = $from.node($from.depth - 1).type.name
         if (!['doc', 'quote', 'tableCell', 'tableHeader'].includes(parent)) return false
-        if (!$from.parent.content.size && selection.empty) return true
+        if (selection.empty && $from.parentOffset === 0) return true
         const ahead = lineAhead(this.editor)
         if (ahead !== null) {
           this.editor.commands.setTextSelection(ahead)
           return true
         }
         if (selection.empty && lineBreak($from.nodeBefore)) {
+          // A pending empty writing line already sits immediately before ¶.
+          if (
+            $from.parentOffset === $from.parent.content.size &&
+            this.editor.state.doc.resolve($from.after()).nodeAfter?.type.name === 'paragraph'
+          )
+            return true
           const pos = $from.pos - 1
           const tr = this.editor.state.tr
             .delete(pos, $from.pos)
@@ -260,7 +257,17 @@ export const DocumentInput = Extension.create({
           this.editor.view.dispatch(tr.scrollIntoView())
           return true
         }
-        return this.editor.commands.insertContent({ type: 'softBreak' })
+        const tr = this.editor.state.tr.replaceSelectionWith(
+          this.editor.schema.nodes.softBreak.create(),
+          true,
+        )
+        if (selection.empty && $from.parentOffset === $from.parent.content.size) {
+          const next = this.editor.state.doc.resolve($from.after()).nodeAfter
+          if (next?.type.name === 'paragraph' && next.content.size)
+            temporaryParagraphLine(tr, $from.pos)
+        }
+        this.editor.view.dispatch(tr.scrollIntoView())
+        return true
       },
     }
   },
@@ -269,64 +276,6 @@ export const DocumentInput = Extension.create({
     return [
       new Plugin({
         props: {
-          handleKeyDown(view, event) {
-            // The decorative ¶ is not a caret stop. Chromium/Linux can otherwise
-            // leave a native Shift+Arrow selection stuck at this noneditable block.
-            if (
-              view.composing ||
-              event.isComposing ||
-              event.altKey ||
-              event.ctrlKey ||
-              event.metaKey ||
-              !['ArrowLeft', 'ArrowRight'].includes(event.key)
-            )
-              return false
-            let selection = view.state.selection
-            if (!(selection instanceof TextSelection)) return false
-            const backwards = event.key === 'ArrowLeft'
-            // Native selectionchange may still be queued when the next keydown
-            // arrives. Crossing from a stale PM head would reset an ongoing
-            // Shift+Arrow selection, especially on Chromium/Linux.
-            if (view.hasFocus()) {
-              const dom = view.dom.ownerDocument.getSelection()
-              if (
-                !dom?.anchorNode ||
-                !dom.focusNode ||
-                !view.dom.contains(dom.anchorNode) ||
-                !view.dom.contains(dom.focusNode)
-              )
-                return false
-              selection = TextSelection.between(
-                view.state.doc.resolve(view.posAtDOM(dom.anchorNode, dom.anchorOffset)),
-                view.state.doc.resolve(view.posAtDOM(dom.focusNode, dom.focusOffset)),
-                backwards ? -1 : 1,
-              )
-            }
-            if (!event.shiftKey && !selection.empty) return false
-            const { $head } = selection
-            if (
-              $head.parent.type.name !== 'paragraph' ||
-              $head.parentOffset !== (backwards ? 0 : $head.parent.content.size)
-            )
-              return false
-            const boundary = backwards ? $head.before() : $head.after()
-            const adjacent = view.state.doc.resolve(boundary)
-            if ((backwards ? adjacent.nodeBefore : adjacent.nodeAfter)?.type.name !== 'paragraph')
-              return false
-            const head = boundary + (backwards ? -1 : 1)
-            view.dispatch(
-              view.state.tr
-                .setSelection(
-                  TextSelection.create(
-                    view.state.doc,
-                    event.shiftKey ? selection.anchor : head,
-                    head,
-                  ),
-                )
-                .scrollIntoView(),
-            )
-            return true
-          },
           handleTextInput(view, from, to, text) {
             if (view.composing || text !== ' ' || from !== to) return false
             const $from = view.state.doc.resolve(from)
@@ -347,43 +296,6 @@ export const DocumentInput = Extension.create({
             const content = listContent(kind)
             if (match[1]) content.attrs = { start: Number(match[1]) }
             return insertBlock(editor, content, { from: start, to: from }, true)
-          },
-          decorations(state) {
-            const markers: Decoration[] = []
-            const visit = (parent: PMNode, pos: number) => {
-              parent.forEach((node, offset, index) => {
-                if (
-                  index &&
-                  node.type.name === 'paragraph' &&
-                  parent.child(index - 1).type.name === 'paragraph' &&
-                  parent.child(index - 1).content.size > 0 &&
-                  !(
-                    parent.type.name === 'doc' &&
-                    index === parent.childCount - 1 &&
-                    node.content.size === 0 &&
-                    state.selection.from !== pos + 2 + offset
-                  )
-                )
-                  markers.push(
-                    Decoration.widget(
-                      pos + 1 + offset,
-                      () => {
-                        const marker = document.createElement('div')
-                        marker.className = 'paragraph-marker'
-                        marker.textContent = '¶'
-                        marker.setAttribute('aria-hidden', 'true')
-                        return marker
-                      },
-                      // Reuse the same decorative DOM across status/focus transactions.
-                      // Replacing it can reset a native selection not yet read by PM.
-                      { side: -1, key: 'paragraph-marker' },
-                    ),
-                  )
-                if (node.childCount) visit(node, pos + 1 + offset)
-              })
-            }
-            visit(state.doc, -1)
-            return DecorationSet.create(state.doc, markers)
           },
         },
       }),

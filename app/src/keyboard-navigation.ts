@@ -276,6 +276,28 @@ interface ScopeOptions {
   tabExit?: () => void
   initialGroup?: () => HTMLElement | null
 }
+function modifiedEnter(event: KeyboardEvent, options: ScopeOptions) {
+  if (
+    event.defaultPrevented ||
+    composing(event) ||
+    options.active?.() === false ||
+    !options.modifiedEnter ||
+    event.key !== 'Enter' ||
+    !(event.ctrlKey || event.metaKey) ||
+    event.altKey ||
+    event.shiftKey
+  )
+    return false
+  consume(event)
+  if (options.canConfirm?.() !== false) options.confirm?.()
+  return true
+}
+/** Rich editors must delegate before ProseMirror consumes every Enter key. */
+export function confirmEnclosingScope(element: HTMLElement, event: KeyboardEvent) {
+  const root = element.closest<HTMLElement>('[data-keyboard-scope]')
+  const options = root && scopes.get(root)
+  return !!root && visible(root) && !!options && modifiedEnter(event, options)
+}
 const scopes = new WeakMap<HTMLElement, ScopeOptions>()
 const scopeHandlers = new WeakMap<HTMLElement, (event: KeyboardEvent) => void>()
 const installed = new WeakSet<Document>()
@@ -288,17 +310,7 @@ export function keyboardScope(root: HTMLElement, options: ScopeOptions) {
   if (previous) root.removeEventListener('keydown', previous)
   const handle = (event: KeyboardEvent) => {
     if (event.defaultPrevented || composing(event) || options.active?.() === false) return
-    if (
-      options.modifiedEnter &&
-      event.key === 'Enter' &&
-      (event.ctrlKey || event.metaKey) &&
-      !event.altKey &&
-      !event.shiftKey
-    ) {
-      consume(event)
-      if (options.canConfirm?.() !== false) options.confirm?.()
-      return
-    }
+    if (modifiedEnter(event, options)) return
     if (!plain(event)) return
     const target = event.target
     if (event.key.startsWith('Arrow') && target === root) {

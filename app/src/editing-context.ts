@@ -5,6 +5,7 @@ import { CellSelection } from '@tiptap/pm/tables'
 import { ySyncPluginKey } from '@tiptap/y-tiptap'
 import { editorRoot, nodePath, type TextTarget, type TreeRoot } from './editor-targets'
 import type { Provider } from './provider'
+import { ParagraphSelection } from './paragraph-selection'
 
 type TreeTarget = { root: TreeRoot; path: number[] }
 export type TextPoint = { zone: TextTarget['zone']; offset: number }
@@ -13,6 +14,7 @@ export type ViewSelection =
   | { kind: 'node'; target: TreeTarget }
   | { kind: 'cells'; anchor: TreeTarget; head: TreeTarget }
   | { kind: 'all'; root: TreeRoot }
+  | { kind: 'paragraph_boundary'; before: TreeTarget }
 export type TypingStyle = { type: 'bold' | 'italic' } | { type: 'link'; url: string }
 export interface EditingView {
   selection: ViewSelection | null
@@ -26,7 +28,9 @@ export function editingView(editor: Editor): EditingView | undefined {
   if (!root || editor.isDestroyed || editor.view.composing) return
   const s = editor.state.selection
   let selection: ViewSelection
-  if (s instanceof CellSelection) {
+  if (s instanceof ParagraphSelection) {
+    selection = { kind: 'paragraph_boundary', before: { root, path: nodePath(editor, s.head) } }
+  } else if (s instanceof CellSelection) {
     selection = {
       kind: 'cells',
       anchor: { root, path: nodePath(editor, s.$anchorCell.pos) },

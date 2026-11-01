@@ -12,6 +12,7 @@ import {
   addRecord,
   createRecordDraft,
   prepareRecordEdit,
+  recordSummary,
   type StructuredMetadata,
 } from '../src/metadata-records'
 
@@ -256,5 +257,27 @@ it('a deleted reference prevents publication without discarding the draft; clear
   expect(edit.plan()).toMatchObject({ id: edit.value().id, commands: [{ id: 'record.add' }] })
   expect(snapshot(provider)).toEqual(before)
   edit.destroy()
+  provider.doc.destroy()
+})
+
+it('card summaries expose rich Unicode text without serialization or mark tags', () => {
+  const provider = setup(),
+    person = recordMap(provider, schema.collections[0]).get('a')!
+  setRecordField(provider, person, 'summary', {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: '日本 et ', marks: [{ type: 'bold' }] },
+          { type: 'text', text: 'l’université', marks: [{ type: 'italic' }] },
+        ],
+      },
+      { type: 'paragraph', content: [{ type: 'text', text: '<une suite>' }] },
+    ],
+  })
+  expect(recordSummary(person.get('summary'))).toBe('日本 et l’université <une suite>')
+  expect(recordSummary(person.get('name'))).toBe('Camille')
+  expect(recordSummary(undefined)).toBe('')
   provider.doc.destroy()
 })

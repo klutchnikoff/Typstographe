@@ -55,7 +55,7 @@ pub async fn spelling_suggestions(
     .map_err(|e| e.to_string())?
 }
 #[tauri::command]
-pub fn count_text(text: String, selection: Option<String>) -> Value {
+pub fn count_text(text: String, selection: Option<String>, field_label: Option<String>) -> Value {
     let total = TextStatistics::count(&text);
     let part = selection.map(|s| TextStatistics::count(&s));
     let mut label =
@@ -72,7 +72,15 @@ pub fn count_text(text: String, selection: Option<String>) -> Value {
         "statistics-hint",
         without_spaces = part.as_ref().unwrap_or(&total).signs_without_spaces
     );
-    json!({"document":total,"selection":part,"label":label,"hint":hint})
+    let field_label = field_label.map(|name| {
+        typstographe_i18n::tr!(
+            "field-stats",
+            name = name,
+            words = total.words,
+            signs = total.signs
+        )
+    });
+    json!({"document":total,"selection":part,"label":label,"hint":hint,"field_label":field_label})
 }
 
 #[cfg(test)]

@@ -15,6 +15,7 @@ Les actions continuent à passer par leurs commandes et validations habituelles.
 | Actions, barre d’outils, en-têtes de widgets | Gauche / Droite, Début / Fin | Déplacement du focus seulement ; Entrée ou Espace déclenche le bouton. |
 | Listes de récupération et dictionnaire personnel | Haut / Bas, Début / Fin | Parcours des entrées. Les actions de récupération restent explicites. |
 | Formulaire | Tab / Maj+Tab, Entrée, Échap | Parcours des champs ; Entrée valide ou actionne le bouton focalisé. Échap ferme la portée locale sans valider. |
+| Poignée de collection | Espace ou Entrée, puis Haut / Bas, Entrée, Échap | Saisir la carte, prévisualiser son déplacement, puis confirmer en une édition. Échap ou Tab annule le déplacement provisoire. Une modification concurrente de l’ordre invalide ce déplacement. |
 
 Les champs conservent leurs touches natives : déplacement du curseur, sélection,
 flèches des nombres et listes déroulantes. Les sélecteurs natifs de fichiers,
@@ -45,6 +46,14 @@ bouclent ; Début et Fin visent les extrémités, sauf dans les champs de saisie
 
 Les générateurs `contextPanel`, `widgetFrame` et les barres d’action installent
 ces contrats. Un nouveau widget ou bandeau qui utilise ces générateurs en hérite.
+`sortableCards` installe la famille de réorganisation pour les collections ;
+`recordCard` fournit la poignée, la surface d’édition et les actions communes.
+Les titres et résumés par langue, auteurs et affiliations utilisent ces mêmes
+générateurs, avec ouverture de leur brouillon dans `formDialog`. Les zones riches de la modale
+héritent des profils communs et de l’historique privé du formulaire ; les bandeaux
+de liens sont hébergés dans la modale. Ctrl/Cmd + Entrée valide le formulaire
+sauf si une action contextuelle interne est prioritaire. Le bouton « + » suit la
+collection ; les cartes n’affichent ni flèches de déplacement ni bouton de paramètres supplémentaire.
 Un nouveau type de contrôle doit déclarer sa famille ; les règles ne sont pas
 déduites du texte du bouton ou du nom de la capacité.
 
@@ -164,3 +173,26 @@ imbriqués, les champs natifs et l’IME, les suggestions asynchrones, le retrai
 d’un élément focalisé et les fermetures imbriquées. Les parcours de navigateur
 vérifient le focus et les documents dans Chromium et WebKit, sans capture.
 Le parcours natif conserve les contrôles d’assistance, de sauvegarde et d’export.
+
+
+## Deux présentations de la barre latérale
+
+La présentation compacte conserve les icônes et ouvre le panneau au-dessus du
+rendu. La présentation développée affiche les intitulés et place le même panneau
+sous le titre actif, avec une seule rubrique ouverte à la fois. Un second clic
+sur le titre ou Échap replie la rubrique ; le contenu possède son défilement.
+Le bouton de présentation déplace le panneau existant sans reconstruire ses
+composants : saisie, sélection, focus et défilements sont conservés.
+
+La bordure gauche de la barre développée règle sa largeur à la souris ou au
+clavier : Gauche agrandit, Droite réduit, Début/Fin atteignent les limites et un
+double clic rétablit 320 px. Échap annule un glisser en cours. Le même générateur
+`resizableSeparator` protège les sélections pour ce réglage et pour les colonnes.
+La largeur préférée (240–520 px) est enregistrée à la fin du geste ; sa largeur
+visible s’adapte aux petites fenêtres sans modifier la préférence. Le rapport
+éditeur/aperçu s’applique à l’espace restant, dans les deux présentations.
+
+Les rubriques et les deux présentations utilisent les mêmes fonctions de contenu
+(`commandPalette`, `searchPanel`, `preferencesPanel`, `versionsPanel`, récupération
+et assistance). Les producteurs de préférences envoient leurs seuls champs édités,
+pour qu’un formulaire déjà ouvert ne rétablisse pas une disposition périmée.
