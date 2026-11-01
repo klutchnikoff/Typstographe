@@ -1,3 +1,4 @@
+import { expectPreviewReady } from './preview-assertions'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -213,7 +214,7 @@ test('tous les formats du catalogue sont réellement compilés en portrait et pa
             }),
         )
         .toBeCloseTo(expected, 3)
-      await expect(page.locator('#render-status')).toHaveText(/^\d+ pages? ·/)
+      await expectPreviewReady(page)
     }
   }
   await paper.selectOption('a5')
@@ -396,7 +397,7 @@ test('date facultative : suppression au clavier, partage, sauvegarde et export s
   await expect(clear).toBeDisabled()
   await expect(peer.getByLabel('Date', { exact: true })).toHaveValue('')
   await expect(peer.getByRole('button', { name: 'Supprimer la date', exact: true })).toBeDisabled()
-  await expect(page.locator('#render-status')).toHaveText(/^\d+ pages? ·/)
+  await expectPreviewReady(page)
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.export"]').click()
   const message = page.locator('#message')

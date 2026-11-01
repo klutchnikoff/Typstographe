@@ -1,3 +1,4 @@
+import { expectPreviewReady } from './preview-assertions'
 import { expect, test, type Page } from '@playwright/test'
 
 async function roots(page: Page) {
@@ -116,7 +117,7 @@ test('insertion commune : tableau au début, milieu, fin ou après un retour, et
         }, kind),
       )
       .toBe(true)
-    await expect(page.locator('#render-status')).toHaveText(/^\d+ pages? ·/)
+    await expectPreviewReady(page)
     if (kind === 'tableFigure')
       await expect
         .poll(() =>

@@ -1,3 +1,4 @@
+import { expectPreviewReady } from './preview-assertions'
 import { expect, test } from '@playwright/test'
 
 declare global {
@@ -65,7 +66,9 @@ for (const encoding of ['png', 'svg'] as const)
       window.__spike!.editor.commands.insertContentAt(1, 'Préparation des images : ')
     }, encoding)
     await expect(page.locator('#pages img')).toHaveCount(2)
-    await expect(page.locator('#render-status')).toHaveText(/^2 pages ·/)
+    await expectPreviewReady(page, 2)
+    await expect(page.locator('.preview-title')).not.toContainText(/Typst|ms/)
+    await expect(page.locator('#render-status')).not.toHaveAttribute('title')
     const scrollBefore = await page.locator('#pages').evaluate((element) => {
       element.scrollTop = 180
       return element.scrollTop
@@ -84,12 +87,17 @@ for (const encoding of ['png', 'svg'] as const)
     await page.evaluate(() => window.__previewProbe.pending.shift()!())
     expect(await page.locator('#pages').innerHTML()).toBe(before)
     await page.evaluate(() => window.__previewProbe.pending.shift()!())
-    await expect(page.locator('#render-status')).toHaveText(/^2 pages ·/)
+    await expectPreviewReady(page, 2)
     expect(await page.locator('#pages').innerHTML()).not.toBe(before)
     expect(await page.locator('#pages').evaluate((element) => element.scrollTop)).toBe(scrollBefore)
     const added = await page.evaluate(() => window.__previewProbe.additions)
     expect(added).toHaveLength(2)
     expect(added.every((img) => img.complete && img.width > 0 && img.height > 0)).toBe(true)
+    await page.evaluate(() => {
+      window.__previewProbe.hold = false
+      window.__spike!.editor.commands.setContent('<p>Un document court.</p>')
+    })
+    await expectPreviewReady(page, 1)
   })
 
 test('le canevas reçoit tous ses pixels avant publication et une erreur garde le dernier rendu', async ({
@@ -100,7 +108,7 @@ test('le canevas reçoit tous ses pixels avant publication et une erreur garde l
   await page.goto('/?client=main')
   await page.waitForFunction(() => window.__spike?.ready)
   await expect(page.locator('#pages canvas')).toHaveCount(2)
-  await expect(page.locator('#render-status')).toHaveText(/^2 pages ·/)
+  await expectPreviewReady(page, 2)
   const pixels = await page
     .locator('#pages canvas')
     .first()

@@ -146,6 +146,8 @@ mod tests {
             let keys: std::collections::BTreeMap<String, String> =
                 serde_json::from_str(include_str!("../web-labels.json")).unwrap();
             for source in [
+                "Aperçu ({count} page)",
+                "Aperçu ({count} pages)",
                 "Reprendre {count} passages",
                 "Choisir dans « {name} »",
                 "Réordonner · {name}",
