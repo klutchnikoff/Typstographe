@@ -18,10 +18,12 @@ export function bindPresenceCaret(editor: Editor, presence: LocalPresence) {
             const caret = document.createElement('span')
             caret.className = 'collaboration-carets__caret'
             caret.style.borderColor = color
+            // Visual only: the name is CSS-generated so it never joins the document text.
+            caret.setAttribute('aria-hidden', 'true')
             const label = document.createElement('span')
             label.className = 'collaboration-carets__label'
             label.style.backgroundColor = color
-            label.textContent = String(user.name || '')
+            label.dataset.name = String(user.name || '')
             caret.append(label)
             return caret
           },

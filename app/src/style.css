@@ -495,6 +495,9 @@ footer button {
   position: relative;
   word-break: normal;
 }
+.collaboration-carets__label::before {
+  content: attr(data-name);
+}
 .collaboration-carets__label {
   border-radius: 3px 3px 3px 0;
   color: #fff;
