@@ -287,7 +287,7 @@ test('les ajouts par + restent provisoires et Échap restaure le focus sans annu
   expect(await plus.textContent()).toBe('')
   const box = await plus.boundingBox()
   const row = await authors.locator('.collection-card').first().boundingBox()
-  expect(box!.x + box!.width).toBeCloseTo(row!.x + row!.width, 0)
+  expect(box!.x + box!.width / 2).toBeCloseTo(row!.x + row!.width / 2, 0)
   // A draft is absent from the shared document and does not erase a peer's intervening edit.
   const peer = await context.newPage()
   await ready(peer, `article-draft-peer-${Date.now()}`)

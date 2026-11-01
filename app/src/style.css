@@ -1593,6 +1593,7 @@ li:has(.interline-band-gap[data-marker])::marker {
 }
 .metadata-card-section .metadata-record-empty-actions {
   margin-top: 8px;
+  justify-content: center;
 }
 .metadata-record {
   border-top: 1px solid var(--border);
