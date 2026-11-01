@@ -490,6 +490,7 @@ export async function mountShell(s: Shell) {
         guarded(async () => {
           await provider.flush(false)
           await recovery?.force()
+          overlay.close()
           await switchDocument((revision) =>
             transport.invoke('new_document', {
               settings: { metadata, template: m.source, modelId: m.id },
