@@ -361,8 +361,10 @@ main {
   border-radius: 5px;
   cursor: pointer;
 }
+.tiptap .inline-object[contenteditable='false'],
 .tiptap .inline-object > .inline-object-label {
-  /* Tiptap resets noneditable descendants to normal whitespace. Keep a badge whole. */
+  /* Tiptap resets noneditable elements to normal whitespace. Keep every badge whole,
+     its word joiner included, so it never wraps apart from the preceding word. */
   white-space: nowrap;
 }
 .inline-object::before {
