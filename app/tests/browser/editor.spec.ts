@@ -552,10 +552,10 @@ test('colonne éditable sans cadre et actions groupées à droite', async ({ pag
 
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.new"]').click()
-  const dialog = page.locator('dialog')
+  const dialog = page.locator('dialog[open]')
   await expect(dialog).toBeVisible()
   const buttons = dialog.locator('.panel-actions > button')
-  await expect(buttons).toHaveText(['Abandonner', 'Annuler', 'Enregistrer'])
+  await expect(buttons).toHaveText(['Fermer sans enregistrer', 'Annuler', 'Enregistrer et fermer'])
   await expect(buttons.first()).toHaveClass('danger')
   await expect(buttons.last()).toHaveClass('primary')
   const row = dialog.locator('.panel-actions')

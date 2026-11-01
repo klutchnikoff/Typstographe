@@ -1,5 +1,5 @@
 diff --git a/node_modules/@tiptap/y-tiptap/dist/index.cjs b/node_modules/@tiptap/y-tiptap/dist/index.cjs
-index d5fd6a2..5aca8f1 100644
+index d5fd6a2..911d175 100644
 --- a/node_modules/@tiptap/y-tiptap/dist/index.cjs
 +++ b/node_modules/@tiptap/y-tiptap/dist/index.cjs
 @@ -1647,51 +1647,78 @@ var ProsemirrorBinding = class {
@@ -109,8 +109,38 @@ index d5fd6a2..5aca8f1 100644
  };
  //#endregion
  //#region src/lib/utils/positions/migrations/isNodeMarkupChange.ts
+@@ -1774,10 +1801,27 @@ const mapCharacterPosition = (position, transaction, docs, indexes) => {
+ 	}
+ 	return position;
+ };
++// Text edits taken by the fast path before the view wrote them to Yjs. An appended
++// structural transaction reads the Yjs content of `base` and replays them.
++const unsyncedTextEdits = /* @__PURE__ */ new WeakMap();
+ const mapPositionMigration = (transaction, binding, previous) => {
+ 	const pending = (previous === null || previous === void 0 ? void 0 : previous.doc) === transaction.before && previous.doc !== binding.syncedDoc ? previous : null;
+-	if (!transaction.docChanged || !binding.prosemirrorView || !pending && transaction.steps.every((step, index) => isTextReplacement(step, transaction.docs[index]))) return pending;
+-	const source = pending !== null && pending !== void 0 ? pending : getPositionContent(binding.type, transaction.before);
++	if (!transaction.docChanged || !binding.prosemirrorView) return pending;
++	const unsynced = unsyncedTextEdits.get(binding);
++	const continued = (unsynced === null || unsynced === void 0 ? void 0 : unsynced.doc) === transaction.before && transaction.before !== binding.syncedDoc ? unsynced : void 0;
++	if (!pending && transaction.steps.every((step, index) => isTextReplacement(step, transaction.docs[index]))) {
++		unsyncedTextEdits.set(binding, {
++			base: continued ? continued.base : transaction.before,
++			doc: transaction.doc,
++			transactions: [...continued ? continued.transactions : [], transaction]
++		});
++		return null;
++	}
++	unsyncedTextEdits.delete(binding);
++	const source = pending !== null && pending !== void 0 ? pending : continued ? continued.transactions.reduce((plan, skipped) => mapPositionSource(plan, skipped), getPositionContent(binding.type, continued.base)) : getPositionContent(binding.type, transaction.before);
++	return mapPositionSource(source, transaction);
++};
++const mapPositionSource = (source, transaction) => {
+ 	const docs = [...transaction.docs, transaction.doc];
+ 	const indexes = docs.map(indexNodes);
+ 	const characters = source.characters.map((character) => ({
 diff --git a/node_modules/@tiptap/y-tiptap/dist/index.js b/node_modules/@tiptap/y-tiptap/dist/index.js
-index 50bcfe7..850122e 100644
+index 50bcfe7..2b572c0 100644
 --- a/node_modules/@tiptap/y-tiptap/dist/index.js
 +++ b/node_modules/@tiptap/y-tiptap/dist/index.js
 @@ -1614,51 +1614,78 @@ var ProsemirrorBinding = class {
@@ -220,6 +250,36 @@ index 50bcfe7..850122e 100644
  };
  //#endregion
  //#region src/lib/utils/positions/migrations/isNodeMarkupChange.ts
+@@ -1741,10 +1768,27 @@ const mapCharacterPosition = (position, transaction, docs, indexes) => {
+ 	}
+ 	return position;
+ };
++// Text edits taken by the fast path before the view wrote them to Yjs. An appended
++// structural transaction reads the Yjs content of `base` and replays them.
++const unsyncedTextEdits = /* @__PURE__ */ new WeakMap();
+ const mapPositionMigration = (transaction, binding, previous) => {
+ 	const pending = (previous === null || previous === void 0 ? void 0 : previous.doc) === transaction.before && previous.doc !== binding.syncedDoc ? previous : null;
+-	if (!transaction.docChanged || !binding.prosemirrorView || !pending && transaction.steps.every((step, index) => isTextReplacement(step, transaction.docs[index]))) return pending;
+-	const source = pending !== null && pending !== void 0 ? pending : getPositionContent(binding.type, transaction.before);
++	if (!transaction.docChanged || !binding.prosemirrorView) return pending;
++	const unsynced = unsyncedTextEdits.get(binding);
++	const continued = (unsynced === null || unsynced === void 0 ? void 0 : unsynced.doc) === transaction.before && transaction.before !== binding.syncedDoc ? unsynced : void 0;
++	if (!pending && transaction.steps.every((step, index) => isTextReplacement(step, transaction.docs[index]))) {
++		unsyncedTextEdits.set(binding, {
++			base: continued ? continued.base : transaction.before,
++			doc: transaction.doc,
++			transactions: [...continued ? continued.transactions : [], transaction]
++		});
++		return null;
++	}
++	unsyncedTextEdits.delete(binding);
++	const source = pending !== null && pending !== void 0 ? pending : continued ? continued.transactions.reduce((plan, skipped) => mapPositionSource(plan, skipped), getPositionContent(binding.type, continued.base)) : getPositionContent(binding.type, transaction.before);
++	return mapPositionSource(source, transaction);
++};
++const mapPositionSource = (source, transaction) => {
+ 	const docs = [...transaction.docs, transaction.doc];
+ 	const indexes = docs.map(indexNodes);
+ 	const characters = source.characters.map((character) => ({
 diff --git a/node_modules/@tiptap/y-tiptap/src/lib/utils/positions/migrations/getPositionContent.ts b/node_modules/@tiptap/y-tiptap/src/lib/utils/positions/migrations/getPositionContent.ts
 index 755b9f1..5337030 100644
 --- a/node_modules/@tiptap/y-tiptap/src/lib/utils/positions/migrations/getPositionContent.ts
@@ -285,3 +345,75 @@ index 755b9f1..5337030 100644
    }
  
    visit(fragment, doc, 0)
+diff --git a/node_modules/@tiptap/y-tiptap/src/lib/utils/positions/migrations/mapPositionMigration.ts b/node_modules/@tiptap/y-tiptap/src/lib/utils/positions/migrations/mapPositionMigration.ts
+index e94b0fd..2d9e91e 100644
+--- a/node_modules/@tiptap/y-tiptap/src/lib/utils/positions/migrations/mapPositionMigration.ts
++++ b/node_modules/@tiptap/y-tiptap/src/lib/utils/positions/migrations/mapPositionMigration.ts
+@@ -117,6 +117,13 @@ const mapCharacterPosition = (
+   return position
+ }
+ 
++// Text edits taken by the fast path before the view wrote them to Yjs. An appended
++// structural transaction reads the Yjs content of `base` and replays them.
++const unsyncedTextEdits = new WeakMap<
++  ProsemirrorBinding,
++  { base: Node; doc: Node; transactions: Transaction[] }
++>()
++
+ export const mapPositionMigration = (
+   transaction: Transaction,
+   binding: ProsemirrorBinding,
+@@ -126,17 +133,47 @@ export const mapPositionMigration = (
+   const pending =
+     previous?.doc === transaction.before && previous.doc !== binding.syncedDoc ? previous : null
+ 
++  if (!transaction.docChanged || !binding.prosemirrorView) {
++    return pending
++  }
++
++  const unsynced = unsyncedTextEdits.get(binding)
++  const continued =
++    unsynced?.doc === transaction.before && transaction.before !== binding.syncedDoc
++      ? unsynced
++      : undefined
++
+   // Ordinary text edits retain Yjs character identities without structural migration.
+   if (
+-    !transaction.docChanged ||
+-    !binding.prosemirrorView ||
+-    (!pending &&
+-      transaction.steps.every((step, index) => isTextReplacement(step, transaction.docs[index])))
++    !pending &&
++    transaction.steps.every((step, index) => isTextReplacement(step, transaction.docs[index]))
+   ) {
+-    return pending
++    unsyncedTextEdits.set(binding, {
++      base: continued?.base ?? transaction.before,
++      doc: transaction.doc,
++      transactions: [...(continued?.transactions ?? []), transaction],
++    })
++    return null
+   }
+ 
+-  const source = pending ?? getPositionContent(binding.type, transaction.before)
++  unsyncedTextEdits.delete(binding)
++
++  const source =
++    pending ??
++    (continued
++      ? continued.transactions.reduce(
++          (plan: Omit<PositionMigrationPlan, 'doc'>, skipped) => mapPositionSource(plan, skipped),
++          getPositionContent(binding.type, continued.base),
++        )
++      : getPositionContent(binding.type, transaction.before))
++
++  return mapPositionSource(source, transaction)
++}
++
++const mapPositionSource = (
++  source: Omit<PositionMigrationPlan, 'doc'>,
++  transaction: Transaction,
++): PositionMigrationPlan => {
+   const docs = [...transaction.docs, transaction.doc]
+   const indexes = docs.map(indexNodes)
+   const characters = source.characters.map(character => ({

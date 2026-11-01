@@ -42,3 +42,21 @@ keys in the diagnostic window; the default uses dispatched keyboard events in
 that real WebView. The recipe records which was used, verifies both archive
 hashes, and writes reports under `output/paragraph-input-native/`. It never
 opens or writes the personal recovery session and takes no screenshots.
+
+## @tiptap/y-tiptap 3.0.10: appended transactions after text edits
+
+Plain text insertions take a fast path in `mapPositionMigration`: they keep their
+Yjs character identities and compute no migration. A plugin can append a
+structural transaction in the same dispatch, before the view writes the text to
+Yjs; the link extension does so when it removes the mark from a trailing space.
+That transaction used to read Yjs as if it already held the inserted text, and
+the strict text check above then threw `Position tracking requires synchronized
+editor text`.
+
+The patch remembers the unsynced fast-path transactions per binding. A following
+structural transaction reads the Yjs content of the document they started from
+and maps it through them before its own steps. It still reads Yjs directly when
+no such chain exists, so a real inconsistency keeps failing explicitly.
+
+Regression coverage: `app/tests/browser/bands.spec.ts` (links and table
+deletion), which inserts a linked text with a trailing space in the real editor.

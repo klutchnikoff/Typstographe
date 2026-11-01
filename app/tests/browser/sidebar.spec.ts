@@ -155,7 +155,10 @@ test('pointer resizing cannot select text, Escape cancels, and viewport limits k
   await divider.press('ArrowLeft')
   await expect.poll(async () => (await prefs(page)).sidebar_width).toBe(336)
   await page.setViewportSize({ width: 700, height: 800 })
-  await expect(rail(page)).toHaveCSS('width', '315px')
+  // Narrow windows give the document the room: compact rail, no label toggle.
+  await expect(rail(page)).toHaveCSS('width', '36px')
+  await expect(page.locator('.side-rail-toggle')).toBeHidden()
+  expect((await prefs(page)).sidebar_width).toBe(336)
   await page.setViewportSize({ width: 1280, height: 900 })
   await expect(rail(page)).toHaveCSS('width', '336px')
   expect((await dimensions(page)).reserved).toBe(true)

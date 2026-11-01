@@ -361,8 +361,10 @@ main {
   border-radius: 5px;
   cursor: pointer;
 }
+.tiptap .inline-object[contenteditable='false'],
 .tiptap .inline-object > .inline-object-label {
-  /* Tiptap resets noneditable descendants to normal whitespace. Keep a badge whole. */
+  /* Tiptap resets noneditable elements to normal whitespace. Keep every badge whole,
+     its word joiner included, so it never wraps apart from the preceding word. */
   white-space: nowrap;
 }
 .inline-object::before {
@@ -494,6 +496,9 @@ footer button {
   pointer-events: none;
   position: relative;
   word-break: normal;
+}
+.collaboration-carets__label::before {
+  content: attr(data-name);
 }
 .collaboration-carets__label {
   border-radius: 3px 3px 3px 0;
@@ -1048,6 +1053,20 @@ main {
   background: var(--bg);
   border-left: 1px solid var(--border);
   overflow: hidden;
+}
+/* Mirrors bounds() in side-rail.ts: 240–520 px, at most 45% of the window. */
+main[data-rail='labelled'] {
+  --side-rail-width: clamp(
+    min(240px, max(180px, 45vw)),
+    var(--side-rail-preferred, 320px),
+    min(520px, max(180px, 45vw))
+  );
+}
+/* Same breakpoint as side-rail.ts: narrow windows keep the document width. */
+@media (max-width: 1040px) {
+  main[data-rail='labelled'] {
+    --side-rail-width: 36px;
+  }
 }
 .side-rail > button {
   display: flex;
