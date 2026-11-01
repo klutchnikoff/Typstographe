@@ -12,6 +12,7 @@ mod error;
 mod files;
 mod launch;
 mod menus;
+mod model_thumbnails;
 mod native_locales;
 mod owner;
 mod preferences;
@@ -576,6 +577,7 @@ fn main() {
             menus::set_menu_availability,
             settings::validate_model,
             catalogue::content_catalogue,
+            model_thumbnails::model_thumbnail,
             recovery::drafts::open_private_recovery,
             recovery::drafts::conserve_private,
             recovery::commands::work_list,
