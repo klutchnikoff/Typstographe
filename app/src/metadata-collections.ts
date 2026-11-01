@@ -485,9 +485,8 @@ export function metadataCollections(
         .filter(Boolean)
         .join(' · ')
       if (card && detail.textContent) caption.textContent += ` (${detail.textContent})`
-      caption.title = caption.textContent
+      if (!card) caption.title = caption.textContent
       if (card) {
-        card.open.title = caption.textContent
         card.open.setAttribute(
           'aria-label',
           `${tr('Modifier')} · ${definition.itemLabel} · ${caption.textContent}`,
