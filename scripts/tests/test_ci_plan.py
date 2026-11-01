@@ -68,7 +68,30 @@ class CIPlanTests(unittest.TestCase):
             result = subprocess.check_output(
                 ["python3", str(SCRIPT), "--base", base], cwd=root, env=env)
             self.assertTrue(json.loads(result)["code"])
-            self.assertEqual(output.read_text(), "code=true\ndependencies=false\n")
+            self.assertEqual(output.read_text(), "code=true\ndependencies=false\nrecipes=\n")
+
+    def test_pull_requests_run_recipes_of_the_edited_areas_only(self):
+        root = SCRIPT.parents[2]
+        self.assertEqual(planner.browser_recipes(["app/src/side-rail.ts"], root),
+                         ["tests/browser/sidebar.spec.ts", "tests/browser/splitter.spec.ts"])
+        self.assertEqual(planner.browser_recipes(["app/src/tables.ts", "app/tests/browser/tables.spec.ts"], root),
+                         ["tests/browser/tables.spec.ts"])
+        self.assertIn("tests/browser/bands.spec.ts",
+                      planner.browser_recipes(["patches/@tiptap+y-tiptap+3.0.10.patch"], root))
+        # A shared helper selects each recipe importing it.
+        self.assertIn("tests/browser/title-dialogs.spec.ts",
+                      planner.browser_recipes(["app/tests/browser/record-dialog-controls.ts"], root))
+        for paths in [None, [], ["README.md"], ["crates/core/src/lib.rs"], ["app/src/main.ts"]]:
+            self.assertEqual(planner.browser_recipes(paths, root), [], paths)
+
+    def test_every_browser_area_names_existing_sources_and_recipes(self):
+        root = SCRIPT.parents[2]
+        files = subprocess.check_output(["git", "ls-files"], cwd=root, text=True).splitlines()
+        for patterns, stems in planner.BROWSER_AREAS:
+            for pattern in patterns:
+                self.assertTrue(any(planner.fnmatch(name, pattern) for name in files), pattern)
+            for stem in stems:
+                self.assertTrue((root / planner.RECIPES / f"{stem}.spec.ts").is_file(), stem)
 
 
 if __name__ == "__main__":

@@ -6,9 +6,13 @@ on:
       platforms:
         type: string
         required: true
+      # none, smoke (@smoke + recipes on Chromium), chromium (all, Chromium) or full.
       browsers:
         type: string
         default: none
+      recipes:
+        type: string
+        default: ''
       audit:
         type: boolean
         default: false
@@ -153,13 +157,28 @@ jobs:
           cargo +stable check --locked -p typstographe-core --target wasm32-unknown-unknown
       - name: Browser engines
         if: runner.os == 'Linux' && inputs.browsers != 'none' && !inputs.acceptance_only
-        run: npx playwright install --with-deps chromium webkit
+        env:
+          ENGINES: ${{ inputs.browsers == 'chromium' && 'chromium' || 'chromium webkit' }}
+        run: |
+          # shellcheck disable=SC2086 # one argument per word
+          npx playwright install --with-deps $ENGINES
       - name: Critical graphical recipes
         if: runner.os == 'Linux' && inputs.browsers == 'smoke' && !inputs.acceptance_only
         run: npm run test:browser:smoke
+      - name: Graphical recipes of the edited areas
+        if: runner.os == 'Linux' && inputs.browsers == 'smoke' && inputs.recipes != '' && !inputs.acceptance_only
+        env:
+          RECIPES: ${{ inputs.recipes }}
+        run: |
+          # shellcheck disable=SC2086 # one argument per word
+          npm run test:browser -- --project chromium --grep-invert @smoke $RECIPES
       - name: Exhaustive graphical recipes
-        if: runner.os == 'Linux' && inputs.browsers == 'full' && !inputs.acceptance_only
-        run: npm run test:browser
+        if: runner.os == 'Linux' && (inputs.browsers == 'full' || inputs.browsers == 'chromium') && !inputs.acceptance_only
+        env:
+          ENGINES: ${{ inputs.browsers == 'chromium' && '--project chromium' || '' }}
+        run: |
+          # shellcheck disable=SC2086 # one argument per word
+          npm run test:browser -- $ENGINES
       - uses: actions/upload-artifact@v7
         if: failure() && runner.os == 'Linux' && inputs.browsers != 'none'
         with:

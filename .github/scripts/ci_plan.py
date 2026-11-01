@@ -1,5 +1,6 @@
 """Conservative CI scope: unknown history runs checks; documentation alone does not."""
 import argparse
+from fnmatch import fnmatch
 import json
 import os
 from pathlib import Path
@@ -24,6 +25,82 @@ def plan(paths):
         code |= dependency or not documentation or name == "docs/commands.json"
         dependencies |= dependency
     return {"code": code, "dependencies": dependencies}
+
+
+RECIPES = Path("app/tests/browser")
+
+# Graphical recipes a pull request runs beyond @smoke, by edited area. A source
+# missing here only runs @smoke on the PR; the full suite runs after merging.
+BROWSER_AREAS = (
+    (("app/src/side-rail.ts", "app/src/shell-layout.ts", "app/src/resizable-separator.ts"),
+     ("sidebar", "splitter")),
+    (("app/src/bibliography-panel.ts", "app/src/citation-*.ts"), ("bibliography",)),
+    (("app/src/comparison-*.ts",), ("comparison",)),
+    (("app/src/version*", "app/src/versions*"), ("versions",)),
+    (("app/src/preview*.ts", "app/src/render-queue.ts", "app/src/proposal-preview.ts"), ("preview",)),
+    (("app/src/preferences-*.ts", "app/src/shell-preferences.ts"), ("preferences",)),
+    (("app/src/*recover*", "app/src/private-*.ts", "app/src/draft-*.ts", "app/src/form-drafts.ts"),
+     ("recovery-resume", "draft-conservation")),
+    (("app/src/metadata-*.ts", "app/src/shell-metadata.ts", "app/src/record-card.ts",
+      "app/src/sortable-cards.ts", "app/src/form-dialog.ts", "app/src/parameter-fields.ts"),
+     ("metadata", "metadata-dialogs", "structured-metadata", "record-cards", "abstract-dialogs",
+      "title-dialogs")),
+    (("app/src/table-*.ts", "app/src/cell-paste.ts"), ("tables",)),
+    (("app/src/inline-object*.ts",), ("inline-objects", "badge-spacing", "inline-caret")),
+    # Editing, selection and the patched Yjs binding shared by every rich zone.
+    (("app/src/paragraph-*.ts", "app/src/selection-edits.ts", "app/src/text-edits.ts",
+      "app/src/rich-zone.ts", "app/src/shared-inline-marks.ts", "app/src/editing*.ts",
+      "app/src/*-selection.ts", "app/src/immediate-edit.ts", "app/src/clipboard-content.ts",
+      "patches/*"),
+     ("paragraph-flow", "paragraph-join", "persisted-paragraph-input", "selection-input",
+      "input-boundaries", "rich-zone", "bands", "editor", "editing-owner")),
+    (("app/src/command*.ts", "app/src/public-commands.ts", "app/src/shell-commands.ts",
+      "app/src/menus.ts", "app/src/shell-menus.ts"),
+     ("command-availability", "palette", "editor-palette")),
+    (("app/src/document-type-picker.ts", "app/src/new-document-dialog.ts",
+      "app/src/document-options.ts", "app/src/welcome-*.ts", "app/src/work-list.ts"),
+     ("document-types", "welcome")),
+    (("app/src/widget*.ts",), ("widget-presentation", "components")),
+    (("app/src/document-whitespace.ts",), ("whitespace",)),
+    (("app/src/keyboard-navigation.ts", "app/src/editor-focus.ts", "app/src/editor-targets.ts",
+      "app/src/editor-reveal.ts"),
+     ("keyboard-navigation", "band-focus", "band-return")),
+    (("app/src/band-layout.ts",), ("bands", "inline-bands")),
+    (("app/src/synchronization-*.ts", "app/src/provider.ts", "app/src/browser-transport.ts"),
+     ("synchronization", "backward-sync")),
+    (("app/src/proofing.ts", "app/src/assistance.ts"), ("structured-proofing",)),
+    (("app/src/structured-commands.ts", "app/src/object-commands.ts", "app/src/resource-commands.ts",
+      "app/src/formatting.ts"),
+     ("structured-objects", "structured-resources", "structured-formatting", "insertion")),
+    (("app/src/close-decision.ts", "app/src/closure-*.ts", "app/src/shell-documents.ts"),
+     ("editor",)),
+)
+
+
+def browser_recipes(paths, root=Path(".")):
+    """Targeted recipes, relative to app/. Unknown history keeps @smoke only."""
+    root = Path(root)
+    specs = {path.name.removesuffix(".spec.ts"): path
+             for path in (root / RECIPES).glob("*.spec.ts")}
+    selected = set()
+    for name in paths or ():
+        path = Path(name)
+        if path.parent == RECIPES and path.suffix == ".ts":
+            stem = path.name.removesuffix(".spec.ts")
+            if stem != path.name:
+                selected.add(stem)
+            else:
+                # A shared helper: every recipe importing it.
+                helper = f"from './{path.stem}'"
+                selected |= {stem for stem, spec in specs.items()
+                             if helper in spec.read_text(encoding="utf-8")}
+        if path.parent == Path("app/src"):
+            selected.add(path.name.split(".")[0])
+        for patterns, stems in BROWSER_AREAS:
+            if any(fnmatch(name, pattern) for pattern in patterns):
+                selected.update(stems)
+    return sorted((RECIPES / f"{stem}.spec.ts").relative_to("app").as_posix()
+                  for stem in selected if stem in specs)
 
 
 def changed_paths(base, head="HEAD", root=None):
@@ -52,12 +129,15 @@ def main():
     parser.add_argument("--base", default="")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
-    result = plan(None if args.force else changed_paths(args.base))
+    paths = None if args.force else changed_paths(args.base)
+    result = plan(paths)
+    recipes = " ".join(browser_recipes(paths))
     if output := os.environ.get("GITHUB_OUTPUT"):
         with open(output, "a", encoding="utf-8") as stream:
             for key, value in result.items():
                 stream.write(f"{key}={str(value).lower()}\n")
-    print(json.dumps(result))
+            stream.write(f"recipes={recipes}\n")
+    print(json.dumps({**result, "recipes": recipes}))
 
 
 if __name__ == "__main__":
