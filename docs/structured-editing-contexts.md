@@ -43,6 +43,13 @@ sont jamais aplaties en fausses plages textuelles. La sélection discontinue
 reste hors périmètre. `insert` exige encore une sélection textuelle dans une
 seule zone ; les transformations multizones utilisent les commandes explicites.
 
+La sélection `paragraph_boundary` désigne la ligne `¶` avant un paragraphe par
+`before: {root, path}`. C'est une position privée de navigation, sans caractère
+documentaire ni plage de texte. Son ancre suit le paragraphe par identité ; elle
+devient indisponible si la séparation disparaît. L'historique la restaure après
+annulation d'une fusion. Les règles graphiques sont décrites dans le
+[contrat des interfaces](interface-contract.md#navigation-entre-paragraphes).
+
 ## Sélection et styles
 
 Le résolveur de zones, les frontières et les offsets UTF-16 sont ceux des

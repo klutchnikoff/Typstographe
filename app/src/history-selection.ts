@@ -3,6 +3,7 @@ import { AllSelection, NodeSelection, TextSelection } from '@tiptap/pm/state'
 import { CellSelection } from '@tiptap/pm/tables'
 import { editorRoot, positionAtPath, type TreeRoot } from './editor-targets'
 import type { HistoryState } from './provider'
+import { ParagraphSelection, paragraphBoundary } from './paragraph-selection'
 
 /** Restore only an exact live zone in the initiating view. Never choose a
  * neighboring field, reopen a modal, focus another window or guess a position.
@@ -49,6 +50,13 @@ export function restoreHistorySelection(editor: Editor, snapshot: HistoryState) 
     const found = position(selection.target.path)
     if (!found || !NodeSelection.isSelectable(found.node)) return false
     next = NodeSelection.create(editor.state.doc, found.pos)
+  } else if (selection.kind === 'paragraph_boundary') {
+    if (!sameRoot(selection.before.root)) return false
+    const found = position(selection.before.path)
+    if (!found) return false
+    const $pos = editor.state.doc.resolve(found.pos)
+    if (!paragraphBoundary($pos)) return false
+    next = new ParagraphSelection($pos)
   } else {
     if (!sameRoot(selection.anchor.root) || !sameRoot(selection.head.root)) return false
     const a = position(selection.anchor.path),

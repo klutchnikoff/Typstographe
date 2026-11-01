@@ -7,7 +7,7 @@ use crate::content::{
     shared::{SharedDocument, structure, targets},
 };
 use serde::{Deserialize, Serialize};
-use yrs::{Assoc, StickyIndex, Transact};
+use yrs::{Assoc, StickyIndex, Transact, XmlFragment};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -40,6 +40,10 @@ pub enum Selection {
     },
     All {
         root: TreeRoot,
+    },
+    /// View-only caret on the separator before a paragraph. No document node.
+    ParagraphBoundary {
+        before: TreeTarget,
     },
 }
 impl From<TextTarget> for Selection {
@@ -141,6 +145,37 @@ fn same_table(a: &TreeTarget, b: &TreeTarget) -> bool {
         && b.path.len() >= 3
         && a.path[..a.path.len() - 2] == b.path[..b.path.len() - 2]
 }
+fn validate_boundary(
+    doc: &SharedDocument,
+    state: &State,
+    before: &TreeTarget,
+) -> Result<(), Error> {
+    let mut previous = before.path.clone();
+    let index = previous.last_mut().ok_or_else(unsupported)?;
+    *index = index.checked_sub(1).ok_or_else(unsupported)?;
+    let root = structure::root(&doc.doc, state, &before.root)?;
+    let tx = doc.doc.transact();
+    let parent = &before.path[..before.path.len() - 1];
+    if !parent.is_empty()
+        && !matches!(
+            targets::element(root.clone(), &tx, parent)?.tag().as_ref(),
+            "quote" | "tableCell" | "tableHeader"
+        )
+    {
+        return Err(unsupported());
+    }
+    let left = targets::element(root.clone(), &tx, &previous)?;
+    if targets::element(root.clone(), &tx, &before.path)?
+        .tag()
+        .as_ref()
+        != "paragraph"
+        || left.tag().as_ref() != "paragraph"
+        || left.len(&tx) == 0
+    {
+        return Err(unsupported());
+    }
+    Ok(())
+}
 #[derive(Clone)]
 pub(super) enum AnchoredSelection {
     Range {
@@ -152,6 +187,7 @@ pub(super) enum AnchoredSelection {
         head: Box<Range>,
     },
     Node(NodeAnchor),
+    ParagraphBoundary(NodeAnchor),
     Cells {
         anchor: NodeAnchor,
         head: NodeAnchor,
@@ -185,6 +221,12 @@ impl AnchoredSelection {
             }
             Selection::Node { target } => {
                 Ok(Self::Node(NodeAnchor::capture(doc, state, target, false)?))
+            }
+            Selection::ParagraphBoundary { before } => {
+                validate_boundary(doc, state, before)?;
+                Ok(Self::ParagraphBoundary(NodeAnchor::capture(
+                    doc, state, before, false,
+                )?))
             }
             Selection::Cells { anchor, head } => {
                 if !same_table(anchor, head) {
@@ -243,6 +285,11 @@ impl AnchoredSelection {
             Self::Node(target) => Ok(Selection::Node {
                 target: target.resolve(doc, state)?,
             }),
+            Self::ParagraphBoundary(target) => {
+                let before = target.resolve(doc, state)?;
+                validate_boundary(doc, state, &before)?;
+                Ok(Selection::ParagraphBoundary { before })
+            }
             Self::Cells { anchor, head } => {
                 let a = anchor.resolve(doc, state)?;
                 let h = head.resolve(doc, state)?;
