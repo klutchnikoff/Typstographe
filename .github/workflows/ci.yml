@@ -1,17 +1,21 @@
 name: CI
 on:
   pull_request:
+    # `labeled` lets the full-ci label request the exhaustive suite on a PR.
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches: [main]
 permissions:
   contents: read
 jobs:
   scope:
+    if: github.event.action != 'labeled' || github.event.label.name == 'full-ci'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       code: ${{ steps.plan.outputs.code }}
       dependencies: ${{ steps.plan.outputs.dependencies }}
+      recipes: ${{ steps.plan.outputs.recipes }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -30,12 +34,18 @@ jobs:
       cancel-in-progress: true
     with:
       platforms: ${{ github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest","macos-latest","windows-latest"]' }}
-      browsers: ${{ github.event_name == 'pull_request' && 'smoke' || 'none' }}
+      # PR: @smoke plus the recipes of the edited areas, or everything with full-ci.
+      # main: the whole suite on Chromium after each merge; WebKit stays weekly.
+      browsers: >-
+        ${{ github.event_name != 'pull_request' && 'chromium'
+        || contains(github.event.pull_request.labels.*.name, 'full-ci') && 'full'
+        || 'smoke' }}
+      recipes: ${{ needs.scope.outputs.recipes }}
       audit: ${{ needs.scope.outputs.dependencies == 'true' }}
   result:
     name: Résultat
     needs: [scope, verify]
-    if: always()
+    if: always() && (github.event.action != 'labeled' || github.event.label.name == 'full-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
