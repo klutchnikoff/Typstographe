@@ -9,7 +9,8 @@ les décisions, mesures et limites des étapes livrées.
 
 - [Guide de développement](../app/README.md) : prérequis, lancement, constructions
   normales et recettes isolées, commandes de vérification.
-- [CLI](cli.md), [MCP autonome](mcp.md), [MCP rattaché à Tauri](mcp-local.md).
+- [CLI](cli.md), [MCP autonome](mcp.md), [MCP rattaché à Tauri](mcp-local.md),
+  [découverte MCP progressive](mcp-discovery.md).
 - [Exemples](../examples/README.md) et [politique de CI](ci.md).
 - [Feuille de route produit](../ROADMAP.md) et [plan technique](../ROADMAP-ARCHITECTURE.md).
 

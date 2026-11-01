@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-02",
+  "method": "Compact UTF-8 JSON-RPC response bytes; real autonomous MCP stdio, no configured roots or open document. Includes MCP structured/text duplication; not token counts.",
+  "tool_count": 74,
+  "measurements": {
+    "initialize": {
+      "after_bytes": 764,
+      "before_bytes": 1955,
+      "reduction_percent": 60.9
+    },
+    "tools/list": {
+      "after_bytes": 148880,
+      "before_bytes": 456310,
+      "reduction_percent": 67.4
+    },
+    "document_types.list": {
+      "after_bytes": 12422,
+      "before_bytes": 422562,
+      "reduction_percent": 97.1
+    },
+    "commands.list": {
+      "after_bytes": 39224,
+      "before_bytes": 868474,
+      "reduction_percent": 95.5
+    },
+    "overview": {
+      "after_bytes": 1477
+    },
+    "type_description": {
+      "after_bytes": 23348
+    },
+    "capability_description": {
+      "after_bytes": 3704
+    }
+  },
+  "tool_count_before": 74
+}

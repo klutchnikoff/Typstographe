@@ -16,8 +16,11 @@ Les anciens chemins de découverte propres à egui ne sont plus utilisés.
 ## Lecture et propositions
 
 Le [catalogue commun](mcp.md) décrit les opérations documentaires. Le catalogue
-rattaché n’expose directement que ses requêtes compatibles et `context.set` ;
-`commands.list` distingue `attached_direct` et `attached_proposal`. La géométrie
+rattaché n’expose directement que ses requêtes compatibles et `context.set`.
+La [découverte progressive](mcp-discovery.md) commence par
+`typstographe://overview`. `commands.list` distingue `execution.direct_tool` et
+`execution.proposal_step`, sans recopier tous les schémas. Les signatures et
+exemples se demandent avec `capabilities.describe`. La géométrie
 Typst et `commands.available` restent réservées au serveur autonome pour le moment.
 Le contexte de l’agent est distinct de chaque fenêtre et ne déplace aucun focus.
 
