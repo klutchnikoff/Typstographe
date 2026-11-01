@@ -1147,3 +1147,5 @@ field-stats =
         [one] { $signs } signe
        *[other] { $signs } signes
     })
+
+web-sidebar-width = Largeur de la barre latérale

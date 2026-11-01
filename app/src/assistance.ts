@@ -20,18 +20,18 @@ export function mountAssistance(
   provider: Provider,
   transport: Transport,
   editor: Editor,
-  showPanel: (title: string) => HTMLElement,
+  showPanel: (title: string, section?: string) => HTMLElement,
   message: (text: string, error?: boolean) => void,
   isTauri: boolean,
 ) {
-  const button = railButton(tr('Assistance à la rédaction'), 'pen-line')
+  const button = railButton(tr('Assistance à la rédaction'), 'pen-line', 'ui.assistance')
   document.querySelector('.side-rail')!.prepend(button)
   let currentContent: HTMLElement | undefined
   let request = 0
   let viewer: ReturnType<typeof proposalDialog> | undefined
   const show = async () => {
     const ticket = ++request
-    const host = showPanel(tr('Assistance à la rédaction'))
+    const host = showPanel(tr('Assistance à la rédaction'), 'ui.assistance')
     const content = document.createElement('div')
     content.className = 'assistance-panel'
     host.append(content)

@@ -193,21 +193,33 @@ export async function mountShell(s: Shell) {
   side.className = 'side-rail'
   side.setAttribute('aria-label', tr('Panneaux de l’application'))
   workspace.append(side)
-  const railMode = sideRailMode(side, () => runCommand(commands.get('ui.sidebar_labels')!))
-  navigationGroup(side, { axis: 'vertical' })
+  navigationGroup(side, { axis: 'vertical', items: ':scope > button' })
   const panel = document.createElement('aside')
   panel.className = 'side-panel'
+  panel.id = 'side-panel'
+  panel.setAttribute('role', 'region')
   panel.hidden = true
   panel.innerHTML =
     '<div class="panel-title"><h2 id="side-title"></h2><button id="close-side" aria-label="Fermer le panneau">×</button></div><div id="side-content"></div>'
   workspace.append(panel)
-  $('close-side').onclick = () => {
+  const closePanel = () => {
     versionPanel?.destroy()
     versionPanel = undefined
+    releaseRecoveredPanel?.()
+    releaseRecoveredPanel = undefined
     searchState(editor, '')
-    panel.hidden = true
+    railMode.close()
     editor.commands.focus()
   }
+  const railMode = sideRailMode(side, panel, {
+    toggle: () => runCommand(commands.get('ui.sidebar_labels')!),
+    close: closePanel,
+    resized: (width) => {
+      preferences.sidebar_width = width
+      guarded(() => persistPreferences())
+    },
+  })
+  $('close-side').onclick = closePanel
   const overlay = document.createElement('dialog')
   overlay.className = 'app-dialog'
   document.body.append(overlay)
@@ -243,15 +255,7 @@ export async function mountShell(s: Shell) {
     }
     return policies.get(current.template)
   }
-  keyboardScope(panel, {
-    close: () => {
-      panel.hidden = true
-      searchState(editor, '')
-      editor.commands.focus()
-    },
-    priority: 10,
-    tab: true,
-  })
+  keyboardScope(panel, { close: closePanel, priority: 10, tab: true })
   keyboardScope(overlay, {
     close: () => overlay.close(),
     priority: 30,
@@ -307,7 +311,7 @@ export async function mountShell(s: Shell) {
     if (versionPanel) {
       versionPanel.destroy()
       versionPanel = undefined
-      panel.hidden = true
+      railMode.close()
     }
     active = value
     $('synchronization').hidden = !value
@@ -675,30 +679,30 @@ export async function mountShell(s: Shell) {
       content.append(signature.root)
     }
   }
-  function showPanel(title: string) {
+  function showPanel(title: string, section?: string) {
     versionPanel?.destroy()
     versionPanel = undefined
     releaseRecoveredPanel?.()
     releaseRecoveredPanel = undefined
     searchState(editor, '')
-    panel.hidden = false
+    railMode.show(section)
     $('side-title').textContent = title
     const content = $('side-content')
     content.replaceChildren()
     return content
   }
   function palette() {
-    commandPalette(showPanel(tr('Commandes')), commands, (command) => {
-      panel.hidden = true
+    commandPalette(showPanel(tr('Commandes'), 'ui.palette'), commands, (command) => {
+      railMode.close()
       runCommand(command)
     })
   }
 
   function search() {
-    searchPanel(showPanel(tr('Rechercher et remplacer')), editor)
+    searchPanel(showPanel(tr('Rechercher et remplacer'), 'ui.find'), editor)
   }
   function applyPreferences() {
-    railMode.update(preferences.sidebar_expanded !== false)
+    railMode.update(preferences.sidebar_expanded !== false, preferences.sidebar_width ?? 320)
     document.dispatchEvent(
       new CustomEvent('editor:resize', { detail: (preferences.editor_fraction ?? 0.5) * 100 }),
     )
@@ -717,12 +721,12 @@ export async function mountShell(s: Shell) {
   }
   function prefs() {
     preferencesPanel(
-      showPanel(tr('Préférences')),
+      showPanel(tr('Préférences'), 'ui.preferences'),
       catalogue,
       preferences,
       transport,
       async (next) => {
-        await persistPreferences(next)
+        await persistPreferences({ ...preferences, ...next })
         applyPreferences()
         s.message(tr('Préférences enregistrées. Les documents existants conservent leurs données.'))
       },
@@ -829,8 +833,11 @@ export async function mountShell(s: Shell) {
         else s.message(tr('Versions enregistrées.'))
       },
     })
-    versionPanel = versionsPanel(showPanel(tr('Versions')), api, catalogue, (error) =>
-      s.message(recoveryError(error), true),
+    versionPanel = versionsPanel(
+      showPanel(tr('Versions'), 'ui.versions'),
+      api,
+      catalogue,
+      (error) => s.message(recoveryError(error), true),
     )
   })
   void transport.listen<{ document: string; path: string; revision: number }>(
@@ -848,7 +855,7 @@ export async function mountShell(s: Shell) {
   add('ui.sidebar_labels', tr('Afficher / masquer les libellés de la barre latérale'), () =>
     guarded(async () => {
       preferences.sidebar_expanded = preferences.sidebar_expanded === false
-      railMode.update(preferences.sidebar_expanded)
+      railMode.update(preferences.sidebar_expanded, preferences.sidebar_width ?? 320)
       await persistPreferences()
     }),
   )
@@ -1026,7 +1033,7 @@ export async function mountShell(s: Shell) {
     [tr('Versions'), 'history', 'ui.versions'],
     [tr('Préférences'), 'settings-2', 'ui.preferences'],
   ] as const) {
-    const button = railButton(label, name)
+    const button = railButton(label, name, action)
     button.dataset.command = action
     button.onclick = () => {
       runCommand(commands.get(action)!)
@@ -1085,8 +1092,11 @@ export async function mountShell(s: Shell) {
   const showRecovery = () =>
     guarded(async () => {
       if (active)
-        await workList(showPanel(tr('Travail à reprendre')), transport, resumeWork, (error) =>
-          s.message(recoveryError(error), true),
+        await workList(
+          showPanel(tr('Travail à reprendre'), 'recovery.list'),
+          transport,
+          resumeWork,
+          (error) => s.message(recoveryError(error), true),
         )
       else await refreshRecovery()
     })
@@ -1171,7 +1181,7 @@ export async function mountShell(s: Shell) {
   function showRecoveredItems() {
     releaseRecoveredPanel?.()
     releaseRecoveredPanel = recoveredPanel(
-      showPanel(tr('Saisies à reprendre')),
+      showPanel(tr('Saisies à reprendre'), 'ui.recovered'),
       provider,
       reopenRecovered,
       s.isTauri,
@@ -1193,7 +1203,7 @@ export async function mountShell(s: Shell) {
   }
   add('ui.recovered', tr('Saisies à reprendre'), showRecoveredItems)
   requiresDocument.add('ui.recovered')
-  const recoveredButton = railButton(tr('Saisies à reprendre'), 'history')
+  const recoveredButton = railButton(tr('Saisies à reprendre'), 'history', 'ui.recovered')
   recoveredButton.onclick = showRecoveredItems
   side.prepend(recoveredButton)
   if (provider.recoveredName) {

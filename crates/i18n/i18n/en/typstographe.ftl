@@ -1145,3 +1145,5 @@ field-stats =
         [one] { $signs } character
        *[other] { $signs } characters
     })
+
+web-sidebar-width = Sidebar width
