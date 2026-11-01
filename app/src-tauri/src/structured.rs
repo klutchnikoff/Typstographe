@@ -1,4 +1,5 @@
 //! Prepare a typed edit against a current client checkpoint. The existing relay owns publication.
+use crate::error::CommandError;
 use crate::session::Session;
 use serde::Deserialize;
 use typstographe_core::content::{
@@ -14,7 +15,7 @@ pub struct Request {
     pub update: Vec<u8>,
     pub commands: Vec<Command>,
 }
-pub fn prepare(session: &Session, request: Request) -> Result<Publication, String> {
+pub fn prepare(session: &Session, request: Request) -> Result<Publication, CommandError> {
     let execute = || {
         let expected = Guard {
             document: request.generation,
@@ -37,11 +38,15 @@ pub fn prepare(session: &Session, request: Request) -> Result<Publication, Strin
         let prepared = candidate.prepare_commands(&expected, &request.commands)?;
         candidate.publish(prepared)
     };
-    execute().map_err(|e| serde_json::to_string(&e).expect("typed error"))
+    execute().map_err(CommandError::Content)
 }
 
 /// Recheck and publish under the owning session lock, never as an unguarded client relay.
-pub fn commit(session: &mut Session, peer: &str, request: Request) -> Result<Publication, String> {
+pub fn commit(
+    session: &mut Session,
+    peer: &str,
+    request: Request,
+) -> Result<Publication, CommandError> {
     session.check_peer(peer, &request.generation)?;
     // Full checkpoint verification and final guarded execution share the owning lock.
     prepare(session, request.clone())?;
@@ -101,22 +106,16 @@ mod tests {
         assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 0);
         let mut wrong = request(&session);
         wrong.generation = "another".into();
-        assert!(
-            prepare(&session, wrong)
-                .unwrap_err()
-                .contains("wrong_document")
-        );
+        assert!(prepare(&session, wrong).unwrap_err().code().as_deref() == Some("wrong_document"));
         let mut stale = request(&session);
         stale.revision += 1;
-        assert!(
-            prepare(&session, stale)
-                .unwrap_err()
-                .contains("stale_revision")
-        );
+        assert!(prepare(&session, stale).unwrap_err().code().as_deref() == Some("stale_revision"));
         assert!(
             prepare(&session, request(&session))
                 .unwrap_err()
-                .contains("inconsistent_state")
+                .code()
+                .as_deref()
+                == Some("inconsistent_state")
         );
         let mut invalid = initial.clone();
         invalid.commands.push(Command::RemoveTableColumn {
@@ -126,11 +125,7 @@ mod tests {
             },
             index: 99,
         });
-        assert!(
-            prepare(&session, invalid)
-                .unwrap_err()
-                .contains("batch_failed")
-        );
+        assert!(prepare(&session, invalid).unwrap_err().code().as_deref() == Some("batch_failed"));
         assert_eq!(session.updates.len(), 1);
     }
     #[test]
@@ -148,7 +143,9 @@ mod tests {
         assert!(
             commit(&mut session, "main", request)
                 .unwrap_err()
-                .contains("stale_revision")
+                .code()
+                .as_deref()
+                == Some("stale_revision")
         );
         assert_eq!(session.updates, confirmed);
     }
@@ -187,7 +184,9 @@ mod tests {
         assert!(
             commit(&mut session, "main", request.clone())
                 .unwrap_err()
-                .contains("stale_revision")
+                .code()
+                .as_deref()
+                == Some("stale_revision")
         );
         assert!(session.assets.is_empty());
         request.revision = session.revision;

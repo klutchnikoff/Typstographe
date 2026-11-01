@@ -1,4 +1,5 @@
 //! Functional test transport only. All interpretation and publication belong to core.
+use crate::error::CommandError;
 use serde::Deserialize;
 use serde_json::Value;
 use typstographe_core::{
@@ -70,7 +71,7 @@ enum Request {
         updates: Vec<Vec<u8>>,
     },
 }
-pub fn run(args: Value, assets: &Assets) -> Result<Value, String> {
+pub fn run(args: Value, assets: &Assets) -> Result<Value, CommandError> {
     fn execute(request: Request, assets: &Assets) -> Result<Value, Error> {
         let (shared, state) = match request {
             Request::Editing {
@@ -173,7 +174,6 @@ pub fn run(args: Value, assets: &Assets) -> Result<Value, String> {
         };
         Ok(serde_json::json!({"state":state, "update":shared.update()}))
     }
-    let request = serde_json::from_value(args).map_err(|e| e.to_string())?;
-    execute(request, assets)
-        .map_err(|e| serde_json::to_string(&e).expect("contract error serialization"))
+    let request = serde_json::from_value(args)?;
+    execute(request, assets).map_err(CommandError::Content)
 }

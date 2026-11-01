@@ -39,6 +39,7 @@ import { citationPanel } from './citation-panel'
 import { referenceFiles, setCitationEntries, type ReferenceEntry } from './citation-index'
 import './style.css'
 import './versions.css'
+import { errorText } from './command-error'
 
 declare global {
   interface Window {
@@ -214,7 +215,7 @@ async function render() {
     element('render-status').hidden = false
     element('render-status').textContent = tr('Contenu à corriger · dernier rendu conservé')
     element('render-status').classList.add('error')
-    message(String(error), true)
+    message(errorText(error), true)
   }
 }
 function snapshot() {
@@ -236,7 +237,7 @@ async function save(includeDocumentEdits = true) {
   message(`${tr('Session enregistrée')} · ${path}`)
 }
 function action(task: () => Promise<unknown>) {
-  void task().catch((error) => message(String(error), true))
+  void task().catch((error) => message(errorText(error), true))
 }
 element('save').addEventListener('click', () => action(save))
 element('peer').addEventListener('click', () => action(() => host.transport.invoke('open_peer')))
@@ -423,7 +424,7 @@ async function start() {
       .catch((error) => {
         if (ticket === referenceTicket) {
           setCitationEntries(editor, [])
-          message(String(error), true)
+          message(errorText(error), true)
         }
       })
   }
@@ -560,7 +561,7 @@ async function start() {
     message(
       provider.rejected
         ? tr('La synchronisation est suspendue ; votre brouillon est conservé.')
-        : String(error),
+        : errorText(error),
       true,
     )
     refresh()
@@ -645,7 +646,7 @@ async function start() {
       )
   }
 }
-void start().catch((error) => message(String(error), true))
+void start().catch((error) => message(errorText(error), true))
 window.addEventListener('beforeunload', () => {
   stopping = true
   preview?.destroy()

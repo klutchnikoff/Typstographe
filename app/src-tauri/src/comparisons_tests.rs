@@ -388,7 +388,9 @@ fn a_rejected_private_draft_blocks_before_publication() {
             .is_err()
     );
     assert!(s.ensure_owner().unwrap().draft("human").unwrap().is_some());
-    let failure = apply(&mut s, &mut a, "human", &r, ready).unwrap_err();
+    let failure = apply(&mut s, &mut a, "human", &r, ready)
+        .unwrap_err()
+        .to_string();
     assert!(!failure.starts_with('{') && !failure.contains("pending_draft"));
     assert_eq!(std::fs::read(&path).unwrap(), disk);
     assert_eq!(s.updates, work);

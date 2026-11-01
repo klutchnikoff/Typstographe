@@ -1,5 +1,6 @@
 //! Recoverable work is copied durably before publication. Never publish private input.
 use super::drafts;
+use crate::error::CommandError;
 use crate::session::{Checkpoint, Session};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -48,15 +49,15 @@ fn file_name(value: &str) -> bool {
             || stem.strip_prefix("retained-").is_some_and(uuid)
     })
 }
-fn plain_dir(path: &Path) -> Result<(), String> {
-    let meta = path.symlink_metadata().map_err(|e| e.to_string())?;
+fn plain_dir(path: &Path) -> Result<(), CommandError> {
+    let meta = path.symlink_metadata()?;
     if !meta.is_dir() || meta.file_type().is_symlink() {
         return Err("recovery_invalid_directory".into());
     }
     Ok(())
 }
 impl Session {
-    pub fn recovery_checkpoint(&mut self) -> Result<Checkpoint, String> {
+    pub fn recovery_checkpoint(&mut self) -> Result<Checkpoint, CommandError> {
         let resources = self.resources();
         let owner = self.ensure_owner()?;
         let state = owner.state().clone();
@@ -71,7 +72,7 @@ impl Session {
             resources,
         })
     }
-    fn claim_work(&self, id: &str) -> Result<(Claim, PathBuf), String> {
+    fn claim_work(&self, id: &str) -> Result<(Claim, PathBuf), CommandError> {
         let parts: Vec<_> = id.split('/').collect();
         if parts.len() != 3 {
             return Err("recovery_invalid_reference".into());
@@ -98,7 +99,7 @@ impl Session {
         } else {
             Some(
                 DocumentLease::acquire(&directory.join("owner"))
-                    .map_err(|e| typstographe_i18n::command_error(&e))?,
+                    .map_err(CommandError::localized_protocol)?,
             )
         };
         let path = if parts[1] == "confirmed" && parts[2] == "session" {
@@ -134,7 +135,7 @@ impl Session {
             path,
         ))
     }
-    pub fn work_list(&self) -> Result<Vec<Entry>, String> {
+    pub fn work_list(&self) -> Result<Vec<Entry>, CommandError> {
         let mut roots = vec![("current".to_owned(), self.root.clone())];
         if let Some(store) = &self.recovery
             && let Ok(dirs) = fs::read_dir(store.base.join("sessions"))
@@ -221,7 +222,7 @@ impl Session {
                         window: String::new(),
                         original_path: None,
                         pending: 0,
-                        error: Some(error),
+                        error: Some(error.to_string()),
                     }),
                 }
             }
@@ -229,30 +230,30 @@ impl Session {
         entries.sort_by(|a, b| b.saved_at.cmp(&a.saved_at).then(a.id.cmp(&b.id)));
         Ok(entries)
     }
-    pub fn work_delete(&self, id: &str) -> Result<(), String> {
+    pub fn work_delete(&self, id: &str) -> Result<(), CommandError> {
         let (claim, path) = self.claim_work(id)?;
         let base = read_work(&path)
             .ok()
             .and_then(|record| serde_json::to_vec(&record.confirmed).ok());
-        if path
-            .symlink_metadata()
-            .map_err(|e| e.to_string())?
-            .file_type()
-            .is_symlink()
-        {
+        if path.symlink_metadata()?.file_type().is_symlink() {
             return Err("recovery_invalid_file".into());
         }
-        fs::remove_file(path).map_err(|e| e.to_string())?;
+        fs::remove_file(path)?;
         if let Some(base) = base {
             clean_summary(&claim.directory, &base);
         }
         Ok(())
     }
-    pub fn work_restore(&mut self, window: &str, id: &str, revision: u64) -> Result<(), String> {
+    pub fn work_restore(
+        &mut self,
+        window: &str,
+        id: &str,
+        revision: u64,
+    ) -> Result<(), CommandError> {
         self.lifecycle(revision)?;
         let (claim, path) = self.claim_work(id)?;
         let record = read_work(&path)?;
-        let base = serde_json::to_vec(&record.confirmed).map_err(|e| e.to_string())?;
+        let base = serde_json::to_vec(&record.confirmed)?;
         self.restore_work_record(window, record)?;
         // Destination is durable before the source is consumed. Retain unreadable siblings.
         fs::remove_file(path)
@@ -267,7 +268,7 @@ impl Session {
         &mut self,
         window: &str,
         record: drafts::Record,
-    ) -> Result<(), String> {
+    ) -> Result<(), CommandError> {
         let validated = Session::from_checkpoint(self.root.clone(), record.confirmed.clone())?;
         let recovered = items(&record);
         if recovered.len() > 2048 {
@@ -294,10 +295,8 @@ impl Session {
             epoch: 0,
             sequence: 0,
             update: record.confirmed.update.clone(),
-            document: serde_json::to_value(&record.confirmed.document)
-                .map_err(|e| e.to_string())?,
-            settings: serde_json::to_value(&record.confirmed.settings)
-                .map_err(|e| e.to_string())?,
+            document: serde_json::to_value(&record.confirmed.document)?,
+            settings: serde_json::to_value(&record.confirmed.settings)?,
             fields: vec![],
             forms: vec![],
             resources: record.confirmed.resources.clone(),
@@ -306,7 +305,7 @@ impl Session {
             retain: true,
         };
         copied.rejected_edition = None;
-        fs::create_dir_all(&self.root).map_err(|e| e.to_string())?;
+        fs::create_dir_all(&self.root)?;
         drafts::write(&drafts::path(&self.root, &generation, window)?, &copied)?;
         // Cleanup belongs to the prepared transition, after the destination is durable.
         // No fallible operation follows this cleanup before publication.
@@ -324,11 +323,15 @@ impl Session {
         self.recovered_items.insert(window.into(), recovered);
         Ok(())
     }
-    pub fn abandon_window_work(&mut self, window: &str, generation: &str) -> Result<(), String> {
+    pub fn abandon_window_work(
+        &mut self,
+        window: &str,
+        generation: &str,
+    ) -> Result<(), CommandError> {
         self.check_peer(window, generation)?;
         let path = drafts::path(&self.root, generation, window)?;
         if path.exists() {
-            fs::remove_file(path).map_err(|e| e.to_string())?;
+            fs::remove_file(path)?;
         }
         if self.synchronization().windows.len() <= 1
             && let Some(store) = &self.recovery
@@ -446,37 +449,27 @@ pub fn items(record: &drafts::Record) -> Vec<Item> {
     }
     items
 }
-pub fn read_work(path: &Path) -> Result<drafts::Record, String> {
-    if !path
-        .symlink_metadata()
-        .map_err(|e| e.to_string())?
-        .is_file()
-    {
+pub fn read_work(path: &Path) -> Result<drafts::Record, CommandError> {
+    if !path.symlink_metadata()?.is_file() {
         return Err("recovery_invalid_file".into());
     }
     if let Ok(record) = drafts::read(path) {
         return Ok(record);
     }
-    if path
-        .symlink_metadata()
-        .map_err(|e| e.to_string())?
-        .file_type()
-        .is_symlink()
-    {
+    if path.symlink_metadata()?.file_type().is_symlink() {
         return Err("recovery_invalid_file".into());
     }
     let bytes = crate::project::read_recovery_file(path)?;
-    let mut value: Value = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+    let mut value: Value = serde_json::from_slice(&bytes)?;
     if value["format"] == "typstographe-rejected-draft-v1" {
         let checkpoint: Checkpoint = if value.get("confirmed").is_some() {
-            serde_json::from_value(value["confirmed"].take()).map_err(|e| e.to_string())?
+            serde_json::from_value(value["confirmed"].take())?
         } else {
             let state = State::new(
-                serde_json::from_value(json!({"type":"doc","content":[{"type":"paragraph"}]}))
-                    .map_err(|e| e.to_string())?,
+                serde_json::from_value(json!({"type":"doc","content":[{"type":"paragraph"}]}))?,
                 Default::default(),
             );
-            let shared = SharedDocument::from_state(&state).map_err(crate::owner::error)?;
+            let shared = SharedDocument::from_state(&state)?;
             Checkpoint {
                 project: crate::project::recovery_for_state(state.clone(), shared.update())?,
                 schema: "typstographe-web-editor-v2".into(),
@@ -517,7 +510,7 @@ pub fn read_work(path: &Path) -> Result<drafts::Record, String> {
             rejected_edition: None,
         });
     }
-    let confirmed: super::Record = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+    let confirmed: super::Record = serde_json::from_slice(&bytes)?;
     let cp: Checkpoint = confirmed.checkpoint;
     Ok(drafts::Record {
         format: drafts::FORMAT.into(),
@@ -530,8 +523,8 @@ pub fn read_work(path: &Path) -> Result<drafts::Record, String> {
             epoch: 0,
             sequence: 0,
             update: cp.update.clone(),
-            document: serde_json::to_value(&cp.document).map_err(|e| e.to_string())?,
-            settings: serde_json::to_value(&cp.settings).map_err(|e| e.to_string())?,
+            document: serde_json::to_value(&cp.document)?,
+            settings: serde_json::to_value(&cp.settings)?,
             fields: vec![],
             forms: vec![],
             resources: cp.resources.clone(),

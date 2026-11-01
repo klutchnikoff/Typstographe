@@ -1,5 +1,6 @@
 import type { Provider, Transport } from './provider'
 import { tr } from './i18n'
+import { errorText } from './command-error'
 interface Transition {
   id: string
   generation: string
@@ -108,7 +109,7 @@ export async function recoveryTransitions(provider: Provider, transport: Transpo
           throw new Error(tr('Terminez la saisie en cours avant de décider.'))
         await provider.privateRecovery?.force()
       } catch (reason) {
-        error = String(reason)
+        error = errorText(reason)
       }
       await transport.invoke('transition_ack', { ack: { id: value.id, error: error || null } })
     })().catch(provider.onError)

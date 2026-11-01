@@ -1,13 +1,14 @@
+use crate::error::CommandError;
 #[tauri::command]
 pub fn set_menu_availability(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
     states: std::collections::BTreeMap<String, bool>,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     #[cfg(target_os = "macos")]
     {
         // The menu bar belongs to the foreground window, not a background participant.
-        if !window.is_focused().map_err(|e| e.to_string())? {
+        if !window.is_focused()? {
             return Ok(());
         }
         fn update(
@@ -28,7 +29,7 @@ pub fn set_menu_availability(
             Ok(())
         }
         if let Some(menu) = app.menu() {
-            update(menu.items().map_err(|e| e.to_string())?, &states).map_err(|e| e.to_string())?;
+            update(menu.items()?, &states)?;
         }
     }
     #[cfg(not(target_os = "macos"))]

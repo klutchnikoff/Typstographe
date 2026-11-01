@@ -1,6 +1,7 @@
 import { bindRecoveryPanel } from './form-recovery'
 import { trackForm } from './form-drafts'
 import { actionRow, initialNavigationGroup, keyboardScope, visible } from './keyboard-navigation'
+import { errorText } from './command-error'
 /** Shared panel anatomy. Only body and actions belong to a capability/corrector. */
 export function contextPanel(options: {
   id: string
@@ -61,7 +62,7 @@ export function contextPanel(options: {
     restoreRecoveryData: (_data: any): boolean => true,
     recoveryApplied: async (): Promise<void> => {},
     recoveryFailed: (reason: unknown) => {
-      error.textContent = String(reason)
+      error.textContent = errorText(reason)
     },
     committed() {
       const done = panel.recoveryApplied,

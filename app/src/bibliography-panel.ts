@@ -12,6 +12,7 @@ import { actionRow } from './keyboard-navigation'
 import { icon } from './icons'
 import { tr } from './i18n'
 import { draftGuard } from './snapshot-operation'
+import { errorText } from './command-error'
 
 export function bibliographyPanel(
   parent: HTMLElement,
@@ -125,8 +126,8 @@ export function bibliographyPanel(
       return true
     } catch (error) {
       if (alive) {
-        status.textContent = String(error)
-        confirm.error.textContent = String(error)
+        status.textContent = errorText(error)
+        confirm.error.textContent = errorText(error)
       }
       return false
     } finally {
@@ -199,7 +200,7 @@ export function bibliographyPanel(
           }))
       await publish(next, batch)
     } catch (error) {
-      if (alive) status.textContent = String(error)
+      if (alive) status.textContent = errorText(error)
     }
   }
   root.append(style, rows, actions, input, confirm.element, status)

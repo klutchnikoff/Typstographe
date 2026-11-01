@@ -1,4 +1,5 @@
 //! Native project IO: validate outside the session lock, recheck before publication.
+use crate::error::CommandError;
 use crate::{
     session::{Resource, Session, Snapshot},
     settings::Settings,
@@ -15,23 +16,27 @@ pub(super) fn save_project(
     path: &Path,
     snapshot: Snapshot,
     update: Vec<u8>,
-    validate: impl FnOnce(&str, &Assets, crate::rendering::RenderContext<'_>) -> Result<(), String>,
-) -> Result<(), String> {
+    validate: impl FnOnce(
+        &str,
+        &Assets,
+        crate::rendering::RenderContext<'_>,
+    ) -> Result<(), CommandError>,
+) -> Result<(), CommandError> {
     if path.extension().and_then(|e| e.to_str()) != Some("typsto") {
         return Err("Extension .typsto attendue.".into());
     }
     let (checkpoint, assets) = {
-        let s = session.lock().map_err(|e| e.to_string())?;
+        let s = session.lock()?;
         (s.checkpoint(&snapshot, update)?, s.assets.clone())
     };
     let settings = checkpoint.settings;
     let source = checkpoint.source;
     let context = {
-        let s = session.lock().map_err(|e| e.to_string())?;
+        let s = session.lock()?;
         s.render_context(&settings)
     };
     validate(&source, &assets, context)?;
-    let mut s = session.lock().map_err(|e| e.to_string())?;
+    let mut s = session.lock()?;
     s.validate(&snapshot)?;
     let canonical = if path.exists() {
         path.canonicalize()
@@ -40,13 +45,12 @@ pub(super) fn save_project(
             .unwrap_or_else(|| std::path::Path::new("."))
             .canonicalize()
             .map(|p| p.join(path.file_name().unwrap_or_default()))
-    }
-    .map_err(|e| e.to_string())?;
+    }?;
     let same_target = s.file_lease.as_ref().is_some_and(|l| l.path() == canonical);
     let mut lease = if same_target {
         s.file_lease.as_ref().unwrap().clone()
     } else {
-        DocumentLease::acquire(&canonical).map_err(|e| typstographe_i18n::command_error(&e))?
+        DocumentLease::acquire(&canonical).map_err(CommandError::localized_protocol)?
     };
     let dependencies = s.dependencies_for(&settings);
     let archive = Archive {
@@ -73,7 +77,7 @@ pub(super) fn save_project(
     };
     owner
         .save(&mut lease)
-        .map_err(|e| typstographe_i18n::archive_error(&e))?;
+        .map_err(CommandError::localized_archive)?;
     if let Err(error) = s.mark_clean() {
         // The archive commit succeeded but cleanup failed. Keep the original
         // binding after a refused Save As; otherwise a later ordinary Save
@@ -94,23 +98,23 @@ pub(super) fn open_project(
     session: &Mutex<Session>,
     path: &Path,
     revision: u64,
-    validate: impl FnOnce(&str, &Assets, crate::rendering::RenderContext<'_>) -> Result<(), String>,
-) -> Result<serde_json::Value, String> {
-    session
-        .lock()
-        .map_err(|e| e.to_string())?
-        .lifecycle(revision)?;
-    let canonical = path.canonicalize().map_err(|e| e.to_string())?;
+    validate: impl FnOnce(
+        &str,
+        &Assets,
+        crate::rendering::RenderContext<'_>,
+    ) -> Result<(), CommandError>,
+) -> Result<serde_json::Value, CommandError> {
+    session.lock()?.lifecycle(revision)?;
+    let canonical = path.canonicalize()?;
     let lease = session
-        .lock()
-        .map_err(|e| e.to_string())?
+        .lock()?
         .file_lease
         .as_ref()
         .filter(|lease| lease.path() == canonical)
         .cloned()
         .map(Ok)
         .unwrap_or_else(|| DocumentLease::acquire(path))
-        .map_err(|e| typstographe_i18n::command_error(&e))?;
+        .map_err(CommandError::localized_protocol)?;
     let project = Project::read(path).map_err(|e| {
         eprintln!("Project open failed: {e}");
         typstographe_i18n::archive_error(&e)
@@ -123,11 +127,11 @@ pub(super) fn open_project(
     };
     settings
         .validate()
-        .map_err(|e| typstographe_i18n::content_error(&e))?;
+        .map_err(CommandError::localized_content)?;
     validate(
         &archive
             .validate()
-            .map_err(|e| typstographe_i18n::archive_error(&e))?,
+            .map_err(CommandError::localized_archive)?,
         &archive.assets,
         crate::rendering::RenderContext {
             settings: &settings,
@@ -146,13 +150,11 @@ pub(super) fn open_project(
         })
         .collect();
     {
-        let mut current = session.lock().map_err(|e| e.to_string())?;
+        let mut current = session.lock()?;
         current.lifecycle(revision)?;
         // Reading and compiling happen outside the session lock. A different
         // process may have replaced the target while either was in progress.
-        lease
-            .check()
-            .map_err(|e| typstographe_i18n::command_error(&e))?;
+        lease.check().map_err(CommandError::localized_protocol)?;
         current.mark_clean()?;
         current.file_lease = Some(lease);
         current.replace(
@@ -174,7 +176,7 @@ pub(super) fn open_project(
 }
 
 /// Explicitly confirmed document closure. Refusal must precede cleanup.
-pub(super) fn close_project(session: &mut Session, revision: u64) -> Result<(), String> {
+pub(super) fn close_project(session: &mut Session, revision: u64) -> Result<(), CommandError> {
     session.lifecycle(revision)?;
     session.mark_clean()?;
     session.file_lease = None;

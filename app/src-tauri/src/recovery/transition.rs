@@ -1,4 +1,5 @@
 //! A document switch waits for every window's durable private checkpoint.
+use crate::error::CommandError;
 use crate::{Bridge, session::Session};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -34,7 +35,7 @@ impl Session {
         &mut self,
         window: &str,
         generation: &str,
-    ) -> Result<Transition, String> {
+    ) -> Result<Transition, CommandError> {
         self.check_peer(window, generation)?;
         if self.transition.is_some() {
             return Err("recovery_transition_busy".into());
@@ -56,7 +57,7 @@ impl Session {
         &mut self,
         window: &str,
         ack: Acknowledgement,
-    ) -> Result<(), String> {
+    ) -> Result<(), CommandError> {
         let value = self
             .transition
             .as_mut()
@@ -84,7 +85,7 @@ impl Session {
         }
         Ok(())
     }
-    pub fn transition_status(&self, id: &str) -> Result<Transition, String> {
+    pub fn transition_status(&self, id: &str) -> Result<Transition, CommandError> {
         let value = self
             .transition
             .as_ref()
@@ -102,15 +103,13 @@ pub fn transition_begin(
     window: tauri::WebviewWindow,
     state: State<Bridge>,
     generation: String,
-) -> Result<Transition, String> {
+) -> Result<Transition, CommandError> {
     let value = state
-        .session
-        .lock()
-        .map_err(|e| e.to_string())?
+        .session()?
         .begin_transition(window.label(), &generation)?;
     if let Err(error) = app.emit("recovery:prepare-transition", &value) {
-        state.session.lock().map_err(|e| e.to_string())?.transition = None;
-        return Err(error.to_string());
+        state.session()?.transition = None;
+        return Err(error.into());
     }
     Ok(value)
 }
@@ -119,31 +118,23 @@ pub fn transition_ack(
     window: tauri::WebviewWindow,
     state: State<Bridge>,
     ack: Acknowledgement,
-) -> Result<(), String> {
-    state
-        .session
-        .lock()
-        .map_err(|e| e.to_string())?
-        .acknowledge_transition(window.label(), ack)
+) -> Result<(), CommandError> {
+    state.session()?.acknowledge_transition(window.label(), ack)
 }
 #[tauri::command]
-pub fn transition_status(state: State<Bridge>, id: String) -> Result<Transition, String> {
-    state
-        .session
-        .lock()
-        .map_err(|e| e.to_string())?
-        .transition_status(&id)
+pub fn transition_status(state: State<Bridge>, id: String) -> Result<Transition, CommandError> {
+    state.session()?.transition_status(&id)
 }
 #[tauri::command]
 pub fn transition_end(
     app: tauri::AppHandle,
     state: State<Bridge>,
     id: String,
-) -> Result<(), String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
+) -> Result<(), CommandError> {
+    let mut session = state.session()?;
     if session.transition.as_ref().is_some_and(|v| v.id == id) {
         session.transition = None;
     }
     app.emit("recovery:end-transition", id)
-        .map_err(|e| e.to_string())
+        .map_err(CommandError::from)
 }

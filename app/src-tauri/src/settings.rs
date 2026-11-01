@@ -1,14 +1,15 @@
+use crate::error::CommandError;
 pub use typstographe_core::content::contract::Settings;
 
 #[tauri::command]
 pub async fn validate_model(
     state: tauri::State<'_, crate::Bridge>,
     snapshot: crate::session::Snapshot,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     let session = state.session.clone();
     let renderer = state.renderer.clone();
     tauri::async_runtime::spawn_blocking(move || {
-        let s = session.lock().map_err(|e| e.to_string())?;
+        let s = session.lock()?;
         let source = s.validate(&snapshot)?;
         renderer.validate(
             &source,
@@ -16,8 +17,7 @@ pub async fn validate_model(
             s.render_context(snapshot.settings.as_ref().unwrap_or(&s.settings)),
         )
     })
-    .await
-    .map_err(|e| e.to_string())?
+    .await?
 }
 
 #[cfg(test)]

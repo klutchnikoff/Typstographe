@@ -18,6 +18,7 @@ import { applyFormatting } from './formatting'
 import { applyObjectEdit, removeObject, treeTarget } from './object-commands'
 import { editingProvider } from './editing-history'
 import { documentContent } from './shared-inline-marks'
+import { errorText } from './command-error'
 
 export function propertyPanel(
   editor: Editor,
@@ -177,7 +178,7 @@ export function propertyPanel(
         focusEditorSelection(editor)
     } catch (error) {
       if (current())
-        panel.error.textContent = error instanceof Error ? error.message : String(error)
+        panel.error.textContent = error instanceof Error ? error.message : errorText(error)
     } finally {
       pending = false
       apply.disabled = false

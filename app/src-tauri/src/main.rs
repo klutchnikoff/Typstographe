@@ -8,6 +8,7 @@ mod comparisons;
 mod diagnostics;
 #[cfg(feature = "recipe-driver")]
 mod driver;
+mod error;
 mod files;
 mod launch;
 mod menus;
@@ -26,12 +27,13 @@ mod shared_diagnostic;
 mod structured;
 mod versions;
 
+use error::CommandError;
 use rendering::{Preview, Renderer};
 use session::{Bootstrap, Session, Snapshot};
 use std::{
     path::PathBuf,
     sync::{
-        Arc, Mutex,
+        Arc, Mutex, MutexGuard,
         atomic::{AtomicU64, Ordering},
     },
 };
@@ -43,6 +45,12 @@ struct Bridge {
     #[cfg(feature = "recipe-driver")]
     diagnostic: Option<String>,
     agent: Arc<Mutex<agent::AgentState>>,
+}
+impl Bridge {
+    /// Lock the live session; a poisoned lock becomes a plain command error.
+    fn session(&self) -> Result<MutexGuard<'_, Session>, CommandError> {
+        Ok(self.session.lock()?)
+    }
 }
 #[derive(Clone, serde::Serialize)]
 struct Change {
@@ -59,17 +67,63 @@ struct Awareness {
     update: Vec<u8>,
 }
 
+impl Change {
+    /// The change other windows must receive for a local receipt, if any.
+    fn of_receipt(
+        session: &Session,
+        peer: &str,
+        generation: String,
+        receipt: &owner::Receipt,
+    ) -> Option<Self> {
+        (!receipt.update.is_empty() && session.should_broadcast(peer)).then(|| Self {
+            from: peer.into(),
+            generation,
+            revision: receipt.revision,
+            update: receipt.update.clone(),
+        })
+    }
+}
+/// Apply a guarded edit under the session lock, then broadcast its receipt once released.
+fn publish_receipt(
+    app: &tauri::AppHandle,
+    state: &Bridge,
+    peer: &str,
+    generation: String,
+    edit: impl FnOnce(&mut Session) -> Result<owner::Receipt, CommandError>,
+) -> Result<owner::Receipt, CommandError> {
+    let (receipt, change) = {
+        let mut session = state.session()?;
+        session.check_peer(peer, &generation)?;
+        let receipt = edit(&mut session)?;
+        let change = Change::of_receipt(&session, peer, generation, &receipt);
+        (receipt, change)
+    };
+    if let Some(change) = change {
+        app.emit("web-editor:change", change)?;
+    }
+    Ok(receipt)
+}
+/// Broadcast a synchronization status computed under the session lock.
+fn publish_synchronization(
+    app: &tauri::AppHandle,
+    status: session::Synchronization,
+) -> Result<session::Synchronization, CommandError> {
+    app.emit("web-editor:synchronization", &status)?;
+    Ok(status)
+}
+
 // Tauri dispatches these CPU/lock-bearing calls on its worker pool, never the UI thread.
 #[tauri::command(async)]
 fn join(
     window: WebviewWindow,
     app: tauri::AppHandle,
     state: State<Bridge>,
-) -> Result<Bootstrap, String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
-    let bootstrap = session.join(window.label());
-    app.emit("web-editor:synchronization", session.synchronization())
-        .map_err(|e| e.to_string())?;
+) -> Result<Bootstrap, CommandError> {
+    let (bootstrap, status) = {
+        let mut session = state.session()?;
+        (session.join(window.label()), session.synchronization())
+    };
+    publish_synchronization(&app, status)?;
     Ok(bootstrap)
 }
 #[tauri::command(async)]
@@ -84,29 +138,11 @@ fn relay(
     group: Option<u64>,
     capture: Option<bool>,
     history_view: Option<owner::HistoryViewRequest>,
-) -> Result<owner::Receipt, String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
-    session.check_peer(window.label(), &generation)?;
-    let receipt = session.relay_view(
-        window.label(),
-        &update,
-        group,
-        capture.unwrap_or(true),
-        history_view,
-    )?;
-    if !receipt.update.is_empty() && session.should_broadcast(window.label()) {
-        app.emit(
-            "web-editor:change",
-            Change {
-                from: window.label().into(),
-                generation,
-                revision: receipt.revision,
-                update: receipt.update.clone(),
-            },
-        )
-        .map_err(|e| e.to_string())?;
-    }
-    Ok(receipt)
+) -> Result<owner::Receipt, CommandError> {
+    let peer = window.label();
+    publish_receipt(&app, &state, peer, generation, |session| {
+        session.relay_view(peer, &update, group, capture.unwrap_or(true), history_view)
+    })
 }
 #[tauri::command(async)]
 fn editing_history(
@@ -115,31 +151,19 @@ fn editing_history(
     state: State<Bridge>,
     generation: String,
     direction: typstographe_core::content::editing::Direction,
-) -> Result<owner::Receipt, String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
-    session.check_peer(window.label(), &generation)?;
-    let receipt = session.history(window.label(), direction)?;
-    if !receipt.update.is_empty() && session.should_broadcast(window.label()) {
-        app.emit(
-            "web-editor:change",
-            Change {
-                from: window.label().into(),
-                generation,
-                revision: receipt.revision,
-                update: receipt.update.clone(),
-            },
-        )
-        .map_err(|e| e.to_string())?;
-    }
-    Ok(receipt)
+) -> Result<owner::Receipt, CommandError> {
+    let peer = window.label();
+    publish_receipt(&app, &state, peer, generation, |session| {
+        session.history(peer, direction)
+    })
 }
 #[tauri::command(async)]
 fn editing_context(
     window: WebviewWindow,
     state: State<Bridge>,
     generation: String,
-) -> Result<typstographe_core::content::editing::ContextSnapshot, String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
+) -> Result<typstographe_core::content::editing::ContextSnapshot, CommandError> {
+    let mut session = state.session()?;
     session.check_peer(window.label(), &generation)?;
     session.ensure_owner()?.snapshot(window.label())
 }
@@ -148,8 +172,8 @@ fn set_editing_context(
     window: WebviewWindow,
     state: State<Bridge>,
     request: owner::ContextRequest,
-) -> Result<typstographe_core::content::editing::ContextSnapshot, String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
+) -> Result<typstographe_core::content::editing::ContextSnapshot, CommandError> {
+    let mut session = state.session()?;
     session.check_peer(window.label(), &request.generation)?;
     session.ensure_owner()?.set_context(window.label(), request)
 }
@@ -158,8 +182,8 @@ fn reset_editing_context(
     window: WebviewWindow,
     state: State<Bridge>,
     generation: String,
-) -> Result<typstographe_core::content::editing::ContextSnapshot, String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
+) -> Result<typstographe_core::content::editing::ContextSnapshot, CommandError> {
+    let mut session = state.session()?;
     session.check_peer(window.label(), &generation)?;
     session.ensure_owner()?.reset(window.label())
 }
@@ -168,8 +192,8 @@ fn reset_editing_context(
 fn prepare_structured_commands(
     state: State<Bridge>,
     request: structured::Request,
-) -> Result<typstographe_core::content::shared::Publication, String> {
-    structured::prepare(&*state.session.lock().map_err(|e| e.to_string())?, request)
+) -> Result<typstographe_core::content::shared::Publication, CommandError> {
+    structured::prepare(&*state.session()?, request)
 }
 #[tauri::command(async)]
 fn commit_structured_commands(
@@ -177,16 +201,19 @@ fn commit_structured_commands(
     app: tauri::AppHandle,
     state: State<Bridge>,
     request: structured::Request,
-) -> Result<typstographe_core::content::shared::Publication, String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
-    let publication = structured::commit(&mut session, window.label(), request)?;
-    if session.should_broadcast(window.label()) {
+) -> Result<typstographe_core::content::shared::Publication, CommandError> {
+    let (publication, broadcast) = {
+        let mut session = state.session()?;
+        let publication = structured::commit(&mut session, window.label(), request)?;
+        let broadcast = session.should_broadcast(window.label());
+        (publication, broadcast)
+    };
+    if broadcast {
         for resource in &publication.resources {
             app.emit(
             "web-editor:asset",
             serde_json::json!({"generation": publication.guard.document, "path": resource.path, "data": base64::engine::general_purpose::STANDARD.encode(&resource.data)}),
-        )
-        .map_err(|e| e.to_string())?;
+        )?;
         }
         if publication.changed {
             app.emit(
@@ -197,8 +224,7 @@ fn commit_structured_commands(
                     revision: publication.guard.revision,
                     update: publication.update.clone(),
                 },
-            )
-            .map_err(|e| e.to_string())?;
+            )?;
         }
     }
     Ok(publication)
@@ -210,13 +236,13 @@ fn connection(
     state: State<Bridge>,
     online: bool,
     generation: String,
-) -> Result<session::Synchronization, String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
-    session.connection(window.label(), &generation, online)?;
-    let status = session.synchronization();
-    app.emit("web-editor:synchronization", &status)
-        .map_err(|e| e.to_string())?;
-    Ok(status)
+) -> Result<session::Synchronization, CommandError> {
+    let status = {
+        let mut session = state.session()?;
+        session.connection(window.label(), &generation, online)?;
+        session.synchronization()
+    };
+    publish_synchronization(&app, status)
 }
 #[tauri::command(async)]
 fn set_synchronization(
@@ -225,12 +251,11 @@ fn set_synchronization(
     state: State<Bridge>,
     generation: String,
     enabled: bool,
-) -> Result<session::Synchronization, String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
-    let status = session.set_synchronization(window.label(), &generation, enabled)?;
-    app.emit("web-editor:synchronization", &status)
-        .map_err(|e| e.to_string())?;
-    Ok(status)
+) -> Result<session::Synchronization, CommandError> {
+    let status = state
+        .session()?
+        .set_synchronization(window.label(), &generation, enabled)?;
+    publish_synchronization(&app, status)
 }
 #[tauri::command(async)]
 fn awareness(
@@ -240,12 +265,14 @@ fn awareness(
     generation: String,
     version: u64,
     update: Vec<u8>,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     if update.len() > 64 * 1024 {
         return Err("Présence trop volumineuse.".into());
     }
-    let session = state.session.lock().map_err(|e| e.to_string())?;
-    if !session.accepts_awareness(window.label(), &generation, version)? {
+    if !state
+        .session()?
+        .accepts_awareness(window.label(), &generation, version)?
+    {
         return Ok(());
     }
     app.emit(
@@ -256,18 +283,16 @@ fn awareness(
             version,
             update,
         },
-    )
-    .map_err(|e| e.to_string())
+    )?;
+    Ok(())
 }
 #[tauri::command]
-async fn preview(state: State<'_, Bridge>, snapshot: Snapshot) -> Result<Preview, String> {
+async fn preview(state: State<'_, Bridge>, snapshot: Snapshot) -> Result<Preview, CommandError> {
     let session = state.session.clone();
     let renderer = state.renderer.clone();
     tauri::async_runtime::spawn_blocking(move || {
-        let (source, assets, settings, dependencies) = session
-            .lock()
-            .map_err(|e| e.to_string())?
-            .render_snapshot(&snapshot)?;
+        let (source, assets, settings, dependencies) =
+            session.lock()?.render_snapshot(&snapshot)?;
         let map = typstographe_core::content::source_mapped(&snapshot.document, &assets)?.1;
         let result = renderer.render(
             source,
@@ -280,13 +305,12 @@ async fn preview(state: State<'_, Bridge>, snapshot: Snapshot) -> Result<Preview
             }),
             Some(map),
         )?;
-        if session.lock().map_err(|e| e.to_string())?.revision != snapshot.revision {
+        if session.lock()?.revision != snapshot.revision {
             return Err("stale".into());
         }
         Ok(result)
     })
-    .await
-    .map_err(|e| e.to_string())?
+    .await?
 }
 /// Binary IPC: no base64, JSON byte arrays, temporary files or asset HTTP server.
 #[tauri::command]
@@ -294,14 +318,12 @@ async fn preview_frame(
     state: State<'_, Bridge>,
     snapshot: Snapshot,
     encoding: rendering::Encoding,
-) -> Result<tauri::ipc::Response, String> {
+) -> Result<tauri::ipc::Response, CommandError> {
     let session = state.session.clone();
     let renderer = state.renderer.clone();
-    let bytes = tauri::async_runtime::spawn_blocking(move || -> Result<Vec<u8>, String> {
-        let (source, assets, settings, dependencies) = session
-            .lock()
-            .map_err(|e| e.to_string())?
-            .render_snapshot(&snapshot)?;
+    let bytes = tauri::async_runtime::spawn_blocking(move || -> Result<Vec<u8>, CommandError> {
+        let (source, assets, settings, dependencies) =
+            session.lock()?.render_snapshot(&snapshot)?;
         let map = typstographe_core::content::source_mapped(&snapshot.document, &assets)?.1;
         let bytes = renderer.frame(
             source,
@@ -314,13 +336,12 @@ async fn preview_frame(
             map,
             encoding,
         )?;
-        if session.lock().map_err(|e| e.to_string())?.revision != snapshot.revision {
+        if session.lock()?.revision != snapshot.revision {
             return Err("stale".into());
         }
         Ok(bytes)
     })
-    .await
-    .map_err(|e| e.to_string())??;
+    .await??;
     Ok(tauri::ipc::Response::new(bytes))
 }
 #[tauri::command]
@@ -328,14 +349,12 @@ async fn save(
     state: State<'_, Bridge>,
     snapshot: Snapshot,
     update: Vec<u8>,
-) -> Result<String, String> {
+) -> Result<String, CommandError> {
     let session = state.session.clone();
     let renderer = state.renderer.clone();
     tauri::async_runtime::spawn_blocking(move || {
-        let (source, assets, settings, dependencies) = session
-            .lock()
-            .map_err(|e| e.to_string())?
-            .render_snapshot(&snapshot)?;
+        let (source, assets, settings, dependencies) =
+            session.lock()?.render_snapshot(&snapshot)?;
         renderer.render(
             source,
             assets,
@@ -347,23 +366,22 @@ async fn save(
             }),
             None,
         )?;
-        let session = session.lock().map_err(|e| e.to_string())?;
+        let session = session.lock()?;
         let path = session.save(&snapshot, update)?;
         Ok(path.display().to_string())
     })
-    .await
-    .map_err(|e| e.to_string())?
+    .await?
 }
 #[tauri::command]
 async fn export_document(
     state: State<'_, Bridge>,
     snapshot: Snapshot,
     destination: Option<PathBuf>,
-) -> Result<String, String> {
+) -> Result<String, CommandError> {
     static NEXT: AtomicU64 = AtomicU64::new(1);
     let renderer = state.renderer.clone();
     let (source, assets, root, settings, dependencies) = {
-        let session = state.session.lock().map_err(|e| e.to_string())?;
+        let session = state.session()?;
         (
             session.validate(&snapshot)?,
             session.assets.clone(),
@@ -376,8 +394,7 @@ async fn export_document(
         )
     };
     let stamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_err(|e| e.to_string())?
+        .duration_since(std::time::UNIX_EPOCH)?
         .as_millis();
     let path = destination
         .unwrap_or_else(|| root.join("exports"))
@@ -403,30 +420,29 @@ async fn export_document(
         )?;
         Ok(path.display().to_string())
     })
-    .await
-    .map_err(|e| e.to_string())?
+    .await?
 }
 #[tauri::command(async)]
 fn prepare_image(
     extension: String,
     data: String,
-) -> Result<typstographe_core::content::commands::ImageResource, String> {
+) -> Result<typstographe_core::content::commands::ImageResource, CommandError> {
     use typstographe_core::{assets::MAX_IMAGE_BYTES, content::contract::Error};
     if data.len() > MAX_IMAGE_BYTES.div_ceil(3) * 4 {
-        return Err(crate::owner::error(Error::StateLimitExceeded));
+        return Err(CommandError::from(Error::StateLimitExceeded));
     }
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(data)
         .map_err(|_| {
-            crate::owner::error(Error::InvalidParameters {
+            CommandError::from(Error::InvalidParameters {
                 parameter: "data".into(),
             })
         })?;
     typstographe_core::content::commands::ImageResource::prepare(&extension, bytes)
-        .map_err(crate::owner::error)
+        .map_err(CommandError::from)
 }
 #[tauri::command]
-fn open_peer(app: tauri::AppHandle) -> Result<(), String> {
+fn open_peer(app: tauri::AppHandle) -> Result<(), CommandError> {
     static NEXT: AtomicU64 = AtomicU64::new(1);
     let id = NEXT.fetch_add(1, Ordering::Relaxed);
     tauri::WebviewWindowBuilder::new(
@@ -437,8 +453,7 @@ fn open_peer(app: tauri::AppHandle) -> Result<(), String> {
     .title(format!("typstOgraphe — participant {}", id + 1))
     .inner_size(1280.0, 900.0)
     .min_inner_size(800.0, 600.0)
-    .build()
-    .map_err(|e| e.to_string())?;
+    .build()?;
     Ok(())
 }
 fn main() {
@@ -514,10 +529,7 @@ fn main() {
         .setup(move |app| {
             if global_session {
                 let root = app.path().app_local_data_dir()?.join("recovery");
-                *app.state::<Bridge>()
-                    .session
-                    .lock()
-                    .map_err(|e| e.to_string())? = {
+                *app.state::<Bridge>().session()? = {
                     let mut session = Session::managed(root)?;
                     session.initial_path = initial_path;
                     session

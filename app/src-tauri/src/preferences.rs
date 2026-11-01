@@ -1,3 +1,4 @@
+use crate::error::CommandError;
 use crate::session::Resource;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -39,21 +40,20 @@ impl Default for Preferences {
     }
 }
 impl Preferences {
-    pub fn load(root: &Path) -> Result<Self, String> {
+    pub fn load(root: &Path) -> Result<Self, CommandError> {
         let path = root.join("preferences.json");
         if !path.exists() {
             return Ok(Self::default());
         }
-        let metadata = std::fs::metadata(&path).map_err(|e| e.to_string())?;
+        let metadata = std::fs::metadata(&path)?;
         if metadata.len() > 16 * 1024 * 1024 {
             return Err("Préférences trop volumineuses.".into());
         }
-        let result: Self = serde_json::from_slice(&std::fs::read(path).map_err(|e| e.to_string())?)
-            .map_err(|e| e.to_string())?;
+        let result: Self = serde_json::from_slice(&std::fs::read(path)?)?;
         result.validate()?;
         Ok(result)
     }
-    fn validate(&self) -> Result<(), String> {
+    fn validate(&self) -> Result<(), CommandError> {
         if !["system", "light", "dark"].contains(&self.appearance.as_str())
             || !["serif", "sans", "mono"].contains(&self.font.as_str())
             || !self.size.is_finite()
@@ -78,9 +78,9 @@ impl Preferences {
         self.recent.insert(0, path);
         self.recent.truncate(12);
     }
-    pub fn save(&self, root: &Path) -> Result<(), String> {
+    pub fn save(&self, root: &Path) -> Result<(), CommandError> {
         self.validate()?;
-        std::fs::create_dir_all(root).map_err(|e| e.to_string())?;
+        std::fs::create_dir_all(root)?;
         let options = atomic_write_file::AtomicWriteFile::options();
         #[cfg(unix)]
         let options = {
@@ -89,40 +89,35 @@ impl Preferences {
             options.mode(0o600);
             options
         };
-        let mut file = options
-            .open(root.join("preferences.json"))
-            .map_err(|e| e.to_string())?;
-        file.write_all(&serde_json::to_vec_pretty(self).map_err(|e| e.to_string())?)
-            .map_err(|e| e.to_string())?;
-        file.commit().map_err(|e| e.to_string())
+        let mut file = options.open(root.join("preferences.json"))?;
+        file.write_all(&serde_json::to_vec_pretty(self)?)?;
+        file.commit().map_err(CommandError::from)
     }
 }
-pub fn root(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+pub fn root(app: &tauri::AppHandle) -> Result<PathBuf, CommandError> {
     #[cfg(feature = "recipe-driver")]
     let state = app.state::<crate::Bridge>();
     #[cfg(feature = "recipe-driver")]
     if state.diagnostic.is_some() {
-        return Ok(state
-            .session
-            .lock()
-            .map_err(|e| e.to_string())?
-            .root
-            .join("preferences"));
+        return Ok(state.session()?.root.join("preferences"));
     }
-    app.path().app_config_dir().map_err(|e| e.to_string())
+    app.path().app_config_dir().map_err(CommandError::from)
 }
-pub fn remember(app: &tauri::AppHandle, path: &Path) -> Result<(), String> {
+pub fn remember(app: &tauri::AppHandle, path: &Path) -> Result<(), CommandError> {
     let root = root(app)?;
     let mut preferences = Preferences::load(&root)?;
     preferences.remember_project(path);
     preferences.save(&root)
 }
 #[tauri::command]
-pub fn preferences_load(app: tauri::AppHandle) -> Result<Preferences, String> {
+pub fn preferences_load(app: tauri::AppHandle) -> Result<Preferences, CommandError> {
     Preferences::load(&root(&app)?)
 }
 #[tauri::command]
-pub fn preferences_save(app: tauri::AppHandle, preferences: Preferences) -> Result<(), String> {
+pub fn preferences_save(
+    app: tauri::AppHandle,
+    preferences: Preferences,
+) -> Result<(), CommandError> {
     preferences.save(&root(&app)?)
 }
 
