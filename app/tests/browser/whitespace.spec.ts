@@ -6,7 +6,7 @@ test.beforeEach(async ({ page, request }) => {
   await page.waitForFunction(() => window.__spike?.ready)
 })
 
-test('les flèches franchissent la marque de paragraphe avec et sans sélection', async ({
+test('les flèches s’arrêtent sur la séparation et la sélection traverse sa frontière', async ({
   page,
 }) => {
   const positions = await page.evaluate(() => {
@@ -26,7 +26,12 @@ test('les flèches franchissent la marque de paragraphe avec et sans sélection'
   await page.keyboard.press('Shift+ArrowLeft')
   await expect.poll(selection).toEqual({ anchor: positions.end, head: positions.end })
   await page.keyboard.press('ArrowRight')
+  await expect.poll(selection).toEqual({ anchor: 7, head: 7 })
+  await expect(page.locator('.paragraph-marker[data-active]')).toHaveCount(1)
+  await page.keyboard.press('ArrowRight')
   await expect.poll(selection).toEqual({ anchor: positions.start, head: positions.start })
+  await page.keyboard.press('ArrowLeft')
+  await expect.poll(selection).toEqual({ anchor: 7, head: 7 })
   await page.keyboard.press('ArrowLeft')
   await expect.poll(selection).toEqual({ anchor: positions.end, head: positions.end })
   await expect(page.locator('.tiptap > p')).toHaveText(['Avant', 'Après', ''])

@@ -22,9 +22,16 @@ for (const key of ['Backspace', 'Delete']) {
     await peer.goto('/?client=join-peer')
     await peer.waitForFunction(() => window.__spike?.ready)
     await body.focus()
-    const original = key === 'Backspace' ? 10 : 8
+    const original = key === 'Backspace' ? 9 : 8
     const seam = key === 'Backspace' ? 9 : 8
-    await page.evaluate((pos) => window.__spike!.editor.commands.setTextSelection(pos), original)
+    await page.evaluate(
+      (pos) => window.__spike!.editor.commands.setTextSelection(pos),
+      key === 'Backspace' ? 10 : original,
+    )
+    if (key === 'Backspace') {
+      await page.keyboard.press(key)
+      await expect(body.locator('.paragraph-marker[data-active]')).toHaveCount(1)
+    }
     await page.keyboard.press(key)
     await expect
       .poll(() => page.evaluate(() => window.__spike!.editor.state.doc.textContent))
@@ -91,6 +98,8 @@ test('la même fusion et son historique restent dans le résumé riche actif', a
     ).editor.commands.setTextSelection(8),
   )
   await abstract.press('Backspace')
+  await expect(abstract.locator('.paragraph-marker[data-active]')).toHaveCount(1)
+  await abstract.press('Backspace')
   await expect(abstract.locator('p')).toHaveCount(1)
   await expect(abstract).toHaveText('AvantAprès')
   await expect(abstract.locator('br[data-soft-break]')).toHaveCount(1)
@@ -99,12 +108,13 @@ test('la même fusion et son historique restent dans le résumé riche actif', a
   await expect(abstract).toBeFocused()
   await expect
     .poll(() =>
-      page.evaluate(() => {
-        const s = document.getSelection()
-        return { text: s?.focusNode?.textContent, offset: s?.focusOffset }
-      }),
+      abstract.evaluate((node) =>
+        (
+          node as HTMLElement & { editor: import('@tiptap/core').Editor }
+        ).editor.state.selection.toJSON(),
+      ),
     )
-    .toEqual({ text: 'Après', offset: 0 })
+    .toEqual({ type: 'paragraphBoundary', pos: 7 })
   await abstract.press('ControlOrMeta+Shift+z')
   await expect(abstract.locator('p')).toHaveCount(1)
   await expect(abstract).toHaveText('AvantAprès')
