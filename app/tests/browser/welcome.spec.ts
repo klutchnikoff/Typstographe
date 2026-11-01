@@ -8,17 +8,17 @@ test.beforeEach(async ({ request }) => {
   expect((await response.json()).error).toBeUndefined()
 })
 
-test('accueil centré, trois actions immédiates et animation non rejouée au retour', async ({
+test('accueil centré, ouverture sans fenêtre de progression et animation non rejouée au retour', async ({
   page,
-}, testInfo) => {
+}) => {
   await page.goto('/?client=main&welcome=1')
   await page.waitForFunction(() => window.__spike?.ready)
   const welcome = page.locator('.welcome')
   const brand = welcome.getByRole('img', { name: 'typstOgraphe', exact: true })
   const buttons = welcome.getByRole('button')
-  await expect(buttons).toHaveCount(3)
+  await expect(buttons).toHaveCount(2)
   await expect(welcome).not.toContainText('Le contenu d’abord.')
-  await expect(page.locator('#resume-document')).toBeVisible()
+  await expect(page.locator('#resume-document')).toBeHidden()
   const bounds = await buttons.evaluateAll((elements) =>
     elements.map((element) => {
       const { x, y, width, height } = element.getBoundingClientRect()
@@ -34,11 +34,35 @@ test('accueil centré, trois actions immédiates et animation non rejouée au re
   // The new-document dialog is usable while the signature is still being drawn.
   await page.locator('#create-document').click()
   await expect(page.locator('dialog')).toBeVisible()
-  await confirmNewDocument(page)
+  let continueOpening!: () => void
+  const pause = new Promise<void>((resolve) => (continueOpening = resolve))
+  await page.route('**/__spike/invoke', async (route) => {
+    if (route.request().postDataJSON().command === 'transition_status') await pause
+    await route.continue()
+  })
+  const creation = confirmNewDocument(page)
+  try {
+    const progress = welcome.locator('.welcome-progress')
+    await expect(progress).toBeVisible()
+    await expect(progress.getByRole('status', { name: 'Chargement…' })).toBeVisible()
+    await expect(page.locator('dialog[open]')).toHaveCount(0)
+    await expect(page.locator('.welcome-actions')).toHaveJSProperty('inert', true)
+    const progressBounds = await progress.boundingBox()
+    expect(progressBounds!.y).toBeGreaterThan(bounds.at(-1)!.y + bounds.at(-1)!.height)
+    await expect(progress).toBeInViewport()
+    expect(await progress.evaluate((element) => element.contains(document.activeElement))).toBe(
+      false,
+    )
+  } finally {
+    continueOpening()
+  }
+  await creation
   await expect(welcome).toBeHidden()
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.close"]').click()
   await expect(welcome).toBeVisible()
+  await expect(welcome.locator('.welcome-progress')).toHaveCount(0)
+  await expect(page.locator('.welcome-actions')).toHaveJSProperty('inert', false)
   await expect(brand).toHaveAttribute('data-state', 'settled')
   expect(
     await brand.evaluate((element) =>
@@ -59,10 +83,10 @@ test('accueil sans mouvement et actions accessibles à la taille minimale', asyn
   const brand = page.locator('.welcome-brand')
   await expect(brand).toHaveAttribute('data-state', 'settled')
   expect(await brand.evaluate((element) => element.getAnimations({ subtree: true }).length)).toBe(0)
-  const buttons = page.locator('.welcome-actions button')
-  await expect(buttons).toHaveCount(3)
+  const buttons = page.locator('.welcome-actions').getByRole('button')
+  await expect(buttons).toHaveCount(2)
   for (const button of await buttons.all()) await expect(button).toBeInViewport()
-  await expect(page.locator('#resume-document')).toBeDisabled()
+  await expect(page.locator('#resume-document')).toBeHidden()
   await expect(page.locator('#create-document')).toBeEnabled()
   await expect(page.locator('#open-document')).toBeEnabled()
 })
