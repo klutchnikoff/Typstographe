@@ -26,6 +26,9 @@ export function railButton(label: string, glyph: string, section?: string) {
   return button
 }
 
+// Same breakpoint as style.css: 720 px for writing and preview beside a 320 px rail.
+const NARROW_WINDOW = '(max-width: 1040px)'
+
 /** One live content host, docked below its heading or floating over the preview. */
 export function sideRailMode(
   side: HTMLElement,
@@ -65,6 +68,9 @@ export function sideRailMode(
     return { min: Math.min(240, max), max }
   }
   const actualWidth = () => Math.max(bounds().min, Math.min(bounds().max, width))
+  // The labelled rail yields to the document in narrow windows; the preference is kept.
+  const narrowWindow = matchMedia(NARROW_WINDOW)
+  const docked = () => expanded && !narrowWindow.matches
   const retainPanel = () => {
     const focused = document.activeElement as HTMLElement
     const selection =
@@ -112,11 +118,12 @@ export function sideRailMode(
       ':scope > button[data-side-section]',
     ))
       item.setAttribute('aria-expanded', String(item === button && !panel.hidden))
-    panel.dataset.docked = String(expanded)
+    const dock = docked()
+    panel.dataset.docked = String(dock)
     panel.dataset.linked = String(!!button)
-    panel.setAttribute('aria-labelledby', expanded && button ? button.id : 'side-title')
-    const parent = expanded ? side : workspace
-    const next = expanded ? button?.nextSibling || control : null
+    panel.setAttribute('aria-labelledby', dock && button ? button.id : 'side-title')
+    const parent = dock ? side : workspace
+    const next = dock ? button?.nextSibling || control : null
     if (panel.parentElement === parent && (next === panel || panel.nextSibling === next)) return
     const before = next?.parentNode === parent ? next : null
     if (typeof parent.moveBefore === 'function' && panel.isConnected && parent.isConnected)
@@ -125,13 +132,18 @@ export function sideRailMode(
   }
 
   const layout = () => {
-    side.dataset.expanded = String(expanded)
-    workspace.style.setProperty('--side-rail-width', `${expanded ? actualWidth() : 36}px`)
-    divider.hidden = !expanded
+    const dock = docked()
+    side.dataset.expanded = String(dock)
+    // style.css derives the rail width from these, so window resizes apply before any callback.
+    workspace.dataset.rail = expanded ? 'labelled' : 'compact'
+    workspace.style.setProperty('--side-rail-preferred', `${width}px`)
+    divider.hidden = !dock
+    // Labels cannot be shown until the window widens again.
+    control.hidden = expanded && !dock
     divider.setAttribute('aria-valuemin', String(Math.round(bounds().min)))
     divider.setAttribute('aria-valuemax', String(Math.round(bounds().max)))
     divider.setAttribute('aria-valuenow', String(Math.round(actualWidth())))
-    panel.style.maxWidth = expanded
+    panel.style.maxWidth = dock
       ? ''
       : `${workspace.querySelector<HTMLElement>('.preview')?.clientWidth || workspace.clientWidth}px`
     place()
@@ -182,6 +194,12 @@ export function sideRailMode(
     cancelAnimationFrame(frame)
     frame = requestAnimationFrame(layout)
   })
+  // CSS narrows the rail at once; follow it here, keeping the moved panel's focus and scroll.
+  narrowWindow.addEventListener('change', () => {
+    const restore = retainPanel()
+    layout()
+    restore()
+  })
   observer.observe(workspace)
   const preview = workspace.querySelector('.preview')
   if (preview) observer.observe(preview)
@@ -201,7 +219,7 @@ export function sideRailMode(
       )
         panel.animate(
           [
-            { opacity: 0.6, clipPath: expanded ? 'inset(0 0 100% 0)' : 'inset(0 0 0 100%)' },
+            { opacity: 0.6, clipPath: docked() ? 'inset(0 0 100% 0)' : 'inset(0 0 0 100%)' },
             { opacity: 1, clipPath: 'inset(0)' },
           ],
           { duration: 140, easing: 'ease-out' },
