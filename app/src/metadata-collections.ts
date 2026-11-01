@@ -17,6 +17,8 @@ import { tr } from './i18n'
 import { metadataCommands } from './metadata-commands'
 import { bindMetadataInput } from './metadata-input'
 import { moveRecordCommands, removeRecordCommands } from './metadata-record-commands'
+import { recordCard } from './record-card'
+import { sortableCards } from './sortable-cards'
 import {
   prepareRecordEdit,
   setRecordField,
@@ -61,8 +63,10 @@ export function metadataCollections(
     RecordCollection,
     {
       root: HTMLElement
+      list: HTMLElement
       views: Map<string, View>
       add: HTMLButtonElement
+      sorting?: ReturnType<typeof sortableCards>
       draft?: {
         element: HTMLElement
         floating: boolean
@@ -304,18 +308,22 @@ export function metadataCollections(
     }
   }
   function recordView(definition: RecordCollection, record: SharedRecord, id: string): View {
-    const element = document.createElement('details')
-    element.className = 'metadata-record'
+    const card = panel.editing === 'dialog' ? recordCard(id, definition.itemLabel) : undefined
+    const element = card?.element || document.createElement('details')
+    element.classList.add('metadata-record')
     element.dataset.recordId = id
-    const summary = document.createElement('summary')
-    const caption = document.createElement('span')
+    const open = (value: boolean) => {
+      if (element instanceof HTMLDetailsElement) element.open = value
+    }
+    const summary = card?.open || document.createElement('summary')
+    const caption = card?.caption || document.createElement('span')
     caption.className = 'metadata-record-caption'
     const label = document.createElement('span')
     label.className = 'metadata-record-label'
-    const detail = document.createElement('small')
+    const detail = card?.detail || document.createElement('small')
     detail.className = 'metadata-record-detail'
-    label.append(caption, detail)
-    const actions = actionRow()
+    if (!card) label.append(caption, detail)
+    const actions = card?.actions || actionRow()
     const fieldsRoot = document.createElement('div')
     fieldsRoot.className = 'metadata-record-fields'
     let removing = false
@@ -384,10 +392,11 @@ export function metadataCollections(
     })
     deletion.append(confirm.element)
     const remove = button(`${tr('Supprimer')} · ${definition.itemLabel}`, 'trash-2', () => {
+      collections.get(definition)!.sorting?.cancel()
       confirm.error.textContent = ''
       check.checked = false
       detach.hidden = true
-      element.open = true
+      open(true)
       confirm.element.hidden = false
       confirm.trackRecovery(provider, {
         kind: 'record-deletion',
@@ -396,57 +405,65 @@ export function metadataCollections(
       })
       confirm.focus()
     })
-    const up = button(
-      `${tr('Monter')} · ${definition.itemLabel}`,
-      'chevron-up',
-      () =>
-        void commands
-          .run(moveRecordCommands(provider, definition, id, -1), () => root.isConnected)
-          .catch(provider.onError),
-    )
-    const down = button(
-      `${tr('Descendre')} · ${definition.itemLabel}`,
-      'chevron-down',
-      () =>
-        void commands
-          .run(moveRecordCommands(provider, definition, id, 1), () => root.isConnected)
-          .catch(provider.onError),
-    )
-    const edit = button(`${tr('Modifier')} · ${definition.itemLabel}`, 'settings-2', () => {
+    const up = !card
+      ? button(
+          `${tr('Monter')} · ${definition.itemLabel}`,
+          'chevron-up',
+          () =>
+            void commands
+              .run(moveRecordCommands(provider, definition, id, -1), () => root.isConnected)
+              .catch(provider.onError),
+        )
+      : undefined
+    const down = !card
+      ? button(
+          `${tr('Descendre')} · ${definition.itemLabel}`,
+          'chevron-down',
+          () =>
+            void commands
+              .run(moveRecordCommands(provider, definition, id, 1), () => root.isConnected)
+              .catch(provider.onError),
+        )
+      : undefined
+    const editRecord = () => {
       if (panel.editing === 'dialog') {
         confirm.element.hidden = true
-        element.open = false
-        startDraft(definition, undefined, id, edit)
+        open(false)
+        startDraft(definition, undefined, id, summary)
         return
       }
-      element.open = !element.open
-      if (element.open)
+      const details = element as HTMLDetailsElement
+      details.open = !details.open
+      if (details.open)
         fieldsRoot
           .querySelector<HTMLElement>('input, textarea, select, [contenteditable=true]')
           ?.focus()
-    })
-    const add = addButton(definition, id)
-    actions.append(remove, up, down, edit, add)
-    summary.append(label, actions)
+    }
+    if (card) actions.append(remove)
+    else {
+      const edit = button(`${tr('Modifier')} · ${definition.itemLabel}`, 'settings-2', editRecord)
+      actions.append(remove, up!, down!, edit, addButton(definition, id))
+      summary.append(label, actions)
+    }
     if (panel.editing === 'dialog') {
       summary.setAttribute('aria-haspopup', 'dialog')
       summary.onclick = (event) => {
         event.preventDefault()
         confirm.element.hidden = true
-        element.open = false
+        open(false)
         startDraft(definition, undefined, id, summary)
       }
     }
-    element.append(summary, deletion, fieldsRoot)
-    collections.get(definition)!.root.append(element)
+    if (card) element.append(deletion)
+    else element.append(summary, deletion, fieldsRoot)
+    collections.get(definition)!.list.append(element)
     let views: ReturnType<typeof fieldView>[] = [],
       mode = ''
     const render = () => {
       const isPrimary =
         !!definition.language_key && record.get(definition.language_key) === language()
       const nextMode = isPrimary ? 'primary' : 'other'
-      if (mode && mode !== nextMode && !element.contains(document.activeElement))
-        element.open = isPrimary
+      if (mode && mode !== nextMode && !element.contains(document.activeElement)) open(isPrimary)
       if (panel.editing !== 'dialog' && mode !== nextMode) {
         for (const view of views) view.destroy()
         fieldsRoot.replaceChildren()
@@ -460,6 +477,16 @@ export function metadataCollections(
         ? catalogue.languages.find((item) => item.value === value)?.label || definition.itemLabel
         : String(value || definition.itemLabel)
       caption.title = caption.textContent
+      if (card) {
+        card.open.setAttribute(
+          'aria-label',
+          `${tr('Modifier')} · ${definition.itemLabel} · ${caption.textContent}`,
+        )
+        card.handle.setAttribute(
+          'aria-label',
+          tr('Réordonner · {name}', { name: caption.textContent }),
+        )
+      }
       detail.textContent = (definition.summary || [])
         .map((key) => {
           const field = definition.fields.find((item) => item.key === key)
@@ -471,13 +498,14 @@ export function metadataCollections(
       detail.hidden = !detail.textContent
       const ids = recordIds(provider, definition),
         index = ids.indexOf(id)
-      up.disabled = index === 0
-      down.disabled = index === ids.length - 1
+      if (up) up.disabled = index === 0
+      if (down) down.disabled = index === ids.length - 1
       remove.disabled = isPrimary
-      add.disabled = cannotAdd(definition)
+      const add = element.querySelector<HTMLButtonElement>('[data-record-add]')
+      if (add) add.disabled = cannotAdd(definition)
       for (const view of views) view.refresh()
     }
-    element.open = !!definition.language_key && record.get(definition.language_key) === language()
+    open(!!definition.language_key && record.get(definition.language_key) === language())
     render()
     return {
       record,
@@ -526,6 +554,7 @@ export function metadataCollections(
     resumed?: RecoveredItem,
   ) {
     const state = collections.get(definition)!
+    state.sorting?.cancel()
     if (state.draft) {
       state.draft.focus()
       return
@@ -601,7 +630,7 @@ export function metadataCollections(
     form.element.hidden = false
     form.element.dataset.after = after || ''
     form.body.classList.add('metadata-record-fields')
-    if (!modal) state.root.append(form.element)
+    if (!modal) state.list.append(form.element)
     views = fields(definition).map((field) =>
       fieldView(form.body, definition, draft.record, field, draft, owner || main),
     )
@@ -701,26 +730,50 @@ export function metadataCollections(
       layout: 'editorial',
     })
     section.root.classList.add('metadata-record-section')
+    const cards = panel.editing === 'dialog'
+    section.root.classList.toggle('metadata-card-section', cards)
     // The tab supplies the section name; do not repeat it inside the panel.
     section.root.querySelector('legend')?.classList.add('sr-only')
     const add = addButton(definition)
     const actions = actionRow()
     actions.classList.add('metadata-record-empty-actions')
     actions.append(add)
-    section.content.append(actions)
+    const list = document.createElement('div')
+    list.className = cards ? 'collection-card-list' : 'metadata-record-list'
+    section.content.append(list, actions)
     root.append(section.root)
-    collections.set(definition, { root: section.content, views: new Map(), add })
+    const sorting = cards
+      ? sortableCards(list, {
+          order: () => recordIds(provider, definition),
+          move: (id, before, base) =>
+            commands.run(
+              [
+                {
+                  id: 'record.move',
+                  params: { collection: definition.parameter, id, ...(before ? { before } : {}) },
+                },
+              ],
+              () =>
+                root.isConnected &&
+                stableJSON(recordIds(provider, definition)) === stableJSON(base),
+            ),
+          error: provider.onError,
+        })
+      : undefined
+    collections.set(definition, { root: section.content, list, views: new Map(), add, sorting })
   }
   function refresh() {
     for (const [definition, state] of collections) {
       const ids = recordIds(provider, definition)
+      state.sorting?.refresh()
       for (const [id, view] of state.views)
         if (!ids.includes(id)) {
           view.destroy()
           state.views.delete(id)
         }
-      let previous: ChildNode = state.add.parentElement!
-      ;(previous as HTMLElement).hidden = ids.length > 0 || !!state.draft
+      let previous: ChildNode | null = null
+      state.add.parentElement!.hidden =
+        panel.editing !== 'dialog' && (ids.length > 0 || !!state.draft)
       const focused = document.activeElement as HTMLElement | null
       for (const id of ids) {
         let view = state.views.get(id)
@@ -734,12 +787,13 @@ export function metadataCollections(
           state.views.set(id, view)
         }
         view.refresh()
-        if (previous.nextSibling !== view.element)
-          state.root.insertBefore(view.element, previous.nextSibling)
+        const next: ChildNode | null = previous ? previous.nextSibling : state.list.firstChild
+        if (!state.sorting?.active() && next !== view.element)
+          state.list.insertBefore(view.element, next)
         previous = view.element
         if (state.draft && !state.draft.floating && id === state.draft.element.dataset.after) {
           if (previous.nextSibling !== state.draft.element)
-            state.root.insertBefore(state.draft.element, previous.nextSibling)
+            state.list.insertBefore(state.draft.element, previous.nextSibling)
           previous = state.draft.element
         }
       }
@@ -749,12 +803,13 @@ export function metadataCollections(
         if (
           !state.draft.floating &&
           !ids.includes(state.draft.element.dataset.after || '') &&
-          state.root.lastChild !== state.draft.element
+          state.list.lastChild !== state.draft.element
         )
-          state.root.append(state.draft.element)
+          state.list.append(state.draft.element)
         state.draft.refresh()
       }
       state.add.disabled = cannotAdd(definition)
+      state.sorting?.refresh()
     }
   }
   refresh()
@@ -781,6 +836,7 @@ export function metadataCollections(
     refresh,
     destroy() {
       for (const state of collections.values()) {
+        state.sorting?.destroy()
         state.draft?.destroy()
         for (const view of state.views.values()) view.destroy()
       }

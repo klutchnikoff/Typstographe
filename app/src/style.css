@@ -1525,6 +1525,75 @@ li:has(.interline-band-gap[data-marker])::marker {
 .metadata-record-section .metadata-section-fields {
   display: block;
 }
+.metadata-card-section {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.collection-card-list {
+  display: grid;
+  gap: 8px;
+}
+.collection-card.metadata-record {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  margin: 0;
+}
+.collection-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+}
+.collection-card-heading button {
+  padding: 6px;
+  background: transparent;
+  border: 0;
+  min-width: 0;
+}
+.collection-card-heading button svg {
+  width: 16px;
+  height: 16px;
+}
+.collection-card-open {
+  flex: 1;
+  text-align: left;
+}
+.collection-card-open .metadata-record-caption,
+.collection-card-open .metadata-record-detail {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.collection-card-heading .panel-actions {
+  margin: 0;
+  flex: 0 0 auto;
+}
+.collection-card-handle {
+  cursor: grab;
+  touch-action: none;
+  color: var(--muted);
+}
+.collection-card-heading .collection-card-handle[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--soft);
+}
+.collection-card-ghost {
+  opacity: 0.4;
+}
+.collection-card-chosen {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.collection-sorting .collection-card-handle {
+  cursor: grabbing;
+}
+.collection-card .metadata-record-deletion {
+  padding: 0 6px;
+}
+.metadata-card-section .metadata-record-empty-actions {
+  margin-top: 8px;
+}
 .metadata-record {
   border-top: 1px solid var(--border);
   min-width: 0;
