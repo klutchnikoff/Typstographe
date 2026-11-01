@@ -48,8 +48,8 @@ Les générateurs `contextPanel`, `widgetFrame` et les barres d’action install
 ces contrats. Un nouveau widget ou bandeau qui utilise ces générateurs en hérite.
 `sortableCards` installe la famille de réorganisation pour les collections ;
 `recordCard` fournit la poignée, la surface d’édition et les actions communes.
-Les auteurs, affiliations et résumés par langue utilisent ces mêmes générateurs,
-avec ouverture de leur brouillon dans `formDialog`. Les zones riches de la modale
+Les titres et résumés par langue, auteurs et affiliations utilisent ces mêmes
+générateurs, avec ouverture de leur brouillon dans `formDialog`. Les zones riches de la modale
 héritent des profils communs et de l’historique privé du formulaire ; les bandeaux
 de liens sont hébergés dans la modale. Ctrl/Cmd + Entrée valide le formulaire
 sauf si une action contextuelle interne est prioritaire. Le bouton « + » suit la

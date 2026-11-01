@@ -89,7 +89,7 @@ titre court par langue), Résumés (résumé et mots-clés par langue), Affiliat
 Auteurs, Bibliographie. Les zones riches utilisent les
 profils communs de l’éditeur ; un résumé n’est pas sérialisé comme une citation.
 Le descripteur du type définit la répartition des collections et de leurs champs
-entre onglets, sans dupliquer les données. Les auteurs, affiliations et résumés
+entre onglets, sans dupliquer les données. Titres, résumés, auteurs et affiliations
 utilisent des cartes communes avec un + centré sous la collection ; leur édition
 ouvre une modale réutilisable. Les ajouts et modifications en modale restent
 provisoires jusqu’à validation ; Échap les abandonne sans toucher au document.

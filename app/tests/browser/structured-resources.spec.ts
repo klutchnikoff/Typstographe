@@ -1,3 +1,4 @@
+import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { confirmNewDocument } from './document-lifecycle'
 import { expect, test, type Page } from '@playwright/test'
 
@@ -207,7 +208,9 @@ test('changer de modèle garde les fragments Article et entre dans l’historiqu
     setup.generation,
   )
   await page.locator('#metadata-tab-titles').click()
+  await openRecordCard(page)
   await page.getByRole('textbox', { name: 'Titre', exact: true }).fill('Un titre conservé')
+  await confirmRecordDialog(page)
   await flush(page)
   await page.evaluate(async () => {
     const { provider } = window.__spike!
@@ -252,6 +255,7 @@ test('changer de modèle garde les fragments Article et entre dans l’historiqu
     }),
   ).toBe(true)
   await page.locator('#metadata-tab-titles').click()
+  await openRecordCard(page)
   await expect(page.getByRole('textbox', { name: 'Titre', exact: true })).toHaveText(
     'Un titre conservé',
   )

@@ -1,9 +1,11 @@
+import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { expect, test, type Page } from '@playwright/test'
 import { confirmNewDocument } from './document-lifecycle'
 
 const modal = (page: Page) => page.locator('dialog.rich-record-dialog')
 const abstract = (page: Page) => modal(page).getByRole('textbox', { name: 'Résumé', exact: true })
 const keywords = (page: Page) => modal(page).getByLabel('Mots-clés', { exact: true })
+const fieldTitle = (page: Page) => modal(page).getByRole('textbox', { name: 'Titre', exact: true })
 const cards = (page: Page) => page.locator('[data-section=localizations] [data-record-open]')
 const values = (page: Page) =>
   page.evaluate(() =>
@@ -16,7 +18,9 @@ async function create(page: Page) {
   await page.locator('dialog select').first().selectOption('article')
   await confirmNewDocument(page)
   await page.locator('#metadata-tab-titles').click()
+  await openRecordCard(page)
   await page.getByRole('textbox', { name: 'Titre', exact: true }).fill('Un titre conservé')
+  await confirmRecordDialog(page)
   await page.locator('#metadata-tab-abstracts').click()
 }
 async function confirm(page: Page) {
@@ -86,6 +90,7 @@ test('cartes de langue : focus riche, annulation privée et validation atomique 
   }
   await page.keyboard.press('Escape')
   await page.locator('#metadata-tab-titles').click()
+  await openRecordCard(page)
   await expect(page.getByRole('textbox', { name: 'Titre', exact: true })).toHaveText(
     'Un titre conservé',
   )
@@ -103,9 +108,10 @@ test('ajouter un résumé partage la langue avec les titres et la suppression an
   await confirm(page)
   await expect(cards(page)).toHaveText(['Français', 'Anglais'])
   await page.locator('#metadata-tab-titles').click()
-  const english = page.locator('[data-section=localizations] details').nth(1)
-  await english.locator('summary').click()
+  await openRecordCard(page, 1)
+  const english = page.locator('dialog.form-dialog')
   await english.getByRole('textbox', { name: 'Titre', exact: true }).fill('A shared language entry')
+  await confirmRecordDialog(page)
   await page.locator('#metadata-tab-abstracts').click()
   const before = await values(page)
   const remove = page.getByRole('button', {
@@ -127,39 +133,50 @@ test('ajouter un résumé partage la langue avec les titres et la suppression an
   await expect(keywords(page)).toHaveValue('research\ninstitutions')
 })
 
-test('la reprise d’un résumé privé retrouve sa modale et son onglet sans publication anticipée', async ({
-  page,
-}) => {
-  await create(page)
-  const initial = await values(page)
-  await cards(page).click()
-  await abstract(page).fill('Résumé à reprendre après incident.')
-  await keywords(page).fill('brouillon\nconservation')
-  await page.evaluate(() => window.__spike!.provider.privateRecovery!.force())
-  await page.evaluate(() => window.__spike!.provider.transport.invoke('diagnostic_request_close'))
-  const closing = page.locator('dialog.recovery-close-dialog')
-  await Promise.all([
-    page.waitForEvent('domcontentloaded'),
-    closing.getByRole('button', { name: 'Conserver et fermer', exact: true }).click(),
-  ])
-  await page.waitForFunction(() => window.__spike?.ready)
-  await Promise.all([
-    page.waitForEvent('domcontentloaded'),
-    page
-      .locator('.recovery-work-list')
-      .getByRole('button', { name: 'Reprendre', exact: true })
-      .first()
-      .click(),
-  ])
-  await page.waitForFunction(() => window.__spike?.ready)
-  expect(await values(page)).toEqual(initial)
-  await page.getByRole('button', { name: 'Reprendre la saisie', exact: true }).click()
-  await expect(modal(page)).toBeVisible()
-  await expect(page.locator('#metadata-tab-abstracts')).toHaveAttribute('aria-pressed', 'true')
-  await expect(abstract(page)).toHaveText('Résumé à reprendre après incident.')
-  await expect(keywords(page)).toHaveValue('brouillon\nconservation')
-  expect(await values(page)).toEqual(initial)
-  await confirm(page)
-  expect(JSON.stringify(await values(page))).toContain('Résumé à reprendre après incident.')
-  await expect(page.locator('#side-content')).toContainText('Toutes les saisies ont été traitées.')
-})
+for (const panel of ['abstracts', 'titles'] as const) {
+  test(`la reprise privée retrouve la modale ${panel} sans publication anticipée`, async ({
+    page,
+  }) => {
+    await create(page)
+    if (panel === 'titles') await page.locator('#metadata-tab-titles').click()
+    const text = panel === 'titles' ? fieldTitle(page) : abstract(page)
+    const extra =
+      panel === 'titles'
+        ? page.getByRole('textbox', { name: 'Titre court', exact: true })
+        : keywords(page)
+    const initial = await values(page)
+    await cards(page).click()
+    await text.fill('Texte à reprendre après incident.')
+    await extra.fill('Conservation')
+    await page.evaluate(() => window.__spike!.provider.privateRecovery!.force())
+    await page.evaluate(() => window.__spike!.provider.transport.invoke('diagnostic_request_close'))
+    const closing = page.locator('dialog.recovery-close-dialog')
+    await Promise.all([
+      page.waitForEvent('domcontentloaded'),
+      closing.getByRole('button', { name: 'Conserver et fermer', exact: true }).click(),
+    ])
+    await page.waitForFunction(() => window.__spike?.ready)
+    await Promise.all([
+      page.waitForEvent('domcontentloaded'),
+      page
+        .locator('.recovery-work-list')
+        .getByRole('button', { name: 'Reprendre', exact: true })
+        .first()
+        .click(),
+    ])
+    await page.waitForFunction(() => window.__spike?.ready)
+    expect(await values(page)).toEqual(initial)
+    await page.getByRole('button', { name: 'Reprendre la saisie', exact: true }).click()
+    await expect(modal(page)).toBeVisible()
+    await expect(page.locator(`#metadata-tab-${panel}`)).toHaveAttribute('aria-pressed', 'true')
+    await expect(text).toHaveText('Texte à reprendre après incident.')
+    if (panel === 'titles') await expect(extra).toHaveText('Conservation')
+    else await expect(extra).toHaveValue('Conservation')
+    expect(await values(page)).toEqual(initial)
+    await confirm(page)
+    expect(JSON.stringify(await values(page))).toContain('Texte à reprendre après incident.')
+    await expect(page.locator('#side-content')).toContainText(
+      'Toutes les saisies ont été traitées.',
+    )
+  })
+}

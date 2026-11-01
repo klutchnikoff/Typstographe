@@ -1,3 +1,4 @@
+import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { confirmNewDocument } from './document-lifecycle'
 import { expect, test, type Page } from '@playwright/test'
 const bib =
@@ -25,7 +26,9 @@ async function create(page: Page) {
   await page.locator('dialog select').first().selectOption('article')
   await confirmNewDocument(page)
   await tab(page, 'titles')
+  await openRecordCard(page)
   await page.getByRole('textbox', { name: 'Titre', exact: true }).fill('Article bibliographique')
+  await confirmRecordDialog(page)
   await tab(page, 'bibliography')
   await files(page).setInputFiles(file('livres.bib', bib))
   await expect(page.locator('.bibliography-file-row')).toHaveCount(1)

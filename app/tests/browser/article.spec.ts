@@ -1,3 +1,4 @@
+import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { confirmNewDocument } from './document-lifecycle'
 import { recordSelection } from './selection-diagnostic'
 import { expect, test, type Page } from '@playwright/test'
@@ -64,12 +65,14 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
     console.error(error.stack)
   })
   await create(page)
+  await openRecordCard(page)
   const title = page.getByRole('textbox', { name: 'Titre', exact: true })
   await title.fill('Travail universitaire et institutions')
   await expect(title).toBeFocused()
   await page
     .getByRole('textbox', { name: 'Titre court', exact: true })
     .fill('Travail universitaire')
+  await confirmRecordDialog(page)
   await expect(page.getByRole('textbox', { name: 'Résumé', exact: true })).toHaveCount(0)
   await tab(page, 'affiliations')
   const affiliations = section(page, 'affiliations')
@@ -107,7 +110,7 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
     .fill('enseignement supérieur\norganisation du travail')
   await confirm(page)
   await tab(page, 'titles')
-  await add(page, 'Ensemble linguistique')
+  await add(page, 'Titre')
   await expect(draft(page).getByLabel('Langue', { exact: true })).toHaveValue('en')
   await draft(page)
     .getByRole('textbox', { name: 'Titre', exact: true })
@@ -145,7 +148,9 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   await expect(abstract).toBeFocused()
   await confirm(page)
   await tab(page, 'titles')
+  await openRecordCard(page)
   await expect(title).toHaveText('Travail universitaire et institutions')
+  await confirmRecordDialog(page)
   // Removing a used affiliation is explicit and undo restores its associations.
   await tab(page, 'affiliations')
   await affiliations.getByRole('button', { name: 'Supprimer · Affiliation', exact: true }).click()
@@ -164,7 +169,9 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   await tab(page, 'general')
   await page.getByLabel('Langue du document', { exact: true }).selectOption('en')
   await tab(page, 'titles')
+  await openRecordCard(page, 1)
   await expect(title).toHaveText('Academic work and institutions')
+  await confirmRecordDialog(page)
   // Independent peer changes refresh references without disturbing the active author field.
   const peer = await context.newPage()
   await ready(peer, `article-peer-${Date.now()}`)
@@ -201,7 +208,9 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   errors.length = 0
   await expect(body(page)).toContainText('Le corps de cet article')
   await tab(page, 'titles')
+  await openRecordCard(page, 1)
   await expect(title).toHaveText('Academic work and institutions')
+  await confirmRecordDialog(page)
   await tab(page, 'authors')
   await expect(authors.locator('.collection-card')).toHaveCount(2)
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
@@ -220,12 +229,14 @@ test('les zones riches partagent les raccourcis Typst et la sémantique des reto
   page,
 }, info) => {
   await create(page)
+  await openRecordCard(page)
   const title = page.getByRole('textbox', { name: 'Titre', exact: true })
   await title.fill('Un titre')
   await title.press('End')
   await title.press('Enter')
   await expect(title.locator('p')).toHaveCount(1)
   await expect(title).toHaveText('Un titre')
+  await confirmRecordDialog(page)
   await tab(page, 'abstracts')
   await section(page, 'localizations').locator('[data-record-open]').first().click()
   const abstract = draft(page).getByRole('textbox', {
@@ -253,6 +264,7 @@ test('les zones riches partagent les raccourcis Typst et la sémantique des reto
   await expect(abstract).toContainText('- ')
   await confirm(page)
   await tab(page, 'titles')
+  await openRecordCard(page)
   const diagnostic = process.env.TOG_SELECTION_DIAGNOSTIC
     ? await recordSelection(page, 'Titre')
     : undefined
