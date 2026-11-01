@@ -8,6 +8,7 @@ import type { VersionAPI, VersionCatalogue, VersionRecord } from './version-type
 import type { Catalogue } from './shell'
 import { tr } from './i18n'
 import { icon } from './icons'
+import { errorText } from './command-error'
 
 /** Read-only state viewer. Band decisions are separate from the displayed immutable state. */
 export function versionDialog(options: {
@@ -263,7 +264,7 @@ function stateDialog(options: {
                 value
           },
           error: (reason) => {
-            error.textContent = String(reason)
+            error.textContent = errorText(reason)
           },
         })
         disposeContent?.()
@@ -303,7 +304,7 @@ function stateDialog(options: {
       disposeContent?.()
       disposeContent = undefined
       display.replaceChildren()
-      error.textContent = String(reason)
+      error.textContent = errorText(reason)
     } finally {
       if (alive && request === ticket) {
         display.removeAttribute('aria-busy')
@@ -362,7 +363,7 @@ function stateDialog(options: {
         busy = false
         cancelBand()
       } catch (reason) {
-        form.error.textContent = String(reason)
+        form.error.textContent = errorText(reason)
       } finally {
         busy = false
         controls.forEach((b) => (b.disabled = false))

@@ -8,6 +8,7 @@ import { railButton } from './side-rail'
 import { type Editor, type JSONContent } from '@tiptap/core'
 
 import type { Provider, Transport } from './provider'
+import { errorText } from './command-error'
 interface Proposal {
   id: string
   summary: string
@@ -106,7 +107,7 @@ export function mountAssistance(
           catalogue,
           returnFocus: () => (review.isConnected ? review : button),
         })
-      })().catch((error) => message(String(error), true))
+      })().catch((error) => message(errorText(error), true))
     }
     const actions = actionRow()
     const reject = document.createElement('button')
@@ -115,18 +116,18 @@ export function mountAssistance(
       void transport
         .invoke('agent_reject', { id: p.id })
         .then(show)
-        .catch((error) => message(String(error), true))
+        .catch((error) => message(errorText(error), true))
     }
     reject.hidden = p.status !== 'pending'
     actions.append(reject, review)
     content.append(actions)
   }
   button.onclick = () => {
-    void show().catch((error) => message(String(error), true))
+    void show().catch((error) => message(errorText(error), true))
   }
   void transport.listen('agent:changed', () => {
     button.classList.add('has-proposal')
     if (currentContent?.isConnected && !document.querySelector<HTMLElement>('.side-panel')!.hidden)
-      void show().catch((error) => message(String(error), true))
+      void show().catch((error) => message(errorText(error), true))
   })
 }

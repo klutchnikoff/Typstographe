@@ -5,6 +5,7 @@ import type { Editor, JSONContent } from '@tiptap/core'
 import type { Provider, Transport } from './provider'
 import * as Y from 'yjs'
 import { settingsFor } from './state'
+import { errorText } from './command-error'
 
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 async function until(check: () => boolean | Promise<boolean>, message: string) {
@@ -83,7 +84,7 @@ export async function nativeDiagnostic(
     if (event.step === 'execute' && provider.id !== 'main') {
       void perform(event.payload)
         .then((value) => send('main', 'result', { id: event.payload.id, value }))
-        .catch((error) => send('main', 'result', { id: event.payload.id, error: String(error) }))
+        .catch((error) => send('main', 'result', { id: event.payload.id, error: errorText(error) }))
     }
   })
   if (provider.id !== 'main') {
@@ -219,7 +220,7 @@ export async function nativeDiagnostic(
     await transport.invoke('diagnostic_finish', { report: { success: true, mode, steps } })
   } catch (error) {
     await transport.invoke('diagnostic_finish', {
-      report: { success: false, mode, steps, error: String(error) },
+      report: { success: false, mode, steps, error: errorText(error) },
     })
   }
 }

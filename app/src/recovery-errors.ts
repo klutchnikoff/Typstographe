@@ -1,7 +1,8 @@
 import { tr } from './i18n'
+import { errorText } from './command-error'
 /** Keep recovery failures readable; technical details remain available for diagnosis. */
 export function recoveryError(reason: unknown) {
-  const raw = String(reason)
+  const raw = errorText(reason)
   const messages: Record<string, string> = {
     recovery_invalid_file: 'Cette copie de secours est invalide.',
     recovery_invalid_directory: 'Le dossier de récupération n’est pas disponible.',

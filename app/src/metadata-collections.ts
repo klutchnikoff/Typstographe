@@ -34,6 +34,7 @@ import {
   type RecordField,
 } from './metadata-records'
 import * as Y from 'yjs'
+import { errorText } from './command-error'
 
 type View = { record: SharedRecord; element: HTMLElement; refresh: () => void; destroy: () => void }
 
@@ -391,7 +392,7 @@ export function metadataCollections(
             focusAdd(definition)
           })
           .catch((error: unknown) => {
-            if (confirm.element.isConnected) confirm.error.textContent = String(error)
+            if (confirm.element.isConnected) confirm.error.textContent = errorText(error)
           })
           .finally(() => {
             removing = false
@@ -703,7 +704,7 @@ export function metadataCollections(
           })
           .catch((error: unknown) => {
             if (active())
-              form.error.textContent = error instanceof Error ? error.message : String(error)
+              form.error.textContent = error instanceof Error ? error.message : errorText(error)
           })
           .finally(() => {
             pending = false

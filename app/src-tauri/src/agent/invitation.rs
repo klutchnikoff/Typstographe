@@ -1,5 +1,6 @@
 //! Replace an invitation only after its durable local descriptor is written.
 use super::{AgentState, agent_peer};
+use crate::error::CommandError;
 use crate::session::Session;
 use std::{io::Write, path::Path, sync::Mutex};
 use typstographe_mcp::local::Invitation;
@@ -8,8 +9,8 @@ pub(super) fn install(
     agent: &Mutex<AgentState>,
     root: &Path,
     invitation: &Invitation,
-) -> Result<(), String> {
-    std::fs::create_dir_all(root).map_err(|e| e.to_string())?;
+) -> Result<(), CommandError> {
+    std::fs::create_dir_all(root)?;
     let options = atomic_write_file::AtomicWriteFile::options();
     #[cfg(unix)]
     let options = {
@@ -18,14 +19,11 @@ pub(super) fn install(
         options.mode(0o600);
         options
     };
-    let mut out = options
-        .open(root.join("invitation.json"))
-        .map_err(|e| e.to_string())?;
-    out.write_all(&serde_json::to_vec(invitation).map_err(|e| e.to_string())?)
-        .map_err(|e| e.to_string())?;
-    out.commit().map_err(|e| e.to_string())?;
-    let mut session = session.lock().map_err(|e| e.to_string())?;
-    let mut agent = agent.lock().map_err(|e| e.to_string())?;
+    let mut out = options.open(root.join("invitation.json"))?;
+    out.write_all(&serde_json::to_vec(invitation)?)?;
+    out.commit()?;
+    let mut session = session.lock()?;
+    let mut agent = agent.lock()?;
     if let Some(owner) = &mut session.owner {
         owner.close(&agent_peer(&agent))?;
     }

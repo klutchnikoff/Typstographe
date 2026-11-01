@@ -1,4 +1,5 @@
 //! Version storage is independent of live editing, private forms and preview synchronization.
+use crate::error::CommandError;
 use crate::{Bridge, project, session::Session};
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
@@ -9,18 +10,18 @@ use typstographe_core::{
 };
 use uuid::Uuid;
 
-fn check(s: &Session, peer: &str, guard: &Guard) -> Result<(), String> {
+fn check(s: &Session, peer: &str, guard: &Guard) -> Result<(), CommandError> {
     s.check_peer(peer, &guard.document)?;
-    guard.check(&s.guard()).map_err(crate::owner::error)
+    guard.check(&s.guard()).map_err(CommandError::from)
 }
-pub fn list(s: &mut Session, peer: &str, guard: &Guard) -> Result<Value, String> {
+pub fn list(s: &mut Session, peer: &str, guard: &Guard) -> Result<Value, CommandError> {
     check(s, peer, guard)?;
     if s.project.get().is_none() {
         s.stored_project()?;
     }
     Ok(s.project.get().unwrap().owner.version_catalogue())
 }
-pub fn read(s: &mut Session, peer: &str, guard: &Guard, id: Uuid) -> Result<Value, String> {
+pub fn read(s: &mut Session, peer: &str, guard: &Guard, id: Uuid) -> Result<Value, CommandError> {
     check(s, peer, guard)?;
     if s.project.get().is_none() {
         s.stored_project()?;
@@ -38,7 +39,7 @@ pub fn change(
     guard: &Guard,
     change: VersionChange,
     destination: Option<&Path>,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     check(s, peer, guard)?;
     // Build and validate the complete candidate before touching the file or live owner.
     let candidate = s
@@ -47,20 +48,20 @@ pub fn change(
         .map_err(project::error)?;
     let existing = s.file_lease.as_ref().map(|lease| lease.path());
     if existing.is_some() && destination.is_some() && destination != existing {
-        return Err(typstographe_i18n::text("web-versions-existing-path"));
+        return Err(typstographe_i18n::text("web-versions-existing-path").into());
     }
     let path = existing
         .or(destination)
         .ok_or_else(|| typstographe_i18n::text("web-versions-path-required"))?;
     if path.extension().and_then(|e| e.to_str()) != Some("typsto") {
-        return Err(typstographe_i18n::text("web-versions-extension"));
+        return Err(typstographe_i18n::text("web-versions-extension").into());
     }
     let mut lease = s
         .file_lease
         .clone()
         .map(Ok)
         .unwrap_or_else(|| DocumentLease::acquire(path))
-        .map_err(|e| typstographe_i18n::command_error(&e))?;
+        .map_err(CommandError::localized_protocol)?;
     candidate.save(&mut lease).map_err(project::error)?;
     let path = lease.path().to_path_buf();
     // The durable commit is authoritative, even if removing redundant recovery files fails.
@@ -79,7 +80,7 @@ pub fn selected(
     peer: &str,
     guard: &Guard,
     id: Uuid,
-) -> Result<typstographe_core::content::archive::Archive, String> {
+) -> Result<typstographe_core::content::archive::Archive, CommandError> {
     check(s, peer, guard)?;
     if s.project.get().is_none() {
         s.stored_project()?;
@@ -93,7 +94,7 @@ pub fn selected(
 }
 pub fn preview(
     archive: typstographe_core::content::archive::Archive,
-) -> Result<crate::rendering::Preview, String> {
+) -> Result<crate::rendering::Preview, CommandError> {
     crate::rendering::Renderer::default().render(
         archive.validate().map_err(project::error)?,
         archive.assets.clone(),
@@ -111,12 +112,8 @@ pub fn versions_list(
     window: tauri::WebviewWindow,
     state: State<'_, Bridge>,
     guard: Guard,
-) -> Result<Value, String> {
-    list(
-        &mut *state.session.lock().map_err(|e| e.to_string())?,
-        window.label(),
-        &guard,
-    )
+) -> Result<Value, CommandError> {
+    list(&mut *state.session()?, window.label(), &guard)
 }
 #[tauri::command]
 pub fn versions_read(
@@ -124,13 +121,8 @@ pub fn versions_read(
     state: State<'_, Bridge>,
     guard: Guard,
     id: Uuid,
-) -> Result<Value, String> {
-    read(
-        &mut *state.session.lock().map_err(|e| e.to_string())?,
-        window.label(),
-        &guard,
-        id,
-    )
+) -> Result<Value, CommandError> {
+    read(&mut *state.session()?, window.label(), &guard, id)
 }
 #[tauri::command]
 pub async fn versions_change(
@@ -140,21 +132,20 @@ pub async fn versions_change(
     guard: Guard,
     change: VersionChange,
     destination: Option<PathBuf>,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     let session = state.session.clone();
     let document = guard.document.clone();
     let peer = window.label().to_string();
     let result = tauri::async_runtime::spawn_blocking(move || {
         self::change(
-            &mut *session.lock().map_err(|e| e.to_string())?,
+            &mut *session.lock()?,
             &peer,
             &guard,
             change,
             destination.as_deref(),
         )
     })
-    .await
-    .map_err(|e| e.to_string())??;
+    .await??;
     let _ = app.emit(
         "web-editor:versions",
         json!({"document":document,"path":result["path"],"revision":result["revision"]}),
@@ -167,16 +158,9 @@ pub async fn versions_preview(
     state: State<'_, Bridge>,
     guard: Guard,
     id: Uuid,
-) -> Result<crate::rendering::Preview, String> {
-    let archive = selected(
-        &mut *state.session.lock().map_err(|e| e.to_string())?,
-        window.label(),
-        &guard,
-        id,
-    )?;
-    tauri::async_runtime::spawn_blocking(move || preview(archive))
-        .await
-        .map_err(|e| e.to_string())?
+) -> Result<crate::rendering::Preview, CommandError> {
+    let archive = selected(&mut *state.session()?, window.label(), &guard, id)?;
+    tauri::async_runtime::spawn_blocking(move || preview(archive)).await?
 }
 
 #[cfg(test)]

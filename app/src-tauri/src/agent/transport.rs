@@ -1,6 +1,6 @@
 //! Bounded authenticated native MCP connection, shared with loopback integration tests.
 use super::{AgentState, authorize, dispatch, validate_request};
-use crate::session::Session;
+use crate::{error::CommandError, session::Session};
 use serde_json::{Value, json};
 use std::{
     io::{BufRead, BufReader, Read, Write},
@@ -28,15 +28,12 @@ pub(super) fn connection(
         return;
     }
     let response = (|| {
-        let request: Value = serde_json::from_str(&line).map_err(|e| e.to_string())?;
-        authorize(
-            &*agent.lock().map_err(|e| e.to_string())?,
-            request["token"].as_str(),
-        )?;
+        let request: Value = serde_json::from_str(&line)?;
+        authorize(&*agent.lock()?, request["token"].as_str())?;
         // Schema compilation can be cold/expensive; do it before taking the live document lock.
         validate_request(request["method"].as_str().unwrap_or(""), &request["params"])?;
-        let mut s = session.lock().map_err(|e| e.to_string())?;
-        let mut a = agent.lock().map_err(|e| e.to_string())?;
+        let mut s = session.lock()?;
+        let mut a = agent.lock()?;
         authorize(&a, request["token"].as_str())?; // Revocation may have happened meanwhile.
         let result = dispatch(
             &mut s,
@@ -51,11 +48,11 @@ pub(super) fn connection(
     })();
     let value = match response {
         Ok(value) => json!({"result":value}),
-        Err(error) => {
-            let value = serde_json::from_str::<Value>(&error)
-                .unwrap_or_else(|_| json!({"code":"unavailable","message":error}));
-            json!({"error":value})
+        Err(CommandError::Message(message)) => {
+            json!({"error":{"code":"unavailable","message":message}})
         }
+        // Typed errors keep their machine-readable payload for the agent.
+        Err(error) => json!({"error":error}),
     };
     let _ = writeln!(stream, "{value}");
 }

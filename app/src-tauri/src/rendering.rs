@@ -1,3 +1,4 @@
+use crate::error::CommandError;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, sync::Mutex, time::Instant};
@@ -53,7 +54,7 @@ struct Output {
     dimensions: Vec<[u32; 2]>,
 }
 impl Output {
-    fn packet(self, encoding: Encoding) -> Result<Vec<u8>, String> {
+    fn packet(self, encoding: Encoding) -> Result<Vec<u8>, CommandError> {
         let mut offset = 0;
         let pages: Vec<_> = self.buffers.iter().zip(&self.dimensions).map(|(bytes, size)| {
             let page = serde_json::json!({"encoding": encoding, "width": size[0], "height": size[1], "offset": offset, "length": bytes.len()});
@@ -61,9 +62,8 @@ impl Output {
             page
         }).collect();
         let header =
-            serde_json::to_vec(&serde_json::json!({"preview": self.preview, "pages": pages}))
-                .map_err(|e| e.to_string())?;
-        let length = u32::try_from(header.len()).map_err(|e| e.to_string())?;
+            serde_json::to_vec(&serde_json::json!({"preview": self.preview, "pages": pages}))?;
+        let length = u32::try_from(header.len())?;
         let mut packet = Vec::with_capacity(8 + header.len() + offset);
         packet.extend_from_slice(b"TOG1");
         packet.extend_from_slice(&length.to_le_bytes());
@@ -98,15 +98,15 @@ impl Renderer {
         source: &str,
         assets: &Assets,
         context: RenderContext<'_>,
-    ) -> Result<(), String> {
-        let mut world = self.0.lock().map_err(|e| e.to_string())?;
+    ) -> Result<(), CommandError> {
+        let mut world = self.0.lock()?;
         let settings = context.settings;
         world.set_assets(assets);
         world.set_dependencies(&context.dependencies);
         world
             .validate_model(source, &settings.metadata, &settings.template)
             .map(|_| ())
-            .map_err(|e| typstographe_i18n::error(&e))
+            .map_err(CommandError::localized_core)
     }
     pub fn render(
         &self,
@@ -116,7 +116,7 @@ impl Renderer {
         export: Option<PathBuf>,
         settings: Option<RenderContext<'_>>,
         map: Option<SourceMap>,
-    ) -> Result<Preview, String> {
+    ) -> Result<Preview, CommandError> {
         self.render_output(
             source,
             assets,
@@ -136,7 +136,7 @@ impl Renderer {
         settings: RenderContext<'_>,
         map: SourceMap,
         encoding: Encoding,
-    ) -> Result<Vec<u8>, String> {
+    ) -> Result<Vec<u8>, CommandError> {
         self.render_output(
             source,
             assets,
@@ -159,12 +159,12 @@ impl Renderer {
         context: Option<RenderContext<'_>>,
         map: Option<SourceMap>,
         encoding: Encoding,
-    ) -> Result<Output, String> {
+    ) -> Result<Output, CommandError> {
         let fallback = crate::settings::Settings::default();
         let context = context.unwrap_or_else(|| (&fallback).into());
         let settings = context.settings;
         if export.is_some() && !settings.metadata.ready_for_export() {
-            return Err(typstographe_i18n::text("export-required-fields"));
+            return Err(typstographe_i18n::text("export-required-fields").into());
         }
         let template = settings.template.clone();
         let request = RenderRequest {
@@ -177,16 +177,16 @@ impl Renderer {
         };
         let start = Instant::now();
         let mut timings = PreviewTimings::default();
-        let mut world = self.0.lock().map_err(|e| e.to_string())?;
+        let mut world = self.0.lock()?;
         typstographe_core::packages::validate_embedded(&request.template, &request.dependencies)
-            .map_err(|e| e.to_string())?;
+            .map_err(CommandError::message)?;
         world.set_assets(&request.assets);
         world.set_dependencies(&request.dependencies);
         timings.prepare_ms = milliseconds(start);
         let compile_start = Instant::now();
         let document = world
             .compile_with_template(&request.source, &request.metadata, &request.template)
-            .map_err(|e| e.to_string())?;
+            .map_err(CommandError::message)?;
         timings.compile_ms = milliseconds(compile_start);
         let export_start = Instant::now();
         if let Some(path) = export {
@@ -197,7 +197,7 @@ impl Renderer {
                 typstographe_core::protocol::ExportFormat::Both,
                 false,
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(CommandError::message)?;
         }
         timings.export_ms = milliseconds(export_start);
         let mut pages = Vec::new();
@@ -244,13 +244,12 @@ impl Renderer {
             .collect();
         let sync_start = Instant::now();
         if let Some(map) = map {
-            *self.1.lock().map_err(|e| e.to_string())? =
-                Some(typstographe_core::navigation::RenderSync::new(
-                    revision,
-                    world.clone(),
-                    document,
-                    map,
-                ));
+            *self.1.lock()? = Some(typstographe_core::navigation::RenderSync::new(
+                revision,
+                world.clone(),
+                document,
+                map,
+            ));
         }
         timings.sync_ms = milliseconds(sync_start);
         Ok(Output {
@@ -268,7 +267,7 @@ impl Renderer {
     }
 }
 
-fn preview_png(width: u32, height: u32, rgba: &[u8]) -> Result<Vec<u8>, String> {
+fn preview_png(width: u32, height: u32, rgba: &[u8]) -> Result<Vec<u8>, CommandError> {
     let mut data = Vec::new();
     {
         let mut encoder = png::Encoder::new(&mut data, width, height);
@@ -277,8 +276,8 @@ fn preview_png(width: u32, height: u32, rgba: &[u8]) -> Result<Vec<u8>, String> 
         // Interactive local preview favours latency over minimum file size.
         // Compression is lossless; export keeps its own encoding policy.
         encoder.set_compression(png::Compression::Fast);
-        let mut writer = encoder.write_header().map_err(|e| e.to_string())?;
-        writer.write_image_data(rgba).map_err(|e| e.to_string())?;
+        let mut writer = encoder.write_header()?;
+        writer.write_image_data(rgba)?;
     }
     Ok(data)
 }
@@ -288,12 +287,12 @@ fn current_sync<T>(
     renderer: &Renderer,
     revision: u64,
     query: impl FnOnce(&typstographe_core::navigation::RenderSync) -> Option<T>,
-) -> Result<Option<T>, String> {
-    let session = session.lock().map_err(|e| e.to_string())?;
+) -> Result<Option<T>, CommandError> {
+    let session = session.lock()?;
     if session.revision != revision {
         return Err("stale".into());
     }
-    let cache = renderer.1.lock().map_err(|e| e.to_string())?;
+    let cache = renderer.1.lock()?;
     Ok(cache
         .as_ref()
         .filter(|sync| sync.revision == revision)
@@ -304,7 +303,7 @@ pub fn sync_forward(
     state: tauri::State<crate::Bridge>,
     revision: u64,
     position: usize,
-) -> Result<Option<typstographe_core::navigation::PagePoint>, String> {
+) -> Result<Option<typstographe_core::navigation::PagePoint>, CommandError> {
     current_sync(&state.session, &state.renderer, revision, |sync| {
         sync.forward(position)
     })
@@ -314,7 +313,7 @@ pub fn sync_backward(
     state: tauri::State<crate::Bridge>,
     revision: u64,
     location: typstographe_core::navigation::PagePoint,
-) -> Result<Option<usize>, String> {
+) -> Result<Option<usize>, CommandError> {
     current_sync(&state.session, &state.renderer, revision, |sync| {
         sync.backward(location)
     })
@@ -325,7 +324,7 @@ pub fn sync_selection(
     revision: u64,
     from: usize,
     to: usize,
-) -> Result<Vec<typstographe_core::navigation::SelectionHighlight>, String> {
+) -> Result<Vec<typstographe_core::navigation::SelectionHighlight>, CommandError> {
     current_sync(&state.session, &state.renderer, revision, |sync| {
         Some(sync.selection_highlights_exact(from..to))
     })

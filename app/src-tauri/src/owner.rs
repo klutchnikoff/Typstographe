@@ -1,10 +1,11 @@
 //! One confirmed Rust owner and one private history per authenticated window.
+use crate::error::CommandError;
 use std::collections::HashMap;
 use typstographe_core::{
     assets::Assets,
     content::{
         commands::{Command, Style},
-        contract::{Error, Guard},
+        contract::Guard,
         editing::{ContextId, ContextSnapshot, Direction, EditingSession, Selection},
         shared::Publication,
     },
@@ -36,24 +37,18 @@ pub struct HistoryViewRequest {
     pub selection: Option<Selection>,
     pub typing_styles: Vec<Style>,
 }
-pub fn error(error: Error) -> String {
-    serde_json::to_string(&error).expect("typed content error")
-}
 impl Owner {
-    pub fn open(guard: Guard, update: &[u8], assets: Assets) -> Result<Self, String> {
+    pub fn open(guard: Guard, update: &[u8], assets: Assets) -> Result<Self, CommandError> {
         Ok(Self {
-            engine: EditingSession::open(guard, update, assets).map_err(error)?,
+            engine: EditingSession::open(guard, update, assets)?,
             peers: HashMap::new(),
         })
     }
-    fn context(&mut self, peer: &str) -> Result<ContextId, String> {
+    fn context(&mut self, peer: &str) -> Result<ContextId, CommandError> {
         if let Some(id) = self.peers.get(peer) {
             return Ok(*id);
         }
-        let id = self
-            .engine
-            .open_context(&self.engine.guard().clone())
-            .map_err(error)?;
+        let id = self.engine.open_context(&self.engine.guard().clone())?;
         self.peers.insert(peer.into(), id);
         Ok(id)
     }
@@ -64,38 +59,38 @@ impl Owner {
         &self,
         plan: &typstographe_core::content::comparison::Comparison,
         ids: &[usize],
-    ) -> Result<typstographe_core::content::comparison::PreparedDecision, String> {
+    ) -> Result<typstographe_core::content::comparison::PreparedDecision, CommandError> {
         plan.prepare(&self.engine, ids)
-            .map_err(|e| typstographe_i18n::content_error(&e))
+            .map_err(CommandError::localized_content)
     }
     pub fn publish_comparison(
         &mut self,
         peer: &str,
         plan: &mut typstographe_core::content::comparison::Comparison,
         prepared: typstographe_core::content::comparison::PreparedDecision,
-    ) -> Result<Publication, String> {
+    ) -> Result<Publication, CommandError> {
         let context = self.context(peer)?;
         plan.publish(&mut self.engine, context, prepared)
-            .map_err(|e| typstographe_i18n::content_error(&e))
+            .map_err(CommandError::localized_content)
     }
     pub fn check_comparison(
         &mut self,
         peer: &str,
         plan: &typstographe_core::content::comparison::Comparison,
         prepared: &typstographe_core::content::comparison::PreparedDecision,
-    ) -> Result<(), String> {
+    ) -> Result<(), CommandError> {
         plan.check_prepared(&self.engine, prepared)
-            .map_err(|e| typstographe_i18n::content_error(&e))?;
+            .map_err(CommandError::localized_content)?;
         let context = self.context(peer)?;
         self.engine
             .check_publication_context(plan.guard(), context)
-            .map_err(|e| typstographe_i18n::content_error(&e))
+            .map_err(CommandError::localized_content)
     }
     pub fn prepare_agent_calls(
         &self,
         guard: &Guard,
         calls: &[typstographe_core::content::api::Call],
-    ) -> Result<typstographe_core::content::shared::PreparedUpdate, String> {
+    ) -> Result<typstographe_core::content::shared::PreparedUpdate, CommandError> {
         self.engine
             .prepare_resolved_calls(guard, calls, |state, call| {
                 let command = typstographe_core::content::api::resolve_call(state, call)?;
@@ -106,19 +101,19 @@ impl Owner {
                 }
                 Ok(command)
             })
-            .map_err(error)
+            .map_err(CommandError::from)
     }
     pub fn calls(
         &mut self,
         peer: &str,
         guard: &Guard,
         calls: &[typstographe_core::content::api::Call],
-    ) -> Result<Publication, String> {
+    ) -> Result<Publication, CommandError> {
         let id = self.context(peer)?;
-        let prepared = self.engine.prepare_calls(guard, calls).map_err(error)?;
+        let prepared = self.engine.prepare_calls(guard, calls)?;
         self.engine
             .publish_prepared(guard, id, prepared)
-            .map_err(error)
+            .map_err(CommandError::from)
     }
     pub fn navigate(
         &mut self,
@@ -126,11 +121,11 @@ impl Owner {
         guard: &Guard,
         selection: Option<Selection>,
         styles: Vec<Style>,
-    ) -> Result<ContextSnapshot, String> {
+    ) -> Result<ContextSnapshot, CommandError> {
         let id = self.context(peer)?;
         self.engine
             .set_context(guard, id, selection, styles)
-            .map_err(error)
+            .map_err(CommandError::from)
     }
     pub fn assets(&self) -> &Assets {
         self.engine.assets()
@@ -138,54 +133,50 @@ impl Owner {
     pub fn update_bytes(&self) -> Vec<u8> {
         self.engine.update()
     }
-    pub fn snapshot(&mut self, peer: &str) -> Result<ContextSnapshot, String> {
+    pub fn snapshot(&mut self, peer: &str) -> Result<ContextSnapshot, CommandError> {
         let id = self.context(peer)?;
         self.engine
             .context(&self.engine.guard().clone(), id)
-            .map_err(error)
+            .map_err(CommandError::from)
     }
     pub fn set_context(
         &mut self,
         peer: &str,
         request: ContextRequest,
-    ) -> Result<ContextSnapshot, String> {
+    ) -> Result<ContextSnapshot, CommandError> {
         let guard = Guard {
             document: request.generation,
             revision: request.revision,
         };
-        self.engine
-            .check_frontier(&guard, &request.frontier)
-            .map_err(error)?;
+        self.engine.check_frontier(&guard, &request.frontier)?;
         let id = self.context(peer)?;
         self.engine
             .set_context(&guard, id, request.selection, request.typing_styles)
-            .map_err(error)
+            .map_err(CommandError::from)
     }
-    pub fn reset(&mut self, peer: &str) -> Result<ContextSnapshot, String> {
+    pub fn reset(&mut self, peer: &str) -> Result<ContextSnapshot, CommandError> {
         if let Some(id) = self.peers.remove(peer) {
             self.engine
-                .close_context(&self.engine.guard().clone(), id)
-                .map_err(error)?;
+                .close_context(&self.engine.guard().clone(), id)?;
         }
         self.snapshot(peer)
     }
-    pub fn close(&mut self, peer: &str) -> Result<(), String> {
+    pub fn close(&mut self, peer: &str) -> Result<(), CommandError> {
         if let Some(id) = self.peers.remove(peer) {
             self.engine
-                .close_context(&self.engine.guard().clone(), id)
-                .map_err(error)?;
+                .close_context(&self.engine.guard().clone(), id)?;
         }
         Ok(())
     }
     pub fn draft(
         &mut self,
         peer: &str,
-    ) -> Result<Option<typstographe_core::content::editing::RejectedDraft>, String> {
+    ) -> Result<Option<typstographe_core::content::editing::RejectedDraft>, CommandError> {
         let id = self.context(peer)?;
         self.engine
             .rejected_draft(self.engine.guard(), id)
             .map(|draft| draft.cloned())
-            .map_err(error)
+            .map_err(CommandError::from)
     }
     pub fn update(
         &mut self,
@@ -194,7 +185,7 @@ impl Owner {
         group: Option<u64>,
         capture: bool,
         view: Option<HistoryViewRequest>,
-    ) -> Result<Publication, String> {
+    ) -> Result<Publication, CommandError> {
         let id = self.context(peer)?;
         let guard = self.engine.guard().clone();
         if let Some(view) = view
@@ -202,14 +193,13 @@ impl Owner {
             && self.engine.check_frontier(&guard, &view.frontier).is_ok()
         {
             self.engine
-                .set_context(&guard, id, view.selection, view.typing_styles)
-                .map_err(error)?;
+                .set_context(&guard, id, view.selection, view.typing_styles)?;
         }
         if !capture {
             return self
                 .engine
                 .publish_updates(&guard, &[update.to_vec()])
-                .map_err(error);
+                .map_err(CommandError::from);
         }
         match group {
             Some(group) => self
@@ -217,22 +207,28 @@ impl Owner {
                 .execute_grouped_update(&guard, id, update, group),
             None => self.engine.execute_updates(&guard, id, &[update.to_vec()]),
         }
-        .map_err(error)
+        .map_err(CommandError::from)
     }
     pub fn commands(
         &mut self,
         peer: &str,
         guard: &Guard,
         commands: &[Command],
-    ) -> Result<Publication, String> {
+    ) -> Result<Publication, CommandError> {
         let id = self.context(peer)?;
-        self.engine.execute(guard, id, commands).map_err(error)
+        self.engine
+            .execute(guard, id, commands)
+            .map_err(CommandError::from)
     }
-    pub fn history(&mut self, peer: &str, direction: Direction) -> Result<Publication, String> {
+    pub fn history(
+        &mut self,
+        peer: &str,
+        direction: Direction,
+    ) -> Result<Publication, CommandError> {
         let id = self.context(peer)?;
         self.engine
             .history(&self.engine.guard().clone(), id, direction)
-            .map_err(error)
+            .map_err(CommandError::from)
     }
 }
 

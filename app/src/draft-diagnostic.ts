@@ -3,6 +3,7 @@ import * as Y from 'yjs'
 import { documentContent } from './shared-inline-marks'
 import { settingsFor } from './state'
 import type { Provider, Transport, Bootstrap } from './provider'
+import { errorText } from './command-error'
 
 /** Explicit native recipe only: the normal form, scheduler, save and reopen paths. */
 export async function draftDiagnostic(
@@ -144,7 +145,7 @@ export async function draftDiagnostic(
     // The runner now kills this process, bypassing all normal close cleanup.
   } catch (error) {
     await transport.invoke('diagnostic_finish', {
-      report: { success: false, error: String(error) },
+      report: { success: false, error: errorText(error) },
     })
   }
 }

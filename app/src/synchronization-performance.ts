@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/core'
 import type { Provider, Transport } from './provider'
 import { requestPreview } from './preview-frame'
+import { errorText } from './command-error'
 
 /** Diagnostic instrumentation only: installed before listeners, never in normal launches. */
 export function measureTransport(transport: Transport) {
@@ -122,7 +123,7 @@ export async function synchronizationPerformance(
     })
   } catch (error) {
     await transport.invoke('diagnostic_finish', {
-      report: { success: false, error: String(error) },
+      report: { success: false, error: errorText(error) },
     })
   }
 }
