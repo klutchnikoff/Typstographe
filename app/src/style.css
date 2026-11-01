@@ -2030,3 +2030,60 @@ li:has(.interline-band-gap[data-marker])::marker {
 #synchronization[aria-pressed='true'] {
   color: var(--accent);
 }
+
+/* Planned document types remain inspectable, but cannot enable creation. */
+.app-dialog:has(.document-type-picker) {
+  width: min(880px, 90vw);
+  max-height: 90vh;
+  overflow: auto;
+}
+.document-type-picker > label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.document-type-picker select {
+  width: auto;
+  max-width: 100%;
+}
+.type-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+  gap: 10px;
+  max-height: 42vh;
+  overflow: auto;
+  padding: 4px;
+  margin: 12px -4px;
+}
+.type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 6px;
+  padding: 12px;
+  text-align: left;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.type-card span {
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+.type-card.planned {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel), var(--border) 18%);
+}
+.type-card[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.type-card small {
+  margin-top: auto;
+  font-weight: 600;
+}
+.type-choice-description {
+  font-size: 0.9em;
+  line-height: 1.45;
+}

@@ -19,8 +19,10 @@ async function create(page: Page) {
   await ready(page)
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.new"]').click()
-  await page.locator('dialog select').first().selectOption('article')
-  await expect(page.locator('dialog select').nth(1)).toHaveValue('article.model.working')
+  await page.locator('dialog [data-type="article"]').click()
+  await expect(page.getByRole('dialog').getByLabel('Modèle', { exact: true })).toHaveValue(
+    'article.model.working',
+  )
   await confirmNewDocument(page)
   await tab(page, 'titles')
 }

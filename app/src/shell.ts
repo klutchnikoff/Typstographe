@@ -43,6 +43,7 @@ import type { BandHost } from './band-layout'
 import { prepareImage, resourceCommand } from './resource-commands'
 import { documentType, settingsFor, setSetting, setDocument, type Settings } from './state'
 import { welcomeBrand } from './welcome-brand'
+import { documentTypePicker, type TypeCard } from './document-type-picker'
 import type { StructuredMetadata } from './metadata-records'
 import { metadataCollections } from './metadata-collections'
 import { richZoneOwnsShortcut } from './rich-zone'
@@ -102,6 +103,8 @@ export interface DocumentType {
 export interface Catalogue {
   messages: Record<string, string>
   locale: string
+  typeGroups: { id: string; label: string }[]
+  typeCards: TypeCard[]
   types: DocumentType[]
   entries: Capability[]
   papers: { value: string; label: string }[]
@@ -450,19 +453,6 @@ export async function mountShell(s: Shell) {
     overlay.replaceChildren()
     const heading = document.createElement('h2')
     heading.textContent = tr('Nouveau document')
-    const types = catalogue.types.filter((t) => t.canCreate)
-    const type = document.createElement('select')
-    type.setAttribute('aria-label', tr('Type de document'))
-    for (const t of types) type.add(new Option(t.label, t.id))
-    const model = document.createElement('select')
-    model.setAttribute('aria-label', tr('Modèle'))
-    const fill = () => {
-      model.replaceChildren()
-      for (const m of types.find((t) => t.id === type.value)!.models)
-        model.add(new Option(m.label, m.id))
-    }
-    type.onchange = fill
-    fill()
     const controls = actionRow()
     const cancel = document.createElement('button')
     cancel.textContent = tr('Annuler')
@@ -471,9 +461,14 @@ export async function mountShell(s: Shell) {
     submit.className = 'primary'
     submit.dataset.default = ''
     submit.textContent = tr('Créer')
+    let choice: { type: DocumentType; model: Model } | null = null
+    const picker = documentTypePicker(catalogue, (value) => {
+      choice = value
+      submit.disabled = value === null
+    })
     submit.onclick = () => {
-      const t = types.find((t) => t.id === type.value)!,
-        m = t.models.find((m) => m.id === model.value)!
+      if (!choice) return
+      const { type: t, model: m } = choice
       const metadata = structuredClone(t.metadata)
       for (const f of t.fields)
         if (f.field in preferences.profile)
@@ -518,7 +513,7 @@ export async function mountShell(s: Shell) {
       renderMetadata()
     }
     controls.append(cancel, submit)
-    overlay.append(heading, type, model, controls)
+    overlay.append(heading, picker, controls)
     overlay.showModal()
   }
   function renderMetadata() {

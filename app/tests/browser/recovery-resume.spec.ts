@@ -9,7 +9,7 @@ async function ready(page: Page) {
 }
 async function create(page: Page, kind = 'article') {
   await page.getByRole('button', { name: 'Nouveau document', exact: true }).first().click()
-  await page.locator('dialog select').first().selectOption(kind)
+  await page.locator(`dialog [data-type="${kind}"]`).click()
   await confirmNewDocument(page)
 }
 async function closeAndKeep(page: Page) {
