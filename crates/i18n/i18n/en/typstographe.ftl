@@ -1134,3 +1134,5 @@ web-record-reorder-help = Drag to reorder. Keyboard: Space, arrows, then Enter o
 web-record-reorder-cancelled = Move cancelled.
 web-record-reorder-position = New position: { "{position}" } of { "{count}" }.
 web-record-reorder-started = Move started. Use the arrows, then Enter or Escape.
+
+article-localization-removal-notice = This removes the entire language entry: its titles, abstract and keywords.

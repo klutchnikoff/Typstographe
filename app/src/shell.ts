@@ -1098,7 +1098,9 @@ export async function mountShell(s: Shell) {
       const context = item.payload.context
       if (context?.kind === 'record') {
         const definition = kind.structured?.panels?.find(
-          (panel) => panel.collection === context.collection,
+          (panel) =>
+            panel.collection === context.collection &&
+            (!context.panel || panel.id === context.panel),
         )
         if (!definition) return false
         tab = definition.id
@@ -1108,7 +1110,9 @@ export async function mountShell(s: Shell) {
       if (context?.kind === 'band') {
         if (context.root?.kind === 'record') {
           const definition = kind.structured?.panels?.find(
-            (panel) => panel.collection === context.root.collection,
+            (panel) =>
+              panel.collection === context.root.collection &&
+              (!panel.fields || panel.fields.includes(context.root.field)),
           )
           if (definition) {
             tab = definition.id
@@ -1179,6 +1183,7 @@ export async function mountShell(s: Shell) {
         const context = item.payload.context
         if (item.kind === 'form' && context?.kind === 'record')
           return (
+            kind.structured?.panels?.find((p) => p.id === context.panel)?.itemLabel ||
             kind.structured?.collections.find((c) => c.field === context.collection)?.itemLabel ||
             recoveredLabel(item)
           )

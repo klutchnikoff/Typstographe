@@ -1136,3 +1136,5 @@ web-record-reorder-help = Glisser pour réordonner. Au clavier : Espace, flèche
 web-record-reorder-cancelled = Déplacement annulé.
 web-record-reorder-position = Nouvelle position : { "{position}" } sur { "{count}" }.
 web-record-reorder-started = Déplacement activé. Utilisez les flèches, puis Entrée ou Échap.
+
+article-localization-removal-notice = Cette suppression retire toute la langue : ses titres, son résumé et ses mots-clés.

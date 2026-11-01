@@ -88,7 +88,8 @@ export function metadataRich(
   })
   const recoveryOwner = editingProvider(main) || formOwner(main)
   if (recoveryOwner) bindFormOwner(editor, recoveryOwner)
-  const bands = new BandHost(editor, parent.closest<HTMLElement>('#metadata-content')!, input, main)
+  const host = parent.closest<HTMLElement>('dialog, #metadata-content') || parent
+  const bands = new BandHost(editor, host, input, main)
   properties = propertyPanel(editor, bands, catalogue, () => {}, `metadata-${crypto.randomUUID()}-`)
   if (recoveryOwner)
     registerRecoveryOpener(recoveryOwner, editor, (pos, draft) => {

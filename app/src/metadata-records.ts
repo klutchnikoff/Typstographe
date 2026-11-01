@@ -32,6 +32,7 @@ export interface RecordCollection {
   parameter: string
   label: string
   itemLabel: string
+  removalNotice?: string
   title_key: string
   summary?: string[]
   language_key?: string
@@ -42,6 +43,7 @@ export interface MetadataPanel {
   collection: string
   fields?: string[]
   editing?: 'dialog'
+  itemLabel?: string
 }
 export interface BibliographyDescriptor {
   tab: string

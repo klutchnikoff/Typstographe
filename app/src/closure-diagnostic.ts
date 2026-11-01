@@ -131,17 +131,22 @@ export async function closureDiagnostic(
         input.dispatchEvent(new Event('input', { bubbles: true }))
       } else {
         document.getElementById('metadata-tab-abstracts')!.click()
+        await clickControl(
+          document.body,
+          '[data-section="localizations"] [data-record-open]',
+          'abstract card',
+        )
         await until(
-          () =>
-            !!document.querySelector(
-              '[data-section="localizations"] [data-rich-zone-profile="rich-text"]',
-            ),
-          'abstract field',
+          () => !!document.querySelector('dialog[open] [data-rich-zone-profile="rich-text"]'),
+          'private abstract field',
         )
         const element = document.querySelector(
-          '[data-section="localizations"] [data-rich-zone-profile="rich-text"]',
+          'dialog[open] [data-rich-zone-profile="rich-text"]',
         ) as HTMLElement & { editor: Editor }
         append(element.editor, ' [TAURI-RÉSUMÉ]')
+        const dialog = element.closest('dialog')!
+        await clickControl(dialog, '.dialog-form > .panel-actions .primary', 'confirm abstract')
+        await until(() => !dialog.isConnected, 'abstract confirmation acknowledged')
       }
       await provider.flush()
       append(editor, '[TAURI]')

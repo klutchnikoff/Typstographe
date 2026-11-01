@@ -922,6 +922,15 @@ summary svg {
 .dialog-form {
   margin: 0;
 }
+.form-dialog.rich-record-dialog {
+  width: min(760px, calc(100vw - 32px));
+}
+.rich-record-dialog [data-rich-zone-profile='rich-text'] {
+  min-height: 160px;
+}
+.dialog-form [data-field-kind='tokens'] textarea {
+  min-height: 64px;
+}
 .dialog-form > .panel-title {
   margin-bottom: 20px;
 }

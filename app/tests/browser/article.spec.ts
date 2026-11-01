@@ -98,12 +98,14 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   await page.keyboard.press('Escape')
   await tab(page, 'abstracts')
   const locales = section(page, 'localizations')
-  await locales
+  await locales.locator('[data-record-open]').first().click()
+  await draft(page)
     .getByRole('textbox', { name: 'Résumé', exact: true })
     .fill('Un résumé précis et lisible.')
-  await locales
+  await draft(page)
     .getByLabel('Mots-clés', { exact: true })
     .fill('enseignement supérieur\norganisation du travail')
+  await confirm(page)
   await tab(page, 'titles')
   await add(page, 'Ensemble linguistique')
   await expect(draft(page).getByLabel('Langue', { exact: true })).toHaveValue('en')
@@ -113,13 +115,13 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   await draft(page).getByRole('textbox', { name: 'Titre court', exact: true }).fill('Academic work')
   await confirm(page)
   await tab(page, 'abstracts')
-  const english = locales.locator('details').nth(1)
-  await english.locator('summary').click()
+  await locales.locator('[data-record-open]').nth(1).click()
+  const english = draft(page)
   await english
     .getByRole('textbox', { name: 'Résumé', exact: true })
     .fill('A concise English abstract.')
   await english.getByLabel('Mots-clés', { exact: true }).fill('higher education\nacademic work')
-  // Rich-zone undo uses the document history, and survives closing the tab.
+  // Rich-zone undo remains inside the private draft until confirmation.
   const abstract = english.getByRole('textbox', { name: 'Résumé', exact: true })
   await abstract.press('ControlOrMeta+a')
   await expect
@@ -135,12 +137,13 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   await abstract.press('ControlOrMeta+z')
   await expect(abstract.locator('em')).toHaveCount(0)
   await abstract.press('ControlOrMeta+k')
-  const link = page.locator('#metadata-content .context-band:not([hidden])')
+  const link = page.locator('dialog .context-band:not([hidden])')
   await link.locator('[id$=parameter-url]').fill('https://example.org/recherche')
   await link.getByRole('button', { name: 'Valider', exact: true }).click()
   await expect(abstract.locator('a')).toHaveAttribute('href', 'https://example.org/recherche')
   await expect(abstract).toHaveText('A concise English abstract.')
   await expect(abstract).toBeFocused()
+  await confirm(page)
   await tab(page, 'titles')
   await expect(title).toHaveText('Travail universitaire et institutions')
   // Removing a used affiliation is explicit and undo restores its associations.
@@ -224,7 +227,8 @@ test('les zones riches partagent les raccourcis Typst et la sémantique des reto
   await expect(title.locator('p')).toHaveCount(1)
   await expect(title).toHaveText('Un titre')
   await tab(page, 'abstracts')
-  const abstract = section(page, 'localizations').getByRole('textbox', {
+  await section(page, 'localizations').locator('[data-record-open]').first().click()
+  const abstract = draft(page).getByRole('textbox', {
     name: 'Résumé',
     exact: true,
   })
@@ -247,6 +251,7 @@ test('les zones riches partagent les raccourcis Typst et la sémantique des reto
   await expect(abstract.locator('p')).toHaveCount(3)
   await expect(abstract.locator('ul')).toHaveCount(0)
   await expect(abstract).toContainText('- ')
+  await confirm(page)
   await tab(page, 'titles')
   const diagnostic = process.env.TOG_SELECTION_DIAGNOSTIC
     ? await recordSelection(page, 'Titre')

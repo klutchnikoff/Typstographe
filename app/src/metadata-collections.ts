@@ -47,6 +47,7 @@ export function metadataCollections(
   language: () => string,
 ) {
   const history = historyFor(main)
+  const itemLabel = (definition: RecordCollection) => panel.itemLabel || definition.itemLabel
   const commands = metadataCommands(main, provider)
   const discrete = (action: () => void) => {
     history?.stopCapturing()
@@ -308,7 +309,7 @@ export function metadataCollections(
     }
   }
   function recordView(definition: RecordCollection, record: SharedRecord, id: string): View {
-    const card = panel.editing === 'dialog' ? recordCard(id, definition.itemLabel) : undefined
+    const card = panel.editing === 'dialog' ? recordCard(id, itemLabel(definition)) : undefined
     const element = card?.element || document.createElement('details')
     element.classList.add('metadata-record')
     element.dataset.recordId = id
@@ -340,6 +341,11 @@ export function metadataCollections(
       canConfirm: () => true,
     })
     confirm.title.textContent = `${tr('Supprimer')} · ${definition.itemLabel}`
+    if (definition.removalNotice) {
+      const notice = document.createElement('p')
+      notice.textContent = definition.removalNotice
+      confirm.body.append(notice)
+    }
     const detach = document.createElement('label'),
       check = document.createElement('input')
     check.type = 'checkbox'
@@ -489,7 +495,7 @@ export function metadataCollections(
       if (card) {
         card.open.setAttribute(
           'aria-label',
-          `${tr('Modifier')} · ${definition.itemLabel} · ${caption.textContent}`,
+          `${tr('Modifier')} · ${itemLabel(definition)} · ${caption.textContent}`,
         )
         card.handle.setAttribute(
           'aria-label',
@@ -541,7 +547,7 @@ export function metadataCollections(
     return row?.element.querySelector<HTMLButtonElement>('[data-record-add]') || state.add
   }
   function addButton(definition: RecordCollection, after?: string) {
-    const add = button(`${tr('Ajouter')} · ${definition.itemLabel}`, 'plus', () =>
+    const add = button(`${tr('Ajouter')} · ${itemLabel(definition)}`, 'plus', () =>
       startDraft(definition, after, undefined, add),
     )
     add.dataset.recordAdd = ''
@@ -610,10 +616,15 @@ export function metadataCollections(
       returnFocus.focus({ preventScroll: true })
     }
     const modal = panel.editing === 'dialog'
+    const title = () => {
+      const code = langKey && String(draft.record.get(langKey))
+      const name = catalogue.languages.find((item) => item.value === code)?.label || code
+      return `${tr(editing ? 'Modifier' : 'Ajouter')} · ${itemLabel(definition)}${editing && name ? ` · ${name}` : ''}`
+    }
     const dialog = modal
       ? formDialog({
           id: `edit-record-${definition.parameter}`,
-          title: `${tr(editing ? 'Modifier' : 'Ajouter')} · ${definition.itemLabel}`,
+          title: title(),
           cancel: () => discard(),
           returnFocus: () => returnFocus || trigger,
         })
@@ -626,18 +637,30 @@ export function metadataCollections(
         close: () => discard(),
         canConfirm: () => true,
       })
-    form.title.textContent = `${tr(editing ? 'Modifier' : 'Ajouter')} · ${definition.itemLabel}`
+    form.title.textContent = title()
     form.element.classList.add('metadata-record-draft')
     form.element.hidden = false
     form.element.dataset.after = after || ''
     form.body.classList.add('metadata-record-fields')
     if (!modal) state.list.append(form.element)
-    views = fields(definition).map((field) =>
-      fieldView(form.body, definition, draft.record, field, draft, owner || main),
-    )
+    if (dialog && owner) dialog.dialog.classList.add('rich-record-dialog')
+    views = fields(definition)
+      .filter(
+        (field) =>
+          !(
+            editing &&
+            langKey &&
+            field.key === langKey &&
+            draft.record.get(langKey) === language()
+          ),
+      )
+      .map((field) => fieldView(form.body, definition, draft.record, field, draft, owner || main))
+    if (modal && editing && owner)
+      form.body.querySelector<HTMLElement>('[contenteditable=true]')!.dataset.initialFocus = ''
     form.recoveryData = () => ({ record: draft.value() })
     form.trackRecovery(provider, {
       kind: 'record',
+      panel: panel.id,
       collection: definition.parameter,
       record: editing || null,
       after: after || null,
@@ -696,6 +719,7 @@ export function metadataCollections(
     })
     const update = () => {
       form.draftChanged()
+      form.title.textContent = title()
       for (const view of views) view.refresh()
     }
     draft.record.observeDeep(update)
@@ -703,10 +727,7 @@ export function metadataCollections(
       element: form.element,
       floating: modal,
       refresh: update,
-      focus: () =>
-        form.body
-          .querySelector<HTMLElement>('input, textarea, select, [contenteditable=true]')
-          ?.focus(),
+      focus: () => form.focus(),
       destroy() {
         form.detachRecovery()
         draft.record.unobserveDeep(update)
@@ -817,6 +838,7 @@ export function metadataCollections(
   return {
     resume(item: RecoveredItem) {
       const context = item.payload.context
+      if (context.panel && context.panel !== panel.id) return false
       const definition = schema.collections.find((c) => c.parameter === context?.collection)
       if (!definition || !collections.has(definition)) return false
       if (context.record) {

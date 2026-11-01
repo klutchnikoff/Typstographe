@@ -116,32 +116,40 @@ typst compile --root . --ignore-system-fonts fixtures/article-layout.typ output/
 autres formats sans modifier la recette. Les fichiers générés dans `output/`
 restent hors du dépôt.
 
-L’onglet Général conserve modèle, papier, orientation et langue principale.
-Les onglets **Titres**, **Affiliations**, **Auteurs** et **Résumés** séparent les
-informations éditoriales. Titres présente, pour chaque langue, le titre, le
-sous-titre et le titre court ; Résumés présente le résumé et les mots-clés des
-mêmes ensembles linguistiques. Leur séparation visuelle ne duplique aucune donnée.
-**Bibliographie** gère les fichiers originaux et le style autorisé par le modèle.
-**Général** propose le sommaire si le modèle le permet. Les déclarations Typst
+L’ordre des onglets est **Général > Titres > Résumés > Affiliations > Auteurs >
+Bibliographie**. Général conserve modèle, papier, orientation et langue principale.
+Titres présente, pour chaque langue, le titre, le sous-titre et le titre court.
+Résumés montre une carte par langue, portant seulement son nom. Un clic ouvre la
+modale commune pour éditer le résumé riche et ses mots-clés (un par ligne).
+Ces deux onglets présentent les mêmes ensembles linguistiques sans dupliquer
+leurs données : ajouter une langue dans l’un la rend disponible dans l’autre.
+Supprimer une langue secondaire retire ses titres, son résumé et ses mots-clés ;
+la confirmation annonce cette portée. La langue principale ne peut pas être supprimée.
+
+Bibliographie gère les fichiers originaux et le style autorisé par le modèle.
+Général propose le sommaire si le modèle le permet. Les déclarations Typst
 `editor-options.outline` et `editor-options.citation-styles` contrôlent ces choix ;
 une valeur absente ou un choix unique ne produit pas de contrôle inutile.
-L’ensemble de la langue principale est ouvert par défaut dans ces deux onglets.
 Ajouter une affiliation une seule fois, puis la cocher pour chacun de ses auteurs.
-Les flèches changent l’ordre sans changer les identifiants ; les corbeilles demandent
-confirmation. Une affiliation utilisée ne peut être supprimée qu’avec le retrait
-explicite de ses associations.
+Les auteurs, affiliations et résumés utilisent les mêmes cartes réordonnables et
+la même modale, avec fond atténué et légèrement flouté. La poignée change l’ordre
+sans changer les identifiants ; la corbeille demande confirmation. Une affiliation
+utilisée exige le retrait explicite de ses associations avant suppression.
+Le bouton **+** est centré sous chaque collection de cartes. Les titres conservent
+leurs zones en ligne et leur bouton d’ajout par entrée.
 
-Un bouton **+** termine chaque ligne d’auteur, d’affiliation ou de langue. Il
-prépare une entrée juste après cette ligne ; une collection vide présente seulement
-ce bouton. Le formulaire d’ajout prend le focus. **Valider** publie l’entrée entière
-en une seule action annulable ; **Échap** ou **Annuler** l’abandonne et remet le
-focus sur le bouton d’ajout. Entrée valide depuis un champ texte simple ; les
-zones riches conservent leurs règles de saisie. Changer d’onglet abandonne aussi
-l’ajout non validé. Les ajouts provisoires restent locaux : ils ne sont ni diffusés
-aux collaborateurs, ni inclus dans les fichiers ou exports, ni ajoutés à
-l’historique commun. L’annulation ne touche pas aux éditions reçues entre-temps.
-Le résumé possède une zone riche, avec gras, italique et liens via le bandeau
-commun. Les mots-clés sont saisis un par ligne, y compris les expressions longues.
+L’ajout et la modification en modale sont des brouillons privés. **Valider** publie
+les champs modifiés en une seule action annulable ; **Échap** ou **Annuler** abandonne
+la saisie et rend le focus au déclencheur. **Ctrl/Cmd + Entrée** valide la modale ;
+Entrée conserve les règles de la zone active (retour simple dans un résumé, ligne
+suivante dans les mots-clés). À l’ouverture d’un résumé existant, le focus va dans
+le texte ; pour une nouvelle langue, il va dans son choix de langue. Le résumé
+hérite des profils riches communs : gras, italique, liens et bandeaux associés,
+retours et historique local du brouillon. Seule sa validation alimente l’historique
+documentaire partagé. L’annulation ne touche pas aux éditions reçues entre-temps ;
+une modification concurrente du même enregistrement empêche son remplacement.
+La récupération conserve aussi l’onglet d’origine du formulaire, pour rouvrir un
+résumé dans Résumés plutôt que dans Titres, sans le publier avant validation.
 
 Les collections sont décrites en Rust, traduites par Fluent et présentées par des
 composants génériques. Le descripteur `panels` associe chaque onglet à une collection
