@@ -123,7 +123,9 @@ une seule ligne (tronqué avec une ellipse si nécessaire). Un clic ouvre la mê
 modale commune pour éditer le titre, le sous-titre et le titre court, avec les
 profils riches en ligne habituels. Résumés montre une carte par langue, portant
 seulement son nom. Un clic ouvre la modale commune pour éditer le résumé riche
-et ses mots-clés (un par ligne).
+et ses mots-clés (un par ligne). Le libellé du résumé affiche les mots et signes
+pendant la saisie, avec le même comptage Unicode que le document : espaces inclus,
+retours exclus, sans les mots-clés ni les marques de mise en forme.
 Ces deux onglets présentent les mêmes ensembles linguistiques sans dupliquer
 leurs données : ajouter une langue dans l’un la rend disponible dans l’autre.
 Supprimer une langue secondaire retire ses titres, son résumé et ses mots-clés ;

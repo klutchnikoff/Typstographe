@@ -180,3 +180,29 @@ for (const panel of ['abstracts', 'titles'] as const) {
     )
   })
 }
+
+test('le libellé du résumé compte le texte Unicode pendant la saisie et les annulations', async ({
+  page,
+}) => {
+  await create(page)
+  await openRecordCard(page)
+  const heading = modal(page).locator('.metadata-rich-heading > span')
+  const visibleLabel = () =>
+    heading.textContent().then((text) => text?.replace(/[\u2068\u2069]/g, ''))
+  await expect.poll(visibleLabel).toBe('Résumé (0 mot - 0 signe)')
+  await abstract(page).fill('e\u0301 👩🏽‍💻 chat')
+  await expect.poll(visibleLabel).toBe('Résumé (2 mots - 8 signes)')
+  await abstract(page).press('ControlOrMeta+a')
+  await abstract(page).press('ControlOrMeta+b')
+  await expect.poll(visibleLabel).toBe('Résumé (2 mots - 8 signes)')
+  await keywords(page).fill('hors compteur')
+  await expect.poll(visibleLabel).toBe('Résumé (2 mots - 8 signes)')
+  await confirm(page)
+  await openRecordCard(page)
+  await expect.poll(visibleLabel).toBe('Résumé (2 mots - 8 signes)')
+  await abstract(page).press('ControlOrMeta+a')
+  await abstract(page).press('Backspace')
+  await expect.poll(visibleLabel).toBe('Résumé (0 mot - 0 signe)')
+  await abstract(page).press('ControlOrMeta+z')
+  await expect.poll(visibleLabel).toBe('Résumé (2 mots - 8 signes)')
+})

@@ -93,3 +93,17 @@ fn oversized_spelling_requests_are_refused_before_background_work() {
         .is_err()
     );
 }
+
+#[test]
+fn named_field_statistics_reuse_unicode_document_counts_without_publishing() {
+    let result = count_text("e\u{301} 👩🏽‍💻 chat\n".into(), None, Some("Résumé".into()));
+    assert_eq!(
+        result["document"],
+        json!({"words":2,"signs":8,"signs_without_spaces":6})
+    );
+    assert_eq!(
+        result["field_label"],
+        typstographe_i18n::tr!("field-stats", name = "Résumé", words = 2, signs = 8)
+    );
+    assert!(count_text(String::new(), None, None)["field_label"].is_null());
+}
