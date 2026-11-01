@@ -25,6 +25,7 @@ import {
   recordMap,
   recordIds,
   readRecord,
+  recordSummary,
   type StructuredMetadata,
   type MetadataPanel,
   type RecordStore,
@@ -482,11 +483,11 @@ export function metadataCollections(
       caption.textContent = definition.language_key
         ? catalogue.languages.find((item) => item.value === value)?.label || definition.itemLabel
         : String(value || definition.itemLabel)
-      detail.textContent = (definition.summary || [])
+      detail.textContent = (panel.summary || definition.summary || [])
         .map((key) => {
           const field = definition.fields.find((item) => item.key === key)
           const value = record.get(key)
-          return field?.kind === 'boolean' ? (value ? field.label : '') : String(value || '')
+          return field?.kind === 'boolean' ? (value ? field.label : '') : recordSummary(value)
         })
         .filter(Boolean)
         .join(' · ')
