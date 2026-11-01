@@ -39,6 +39,31 @@ Ce texte présente un exemple fictif destiné à illustrer la mise en page d’u
     }
 }
 
+/// Shared specimen metadata for each type, never the user's profile or open work.
+fn sample_metadata(kind: DocumentType) -> Metadata {
+    let mut metadata = Metadata::demo(kind);
+    if let Metadata::Article(article) = &mut metadata {
+        article.show_outline = false;
+        let summary = "Cet article examine les transformations de l’organisation du travail universitaire à partir des activités quotidiennes des équipes. Il s’intéresse aux échanges entre collègues, à la circulation des documents et aux conventions qui soutiennent la coopération. La démarche proposée associe des entretiens et l’observation des pratiques pour comprendre les ajustements entre objectifs individuels et collectifs. Cet exemple fictif met en perspective la diversité des situations et le rôle des outils numériques, sans supposer une évolution uniforme des établissements. Il invite à porter attention aux conditions concrètes dans lesquelles se construisent les pratiques de travail.";
+        article.localizations[0].summary = serde_json::from_value(serde_json::json!({
+            "type": "doc", "content": [{"type": "paragraph", "content": [{
+                "type": "text", "text": summary
+            }]}]
+        }))
+        .expect("valid article specimen abstract");
+        article.localizations[0].keywords = [
+            "travail universitaire",
+            "coopération",
+            "pratiques professionnelles",
+            "outils numériques",
+            "enquête qualitative",
+        ]
+        .map(String::from)
+        .into();
+    }
+    metadata
+}
+
 /// Runs on a Tauri worker; no session, shared preview renderer or disk access.
 #[tauri::command(async)]
 pub fn model_thumbnail(model_id: String) -> Result<String, CommandError> {
@@ -55,16 +80,16 @@ pub fn model_thumbnail(model_id: String) -> Result<String, CommandError> {
     let document = world
         .compile_with_template(
             sample(model.kind),
-            &Metadata::demo(model.kind),
+            &sample_metadata(model.kind),
             model.source,
         )
         .map_err(CommandError::message)?;
     let page = document.pages().first().ok_or("empty_model_preview")?;
-    // About 320 pixels across for A4, enough for a sharp small thumbnail at 2x.
+    // One image covers both the thumbnail and its 2x magnifier on Retina displays.
     let raster = typst_render::render(
         page,
         &typst_render::RenderOptions {
-            pixel_per_pt: (320.0 / page.frame.size().x.to_pt()).into(),
+            pixel_per_pt: (512.0 / page.frame.size().x.to_pt()).into(),
             ..Default::default()
         },
     );
@@ -91,9 +116,9 @@ mod tests {
             let reader = png::Decoder::new(std::io::Cursor::new(bytes))
                 .read_info()
                 .unwrap();
-            assert_eq!(reader.info().width, 320);
-            assert!(reader.info().height > 300);
-            assert!(reader.info().height < 600);
+            assert_eq!(reader.info().width, 512);
+            assert!(reader.info().height > 500);
+            assert!(reader.info().height < 800);
             assert_eq!(thumbnail, model_thumbnail(model.model.id().into()).unwrap());
         }
         assert!(model_thumbnail("absent".into()).is_err());
