@@ -14,6 +14,7 @@ import { contextPanel } from '../src/context-panel'
 import { editingProvider, historyFor } from '../src/editing-history'
 import { documentWhitespaceKey } from '../src/document-whitespace'
 import { syncNativeTextSelection } from '../src/native-selection'
+import { ParagraphSelection } from '../src/paragraph-selection'
 import { AllSelection, NodeSelection } from '@tiptap/pm/state'
 import { CellSelection } from '@tiptap/pm/tables'
 
@@ -407,14 +408,17 @@ it('l’historique privé du résumé restaure sa sélection sans déplacer le c
   })
   const history = historyFor(field)!
   history.clear()
-  field.commands.setTextSelection(8)
+  field.view.dispatch(
+    field.state.tr.setSelection(new ParagraphSelection(field.state.doc.resolve(7))),
+  )
   history.stopCapturing()
   field.commands.keyboardShortcut('Backspace')
   expect(paragraphs(field)).toEqual(['AvantAprès'])
   const seam = field.state.selection.from
   field.commands.undo()
   expect(paragraphs(field)).toEqual(['Avant', 'Après'])
-  expect(field.state.selection.from).toBe(8)
+  expect(field.state.selection).toBeInstanceOf(ParagraphSelection)
+  expect(field.state.selection.from).toBe(7)
   field.commands.redo()
   expect(paragraphs(field)).toEqual(['AvantAprès'])
   expect(field.state.selection.from).toBe(seam)

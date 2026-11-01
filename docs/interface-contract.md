@@ -37,6 +37,31 @@ assert!(!session.query("document.text", json!({})).unwrap()["text"].as_str().unw
 
 ## Frontières et garanties
 
+### Navigation entre paragraphes
+
+La séparation affichée par `¶` est une position de curseur distincte de la fin
+du paragraphe précédent et du début du suivant. Le symbole n'est pas éditable et
+n'ajoute aucun nœud ni caractère au document. Un clic, les flèches horizontales
+et les flèches verticales permettent de rejoindre cette ligne.
+
+Entrée en fin de paragraphe ouvre une ligne de rédaction avant la séparation
+existante. Si on la quitte vide, ce retour temporaire disparaît ; si on y écrit,
+le texte et son retour simple sont conservés dans le même paragraphe. Entrée sur
+`¶`, au début du paragraphe suivant ou sur cette ligne encore vide ne multiplie
+pas les lignes. Une sélection étendue continue à désigner le contenu réel.
+
+Retour arrière au début du paragraphe rejoint `¶`. Sur `¶`, il supprime la
+séparation tout en conservant un retour simple entre les deux textes. Un second
+Retour arrière peut retirer ce retour simple. Les frontières des widgets,
+annotations et cellules restent protégées. Ces règles s'appliquent au corps et
+aux champs riches multilignes ; les champs sur une seule ligne restent distincts.
+
+Le contexte privé représente cette position par `paragraph_boundary`, ancré
+avant le paragraphe suivant. L'annulation peut ainsi rétablir le curseur sur la
+séparation, sans remplacer cette position par une sélection de texte fictive.
+
+### Conservation documentaire
+
 `protocol` contient les erreurs d'adaptateurs, les formats d'export et les
 limites communes ; `content::contract::Error` décrit les refus documentaires.
 Le cœur ne dépend ni de Fluent, ni d'une interface graphique, ni du transport MCP.

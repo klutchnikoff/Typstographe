@@ -1576,11 +1576,27 @@ li:has(.interline-band-gap[data-marker])::marker {
   margin: 0;
 }
 .paragraph-marker {
+  position: relative;
   color: var(--muted);
   opacity: 0.65;
   user-select: none;
-  font-size: 0.8em;
-  line-height: 1.8em;
+  font-size: 1em;
+  line-height: inherit;
+  cursor: text;
+}
+.tiptap.ProseMirror-focused .paragraph-marker[data-active]::before {
+  content: '';
+  position: absolute;
+  top: 0.3em;
+  left: -1px;
+  height: 1em;
+  border-left: 1px solid var(--text);
+}
+.tiptap:has(.paragraph-marker[data-active]) {
+  caret-color: transparent;
+}
+.tiptap.ProseMirror-hideselection ::selection {
+  background: transparent;
 }
 .nonbreaking-space {
   position: relative;

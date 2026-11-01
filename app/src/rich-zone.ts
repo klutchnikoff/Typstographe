@@ -30,6 +30,7 @@ import { ContextBand } from './band-layout'
 import { confirmEnclosingScope } from './keyboard-navigation'
 import { DocumentInput, SoftBreak, TypstInlineInput } from './editing'
 import { DocumentWhitespace } from './document-whitespace'
+import { ParagraphFlow } from './paragraph-flow'
 import { HorizontalSpace } from './horizontal-space'
 import { EditorLocation } from './editor-reveal'
 import { SharedInlineMarks } from './shared-inline-marks'
@@ -96,7 +97,7 @@ export function richZoneExtensions(
       paragraphs: policy.multiline,
     }),
     ...(policy.multiline
-      ? [DocumentInput.configure({ trailingParagraph: policy.trailingParagraph })]
+      ? [ParagraphFlow, DocumentInput.configure({ trailingParagraph: policy.trailingParagraph })]
       : [
           Extension.create({
             name: 'singleLineInput',
