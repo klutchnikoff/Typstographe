@@ -17,7 +17,7 @@ open-dialog = Open document
 all-files = All files
 renderer-stopped = The rendering engine has stopped.
 multiple-styles = Mixed styles
-preview-title = Typst preview
+preview-title = Preview
 preview-hint = Double-click a passage to find it in the editor.
 preview-updating = Updating…
 preview-failed = The document could not be typeset. The last successful preview is still displayed.
@@ -666,7 +666,7 @@ web-preparing = Preparing…
 web-loading = Loading…
 web-invalid-content = Content needs correction · last valid preview retained
 web-local-edits-offline = Local changes · offline
-web-preview = Typst preview
+web-preview = Preview
 web-invalid-link = Use an http, https or mailto address.
 web-invalid-list-start = Start number must be between 1 and 10,000.
 web-changed-block = The block has changed.
@@ -1147,3 +1147,6 @@ field-stats =
     })
 
 web-sidebar-width = Sidebar width
+
+web-preview-single-page = Preview ({ "{count}" } page)
+web-preview-multiple-pages = Preview ({ "{count}" } pages)

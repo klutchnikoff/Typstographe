@@ -75,7 +75,7 @@ open-dialog = Ouvrir un document
 all-files = Tous les fichiers
 renderer-stopped = Le moteur de rendu s’est arrêté.
 multiple-styles = Styles multiples
-preview-title = Aperçu Typst
+preview-title = Aperçu
 preview-hint = Double-cliquez sur un passage pour le retrouver dans l’éditeur.
 preview-updating = Actualisation…
 preview-failed = Le document n’a pas pu être composé. Le dernier aperçu réussi est conservé.
@@ -668,7 +668,7 @@ web-preparing = Préparation…
 web-loading = Chargement…
 web-invalid-content = Contenu à corriger · dernier rendu conservé
 web-local-edits-offline = Modifications locales · hors connexion
-web-preview = Aperçu Typst
+web-preview = Aperçu
 web-invalid-link = Utilisez une adresse http, https ou mailto.
 web-invalid-list-start = Numéro initial entre 1 et 10 000.
 web-changed-block = Le bloc a changé.
@@ -1149,3 +1149,6 @@ field-stats =
     })
 
 web-sidebar-width = Largeur de la barre latérale
+
+web-preview-single-page = Aperçu ({ "{count}" } page)
+web-preview-multiple-pages = Aperçu ({ "{count}" } pages)

@@ -58,7 +58,7 @@ app.innerHTML = `
     <div class="document-info"><span>Courrier personnel</span><span>Français · A4 · Modèle local</span></div>
     <div id="editor-scroll"><div id="editor"></div></div>
   </section><div class="splitter" role="separator" tabindex="0" aria-label="Largeur des colonnes" aria-orientation="vertical" aria-valuemin="10" aria-valuemax="90" aria-valuenow="50"></div>
-  <section class="preview" aria-label="Aperçu Typst"><div class="preview-title"><strong>Aperçu Typst</strong><span id="render-status" role="status">Préparation…</span></div><div id="pages"><p class="empty">Le rendu du document apparaîtra ici.</p></div></section></main>
+  <section class="preview" aria-label="Aperçu"><div class="preview-title"><strong id="preview-heading" role="status">Aperçu</strong><span id="render-status" role="status">Préparation…</span></div><div id="pages"><p class="empty">Le rendu du document apparaîtra ici.</p></div></section></main>
   <footer><span id="statistics">Chargement…</span><span id="presence"></span><button id="synchronization" type="button" aria-pressed="false"></button><span id="message" role="status"></span></footer>
   <input id="image-file" type="file" accept="image/png,image/jpeg,image/svg+xml" hidden>
 `
@@ -94,7 +94,6 @@ let properties: ReturnType<typeof propertyPanel> | undefined
 let citations: ReturnType<typeof citationPanel> | undefined
 let tables: ReturnType<typeof tablePanel> | undefined
 const rendering = renderQueue(render)
-let scheduledAt = 0
 let onPreview: ((revision: number) => void) | undefined
 let restoringError = false
 let stopping = false
@@ -181,7 +180,7 @@ function schedule() {
   if (stopping) return
   version++
   preview?.invalidate()
-  scheduledAt = performance.now()
+  element('render-status').hidden = false
   if (!provider.online) {
     element('render-status').textContent = tr('Modifications locales · hors connexion')
     return
@@ -192,25 +191,27 @@ function schedule() {
 async function render() {
   if (!editor || !provider.online || provider.composing || restoringError) return
   const localVersion = version
-  const inputTime = scheduledAt
   try {
     await provider.flush()
     if (localVersion !== version) return
     const { result } = await requestPreview(host.transport, snapshot())
     if (localVersion !== version) return
     if (!(await preview?.show(result, localVersion)) || localVersion !== version) return
-    const pages = result.pages
-    element('render-status').textContent =
-      `${pages.length} page${pages.length > 1 ? 's' : ''} · ${Math.round(result.elapsedMs)} ms`
+    const count = result.pages.length
+    element('preview-heading').textContent = tr(
+      count === 1 ? 'Aperçu ({count} page)' : 'Aperçu ({count} pages)',
+      { count },
+    )
+    element('render-status').textContent = ''
+    element('render-status').hidden = true
     element('render-status').classList.remove('error')
-    element('render-status').title =
-      `${Math.round(performance.now() - inputTime)} ms · édition → publication`
     onPreview?.(result.revision)
   } catch (error) {
     if (String(error) === 'stale') {
       rendering.request()
       return
     }
+    element('render-status').hidden = false
     element('render-status').textContent = tr('Contenu à corriger · dernier rendu conservé')
     element('render-status').classList.add('error')
     message(String(error), true)
@@ -337,7 +338,8 @@ async function start() {
     ['export', 'Exporter'],
   ])
     element(id).textContent = tr(label)
-  document.querySelector('.preview-title strong')!.textContent = tr('Aperçu Typst')
+  element('preview-heading').textContent = tr('Aperçu')
+  document.querySelector('.preview')!.setAttribute('aria-label', tr('Aperçu'))
   const presentations = widgetPresentations(contentCatalogue.entries)
   const schema = getSchema(
     richZoneExtensions('document', { imageURL: (path) => provider.imageURL(path), presentations }),
