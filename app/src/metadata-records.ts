@@ -26,6 +26,7 @@ export interface RecordField {
     | 'source'
   default: unknown
   references?: string
+  statistics?: boolean
 }
 export interface RecordCollection {
   field: string

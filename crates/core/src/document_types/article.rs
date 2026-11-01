@@ -305,6 +305,8 @@ pub const GROUPS: &[FieldGroup] = &[
 pub(super) fn schema() -> serde_json::Value {
     use serde_json::json;
     let rich = |key, label, inline| json!({"key":key,"label_key":label,"kind":if inline {"rich_inline"} else {"rich"},"default":RichText::default()});
+    let mut abstract_field = rich("abstract", "field-abstract", false);
+    abstract_field["statistics"] = json!(true);
     json!({"outline":{"parameter":"show_outline","field":"article.show_outline"},"bibliography":{"tab":"bibliography","files":"references","field":"article.references","style":"citation_style","style_field":"article.citation_style"},"panels":[
         {"id":"titles","collection":"localizations","editing":"dialog","item_label_key":"field-article-title","summary":["title"],"fields":["language","title","subtitle","short-title"]},
         {"id":"abstracts","collection":"localizations","editing":"dialog","item_label_key":"field-abstract","fields":["language","abstract","keywords"]},
@@ -331,7 +333,7 @@ pub(super) fn schema() -> serde_json::Value {
          "schema":schemars::schema_for!(Vec<Localization>), "fields":[
             {"key":"language","label_key":"field-language","kind":"language","default":"fr"},
             rich("title","field-article-title",true), rich("short-title","field-short-title",true),
-            rich("subtitle","field-subtitle",true), rich("abstract","field-abstract",false),
+            rich("subtitle","field-subtitle",true), abstract_field,
             {"key":"keywords","label_key":"field-keywords","kind":"tokens","default":[]}
          ]}
     ]})

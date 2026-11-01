@@ -1138,3 +1138,12 @@ web-record-reorder-position = Nouvelle position : { "{position}" } sur { "{count
 web-record-reorder-started = Déplacement activé. Utilisez les flèches, puis Entrée ou Échap.
 
 article-localization-removal-notice = Cette suppression retire toute la langue : ses titres, son résumé et ses mots-clés.
+
+field-stats =
+    { $name } ({ $words ->
+        [one] { $words } mot
+       *[other] { $words } mots
+    } - { $signs ->
+        [one] { $signs } signe
+       *[other] { $signs } signes
+    })

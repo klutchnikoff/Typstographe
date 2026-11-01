@@ -405,6 +405,7 @@ fn dispatch(
         "count_text" => Ok(proofing::count_text(
             args["text"].as_str().unwrap_or("").into(),
             args["selection"].as_str().map(str::to_owned),
+            args["fieldLabel"].as_str().map(str::to_owned),
         )),
         "spelling_check" => tauri::async_runtime::block_on(proofing::spelling_check(
             serde_json::from_value(args["segments"].clone()).map_err(|e| e.to_string())?,

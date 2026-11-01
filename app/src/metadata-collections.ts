@@ -126,6 +126,7 @@ export function metadataCollections(
           id: String(record.get('id')),
           field: field.key,
         },
+        field.statistics ? provider.transport : undefined,
       )
       return {
         refresh: () =>

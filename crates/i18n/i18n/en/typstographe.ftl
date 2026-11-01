@@ -1136,3 +1136,12 @@ web-record-reorder-position = New position: { "{position}" } of { "{count}" }.
 web-record-reorder-started = Move started. Use the arrows, then Enter or Escape.
 
 article-localization-removal-notice = This removes the entire language entry: its titles, abstract and keywords.
+
+field-stats =
+    { $name } ({ $words ->
+        [one] { $words } word
+       *[other] { $words } words
+    } - { $signs ->
+        [one] { $signs } character
+       *[other] { $signs } characters
+    })
