@@ -53,6 +53,21 @@ Cargo sans `.app`. Sur macOS :
 node app/scripts/check-native-locales.mjs target/debug/typstographe
 ```
 
+## Composants de navigation et d’en-tête
+
+`side-rail.ts` fournit les mêmes actions dans les modes icônes et icônes avec
+libellés. `ui.sidebar_labels` bascule entre eux ; `sidebar_expanded` est conservé
+dans les préférences globales, par le writer commun.
+
+Les collections dont le profil d’édition est `dialog` utilisent `recordCard` et
+`sortableCards` : une carte par entrée, ouverture du brouillon dans `formDialog`,
+poignée et suppression. Auteurs et affiliations partagent cette voie.
+[SortableJS](https://github.com/SortableJS/Sortable) gère le déplacement à la souris ;
+la [convention clavier](../docs/keyboard-navigation.md) permet le même travail.
+Le déplacement reste provisoire jusqu’à sa confirmation et publie une seule
+commande `record.move` ; une modification concurrente de l’ordre l’invalide.
+La licence MIT de SortableJS est embarquée dans `public/licenses/`.
+
 ## Vérifications courantes
 
 ```sh

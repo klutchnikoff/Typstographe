@@ -15,6 +15,7 @@ Les actions continuent à passer par leurs commandes et validations habituelles.
 | Actions, barre d’outils, en-têtes de widgets | Gauche / Droite, Début / Fin | Déplacement du focus seulement ; Entrée ou Espace déclenche le bouton. |
 | Listes de récupération et dictionnaire personnel | Haut / Bas, Début / Fin | Parcours des entrées. Les actions de récupération restent explicites. |
 | Formulaire | Tab / Maj+Tab, Entrée, Échap | Parcours des champs ; Entrée valide ou actionne le bouton focalisé. Échap ferme la portée locale sans valider. |
+| Poignée de collection | Espace ou Entrée, puis Haut / Bas, Entrée, Échap | Saisir la carte, prévisualiser son déplacement, puis confirmer en une édition. Échap ou Tab annule le déplacement provisoire. Une modification concurrente de l’ordre invalide ce déplacement. |
 
 Les champs conservent leurs touches natives : déplacement du curseur, sélection,
 flèches des nombres et listes déroulantes. Les sélecteurs natifs de fichiers,
@@ -45,6 +46,11 @@ bouclent ; Début et Fin visent les extrémités, sauf dans les champs de saisie
 
 Les générateurs `contextPanel`, `widgetFrame` et les barres d’action installent
 ces contrats. Un nouveau widget ou bandeau qui utilise ces générateurs en hérite.
+`sortableCards` installe la famille de réorganisation pour les collections ;
+`recordCard` fournit la poignée, la surface d’édition et les actions communes.
+Les auteurs et affiliations utilisent ces mêmes générateurs, avec ouverture de
+leur brouillon dans `formDialog`. Le bouton « + » suit la collection ; les cartes
+n’affichent ni flèches de déplacement ni bouton de paramètres supplémentaire.
 Un nouveau type de contrôle doit déclarer sa famille ; les règles ne sont pas
 déduites du texte du bouton ou du nom de la capacité.
 
