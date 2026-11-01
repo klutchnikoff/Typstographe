@@ -440,6 +440,28 @@ fn dispatch(
             *session = Session::open(root)?;
             Ok(serde_json::Value::Null)
         }
+        "open_file" => {
+            let path =
+                std::path::PathBuf::from(args["path"].as_str().ok_or("Missing project path")?)
+                    .canonicalize()
+                    .map_err(|e| e.to_string())?;
+            let session_root = bridge
+                .session
+                .lock()
+                .map_err(|e| e.to_string())?
+                .root
+                .canonicalize()
+                .map_err(|e| e.to_string())?;
+            if !path.starts_with(session_root) {
+                return Err("Recipe projects must stay inside the isolated session".into());
+            }
+            files::open_for_recipe(
+                &bridge.session,
+                &path,
+                args["revision"].as_u64().ok_or("Missing revision")?,
+                |source, assets, context| bridge.renderer.validate(source, assets, context),
+            )
+        }
         "new_document" => {
             let settings =
                 serde_json::from_value(args["settings"].clone()).map_err(|e| e.to_string())?;

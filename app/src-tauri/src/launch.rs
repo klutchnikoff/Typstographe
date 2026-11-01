@@ -44,6 +44,8 @@ impl Options {
                         "synchronization-active",
                         "synchronization",
                         "performance",
+                        "paragraph-input",
+                        "paragraph-input-manual",
                         "draft-conservation",
                         "draft-recover",
                         "draft-verify",

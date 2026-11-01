@@ -579,7 +579,14 @@ async function start() {
   )
   if (recipeBuild && isTauri) {
     const mode = diagnosticMode
-    if (mode?.startsWith('synchronization') && synchronizationMeter) {
+    if (mode?.startsWith('paragraph-input')) {
+      void (await import('./paragraph-input-diagnostic')).paragraphInputDiagnostic(
+        mode,
+        host.transport,
+        provider,
+        editor,
+      )
+    } else if (mode?.startsWith('synchronization') && synchronizationMeter) {
       void (await import('./synchronization-performance')).synchronizationPerformance(
         host.transport,
         provider,
