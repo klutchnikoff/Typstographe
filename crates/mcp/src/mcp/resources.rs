@@ -1,26 +1,31 @@
 //! Ressources virtuelles uniquement ; aucun URI n’est converti en chemin disque.
 use rmcp::model::Resource;
 
-const RESOURCES: [(&str, &str, &str); 6] = [
+const RESOURCES: [(&str, &str, &str); 7] = [
+    (
+        "overview",
+        "Start here",
+        "Compact session overview, current document type and capabilities, rules and links to details.",
+    ),
     (
         "content-capabilities",
         "Structured content contracts",
-        "Shared semantic capability definitions with explicit support per adapter; documentation does not imply execution.",
+        "Compact semantic capability index; use capabilities.describe for one signature and its executable examples.",
     ),
     (
         "guide",
         "Usage guide",
-        "Session rules, current permissions and discovery workflow.",
+        "Detailed editing rules and workflow. Read the compact overview first.",
     ),
     (
         "types",
         "Document types",
-        "Fields, defaults, capabilities and brief interchangeable model cards.",
+        "Compact type profiles and brief visual model cards. Use document_types.describe for fields and capabilities.",
     ),
     (
         "commands",
         "Documented command catalogue",
-        "Common structured operation schemas. Effective invocation schemas are exposed by tools/list; permissions are checked separately.",
+        "Compact operation index and adapter support. Use capabilities.describe for a schema; permissions are checked separately.",
     ),
     (
         "document",

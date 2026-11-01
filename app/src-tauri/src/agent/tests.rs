@@ -36,7 +36,7 @@ fn discovery_matches_the_shared_catalogue_and_cannot_approve_or_write_files() {
             .as_array()
             .unwrap()
             .iter()
-            .any(|e| e["id"] == "record.add" && e["attached_proposal"] == false)
+            .any(|e| e["id"] == "record.add" && e["execution"]["proposal_step"] == false)
     );
     let tools = typstographe_mcp::tools(true);
     assert!(tools.iter().all(|t| !t.name.contains("accept")
@@ -592,7 +592,7 @@ fn attached_requests_stay_scoped_to_this_document_and_known_resources() {
         &read("typstographe://types"),
     )
     .unwrap();
-    assert_eq!(types["outcome"], api::types());
+    assert_eq!(types["outcome"], typstographe_mcp::discovery::types());
     for uri in [
         "typstographe://commands",
         "typstographe://content-capabilities",
@@ -681,4 +681,58 @@ fn the_invitation_listener_serves_only_while_its_token_is_current() {
     }
     worker.join().unwrap();
     assert!(received.try_recv().is_err());
+}
+
+#[test]
+fn compact_attached_discovery_exposes_details_without_changing_work_or_granting_authority() {
+    let (_root, mut session, mut agent) = fixture();
+    let before = reference(&session);
+    let state = session.ensure_owner().unwrap().state().clone();
+    let overview = dispatch(
+        &mut session,
+        &mut agent,
+        "resource.read",
+        &json!({"uri":"typstographe://overview"}),
+    )
+    .unwrap();
+    assert_eq!(overview["outcome"]["document_type"], "courrier");
+    assert_eq!(overview["permissions"]["human_approval_required"], true);
+    assert_eq!(overview["permissions"]["filesystem"], false);
+    let types = dispatch(&mut session, &mut agent, "document_types.list", &json!({})).unwrap();
+    assert!(types["outcome"]["types"][0].get("metadata").is_none());
+    let planned = dispatch(
+        &mut session,
+        &mut agent,
+        "document_types.describe",
+        &json!({"type":"cv"}),
+    )
+    .unwrap();
+    assert_eq!(planned["outcome"]["can_create"], false);
+    let insert = dispatch(
+        &mut session,
+        &mut agent,
+        "capabilities.describe",
+        &json!({"id":"text.insert"}),
+    )
+    .unwrap();
+    assert_eq!(
+        insert["outcome"]["execution"],
+        json!({"direct_tool":false,"proposal_step":true})
+    );
+    let submit = dispatch(
+        &mut session,
+        &mut agent,
+        "capabilities.describe",
+        &json!({"id":"proposals.submit"}),
+    )
+    .unwrap();
+    assert_eq!(submit["outcome"]["execution"]["direct_tool"], true);
+    assert!(
+        submit["outcome"]["params_schema"]["properties"]
+            .get("document")
+            .is_some()
+    );
+    assert_eq!(reference(&session), before);
+    assert_eq!(session.ensure_owner().unwrap().state(), &state);
+    assert!(agent.proposal.is_none());
 }
