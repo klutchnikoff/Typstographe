@@ -1,3 +1,4 @@
+import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { expect, test, type Page } from '@playwright/test'
 import { confirmNewDocument } from './document-lifecycle'
 import { expectEditorText } from './editor-content'
@@ -144,6 +145,7 @@ test(
     await page.locator('dialog select').first().selectOption('article')
     await confirmNewDocument(page)
     await page.locator('#metadata-tab-titles').click()
+    await openRecordCard(page)
     const title = page.getByRole('textbox', { name: 'Titre', exact: true })
     await title.click()
     await paste(
@@ -153,6 +155,7 @@ test(
     )
     await expect(title).toHaveText('Titre complémentaire')
     await expect(title.locator('p')).toHaveCount(1)
+    await confirmRecordDialog(page)
     await page.evaluate(() => window.__spike!.provider.flush())
     await expect(page.getByRole('region', { name: 'Brouillon non synchronisé' })).toBeHidden()
   },

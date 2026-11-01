@@ -17,7 +17,7 @@ open-dialog = Open document
 all-files = All files
 renderer-stopped = The rendering engine has stopped.
 multiple-styles = Mixed styles
-preview-title = Typst preview
+preview-title = Preview
 preview-hint = Double-click a passage to find it in the editor.
 preview-updating = Updating…
 preview-failed = The document could not be typeset. The last successful preview is still displayed.
@@ -666,7 +666,7 @@ web-preparing = Preparing…
 web-loading = Loading…
 web-invalid-content = Content needs correction · last valid preview retained
 web-local-edits-offline = Local changes · offline
-web-preview = Typst preview
+web-preview = Preview
 web-invalid-link = Use an http, https or mailto address.
 web-invalid-list-start = Start number must be between 1 and 10,000.
 web-changed-block = The block has changed.
@@ -1122,3 +1122,31 @@ web-comparison-context-42 = Review the composition
 web-comparison-context-43 = The proposal was rejected. The document is unchanged.
 web-comparison-context-44 = The proposal was completed without changes.
 web-comparison-context-45 = The current document was kept.
+
+# Sidebar modes and reusable record cards.
+web-rail-panels = Application panels
+web-rail-hide-labels = Hide labels
+web-rail-show-labels = Show labels
+web-rail-toggle-labels = Show / hide sidebar labels
+web-record-reorder = Reorder · { "{name}" }
+web-record-order-changed = The list changed. Start moving the item again.
+web-record-reorder-help = Drag to reorder. Keyboard: Space, arrows, then Enter or Escape.
+web-record-reorder-cancelled = Move cancelled.
+web-record-reorder-position = New position: { "{position}" } of { "{count}" }.
+web-record-reorder-started = Move started. Use the arrows, then Enter or Escape.
+
+article-localization-removal-notice = This removes the entire language entry: its titles, abstract and keywords.
+
+field-stats =
+    { $name } ({ $words ->
+        [one] { $words } word
+       *[other] { $words } words
+    } - { $signs ->
+        [one] { $signs } character
+       *[other] { $signs } characters
+    })
+
+web-sidebar-width = Sidebar width
+
+web-preview-single-page = Preview ({ "{count}" } page)
+web-preview-multiple-pages = Preview ({ "{count}" } pages)

@@ -1,3 +1,4 @@
+import { openRecordCard } from './record-dialog-controls'
 import { expect, test } from '@playwright/test'
 import { confirmNewDocument } from './document-lifecycle'
 
@@ -15,6 +16,7 @@ for (const profile of ['body', 'title', 'abstract']) {
       await confirmNewDocument(page)
       await page.locator(`#metadata-tab-${profile === 'title' ? 'titles' : 'abstracts'}`).click()
     }
+    if (profile !== 'body') await openRecordCard(page)
     const zone = page.getByRole('textbox', {
       name: profile === 'body' ? 'Corps du document' : profile === 'title' ? 'Titre' : 'Résumé',
       exact: true,
@@ -61,9 +63,16 @@ for (const profile of ['body', 'title', 'abstract']) {
     })
     expect(advance.space).toBeGreaterThan(0)
     expect(Math.abs(advance.space - advance.tilde)).toBeLessThan(0.5)
-    await page.evaluate(async () => {
-      await window.__spike!.provider.clearHistory()
-    })
+    if (profile !== 'body') {
+      // Changing controls ends the private rich field's capture group.
+      await page
+        .getByRole('button', {
+          name: 'Gras · ' + (profile === 'title' ? 'Titre' : 'Résumé'),
+          exact: true,
+        })
+        .focus()
+      await zone.focus()
+    } else await page.evaluate(() => window.__spike!.provider.clearHistory())
     await page.keyboard.type('mots')
     await expect.poll(() => zone.textContent()).toBe('Deux\u00a0mots')
     await zone.press('ControlOrMeta+z')

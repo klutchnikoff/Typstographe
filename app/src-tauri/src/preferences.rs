@@ -18,6 +18,8 @@ pub struct Preferences {
     pub recent: Vec<String>,
     pub editor_fraction: f64,
     pub spelling_enabled: bool,
+    pub sidebar_expanded: bool,
+    pub sidebar_width: f64,
 }
 impl Default for Preferences {
     fn default() -> Self {
@@ -31,6 +33,8 @@ impl Default for Preferences {
             recent: vec![],
             editor_fraction: 0.5,
             spelling_enabled: true,
+            sidebar_expanded: true,
+            sidebar_width: 320.,
         }
     }
 }
@@ -58,6 +62,8 @@ impl Preferences {
             || self.profile.values().any(|s| s.len() > 16_000)
             || !self.editor_fraction.is_finite()
             || !(0.1..=0.9).contains(&self.editor_fraction)
+            || !self.sidebar_width.is_finite()
+            || !(240.0..=520.0).contains(&self.sidebar_width)
         {
             return Err("Préférences invalides.".into());
         }
@@ -125,11 +131,29 @@ pub fn preferences_save(app: tauri::AppHandle, preferences: Preferences) -> Resu
 mod tests {
     use super::*;
     #[test]
+    fn adding_sidebar_mode_keeps_existing_profile_and_appearance() {
+        let preferences: Preferences = serde_json::from_value(serde_json::json!({
+            "appearance": "dark",
+            "profile": { "sender.name": "Camille Martin" }
+        }))
+        .unwrap();
+        assert!(preferences.sidebar_expanded);
+        assert_eq!(preferences.sidebar_width, 320.);
+        let directory = tempfile::tempdir().unwrap();
+        preferences.save(directory.path()).unwrap();
+        let reopened = Preferences::load(directory.path()).unwrap();
+        assert_eq!(reopened.profile["sender.name"], "Camille Martin");
+        assert_eq!(reopened.appearance, "dark");
+        assert!(reopened.sidebar_expanded);
+    }
+    #[test]
     fn preferences_roundtrip_and_reject_invalid_column_widths() {
         let directory = tempfile::tempdir().unwrap();
         let mut preferences = Preferences {
             editor_fraction: 0.63,
             spelling_enabled: false,
+            sidebar_expanded: false,
+            sidebar_width: 404.,
             ..Default::default()
         };
         preferences
@@ -139,7 +163,18 @@ mod tests {
         let restored = Preferences::load(directory.path()).unwrap();
         assert_eq!(restored.editor_fraction, 0.63);
         assert!(!restored.spelling_enabled);
+        assert!(!restored.sidebar_expanded);
+        assert_eq!(restored.sidebar_width, 404.);
         assert_eq!(restored.personal["fr"], vec!["Typst"]);
+        for invalid in [239., 521., f64::NAN] {
+            preferences.sidebar_width = invalid;
+            assert!(preferences.save(directory.path()).is_err());
+            assert_eq!(
+                Preferences::load(directory.path()).unwrap().sidebar_width,
+                404.
+            );
+        }
+        preferences.sidebar_width = 404.;
         preferences.editor_fraction = 0.99;
         assert!(preferences.save(directory.path()).is_err());
         assert_eq!(

@@ -54,10 +54,7 @@ test('dialogue réutilisable : clavier, fond flouté, brouillon, annulation et v
   await create(page)
   await author(page)
   const before = await data(page)
-  const trigger = records(page, 'authors').getByRole('button', {
-    name: 'Modifier · Auteur',
-    exact: true,
-  })
+  const trigger = records(page, 'authors').locator('[data-record-open]')
   await trigger.click()
   await expect(name(page)).toBeFocused()
   await name(page).fill('Brouillon à annuler')
@@ -92,8 +89,13 @@ test('dialogue réutilisable : clavier, fond flouté, brouillon, annulation et v
   await name(page).press('ControlOrMeta+Enter')
   await expect(dialog(page)).toHaveCount(0)
   await expect(trigger).toBeFocused()
-  await expect(records(page, 'authors')).toContainText('camille@example.org')
+  await expect(records(page, 'authors').locator('.metadata-record-caption')).toHaveText(
+    'Camille Durand (Auteur correspondant)',
+  )
   const saved = await data(page)
+  expect(
+    Object.values(saved.authors).some((author: any) => author.email === 'camille@example.org'),
+  ).toBe(true)
   expect(Object.keys(saved.authors)).toEqual(Object.keys(before.authors))
   const body = page.getByRole('textbox', { name: 'Corps du document', exact: true })
   await body.focus()
@@ -127,7 +129,7 @@ test('dialogue réutilisable : clavier, fond flouté, brouillon, annulation et v
   }
   await page.keyboard.press('Escape')
   await tab(page, 'affiliations')
-  await records(page, 'affiliations').locator('summary').click()
+  await records(page, 'affiliations').locator('[data-record-open]').click()
   const address = dialog(page).getByLabel('Signature officielle', { exact: true })
   await expect(address).toBeFocused()
   await address.press('End')
@@ -147,9 +149,9 @@ test('une modification concurrente du même auteur est signalée et conserve le 
   const peer = await context.newPage()
   await ready(peer, `record-edit-peer-${Date.now()}`)
   await tab(peer, 'authors')
-  await records(page, 'authors').locator('summary').click()
+  await records(page, 'authors').locator('[data-record-open]').click()
   await name(page).fill('Ma proposition privée')
-  await records(peer, 'authors').locator('summary').click()
+  await records(peer, 'authors').locator('[data-record-open]').click()
   await expect(name(peer)).toHaveValue('Camille Martin')
   await name(peer).fill('Modification de la collègue')
   await confirm(peer)

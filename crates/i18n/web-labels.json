@@ -116,7 +116,9 @@
   "Chargement…": "web-loading",
   "Contenu à corriger · dernier rendu conservé": "web-invalid-content",
   "Modifications locales · hors connexion": "web-local-edits-offline",
-  "Aperçu Typst": "web-preview",
+  "Aperçu": "web-preview",
+  "Aperçu ({count} page)": "web-preview-single-page",
+  "Aperçu ({count} pages)": "web-preview-multiple-pages",
   "Utilisez une adresse http, https ou mailto.": "web-invalid-link",
   "Numéro initial entre 1 et 10 000.": "web-invalid-list-start",
   "Le bloc a changé.": "web-changed-block",
@@ -446,5 +448,16 @@
   "Vérifier la composition": "web-comparison-context-42",
   "Proposition refusée. Le document est inchangé.": "web-comparison-context-43",
   "Proposition terminée sans modification.": "web-comparison-context-44",
-  "Document courant conservé.": "web-comparison-context-45"
+  "Document courant conservé.": "web-comparison-context-45",
+  "Largeur de la barre latérale": "web-sidebar-width",
+  "Panneaux de l’application": "web-rail-panels",
+  "Masquer les libellés": "web-rail-hide-labels",
+  "Afficher les libellés": "web-rail-show-labels",
+  "Afficher / masquer les libellés de la barre latérale": "web-rail-toggle-labels",
+  "Réordonner · {name}": "web-record-reorder",
+  "La liste a changé. Recommencez le déplacement.": "web-record-order-changed",
+  "Glisser pour réordonner. Au clavier : Espace, flèches, puis Entrée ou Échap.": "web-record-reorder-help",
+  "Déplacement annulé.": "web-record-reorder-cancelled",
+  "Nouvelle position : {position} sur {count}.": "web-record-reorder-position",
+  "Déplacement activé. Utilisez les flèches, puis Entrée ou Échap.": "web-record-reorder-started"
 }

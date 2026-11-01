@@ -1,3 +1,4 @@
+import { expectPreviewReady } from './preview-assertions'
 import { confirmNewDocument } from './document-lifecycle'
 import { recordSelection } from './selection-diagnostic'
 import { expect, test } from '@playwright/test'
@@ -87,8 +88,10 @@ test(
       .press('Enter')
     await expect(page.locator('tr')).toHaveCount(4)
     await expect(page.locator('#render-status')).not.toContainText('corriger')
-    await page.waitForFunction(() =>
-      /page/.test(document.querySelector('#render-status')!.textContent || ''),
+    await page.waitForFunction(
+      () =>
+        (document.querySelector('#render-status') as HTMLElement).hidden &&
+        /page/.test(document.querySelector('#preview-heading')!.textContent || ''),
     )
     await page.emulateMedia({ colorScheme: 'dark' })
   },
@@ -219,9 +222,7 @@ test('sélection entre blocs et saisie sur un document plus long', async ({ page
     })
     e.commands.focus('end')
   })
-  await expect
-    .poll(() => page.locator('#render-status').textContent(), { timeout: 60_000 })
-    .toMatch(/\d+ pages? · \d+ ms/)
+  await expectPreviewReady(page, undefined, 60_000)
   // Du keydown jusqu'à la prochaine frame après la transaction : mesure graphique,
   // sans compter les allers-retours entre Playwright et le navigateur.
   await page.evaluate(() => {
@@ -250,9 +251,7 @@ test('sélection entre blocs et saisie sur un document plus long', async ({ page
   })
   await page.keyboard.type('Un test de saisie après cent paragraphes.', { delay: 30 })
   await page.waitForTimeout(100)
-  await expect
-    .poll(() => page.locator('#render-status').textContent(), { timeout: 60_000 })
-    .toMatch(/\d+ pages? · \d+ ms/)
+  await expectPreviewReady(page, undefined, 60_000)
   const result = await page.evaluate(() => {
     const metrics = (window as unknown as { __latency: { samples: number[]; stop: () => void } })
       .__latency
@@ -265,7 +264,7 @@ test('sélection entre blocs et saisie sur un document plus long', async ({ page
       medianMs: values[Math.floor(values.length / 2)],
       p95Ms: values[Math.floor(values.length * 0.95)],
       maxMs: values.at(-1),
-      preview: document.querySelector('#render-status')!.textContent,
+      preview: document.querySelector('#preview-heading')!.textContent,
       userAgent: navigator.userAgent,
       // Indicateur Chromium seulement, ni le DOM ni le RSS total de Tauri/WebKit.
       approximateJSHeapMiB: (performance as Performance & { memory?: { usedJSHeapSize: number } })
@@ -480,8 +479,10 @@ test('listes au clavier et dans la barre d’outils, bascule et sortie du widget
     await page.keyboard.type('Après la liste')
     await expect(page.locator('.tiptap > p')).toHaveText(['Après la liste', ''])
     await expect(page.locator(`.widget-${kind} li`)).toHaveCount(2)
-    await page.waitForFunction(() =>
-      /page/.test(document.querySelector('#render-status')!.textContent || ''),
+    await page.waitForFunction(
+      () =>
+        (document.querySelector('#render-status') as HTMLElement).hidden &&
+        /page/.test(document.querySelector('#preview-heading')!.textContent || ''),
     )
     await expect(page.locator('#message')).not.toHaveClass(/error/)
   }
@@ -543,7 +544,7 @@ test('colonne éditable sans cadre et actions groupées à droite', async ({ pag
   await expect(page.locator('.tiptap')).toBeFocused()
   await page.keyboard.type(' Suite.')
   await expect(page.locator('.tiptap')).toContainText('Suite.')
-  await expect(page.locator('#render-status')).toHaveText(/^\d+ pages? ·/)
+  await expectPreviewReady(page)
   await page.emulateMedia({ colorScheme: 'dark' })
 
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()

@@ -986,3 +986,53 @@ fn joining_restores_the_participants_selection_and_explicit_styles_through_nativ
     // Never guess a replacement for the other participant's removed text zone.
     assert!(snapshot(&mut s, peer).selection_lost);
 }
+
+#[test]
+fn paragraph_boundary_is_private_validated_and_restored_by_native_history() {
+    let mut s = open();
+    let a = ctx(&mut s);
+    let before = Selection::ParagraphBoundary {
+        before: TreeTarget {
+            root: TreeRoot::Body,
+            path: vec![1],
+        },
+    };
+    let bytes = s.update();
+    view(&mut s, a, before.clone(), vec![]);
+    assert_eq!(snapshot(&mut s, a).selection, Some(before.clone()));
+    assert_eq!(bytes, s.update());
+    assert!(
+        s.set_context(
+            &s.guard().clone(),
+            a,
+            Some(Selection::ParagraphBoundary {
+                before: TreeTarget {
+                    root: TreeRoot::Body,
+                    path: vec![0]
+                },
+            }),
+            vec![]
+        )
+        .is_err()
+    );
+    assert_eq!(snapshot(&mut s, a).selection, Some(before.clone()));
+    execute(
+        &mut s,
+        a,
+        &[Command::JoinBlocks {
+            left: TreeTarget {
+                root: TreeRoot::Body,
+                path: vec![0],
+            },
+            right: TreeTarget {
+                root: TreeRoot::Body,
+                path: vec![1],
+            },
+        }],
+    );
+    select(&mut s, a, target(&[0], 5, 5));
+    history(&mut s, a, Direction::Undo);
+    assert_eq!(snapshot(&mut s, a).selection, Some(before));
+    history(&mut s, a, Direction::Redo);
+    assert_eq!(s.state().document.content[0].content[1].kind, "softBreak");
+}

@@ -75,7 +75,7 @@ open-dialog = Ouvrir un document
 all-files = Tous les fichiers
 renderer-stopped = Le moteur de rendu s’est arrêté.
 multiple-styles = Styles multiples
-preview-title = Aperçu Typst
+preview-title = Aperçu
 preview-hint = Double-cliquez sur un passage pour le retrouver dans l’éditeur.
 preview-updating = Actualisation…
 preview-failed = Le document n’a pas pu être composé. Le dernier aperçu réussi est conservé.
@@ -668,7 +668,7 @@ web-preparing = Préparation…
 web-loading = Chargement…
 web-invalid-content = Contenu à corriger · dernier rendu conservé
 web-local-edits-offline = Modifications locales · hors connexion
-web-preview = Aperçu Typst
+web-preview = Aperçu
 web-invalid-link = Utilisez une adresse http, https ou mailto.
 web-invalid-list-start = Numéro initial entre 1 et 10 000.
 web-changed-block = Le bloc a changé.
@@ -1124,3 +1124,31 @@ web-comparison-context-42 = Vérifier la composition
 web-comparison-context-43 = Proposition refusée. Le document est inchangé.
 web-comparison-context-44 = Proposition terminée sans modification.
 web-comparison-context-45 = Document courant conservé.
+
+# Sidebar modes and reusable record cards.
+web-rail-panels = Panneaux de l’application
+web-rail-hide-labels = Masquer les libellés
+web-rail-show-labels = Afficher les libellés
+web-rail-toggle-labels = Afficher / masquer les libellés de la barre latérale
+web-record-reorder = Réordonner · { "{name}" }
+web-record-order-changed = La liste a changé. Recommencez le déplacement.
+web-record-reorder-help = Glisser pour réordonner. Au clavier : Espace, flèches, puis Entrée ou Échap.
+web-record-reorder-cancelled = Déplacement annulé.
+web-record-reorder-position = Nouvelle position : { "{position}" } sur { "{count}" }.
+web-record-reorder-started = Déplacement activé. Utilisez les flèches, puis Entrée ou Échap.
+
+article-localization-removal-notice = Cette suppression retire toute la langue : ses titres, son résumé et ses mots-clés.
+
+field-stats =
+    { $name } ({ $words ->
+        [one] { $words } mot
+       *[other] { $words } mots
+    } - { $signs ->
+        [one] { $signs } signe
+       *[other] { $signs } signes
+    })
+
+web-sidebar-width = Largeur de la barre latérale
+
+web-preview-single-page = Aperçu ({ "{count}" } page)
+web-preview-multiple-pages = Aperçu ({ "{count}" } pages)

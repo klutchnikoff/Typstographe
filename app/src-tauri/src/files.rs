@@ -1,5 +1,18 @@
 mod persistence;
 #[cfg(feature = "recipe-driver")]
+pub fn open_for_recipe(
+    session: &std::sync::Mutex<crate::session::Session>,
+    path: &std::path::Path,
+    revision: u64,
+    validate: impl FnOnce(
+        &str,
+        &typstographe_core::assets::Assets,
+        crate::rendering::RenderContext<'_>,
+    ) -> Result<(), String>,
+) -> Result<serde_json::Value, String> {
+    persistence::open_project(session, path, revision, validate)
+}
+#[cfg(feature = "recipe-driver")]
 pub fn close_for_recipe(
     session: &mut crate::session::Session,
     revision: u64,

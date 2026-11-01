@@ -4,6 +4,7 @@ import type { Catalogue } from './shell'
 import { actionRow } from './keyboard-navigation'
 import { tr } from './i18n'
 import { icon } from './icons'
+import { railButton } from './side-rail'
 import { type Editor, type JSONContent } from '@tiptap/core'
 
 import type { Provider, Transport } from './provider'
@@ -19,21 +20,18 @@ export function mountAssistance(
   provider: Provider,
   transport: Transport,
   editor: Editor,
-  showPanel: (title: string) => HTMLElement,
+  showPanel: (title: string, section?: string) => HTMLElement,
   message: (text: string, error?: boolean) => void,
   isTauri: boolean,
 ) {
-  const button = document.createElement('button')
-  button.innerHTML = icon('pen-line')
-  button.title = tr('Assistance à la rédaction')
-  button.setAttribute('aria-label', tr('Assistance à la rédaction'))
+  const button = railButton(tr('Assistance à la rédaction'), 'pen-line', 'ui.assistance')
   document.querySelector('.side-rail')!.prepend(button)
   let currentContent: HTMLElement | undefined
   let request = 0
   let viewer: ReturnType<typeof proposalDialog> | undefined
   const show = async () => {
     const ticket = ++request
-    const host = showPanel(tr('Assistance à la rédaction'))
+    const host = showPanel(tr('Assistance à la rédaction'), 'ui.assistance')
     const content = document.createElement('div')
     content.className = 'assistance-panel'
     host.append(content)

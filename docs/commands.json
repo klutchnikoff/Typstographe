@@ -9758,6 +9758,24 @@
                       "root"
                     ],
                     "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "View-only caret on the separator before a paragraph. No document node.",
+                    "properties": {
+                      "before": {
+                        "$ref": "#/$defs/TreeTarget"
+                      },
+                      "kind": {
+                        "const": "paragraph_boundary",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "before"
+                    ],
+                    "type": "object"
                   }
                 ],
                 "title": "Selection"

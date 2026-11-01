@@ -21,3 +21,6 @@ l’icône `x`, déjà embarquée pour les boutons de fermeture.
 
 L’icône `wrench` de la palette de commandes provient du SVG officiel de Lucide
 0.468.0 (`icons/wrench.svg`), sans modification et sous les mêmes licences.
+
+La poignée des cartes de collections utilise `grip-vertical.svg` de cette même
+version officielle Lucide 0.468.0, sans modification.

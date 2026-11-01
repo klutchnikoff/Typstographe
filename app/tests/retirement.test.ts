@@ -94,7 +94,7 @@ it('ne modifie le dictionnaire et la signature des préférences qu’à la vali
     editor_fraction: 0.6,
     spelling_enabled: true,
   }
-  const saved = vi.fn(async (_: Preferences) => {})
+  const saved = vi.fn<Parameters<typeof preferencesPanel>[4]>(async () => {})
   const root = document.createElement('div')
   document.body.append(root)
   preferencesPanel(
@@ -121,7 +121,8 @@ it('ne modifie le dictionnaire et la signature des préférences qu’à la vali
   expect(next.signature).toBeNull()
   expect(next.personal.fr).toEqual([])
   expect(next.spelling_enabled).toBe(false)
-  expect(next.editor_fraction).toBe(0.6)
+  expect(next).not.toHaveProperty('editor_fraction')
+  expect(preferences.editor_fraction).toBe(0.6)
 })
 it('liste les copies de récupération, distingue les copies invalides et supprime explicitement', async () => {
   let entries = [

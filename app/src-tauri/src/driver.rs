@@ -405,6 +405,7 @@ fn dispatch(
         "count_text" => Ok(proofing::count_text(
             args["text"].as_str().unwrap_or("").into(),
             args["selection"].as_str().map(str::to_owned),
+            args["fieldLabel"].as_str().map(str::to_owned),
         )),
         "spelling_check" => tauri::async_runtime::block_on(proofing::spelling_check(
             serde_json::from_value(args["segments"].clone()).map_err(|e| e.to_string())?,
@@ -438,6 +439,28 @@ fn dispatch(
             ));
             *session = Session::open(root)?;
             Ok(serde_json::Value::Null)
+        }
+        "open_file" => {
+            let path =
+                std::path::PathBuf::from(args["path"].as_str().ok_or("Missing project path")?)
+                    .canonicalize()
+                    .map_err(|e| e.to_string())?;
+            let session_root = bridge
+                .session
+                .lock()
+                .map_err(|e| e.to_string())?
+                .root
+                .canonicalize()
+                .map_err(|e| e.to_string())?;
+            if !path.starts_with(session_root) {
+                return Err("Recipe projects must stay inside the isolated session".into());
+            }
+            files::open_for_recipe(
+                &bridge.session,
+                &path,
+                args["revision"].as_u64().ok_or("Missing revision")?,
+                |source, assets, context| bridge.renderer.validate(source, assets, context),
+            )
         }
         "new_document" => {
             let settings =

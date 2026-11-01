@@ -1,3 +1,4 @@
+import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { confirmNewDocument } from './document-lifecycle'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
@@ -130,7 +131,7 @@ test('la préédition reste locale jusqu’à compositionend, puis les deux fen�
   await peer.close()
 })
 
-test('la validation IME survit au retrait immédiat de la zone riche d’en-tête', async ({
+test('la validation IME dans la modale de titre reste privée puis est conservée à la validation', async ({
   page,
 }) => {
   await ready(page, 'main')
@@ -139,6 +140,7 @@ test('la validation IME survit au retrait immédiat de la zone riche d’en-têt
   await page.locator('dialog select').first().selectOption('article')
   await confirmNewDocument(page)
   await page.locator('#metadata-tab-titles').click()
+  await openRecordCard(page)
   const title = page.getByRole('textbox', { name: 'Titre', exact: true })
   await title.fill('Titre ')
   await title.press('End')
@@ -147,13 +149,14 @@ test('la validation IME survit au retrait immédiat de la zone riche d’en-têt
   await page.evaluate(() => {
     const title = document.querySelector<HTMLElement>('[aria-label="Titre"][contenteditable]')!
     title.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: 'にほん' }))
-    document.getElementById('metadata-tab-general')!.click()
   })
   await expect.poll(() => page.evaluate(() => window.__spike!.provider.composing)).toBe(false)
   await page.evaluate(async () => {
     await window.__spike!.provider.flush()
   })
-  await page.locator('#metadata-tab-titles').click()
+  await expect(title).toContainText('にほん')
+  await confirmRecordDialog(page)
+  await openRecordCard(page)
   await expect(title).toContainText('にほん')
   await expect(page.getByRole('region', { name: 'Brouillon non synchronisé' })).toBeHidden()
 })

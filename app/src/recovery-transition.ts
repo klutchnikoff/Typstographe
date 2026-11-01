@@ -13,7 +13,8 @@ export async function recoveryTransitions(provider: Provider, transport: Transpo
   let frozen: string | undefined,
     previous: HTMLElement | null = null,
     composing = 0,
-    blocker: HTMLDialogElement | undefined
+    blocker: HTMLElement | undefined,
+    releaseProgress: (() => void) | undefined
   const app = document.querySelector<HTMLElement>('#app')!
   const start = () => composing++,
     end = () => (composing = Math.max(0, composing - 1))
@@ -21,8 +22,10 @@ export async function recoveryTransitions(provider: Provider, transport: Transpo
   document.addEventListener('compositionend', end, true)
   const unfreeze = () => {
     provider.retainRecovery = false
+    releaseProgress?.()
+    releaseProgress = undefined
     if (blocker) {
-      blocker.close()
+      if (blocker instanceof HTMLDialogElement) blocker.close()
       blocker.remove()
       blocker = undefined
     }
@@ -40,13 +43,6 @@ export async function recoveryTransitions(provider: Provider, transport: Transpo
     frozen = value.id
     previous = document.activeElement as HTMLElement
     if (!composing && !provider.composing) {
-      app.inert = true
-      blocker = document.createElement('dialog')
-      blocker.className = 'app-dialog recovery-progress'
-      blocker.tabIndex = -1
-      const text = document.createElement('p')
-      text.textContent = tr('Conservation du travail dans les autres fenêtres…')
-      text.role = 'status'
       const cancelButton = document.createElement('button')
       cancelButton.textContent = tr('Annuler')
       const cancelTransition = () => {
@@ -55,14 +51,54 @@ export async function recoveryTransitions(provider: Provider, transport: Transpo
           .catch(provider.onError)
       }
       cancelButton.onclick = cancelTransition
-      blocker.addEventListener('cancel', (event) => {
-        event.preventDefault()
-        cancelTransition()
-      })
-      blocker.append(text, cancelButton)
-      document.body.append(blocker)
-      blocker.showModal()
-      blocker.focus()
+      const welcome = app.querySelector<HTMLElement>('.welcome:not([hidden]) .welcome-card')
+      if (welcome) {
+        blocker = document.createElement('section')
+        blocker.className = 'welcome-progress'
+        const spinner = document.createElement('span')
+        spinner.className = 'loading-spinner'
+        spinner.role = 'status'
+        spinner.setAttribute('aria-label', tr('Chargement…'))
+        blocker.append(spinner, cancelButton)
+        welcome.append(blocker)
+        // Keep the indicator accessible while protecting every other control.
+        // Unlike a modal, it neither takes focus nor interrupts the home screen.
+        const disabled: { element: HTMLElement; inert: boolean }[] = []
+        for (let branch = blocker; branch !== app; branch = branch.parentElement!)
+          for (const sibling of branch.parentElement!.children)
+            if (sibling !== branch && sibling instanceof HTMLElement) {
+              disabled.push({ element: sibling, inert: sibling.inert })
+              sibling.inert = true
+            }
+        const escape = (event: KeyboardEvent) => {
+          if (event.key !== 'Escape') return
+          event.preventDefault()
+          event.stopImmediatePropagation()
+          cancelTransition()
+        }
+        document.addEventListener('keydown', escape, true)
+        releaseProgress = () => {
+          document.removeEventListener('keydown', escape, true)
+          for (const { element, inert } of disabled) element.inert = inert
+        }
+      } else {
+        app.inert = true
+        const dialog = document.createElement('dialog')
+        blocker = dialog
+        dialog.className = 'app-dialog recovery-progress'
+        dialog.tabIndex = -1
+        const text = document.createElement('p')
+        text.textContent = tr('Conservation du travail dans les autres fenêtres…')
+        text.role = 'status'
+        dialog.addEventListener('cancel', (event) => {
+          event.preventDefault()
+          cancelTransition()
+        })
+        dialog.append(text, cancelButton)
+        document.body.append(dialog)
+        dialog.showModal()
+        dialog.focus()
+      }
     }
     provider.retainRecovery = true
     void (async () => {

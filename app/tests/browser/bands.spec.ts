@@ -1,3 +1,4 @@
+import { expectPreviewReady } from './preview-assertions'
 import { expect, test, type Page } from '@playwright/test'
 
 async function contents(page: Page) {
@@ -213,7 +214,7 @@ test('image : bandeau intégré, focus et modification annulable du texte altern
   await expect(page.locator('#remove-block')).toBeHidden()
   await expect(page.locator('#apply-properties')).toHaveText('Valider')
   await expect(page.locator('#properties .panel-actions')).toBeInViewport()
-  await expect(page.locator('#render-status')).toHaveText(/^\d+ pages? ·/)
+  await expectPreviewReady(page)
 })
 test('orthographe interligne : pointe vers le mot, largeur du bloc et réponse au redimensionnement', async ({
   page,

@@ -14,6 +14,8 @@ export interface Preferences {
   personal: Record<string, string[]>
   editor_fraction: number
   spelling_enabled: boolean
+  sidebar_width?: number
+  sidebar_expanded?: boolean
 }
 
 export function preferencesPanel(
@@ -21,7 +23,12 @@ export function preferencesPanel(
   catalogue: Catalogue,
   preferences: Preferences,
   transport: Transport,
-  onSave: (next: Preferences) => Promise<void>,
+  onSave: (
+    next: Pick<
+      Preferences,
+      'appearance' | 'font' | 'size' | 'spelling_enabled' | 'personal' | 'signature' | 'profile'
+    >,
+  ) => Promise<void>,
   failed: (error: unknown) => void,
 ) {
   const form = document.createElement('form')
@@ -123,8 +130,7 @@ export function preferencesPanel(
   form.onsubmit = (e) => {
     e.preventDefault()
     void (async () => {
-      const next: Preferences = {
-        ...preferences,
+      const next = {
         appearance: appearance.value,
         font: font.value,
         size: Number(size.value),

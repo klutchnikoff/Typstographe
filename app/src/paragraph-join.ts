@@ -2,6 +2,7 @@ import type { Editor } from '@tiptap/core'
 import { TextSelection } from '@tiptap/pm/state'
 import { dispatchImmediateEdit } from './immediate-edit'
 import { lineBreak } from './document-whitespace'
+import { ParagraphSelection } from './paragraph-selection'
 
 const prose = (kind: string) => kind === 'paragraph' || kind === 'heading'
 const containers = new Set(['doc', 'quote', 'listItem', 'tableCell', 'tableHeader'])
@@ -12,9 +13,16 @@ const containers = new Set(['doc', 'quote', 'listItem', 'tableCell', 'tableHeade
  */
 export function joinParagraphs(editor: Editor, backwards: boolean, trailingParagraph: boolean) {
   const { selection, storedMarks } = editor.state
-  if (editor.view.composing || !(selection instanceof TextSelection) || !selection.empty)
+  if (
+    editor.view.composing ||
+    !(selection instanceof TextSelection || selection instanceof ParagraphSelection) ||
+    !selection.empty
+  )
     return false
-  const { $from } = selection
+  const $from =
+    selection instanceof ParagraphSelection
+      ? editor.state.doc.resolve(selection.head + 1)
+      : selection.$from
   if (
     !$from.parent.isTextblock ||
     $from.parentOffset !== (backwards ? 0 : $from.parent.content.size)

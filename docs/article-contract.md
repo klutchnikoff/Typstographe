@@ -116,37 +116,52 @@ typst compile --root . --ignore-system-fonts fixtures/article-layout.typ output/
 autres formats sans modifier la recette. Les fichiers générés dans `output/`
 restent hors du dépôt.
 
-L’onglet Général conserve modèle, papier, orientation et langue principale.
-Les onglets **Titres**, **Affiliations**, **Auteurs** et **Résumés** séparent les
-informations éditoriales. Titres présente, pour chaque langue, le titre, le
-sous-titre et le titre court ; Résumés présente le résumé et les mots-clés des
-mêmes ensembles linguistiques. Leur séparation visuelle ne duplique aucune donnée.
-**Bibliographie** gère les fichiers originaux et le style autorisé par le modèle.
-**Général** propose le sommaire si le modèle le permet. Les déclarations Typst
+L’ordre des onglets est **Général > Titres > Résumés > Affiliations > Auteurs >
+Bibliographie**. Général conserve modèle, papier, orientation et langue principale.
+Titres présente une carte par langue, avec son nom et le titre principal sur
+une seule ligne (tronqué avec une ellipse si nécessaire). Un clic ouvre la même
+modale commune pour éditer le titre, le sous-titre et le titre court, avec les
+profils riches en ligne habituels. Résumés montre une carte par langue, portant
+seulement son nom. Un clic ouvre la modale commune pour éditer le résumé riche
+et ses mots-clés (un par ligne). Le libellé du résumé affiche les mots et signes
+pendant la saisie, avec le même comptage Unicode que le document : espaces inclus,
+retours exclus, sans les mots-clés ni les marques de mise en forme.
+Ces deux onglets présentent les mêmes ensembles linguistiques sans dupliquer
+leurs données : ajouter une langue dans l’un la rend disponible dans l’autre.
+Supprimer une langue secondaire retire ses titres, son résumé et ses mots-clés ;
+la confirmation annonce cette portée. La langue principale ne peut pas être supprimée.
+
+Bibliographie gère les fichiers originaux et le style autorisé par le modèle.
+Général propose le sommaire si le modèle le permet. Les déclarations Typst
 `editor-options.outline` et `editor-options.citation-styles` contrôlent ces choix ;
 une valeur absente ou un choix unique ne produit pas de contrôle inutile.
-L’ensemble de la langue principale est ouvert par défaut dans ces deux onglets.
 Ajouter une affiliation une seule fois, puis la cocher pour chacun de ses auteurs.
-Les flèches changent l’ordre sans changer les identifiants ; les corbeilles demandent
-confirmation. Une affiliation utilisée ne peut être supprimée qu’avec le retrait
-explicite de ses associations.
+Les titres, auteurs, affiliations et résumés utilisent les mêmes cartes
+réordonnables et la même modale, avec fond atténué et légèrement flouté. La poignée
+change l’ordre sans changer les identifiants ; la corbeille demande confirmation. Une affiliation
+utilisée exige le retrait explicite de ses associations avant suppression.
+Le bouton **+** est centré sous chaque collection de cartes. Les deux onglets de
+langues utilisent le même ordre et les mêmes identifiants.
 
-Un bouton **+** termine chaque ligne d’auteur, d’affiliation ou de langue. Il
-prépare une entrée juste après cette ligne ; une collection vide présente seulement
-ce bouton. Le formulaire d’ajout prend le focus. **Valider** publie l’entrée entière
-en une seule action annulable ; **Échap** ou **Annuler** l’abandonne et remet le
-focus sur le bouton d’ajout. Entrée valide depuis un champ texte simple ; les
-zones riches conservent leurs règles de saisie. Changer d’onglet abandonne aussi
-l’ajout non validé. Les ajouts provisoires restent locaux : ils ne sont ni diffusés
-aux collaborateurs, ni inclus dans les fichiers ou exports, ni ajoutés à
-l’historique commun. L’annulation ne touche pas aux éditions reçues entre-temps.
-Le résumé possède une zone riche, avec gras, italique et liens via le bandeau
-commun. Les mots-clés sont saisis un par ligne, y compris les expressions longues.
+L’ajout et la modification en modale sont des brouillons privés. **Valider** publie
+les champs modifiés en une seule action annulable ; **Échap** ou **Annuler** abandonne
+la saisie et rend le focus au déclencheur. **Ctrl/Cmd + Entrée** valide la modale ;
+Entrée conserve les règles de la zone active (titres sur une ligne, retour simple
+dans un résumé, ligne suivante dans les mots-clés). Pour une entrée existante,
+le focus va dans le premier champ riche ; pour une nouvelle langue, il va dans
+son choix de langue. Les champs héritent des profils riches communs : gras,
+italique, liens et bandeaux associés, retours et historique local du brouillon.
+Seule la validation alimente l’historique documentaire partagé. L’annulation ne touche pas aux éditions reçues entre-temps ;
+une modification concurrente du même enregistrement empêche son remplacement.
+La récupération conserve aussi l’onglet d’origine du formulaire, pour rouvrir un
+résumé dans Résumés plutôt que dans Titres, sans le publier avant validation.
 
 Les collections sont décrites en Rust, traduites par Fluent et présentées par des
 composants génériques. Le descripteur `panels` associe chaque onglet à une collection
 et, si nécessaire, à certains de ses champs : aucune liste de champs Article n’est
-recopiée dans l’interface. Les [profils de zones riches](rich-zones.md) centralisent
+recopiée dans l’interface. Un panneau peut déclarer les champs de sa carte
+avec `summary` : le composant commun extrait leur texte sans marques ni code.
+Les [profils de zones riches](rich-zones.md) centralisent
 la création, le schéma et les comportements de saisie des titres et résumés.
 Dans Yjs, chaque enregistrement possède ses champs propres :
 `Y.Text` pour les textes libres, `Y.XmlFragment` pour les zones riches, valeurs

@@ -280,6 +280,11 @@ pub const GROUPS: &[FieldGroup] = &[
         sections: &[],
     },
     FieldGroup {
+        id: "abstracts",
+        label_key: "group-article-abstracts",
+        sections: &[],
+    },
+    FieldGroup {
         id: "affiliations",
         label_key: "field-article-affiliations",
         sections: &[],
@@ -287,11 +292,6 @@ pub const GROUPS: &[FieldGroup] = &[
     FieldGroup {
         id: "authors",
         label_key: "field-article-authors",
-        sections: &[],
-    },
-    FieldGroup {
-        id: "abstracts",
-        label_key: "group-article-abstracts",
         sections: &[],
     },
     FieldGroup {
@@ -305,17 +305,19 @@ pub const GROUPS: &[FieldGroup] = &[
 pub(super) fn schema() -> serde_json::Value {
     use serde_json::json;
     let rich = |key, label, inline| json!({"key":key,"label_key":label,"kind":if inline {"rich_inline"} else {"rich"},"default":RichText::default()});
+    let mut abstract_field = rich("abstract", "field-abstract", false);
+    abstract_field["statistics"] = json!(true);
     json!({"outline":{"parameter":"show_outline","field":"article.show_outline"},"bibliography":{"tab":"bibliography","files":"references","field":"article.references","style":"citation_style","style_field":"article.citation_style"},"panels":[
-        {"id":"titles","collection":"localizations","fields":["language","title","subtitle","short-title"]},
+        {"id":"titles","collection":"localizations","editing":"dialog","item_label_key":"field-article-title","summary":["title"],"fields":["language","title","subtitle","short-title"]},
+        {"id":"abstracts","collection":"localizations","editing":"dialog","item_label_key":"field-abstract","fields":["language","abstract","keywords"]},
         {"id":"affiliations","collection":"affiliations","editing":"dialog"},
-        {"id":"authors","collection":"authors","editing":"dialog"},
-        {"id":"abstracts","collection":"localizations","fields":["language","abstract","keywords"]}
+        {"id":"authors","collection":"authors","editing":"dialog"}
     ],"collections":[
         {"field":"article.references","parameter":"references","label_key":"field-bibliography","item_label_key":"field-reference-file","title_key":"name","schema":schemars::schema_for!(Vec<crate::bibliography::ReferenceFile>),"fields":[
             {"key":"name","label_key":"field-reference-file","kind":"text","default":""},
             {"key":"contents","label_key":"field-reference-source","kind":"source","default":""}
         ]},
-        {"field":"article.authors","parameter":"authors","label_key":"field-article-authors","item_label_key":"article-author","title_key":"name","summary":["email","corresponding"],
+        {"field":"article.authors","parameter":"authors","label_key":"field-article-authors","item_label_key":"article-author","title_key":"name","summary":["corresponding"],
          "schema":schemars::schema_for!(Vec<Author>), "fields":[
             {"key":"name","label_key":"field-full-name","kind":"text","default":""},
             {"key":"email","label_key":"field-email","kind":"text","default":""},
@@ -327,11 +329,11 @@ pub(super) fn schema() -> serde_json::Value {
          "schema":schemars::schema_for!(Vec<Affiliation>), "fields":[
             {"key":"text","label_key":"field-official-affiliation","kind":"multiline","default":""}
          ]},
-        {"field":"article.localizations","parameter":"localizations","label_key":"field-article-localizations","item_label_key":"article-localization","title_key":"language","language_key":"language",
+        {"field":"article.localizations","parameter":"localizations","label_key":"field-article-localizations","item_label_key":"article-localization","removal_notice_key":"article-localization-removal-notice","title_key":"language","language_key":"language",
          "schema":schemars::schema_for!(Vec<Localization>), "fields":[
             {"key":"language","label_key":"field-language","kind":"language","default":"fr"},
             rich("title","field-article-title",true), rich("short-title","field-short-title",true),
-            rich("subtitle","field-subtitle",true), rich("abstract","field-abstract",false),
+            rich("subtitle","field-subtitle",true), abstract_field,
             {"key":"keywords","label_key":"field-keywords","kind":"tokens","default":[]}
          ]}
     ]})
@@ -403,13 +405,22 @@ mod tests {
                 }));
             }
         }
-        assert_eq!(panels[0]["collection"], panels[3]["collection"]);
+        let titles = panels.iter().find(|panel| panel["id"] == "titles").unwrap();
+        let abstracts = panels
+            .iter()
+            .find(|panel| panel["id"] == "abstracts")
+            .unwrap();
+        assert_eq!(titles["collection"], abstracts["collection"]);
+        assert_eq!(titles["editing"], "dialog");
+        assert_eq!(titles["summary"], serde_json::json!(["title"]));
+        assert_eq!(abstracts["editing"], "dialog");
+        assert_eq!(abstracts["item_label_key"], "field-abstract");
         assert_eq!(
-            panels[0]["fields"],
+            titles["fields"],
             serde_json::json!(["language", "title", "subtitle", "short-title"])
         );
         assert_eq!(
-            panels[3]["fields"],
+            abstracts["fields"],
             serde_json::json!(["language", "abstract", "keywords"])
         );
     }
