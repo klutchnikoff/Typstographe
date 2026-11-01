@@ -1,4 +1,5 @@
 //! Shared frozen viewer; staged choices publish a single undoable document edit.
+use crate::error::CommandError;
 use crate::{Bridge, agent::AgentState, session::Session};
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -49,10 +50,10 @@ pub struct Review {
     after_name: Option<String>,
     created: std::time::Instant,
 }
-fn error(key: &str) -> String {
-    typstographe_i18n::text(key)
+fn error(key: &str) -> CommandError {
+    typstographe_i18n::text(key).into()
 }
-fn check(s: &Session, peer: &str, r: &Review) -> Result<(), String> {
+fn check(s: &Session, peer: &str, r: &Review) -> Result<(), CommandError> {
     s.check_peer(peer, &r.plan.guard().document)?;
     if r.peer.as_deref().is_some_and(|p| p != peer) {
         return Err(error("web-comparison-unavailable"));
@@ -65,7 +66,7 @@ fn payload(
     id: &str,
     r: &Review,
     content: bool,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     let mut value = json!({"id":id,"report":r.plan.report(&s.guard())});
     value["report"]["context"] = json!(r.context);
     value["report"]["applied"] = json!(r.finished);
@@ -87,9 +88,9 @@ pub fn open(
     peer: &str,
     guard: &Guard,
     origin: Origin,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     s.check_peer(peer, &guard.document)?;
-    guard.check(&s.guard()).map_err(crate::owner::error)?;
+    guard.check(&s.guard())?;
     if let Origin::Proposal { id } = &origin {
         let p = agent
             .proposal
@@ -156,7 +157,7 @@ pub fn open(
             }
         }
     };
-    let plan = Comparison::new(before, after, source, expected).map_err(crate::owner::error)?;
+    let plan = Comparison::new(before, after, source, expected)?;
     // A delayed old opening/closing must not evict a newer viewer from the same window.
     let peers: Vec<_> = s
         .comparisons
@@ -198,7 +199,7 @@ pub fn open(
     s.comparisons.insert(id, r);
     Ok(result)
 }
-pub fn read(s: &Session, a: &AgentState, peer: &str, id: &str) -> Result<Value, String> {
+pub fn read(s: &Session, a: &AgentState, peer: &str, id: &str) -> Result<Value, CommandError> {
     let r = s
         .comparisons
         .get(id)
@@ -206,7 +207,7 @@ pub fn read(s: &Session, a: &AgentState, peer: &str, id: &str) -> Result<Value, 
     check(s, peer, r)?;
     payload(s, a, id, r, false)
 }
-fn authorized(s: &Session, a: &AgentState, peer: &str, id: &str) -> Result<(), String> {
+fn authorized(s: &Session, a: &AgentState, peer: &str, id: &str) -> Result<(), CommandError> {
     let r = s
         .comparisons
         .get(id)
@@ -234,10 +235,10 @@ pub fn comparison_open(
     state: State<Bridge>,
     guard: Guard,
     origin: Origin,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     open(
-        &mut *state.session.lock().map_err(|e| e.to_string())?,
-        &mut *state.agent.lock().map_err(|e| e.to_string())?,
+        &mut *state.session()?,
+        &mut *state.agent.lock()?,
         window.label(),
         &guard,
         origin,
@@ -248,10 +249,10 @@ pub fn comparison_read(
     window: tauri::WebviewWindow,
     state: State<Bridge>,
     id: String,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     read(
-        &*state.session.lock().map_err(|e| e.to_string())?,
-        &*state.agent.lock().map_err(|e| e.to_string())?,
+        &*state.session()?,
+        &*state.agent.lock()?,
         window.label(),
         &id,
     )
@@ -260,7 +261,7 @@ fn remove(s: &mut Session, id: &str) {
     s.comparisons.remove(id);
     s.comparisons.retain(|_, r| r.parent.as_deref() != Some(id));
 }
-pub fn close(s: &mut Session, peer: &str, id: &str) -> Result<(), String> {
+pub fn close(s: &mut Session, peer: &str, id: &str) -> Result<(), CommandError> {
     if let Some(r) = s.comparisons.get(id) {
         check(s, peer, r)?;
         if r.peer.is_some() {
@@ -274,12 +275,8 @@ pub fn comparison_close(
     window: tauri::WebviewWindow,
     state: State<Bridge>,
     id: String,
-) -> Result<(), String> {
-    close(
-        &mut *state.session.lock().map_err(|e| e.to_string())?,
-        window.label(),
-        &id,
-    )
+) -> Result<(), CommandError> {
+    close(&mut *state.session()?, window.label(), &id)
 }
 #[tauri::command]
 pub async fn comparison_preview(
@@ -287,9 +284,9 @@ pub async fn comparison_preview(
     state: State<'_, Bridge>,
     id: String,
     side: SourceSide,
-) -> Result<crate::rendering::Preview, String> {
+) -> Result<crate::rendering::Preview, CommandError> {
     let archive = {
-        let s = state.session.lock().map_err(|e| e.to_string())?;
+        let s = state.session()?;
         let r = s
             .comparisons
             .get(&id)
@@ -300,9 +297,7 @@ pub async fn comparison_preview(
             SourceSide::After => r.plan.after().clone(),
         }
     };
-    tauri::async_runtime::spawn_blocking(move || crate::versions::preview(archive))
-        .await
-        .map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(move || crate::versions::preview(archive)).await?
 }
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]

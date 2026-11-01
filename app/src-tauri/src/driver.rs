@@ -1,5 +1,6 @@
 //! Transport de recette STDIO, uniquement pour le serveur de test du navigateur.
 //! Les chemins restent ceux de la session fixée au lancement.
+use crate::error::CommandError;
 use crate::*;
 use std::io::{BufRead, Write};
 
@@ -32,19 +33,14 @@ fn dispatch(
     bridge: &Bridge,
     root: &std::path::Path,
     request: &serde_json::Value,
-) -> Result<serde_json::Value, String> {
+) -> Result<serde_json::Value, CommandError> {
     let args = &request["args"];
     let peer = request["peer"].as_str().ok_or("Participant absent.")?;
     let command = request["command"].as_str().ok_or("Commande absente.")?;
     match command {
         "choose_file" if args["save"] == true => {
-            let folder = bridge
-                .session
-                .lock()
-                .map_err(|e| e.to_string())?
-                .root
-                .clone();
-            std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
+            let folder = bridge.session()?.root.clone();
+            std::fs::create_dir_all(&folder)?;
             Ok(serde_json::json!(
                 folder.join(format!("document-{}.typsto", uuid::Uuid::new_v4()))
             ))
@@ -52,21 +48,20 @@ fn dispatch(
 
         "comparison_open" | "comparison_read" | "comparison_close" | "comparison_apply"
         | "comparison_preview" | "comparison_prepare" => {
-            let mut s = bridge.session.lock().map_err(|e| e.to_string())?;
-            let mut a = bridge.agent.lock().map_err(|e| e.to_string())?;
+            let mut s = bridge.session()?;
+            let mut a = bridge.agent.lock()?;
             let id = args["id"].as_str().unwrap_or("");
             match command {
                 "comparison_open" => crate::comparisons::open(
                     &mut s,
                     &mut a,
                     peer,
-                    &serde_json::from_value(args["guard"].clone()).map_err(|e| e.to_string())?,
-                    serde_json::from_value(args["origin"].clone()).map_err(|e| e.to_string())?,
+                    &serde_json::from_value(args["guard"].clone())?,
+                    serde_json::from_value(args["origin"].clone())?,
                 ),
                 "comparison_prepare" => {
                     let choices: Vec<typstographe_core::content::comparison::SourceSide> =
-                        serde_json::from_value(args["choices"].clone())
-                            .map_err(|e| e.to_string())?;
+                        serde_json::from_value(args["choices"].clone())?;
                     let ready =
                         crate::comparisons::staging::capture(&mut s, &a, peer, id, &choices)?
                             .prepare()?;
@@ -97,12 +92,11 @@ fn dispatch(
                     drop(s);
                     drop(a);
                     serde_json::to_value(crate::versions::preview(archive)?)
-                        .map_err(|e| e.to_string())
+                        .map_err(CommandError::from)
                 }
                 _ => {
                     let choices: Vec<typstographe_core::content::comparison::SourceSide> =
-                        serde_json::from_value(args["choices"].clone())
-                            .map_err(|e| e.to_string())?;
+                        serde_json::from_value(args["choices"].clone())?;
                     let ready = crate::comparisons::prepare(&mut s, &a, peer, id, &choices)?;
                     let archive = ready.archive();
                     bridge.renderer.validate(
@@ -115,29 +109,28 @@ fn dispatch(
                     )?;
                     let (mut result, publication) =
                         crate::comparisons::apply(&mut s, &mut a, peer, id, ready)?;
-                    result["publication"] =
-                        serde_json::to_value(publication).map_err(|e| e.to_string())?;
+                    result["publication"] = serde_json::to_value(publication)?;
                     Ok(result)
                 }
             }
         }
 
         "versions_list" | "versions_read" | "versions_preview" | "versions_change" => {
-            let guard = serde_json::from_value(args["guard"].clone()).map_err(|e| e.to_string())?;
-            let mut session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let guard = serde_json::from_value(args["guard"].clone())?;
+            let mut session = bridge.session()?;
             match command {
                 "versions_list" => crate::versions::list(&mut session, peer, &guard),
                 "versions_read" => crate::versions::read(
                     &mut session,
                     peer,
                     &guard,
-                    serde_json::from_value(args["id"].clone()).map_err(|e| e.to_string())?,
+                    serde_json::from_value(args["id"].clone())?,
                 ),
                 "versions_change" => crate::versions::change(
                     &mut session,
                     peer,
                     &guard,
-                    serde_json::from_value(args["change"].clone()).map_err(|e| e.to_string())?,
+                    serde_json::from_value(args["change"].clone())?,
                     args["destination"].as_str().map(std::path::Path::new),
                 ),
                 _ => {
@@ -145,96 +138,68 @@ fn dispatch(
                         &mut session,
                         peer,
                         &guard,
-                        serde_json::from_value(args["id"].clone()).map_err(|e| e.to_string())?,
+                        serde_json::from_value(args["id"].clone())?,
                     )?;
                     drop(session);
                     serde_json::to_value(crate::versions::preview(archive)?)
-                        .map_err(|e| e.to_string())
+                        .map_err(CommandError::from)
                 }
             }
         }
 
         "diagnostic_request_close" => Ok(serde_json::Value::Null),
-        "work_list" => serde_json::to_value(
-            bridge
-                .session
-                .lock()
-                .map_err(|e| e.to_string())?
-                .work_list()?,
-        )
-        .map_err(|e| e.to_string()),
+        "work_list" => {
+            serde_json::to_value(bridge.session()?.work_list()?).map_err(CommandError::from)
+        }
         "work_delete" => {
             bridge
-                .session
-                .lock()
-                .map_err(|e| e.to_string())?
+                .session()?
                 .work_delete(args["id"].as_str().ok_or("id missing")?)?;
             Ok(serde_json::Value::Null)
         }
         "work_restore" => {
-            bridge
-                .session
-                .lock()
-                .map_err(|e| e.to_string())?
-                .work_restore(
-                    peer,
-                    args["id"].as_str().ok_or("id missing")?,
-                    args["revision"].as_u64().ok_or("revision missing")?,
-                )?;
+            bridge.session()?.work_restore(
+                peer,
+                args["id"].as_str().ok_or("id missing")?,
+                args["revision"].as_u64().ok_or("revision missing")?,
+            )?;
             Ok(serde_json::Value::Null)
         }
         "work_abandon" => {
-            bridge
-                .session
-                .lock()
-                .map_err(|e| e.to_string())?
-                .abandon_window_work(
-                    peer,
-                    args["generation"].as_str().ok_or("generation missing")?,
-                )?;
+            bridge.session()?.abandon_window_work(
+                peer,
+                args["generation"].as_str().ok_or("generation missing")?,
+            )?;
             Ok(serde_json::Value::Null)
         }
         "work_import" => {
             let record = crate::recovery::work::read_work(std::path::Path::new(
                 args["path"].as_str().ok_or("path missing")?,
             ))?;
-            let mut s = bridge.session.lock().map_err(|e| e.to_string())?;
+            let mut s = bridge.session()?;
             s.lifecycle(args["revision"].as_u64().ok_or("revision missing")?)?;
             s.restore_work_record(peer, record)?;
             Ok(serde_json::Value::Null)
         }
-        "transition_begin" => serde_json::to_value(
-            bridge
-                .session
-                .lock()
-                .map_err(|e| e.to_string())?
-                .begin_transition(
-                    peer,
-                    args["generation"].as_str().ok_or("generation missing")?,
-                )?,
-        )
-        .map_err(|e| e.to_string()),
+        "transition_begin" => serde_json::to_value(bridge.session()?.begin_transition(
+            peer,
+            args["generation"].as_str().ok_or("generation missing")?,
+        )?)
+        .map_err(CommandError::from),
         "transition_ack" => {
             bridge
-                .session
-                .lock()
-                .map_err(|e| e.to_string())?
-                .acknowledge_transition(
-                    peer,
-                    serde_json::from_value(args["ack"].clone()).map_err(|e| e.to_string())?,
-                )?;
+                .session()?
+                .acknowledge_transition(peer, serde_json::from_value(args["ack"].clone())?)?;
             Ok(serde_json::Value::Null)
         }
         "transition_status" => serde_json::to_value(
             bridge
-                .session
-                .lock()
-                .map_err(|e| e.to_string())?
+                .session()?
                 .transition_status(args["id"].as_str().ok_or("id missing")?)?,
         )
-        .map_err(|e| e.to_string()),
+        .map_err(CommandError::from),
         "transition_end" => {
-            let mut s = bridge.session.lock().map_err(|e| e.to_string())?;
+            let mut s = bridge.session()?;
             if s.transition
                 .as_ref()
                 .is_some_and(|t| Some(t.id.as_str()) == args["id"].as_str())
@@ -245,7 +210,7 @@ fn dispatch(
         }
         "close_document" => {
             crate::files::close_for_recipe(
-                &mut *bridge.session.lock().map_err(|e| e.to_string())?,
+                &mut *bridge.session()?,
                 args["revision"].as_u64().ok_or("revision missing")?,
             )?;
             Ok(serde_json::Value::Null)
@@ -253,46 +218,38 @@ fn dispatch(
         "open_private_recovery" => {
             let generation = args["generation"].as_str().ok_or("generation missing")?;
             Ok(serde_json::json!(
-                bridge
-                    .session
-                    .lock()
-                    .map_err(|e| e.to_string())?
-                    .open_private_recovery(peer, generation)?
+                bridge.session()?.open_private_recovery(peer, generation)?
             ))
         }
         "conserve_private" => {
-            let input = serde_json::from_value(args["input"].clone()).map_err(|e| e.to_string())?;
+            let input = serde_json::from_value(args["input"].clone())?;
             Ok(serde_json::json!(
-                bridge
-                    .session
-                    .lock()
-                    .map_err(|e| e.to_string())?
-                    .conserve_private(peer, input)?
+                bridge.session()?.conserve_private(peer, input)?
             ))
         }
         "diagnostic_private_recovery" => {
-            let s = bridge.session.lock().map_err(|e| e.to_string())?;
+            let s = bridge.session()?;
             let path = crate::recovery::drafts::path(&s.root, &s.generation, peer)?;
             if path.exists() {
                 serde_json::to_value(crate::recovery::drafts::read(&path)?)
-                    .map_err(|e| e.to_string())
+                    .map_err(CommandError::from)
             } else {
                 Ok(serde_json::Value::Null)
             }
         }
 
         "diagnostic_agent_authorize" => {
-            let s = bridge.session.lock().map_err(|e| e.to_string())?;
+            let s = bridge.session()?;
             s.check_peer(peer, &s.generation)?;
-            *bridge.agent.lock().map_err(|e| e.to_string())? = agent::AgentState {
+            *bridge.agent.lock()? = agent::AgentState {
                 token: Some("isolated-browser-recipe".into()),
                 ..Default::default()
             };
             Ok(serde_json::Value::Null)
         }
         "diagnostic_agent" => {
-            let mut session = bridge.session.lock().map_err(|e| e.to_string())?;
-            let mut agent = bridge.agent.lock().map_err(|e| e.to_string())?;
+            let mut session = bridge.session()?;
+            let mut agent = bridge.agent.lock()?;
             agent::dispatch(
                 &mut session,
                 &mut agent,
@@ -310,22 +267,17 @@ fn dispatch(
                     bridge.renderer.validate(
                         &crate::schema::source(&candidate.after, assets)?,
                         assets,
-                        bridge
-                            .session
-                            .lock()
-                            .map_err(|e| e.to_string())?
-                            .render_context(&candidate.settings),
+                        bridge.session()?.render_context(&candidate.settings),
                     )
                 },
             )?;
-            serde_json::to_value(publication).map_err(|e| e.to_string())
+            serde_json::to_value(publication).map_err(CommandError::from)
         }
-        "diagnostic_shared_state" => shared_diagnostic::run(
-            args.clone(),
-            &bridge.session.lock().map_err(|e| e.to_string())?.assets,
-        ),
+        "diagnostic_shared_state" => {
+            shared_diagnostic::run(args.clone(), &bridge.session()?.assets)
+        }
         "bibliography_index" | "bibliography_search" => {
-            let files = serde_json::from_value(args["files"].clone()).map_err(|e| e.to_string())?;
+            let files = serde_json::from_value(args["files"].clone())?;
             serde_json::to_value(if command == "bibliography_index" {
                 bibliography::bibliography_index(files)?
             } else {
@@ -334,27 +286,27 @@ fn dispatch(
                     args["query"].as_str().unwrap_or("").into(),
                 )?
             })
-            .map_err(|e| e.to_string())
+            .map_err(CommandError::from)
         }
         "validate_bibliography" => {
             bibliography::validate_bibliography(
-                serde_json::from_value(args["document"].clone()).map_err(|e| e.to_string())?,
-                serde_json::from_value(args["metadata"].clone()).map_err(|e| e.to_string())?,
+                serde_json::from_value(args["document"].clone())?,
+                serde_json::from_value(args["metadata"].clone())?,
             )?;
             Ok(serde_json::Value::Null)
         }
         "model_policy" => serde_json::to_value(bibliography::policy(
-            &*bridge.session.lock().map_err(|e| e.to_string())?,
+            &*bridge.session()?,
             args["template"].as_str().unwrap_or("").into(),
         )?)
-        .map_err(|e| e.to_string()),
+        .map_err(CommandError::from),
         "sync_forward" | "sync_backward" | "sync_selection" => {
             let revision = args["revision"].as_u64().ok_or("Révision absente.")?;
-            let session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let session = bridge.session()?;
             if session.revision != revision {
                 return Err("stale".into());
             }
-            let cache = bridge.renderer.1.lock().map_err(|e| e.to_string())?;
+            let cache = bridge.renderer.1.lock()?;
             let sync = cache
                 .as_ref()
                 .filter(|sync| sync.revision == revision)
@@ -363,9 +315,9 @@ fn dispatch(
                 "sync_forward" => Ok(serde_json::json!(
                     sync.forward(args["position"].as_u64().ok_or("Position absente.")? as usize)
                 )),
-                "sync_backward" => Ok(serde_json::json!(sync.backward(
-                    serde_json::from_value(args["location"].clone()).map_err(|e| e.to_string())?
-                ))),
+                "sync_backward" => Ok(serde_json::json!(
+                    sync.backward(serde_json::from_value(args["location"].clone())?)
+                )),
                 _ => Ok(serde_json::json!(sync.selection_highlights_exact(
                     args["from"].as_u64().ok_or("Début absent.")? as usize
                         ..args["to"].as_u64().ok_or("Fin absente.")? as usize
@@ -373,7 +325,7 @@ fn dispatch(
             }
         }
         "connection" | "set_synchronization" | "leave" => {
-            let mut session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let mut session = bridge.session()?;
             let generation = args["generation"].as_str().unwrap_or("");
             if command == "connection" {
                 session.connection(peer, generation, args["online"].as_bool() == Some(true))?;
@@ -387,13 +339,12 @@ fn dispatch(
                     args["enabled"].as_bool() == Some(true),
                 )?;
             }
-            serde_json::to_value(session.synchronization()).map_err(|e| e.to_string())
+            serde_json::to_value(session.synchronization()).map_err(CommandError::from)
         }
         "content_catalogue" => Ok(catalogue::content_catalogue()),
         "validate_model" => {
-            let snapshot: Snapshot =
-                serde_json::from_value(args["snapshot"].clone()).map_err(|e| e.to_string())?;
-            let session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let snapshot: Snapshot = serde_json::from_value(args["snapshot"].clone())?;
+            let session = bridge.session()?;
             let source = session.validate(&snapshot)?;
             bridge.renderer.validate(
                 &source,
@@ -408,27 +359,27 @@ fn dispatch(
             args["fieldLabel"].as_str().map(str::to_owned),
         )),
         "spelling_check" => tauri::async_runtime::block_on(proofing::spelling_check(
-            serde_json::from_value(args["segments"].clone()).map_err(|e| e.to_string())?,
-            serde_json::from_value(args["language"].clone()).map_err(|e| e.to_string())?,
-            serde_json::from_value(args["ignored"].clone()).map_err(|e| e.to_string())?,
+            serde_json::from_value(args["segments"].clone())?,
+            serde_json::from_value(args["language"].clone())?,
+            serde_json::from_value(args["ignored"].clone())?,
         )),
         "spelling_suggestions" => tauri::async_runtime::block_on(proofing::spelling_suggestions(
-            serde_json::from_value(args["language"].clone()).map_err(|e| e.to_string())?,
+            serde_json::from_value(args["language"].clone())?,
             args["word"].as_str().unwrap_or("").into(),
         ))
         .map(|words| serde_json::json!(words)),
-        "preferences_load" => serde_json::to_value(preferences::Preferences::load(
-            &bridge.session.lock().map_err(|e| e.to_string())?.root,
-        )?)
-        .map_err(|e| e.to_string()),
+        "preferences_load" => {
+            serde_json::to_value(preferences::Preferences::load(&bridge.session()?.root)?)
+                .map_err(CommandError::from)
+        }
         "preferences_save" => {
             let preferences: preferences::Preferences =
-                serde_json::from_value(args["preferences"].clone()).map_err(|e| e.to_string())?;
-            preferences.save(&bridge.session.lock().map_err(|e| e.to_string())?.root)?;
+                serde_json::from_value(args["preferences"].clone())?;
+            preferences.save(&bridge.session()?.root)?;
             Ok(serde_json::Value::Null)
         }
         "reset" => {
-            let mut session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let mut session = bridge.session()?;
             // Each case is a sibling: never nest it under the preceding case.
             let root = root.join(format!(
                 "case-{}",
@@ -443,15 +394,8 @@ fn dispatch(
         "open_file" => {
             let path =
                 std::path::PathBuf::from(args["path"].as_str().ok_or("Missing project path")?)
-                    .canonicalize()
-                    .map_err(|e| e.to_string())?;
-            let session_root = bridge
-                .session
-                .lock()
-                .map_err(|e| e.to_string())?
-                .root
-                .canonicalize()
-                .map_err(|e| e.to_string())?;
+                    .canonicalize()?;
+            let session_root = bridge.session()?.root.canonicalize()?;
             if !path.starts_with(session_root) {
                 return Err("Recipe projects must stay inside the isolated session".into());
             }
@@ -463,95 +407,82 @@ fn dispatch(
             )
         }
         "new_document" => {
-            let settings =
-                serde_json::from_value(args["settings"].clone()).map_err(|e| e.to_string())?;
+            let settings = serde_json::from_value(args["settings"].clone())?;
             let revision = args["revision"].as_u64().ok_or("Révision absente.")?;
             files::create(
-                &mut *bridge.session.lock().map_err(|e| e.to_string())?,
+                &mut *bridge.session()?,
                 settings,
                 revision,
                 serde_json::from_value(
                     args.get("resources")
                         .cloned()
                         .unwrap_or(serde_json::json!([])),
-                )
-                .map_err(|e| e.to_string())?,
+                )?,
             )?;
             Ok(serde_json::Value::Null)
         }
-        "join" => {
-            serde_json::to_value(bridge.session.lock().map_err(|e| e.to_string())?.join(peer))
-                .map_err(|e| e.to_string())
-        }
+        "join" => serde_json::to_value(bridge.session()?.join(peer)).map_err(CommandError::from),
         "commit_structured_commands" => {
-            let request =
-                serde_json::from_value(args["request"].clone()).map_err(|e| e.to_string())?;
-            let mut session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let request = serde_json::from_value(args["request"].clone())?;
+            let mut session = bridge.session()?;
             let publication = structured::commit(&mut session, peer, request)?;
-            let mut value = serde_json::to_value(publication).map_err(|e| e.to_string())?;
+            let mut value = serde_json::to_value(publication)?;
             value["broadcast"] = serde_json::json!(session.should_broadcast(peer));
             Ok(value)
         }
         "prepare_structured_commands" => {
-            let request =
-                serde_json::from_value(args["request"].clone()).map_err(|e| e.to_string())?;
-            serde_json::to_value(structured::prepare(
-                &*bridge.session.lock().map_err(|e| e.to_string())?,
-                request,
-            )?)
-            .map_err(|e| e.to_string())
+            let request = serde_json::from_value(args["request"].clone())?;
+            serde_json::to_value(structured::prepare(&*bridge.session()?, request)?)
+                .map_err(CommandError::from)
         }
         "relay" => {
-            let update: Vec<u8> =
-                serde_json::from_value(args["update"].clone()).map_err(|e| e.to_string())?;
-            let mut session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let update: Vec<u8> = serde_json::from_value(args["update"].clone())?;
+            let mut session = bridge.session()?;
             session.check_peer(peer, args["generation"].as_str().unwrap_or(""))?;
             let receipt = session.relay_view(
                 peer,
                 &update,
                 args["group"].as_u64(),
                 args["capture"].as_bool().unwrap_or(true),
-                serde_json::from_value(args["historyView"].clone()).map_err(|e| e.to_string())?,
+                serde_json::from_value(args["historyView"].clone())?,
             )?;
-            let mut value = serde_json::to_value(receipt).map_err(|e| e.to_string())?;
+            let mut value = serde_json::to_value(receipt)?;
             value["broadcast"] = serde_json::json!(session.should_broadcast(peer));
             Ok(value)
         }
         "editing_history" => {
-            let mut session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let mut session = bridge.session()?;
             session.check_peer(peer, args["generation"].as_str().unwrap_or(""))?;
-            let direction =
-                serde_json::from_value(args["direction"].clone()).map_err(|e| e.to_string())?;
-            let mut value = serde_json::to_value(session.history(peer, direction)?)
-                .map_err(|e| e.to_string())?;
+            let direction = serde_json::from_value(args["direction"].clone())?;
+            let mut value = serde_json::to_value(session.history(peer, direction)?)?;
             value["broadcast"] = serde_json::json!(session.should_broadcast(peer));
             Ok(value)
         }
 
         "editing_context" => {
-            let mut session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let mut session = bridge.session()?;
             session.check_peer(peer, args["generation"].as_str().unwrap_or(""))?;
-            serde_json::to_value(session.ensure_owner()?.snapshot(peer)?).map_err(|e| e.to_string())
+            serde_json::to_value(session.ensure_owner()?.snapshot(peer)?)
+                .map_err(CommandError::from)
         }
         "set_editing_context" => {
-            let request: owner::ContextRequest =
-                serde_json::from_value(args["request"].clone()).map_err(|e| e.to_string())?;
-            let mut session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let request: owner::ContextRequest = serde_json::from_value(args["request"].clone())?;
+            let mut session = bridge.session()?;
             session.check_peer(peer, &request.generation)?;
             serde_json::to_value(session.ensure_owner()?.set_context(peer, request)?)
-                .map_err(|e| e.to_string())
+                .map_err(CommandError::from)
         }
         "reset_editing_context" => {
-            let mut session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let mut session = bridge.session()?;
             session.check_peer(peer, args["generation"].as_str().unwrap_or(""))?;
-            serde_json::to_value(session.ensure_owner()?.reset(peer)?).map_err(|e| e.to_string())
+            serde_json::to_value(session.ensure_owner()?.reset(peer)?).map_err(CommandError::from)
         }
         "awareness" => {
             let update = args["update"].as_array().ok_or("Présence absente")?;
             if update.len() > 64 * 1024 {
                 return Err("Présence trop volumineuse.".into());
             }
-            let session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let session = bridge.session()?;
             Ok(serde_json::json!(session.accepts_awareness(
                 peer,
                 args["generation"].as_str().unwrap_or(""),
@@ -565,14 +496,12 @@ fn dispatch(
                 .into(),
             args["data"].as_str().ok_or("Missing image data")?.into(),
         )?)
-        .map_err(|e| e.to_string()),
+        .map_err(CommandError::from),
         "preview_frame" => {
             use base64::Engine as _;
-            let snapshot: Snapshot =
-                serde_json::from_value(args["snapshot"].clone()).map_err(|e| e.to_string())?;
-            let encoding =
-                serde_json::from_value(args["encoding"].clone()).map_err(|e| e.to_string())?;
-            let session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let snapshot: Snapshot = serde_json::from_value(args["snapshot"].clone())?;
+            let encoding = serde_json::from_value(args["encoding"].clone())?;
+            let session = bridge.session()?;
             let source = session.validate(&snapshot)?;
             let map =
                 typstographe_core::content::source_mapped(&snapshot.document, &session.assets)?.1;
@@ -590,9 +519,8 @@ fn dispatch(
             )
         }
         "preview" | "save" | "export_document" => {
-            let snapshot: Snapshot =
-                serde_json::from_value(args["snapshot"].clone()).map_err(|e| e.to_string())?;
-            let session = bridge.session.lock().map_err(|e| e.to_string())?;
+            let snapshot: Snapshot = serde_json::from_value(args["snapshot"].clone())?;
+            let session = bridge.session()?;
             let source = session.validate(&snapshot)?;
             let export = (command == "export_document").then(|| {
                 session.root.join("exports").join(format!(
@@ -622,10 +550,9 @@ fn dispatch(
                 map,
             )?;
             match command {
-                "preview" => serde_json::to_value(preview).map_err(|e| e.to_string()),
+                "preview" => serde_json::to_value(preview).map_err(CommandError::from),
                 "save" => {
-                    let update = serde_json::from_value(args["update"].clone())
-                        .map_err(|e| e.to_string())?;
+                    let update = serde_json::from_value(args["update"].clone())?;
                     Ok(serde_json::json!(
                         session.save(&snapshot, update)?.display().to_string()
                     ))

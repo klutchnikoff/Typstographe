@@ -1,3 +1,4 @@
+use crate::error::CommandError;
 use serde_json::{Value, json};
 use typstographe_core::{document::DocumentLanguage, statistics::TextStatistics};
 #[tauri::command]
@@ -5,7 +6,7 @@ pub async fn spelling_check(
     segments: Vec<String>,
     language: DocumentLanguage,
     ignored: Vec<String>,
-) -> Result<Value, String> {
+) -> Result<Value, CommandError> {
     if segments.len() > 20000 || segments.iter().map(String::len).sum::<usize>() > 2 * 1024 * 1024 {
         return Err("Texte trop volumineux.".into());
     }
@@ -20,7 +21,7 @@ pub async fn spelling_check(
         let mut found = vec![];
         for (index, text) in segments.iter().enumerate() {
             for issue in typstographe_core::spelling::check_text(language, text, &accepted)
-                .map_err(|e| e.to_string())?
+                .map_err(CommandError::message)?
             {
                 let from: usize = text
                     .chars()
@@ -37,22 +38,20 @@ pub async fn spelling_check(
         }
         Ok(json!(found))
     })
-    .await
-    .map_err(|e| e.to_string())?
+    .await?
 }
 #[tauri::command]
 pub async fn spelling_suggestions(
     language: DocumentLanguage,
     word: String,
-) -> Result<Vec<String>, String> {
+) -> Result<Vec<String>, CommandError> {
     if word.len() > 512 {
         return Err("Mot trop long.".into());
     }
     tauri::async_runtime::spawn_blocking(move || {
-        typstographe_core::spelling::suggestions(language, &word).map_err(|e| e.to_string())
+        typstographe_core::spelling::suggestions(language, &word).map_err(CommandError::message)
     })
-    .await
-    .map_err(|e| e.to_string())?
+    .await?
 }
 #[tauri::command]
 pub fn count_text(text: String, selection: Option<String>, field_label: Option<String>) -> Value {

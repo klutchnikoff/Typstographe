@@ -8,6 +8,7 @@ import { documentContent } from './shared-inline-marks'
 import { privateDrafts, DRAFT_CHANGED } from './private-drafts'
 import { RecoveryScheduler } from './recovery-scheduler'
 import { tr } from './i18n'
+import { errorText } from './command-error'
 
 /** Snapshot private input without flushing it into the document. The backend owns the confirmed base. */
 export function privateRecovery(
@@ -66,7 +67,7 @@ export function privateRecovery(
     (error) => {
       if (provider.generation === generation)
         failed(
-          `${tr('La copie de secours n’a pas pu être enregistrée. Votre travail reste dans cette fenêtre.')} ${String(error)}`,
+          `${tr('La copie de secours n’a pas pu être enregistrée. Votre travail reste dans cette fenêtre.')} ${errorText(error)}`,
         )
     },
   )
@@ -108,7 +109,7 @@ export function privateRecovery(
     flush: () =>
       scheduler.flush().catch((error) => {
         throw new Error(
-          `${tr('La copie de secours n’a pas pu être enregistrée. Votre travail reste dans cette fenêtre.')} ${String(error)}`,
+          `${tr('La copie de secours n’a pas pu être enregistrée. Votre travail reste dans cette fenêtre.')} ${errorText(error)}`,
         )
       }),
     force: async () => {

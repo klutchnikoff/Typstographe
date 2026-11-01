@@ -2,6 +2,7 @@ import { documentContent } from './shared-inline-marks'
 import type { Editor, JSONContent } from '@tiptap/core'
 import type { Provider, Transport } from './provider'
 import { requestPreview, type Encoding, type Preview } from './preview-frame'
+import { errorText } from './command-error'
 
 // Native WKWebView + real IPC only. Not a timing test in the HTTP browser driver.
 const frame = () =>
@@ -200,7 +201,7 @@ export async function nativePreviewPerformance(
     })
   } catch (error) {
     await transport.invoke('diagnostic_finish', {
-      report: { ok: false, success: false, error: String(error), samples, typing, unexpected },
+      report: { ok: false, success: false, error: errorText(error), samples, typing, unexpected },
     })
   }
 }

@@ -3,6 +3,7 @@ import type { Provider } from './provider'
 import { stableJSON } from './provider'
 import { executeStructured, type StructuredCommand } from './structured-commands'
 import { tr } from './i18n'
+import { errorText } from './command-error'
 
 export type FieldTarget =
   | {
@@ -205,7 +206,7 @@ export class MetadataCommands {
             }
           } catch (reason) {
             if (this.drafts.get(id) === draft)
-              draft.error = reason instanceof Error ? reason : new Error(String(reason))
+              draft.error = reason instanceof Error ? reason : new Error(errorText(reason))
           }
           this.changed()
         }

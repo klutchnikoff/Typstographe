@@ -1,4 +1,5 @@
 //! Per-process crash recovery, distinct from durable project versions.
+use crate::error::CommandError;
 pub mod commands;
 pub mod drafts;
 pub mod transition;
@@ -37,14 +38,14 @@ struct Candidate {
     _owner: DocumentLease,
 }
 impl Candidate {
-    fn read(&self) -> Result<Record, String> {
-        let bytes = crate::project::read_recovery_file(&self.path).map_err(|error| {
-            if error == "recovery_too_large" {
-                "Copie de récupération trop volumineuse.".into()
-            } else {
-                error
-            }
-        })?;
+    fn read(&self) -> Result<Record, CommandError> {
+        let bytes =
+            crate::project::read_recovery_file(&self.path).map_err(|error| match error {
+                CommandError::Message(code) if code == "recovery_too_large" => {
+                    "Copie de récupération trop volumineuse.".into()
+                }
+                error => error,
+            })?;
         // Managed slots use a named record; standalone diagnostic sessions use a raw checkpoint.
         serde_json::from_slice(&bytes)
             .or_else(|_| {
@@ -54,28 +55,29 @@ impl Candidate {
                     checkpoint,
                 })
             })
-            .map_err(|e| e.to_string())
+            .map_err(CommandError::from)
     }
-    fn remove(&self) -> Result<(), String> {
+    fn remove(&self) -> Result<(), CommandError> {
         match std::fs::remove_file(&self.path) {
             Ok(()) => Ok(()),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(e.into()),
         }
     }
 }
 impl Store {
-    pub fn new(base: PathBuf) -> Result<Self, String> {
+    pub fn new(base: PathBuf) -> Result<Self, CommandError> {
         let directory = base.join("sessions").join(uuid::Uuid::new_v4().to_string());
-        std::fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
-        let owner = DocumentLease::acquire(&directory.join("owner")).map_err(|e| e.to_string())?;
+        std::fs::create_dir_all(&directory)?;
+        let owner =
+            DocumentLease::acquire(&directory.join("owner")).map_err(CommandError::message)?;
         Ok(Self {
             base,
             directory,
             _owner: owner,
         })
     }
-    fn claim(&self, id: &str) -> Result<Candidate, String> {
+    fn claim(&self, id: &str) -> Result<Candidate, CommandError> {
         let directory = if id == "previous" {
             self.base.clone()
         } else {
@@ -86,33 +88,24 @@ impl Store {
             }
             self.base.join("sessions").join(id)
         };
-        if directory
-            .symlink_metadata()
-            .map_err(|e| e.to_string())?
-            .file_type()
-            .is_symlink()
-        {
+        if directory.symlink_metadata()?.file_type().is_symlink() {
             return Err("Dossier de récupération invalide.".into());
         }
         let path = directory.join("session.json");
-        if path
-            .symlink_metadata()
-            .map_err(|e| e.to_string())?
-            .file_type()
-            .is_symlink()
-        {
+        if path.symlink_metadata()?.file_type().is_symlink() {
             return Err("Copie de récupération invalide.".into());
         }
-        let owner = DocumentLease::acquire(&directory.join("owner")).map_err(|e| e.to_string())?;
+        let owner =
+            DocumentLease::acquire(&directory.join("owner")).map_err(CommandError::message)?;
         Ok(Candidate {
             path,
             _owner: owner,
         })
     }
-    pub fn list(&self) -> Result<Vec<Entry>, String> {
+    pub fn list(&self) -> Result<Vec<Entry>, CommandError> {
         let mut ids = vec!["previous".to_owned()];
-        for entry in std::fs::read_dir(self.base.join("sessions")).map_err(|e| e.to_string())? {
-            let entry = entry.map_err(|e| e.to_string())?;
+        for entry in std::fs::read_dir(self.base.join("sessions"))? {
+            let entry = entry?;
             // Empty slots retain their stable lock sidecar, but must not hide
             // recovery copies after many normal application launches.
             if !entry.path().join("session.json").is_file() {
@@ -142,24 +135,21 @@ impl Store {
                     id,
                     name: "Copie illisible".into(),
                     saved_at: 0,
-                    error: Some(error),
+                    error: Some(error.to_string()),
                 }),
             }
         }
         entries.sort_by(|a, b| b.saved_at.cmp(&a.saved_at).then(a.id.cmp(&b.id)));
         Ok(entries)
     }
-    pub fn write(&self, checkpoint: Checkpoint, name: String) -> Result<PathBuf, String> {
+    pub fn write(&self, checkpoint: Checkpoint, name: String) -> Result<PathBuf, CommandError> {
         let path = self.directory.join("session.json");
         let record = Record {
             checkpoint,
             name,
-            saved_at: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .map_err(|e| e.to_string())?
-                .as_secs(),
+            saved_at: SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs(),
         };
-        let bytes = serde_json::to_vec(&record).map_err(|e| e.to_string())?;
+        let bytes = serde_json::to_vec(&record)?;
         if bytes.len() as u64 > crate::project::MAX_RECOVERY_BYTES {
             return Err("Copie de récupération trop volumineuse.".into());
         }
@@ -171,34 +161,34 @@ impl Store {
             options.mode(0o600);
             options
         };
-        let mut file = options.open(&path).map_err(|e| e.to_string())?;
-        file.write_all(&bytes).map_err(|e| e.to_string())?;
-        file.commit().map_err(|e| e.to_string())?;
+        let mut file = options.open(&path)?;
+        file.write_all(&bytes)?;
+        file.commit()?;
         Ok(path)
     }
-    pub fn clear(&self) -> Result<(), String> {
+    pub fn clear(&self) -> Result<(), CommandError> {
         match std::fs::remove_file(self.directory.join("session.json")) {
             Ok(()) => Ok(()),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(e.into()),
         }
     }
 }
 #[tauri::command]
-pub fn recovery_list(state: State<Bridge>) -> Result<Vec<Entry>, String> {
-    let s = state.session.lock().map_err(|e| e.to_string())?;
+pub fn recovery_list(state: State<Bridge>) -> Result<Vec<Entry>, CommandError> {
+    let s = state.session()?;
     s.recovery.as_ref().map_or(Ok(vec![]), Store::list)
 }
 #[tauri::command]
-pub fn recovery_delete(state: State<Bridge>, id: String) -> Result<(), String> {
-    let s = state.session.lock().map_err(|e| e.to_string())?;
+pub fn recovery_delete(state: State<Bridge>, id: String) -> Result<(), CommandError> {
+    let s = state.session()?;
     s.recovery
         .as_ref()
         .ok_or("Récupération indisponible.")?
         .claim(&id)?
         .remove()
 }
-fn restore(s: &mut crate::session::Session, id: &str) -> Result<(), String> {
+fn restore(s: &mut crate::session::Session, id: &str) -> Result<(), CommandError> {
     let candidate = s
         .recovery
         .as_ref()
@@ -231,21 +221,21 @@ pub fn recovery_restore(
     state: State<Bridge>,
     id: String,
     revision: u64,
-) -> Result<(), String> {
-    let mut s = state.session.lock().map_err(|e| e.to_string())?;
+) -> Result<(), CommandError> {
+    let mut s = state.session()?;
     s.lifecycle(revision)?;
     restore(&mut s, &id)?;
-    let mut agent = state.agent.lock().map_err(|e| e.to_string())?;
+    let mut agent = state.agent.lock()?;
     agent.token = None;
     agent.proposal = None;
-    app.emit("app:document", ()).map_err(|e| e.to_string())
+    app.emit("app:document", ()).map_err(CommandError::from)
 }
 #[tauri::command]
-pub fn recovery_discard(app: tauri::AppHandle, state: State<Bridge>) -> Result<(), String> {
+pub fn recovery_discard(app: tauri::AppHandle, state: State<Bridge>) -> Result<(), CommandError> {
     if app.webview_windows().len() > 1 {
         return Ok(());
     }
-    let mut s = state.session.lock().map_err(|e| e.to_string())?;
+    let mut s = state.session()?;
     s.mark_clean()
 }
 
@@ -616,7 +606,7 @@ mod tests {
         let upper = id.to_uppercase();
         assert_ne!(upper, id);
         assert_eq!(
-            store.claim(&upper).err().as_deref(),
+            store.claim(&upper).err().map(|e| e.to_string()).as_deref(),
             Some("Référence de récupération invalide.")
         );
         assert!(store.claim(&id).is_ok());

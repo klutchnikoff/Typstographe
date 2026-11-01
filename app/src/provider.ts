@@ -4,6 +4,7 @@ import type { JSONContent } from '@tiptap/core'
 import type { Settings } from './state'
 import { tr } from './i18n'
 import type { EditingView, ViewSelection, TypingStyle } from './editing-context'
+import { errorCode } from './command-error'
 
 export interface Resource {
   path: string
@@ -491,12 +492,7 @@ export class Provider {
           this.onStatus()
         }
       } catch (error) {
-        let code: string | undefined
-        try {
-          code = JSON.parse(String(error)).code
-        } catch {
-          /* Native transport error. */
-        }
+        const code = errorCode(error)
         // A simultaneous publication invalidates guarded paths.
         // A later local action requests a fresh view; never retry the old target.
         if (

@@ -1,5 +1,6 @@
 //! Whole-lot human acceptance. Compilation never holds the live document lock.
 use super::{AgentState, Proposal, commit_accepted};
+use crate::error::CommandError;
 use crate::session::Session;
 use std::sync::Mutex;
 use typstographe_core::{assets::Assets, content::shared::Publication};
@@ -10,8 +11,8 @@ pub(crate) fn accept(
     agent: &Mutex<AgentState>,
     id: &str,
     peer: &str,
-    validate: impl FnOnce(&Proposal, &Assets) -> Result<(), String>,
-) -> Result<Publication, String> {
+    validate: impl FnOnce(&Proposal, &Assets) -> Result<(), CommandError>,
+) -> Result<Publication, CommandError> {
     accept_with_notification(session, agent, id, peer, validate, |_| Ok(()))
 }
 
@@ -20,12 +21,12 @@ pub(super) fn accept_with_notification(
     agent: &Mutex<AgentState>,
     id: &str,
     peer: &str,
-    validate: impl FnOnce(&Proposal, &Assets) -> Result<(), String>,
-    publish: impl FnOnce(&Publication) -> Result<(), String>,
-) -> Result<Publication, String> {
+    validate: impl FnOnce(&Proposal, &Assets) -> Result<(), CommandError>,
+    publish: impl FnOnce(&Publication) -> Result<(), CommandError>,
+) -> Result<Publication, CommandError> {
     let (candidate, assets) = {
-        let session = session.lock().map_err(|e| e.to_string())?;
-        let agent = agent.lock().map_err(|e| e.to_string())?;
+        let session = session.lock()?;
+        let agent = agent.lock()?;
         session.check_peer(peer, &session.generation)?;
         let candidate = agent
             .proposal
@@ -43,8 +44,8 @@ pub(super) fn accept_with_notification(
         (candidate.clone(), session.assets.clone())
     };
     validate(&candidate, &assets)?;
-    let mut session = session.lock().map_err(|e| e.to_string())?;
-    let mut agent = agent.lock().map_err(|e| e.to_string())?;
+    let mut session = session.lock()?;
+    let mut agent = agent.lock()?;
     if !agent.busy.is_empty() {
         return Err("Composition IME en cours.".into());
     }

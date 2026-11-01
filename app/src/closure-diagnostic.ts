@@ -10,6 +10,7 @@ import {
   finishComparison,
   historyStep,
 } from './closure-controls'
+import { errorText } from './command-error'
 function append(editor: Editor, text: string) {
   editor.commands.setTextSelection(editor.state.doc.content.size - 1)
   editor.view.focus()
@@ -185,7 +186,7 @@ export async function closureDiagnostic(
         await transport.invoke('agent_accept', { id: stale.id })
         throw new Error('Stale lot accepted')
       } catch (error) {
-        if (!String(error).includes('périmée')) throw error
+        if (!errorText(error).includes('périmée')) throw error
       }
       if (stableJSON(state()) !== beforeStale) throw new Error('Stale proposal changed the project')
       steps.push('Concurrent human input invalidates the guarded MCP proposal without losing work.')
@@ -345,7 +346,7 @@ export async function closureDiagnostic(
         success: false,
         mode,
         steps,
-        error: String(error),
+        error: errorText(error),
         state: state(),
         controls: controls(),
       },

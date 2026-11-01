@@ -1,22 +1,19 @@
 //! Native recovery boundary. Paths never come from catalogue identifiers.
 use super::{drafts, work};
 use crate::Bridge;
+use crate::error::CommandError;
 use serde_json::json;
 use std::path::PathBuf;
 use tauri::{Emitter, State};
 use tauri_plugin_dialog::DialogExt;
 
 #[tauri::command(async)]
-pub fn work_list(state: State<Bridge>) -> Result<Vec<work::Entry>, String> {
-    state.session.lock().map_err(|e| e.to_string())?.work_list()
+pub fn work_list(state: State<Bridge>) -> Result<Vec<work::Entry>, CommandError> {
+    state.session()?.work_list()
 }
 #[tauri::command(async)]
-pub fn work_delete(state: State<Bridge>, id: String) -> Result<(), String> {
-    state
-        .session
-        .lock()
-        .map_err(|e| e.to_string())?
-        .work_delete(&id)
+pub fn work_delete(state: State<Bridge>, id: String) -> Result<(), CommandError> {
+    state.session()?.work_delete(&id)
 }
 #[tauri::command(async)]
 pub fn work_restore(
@@ -25,34 +22,30 @@ pub fn work_restore(
     state: State<Bridge>,
     id: String,
     revision: u64,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     state
-        .session
-        .lock()
-        .map_err(|e| e.to_string())?
+        .session()?
         .work_restore(window.label(), &id, revision)?;
-    let mut agent = state.agent.lock().map_err(|e| e.to_string())?;
+    let mut agent = state.agent.lock()?;
     agent.token = None;
     agent.proposal = None;
-    app.emit("app:document", ()).map_err(|e| e.to_string())
+    app.emit("app:document", ()).map_err(CommandError::from)
 }
 #[tauri::command(async)]
 pub fn work_abandon(
     window: tauri::WebviewWindow,
     state: State<Bridge>,
     generation: String,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     state
-        .session
-        .lock()
-        .map_err(|e| e.to_string())?
+        .session()?
         .abandon_window_work(window.label(), &generation)
 }
 #[tauri::command]
 pub async fn choose_work_file(
     app: tauri::AppHandle,
     save: bool,
-) -> Result<Option<PathBuf>, String> {
+) -> Result<Option<PathBuf>, CommandError> {
     let (tx, rx) = tokio::sync::oneshot::channel();
     let picker = app.dialog().file().add_filter("JSON", &["json"]);
     if save {
@@ -66,9 +59,8 @@ pub async fn choose_work_file(
             let _ = tx.send(p);
         });
     }
-    rx.await
-        .map_err(|e| e.to_string())?
-        .map(|p| p.into_path().map_err(|e| e.to_string()))
+    rx.await?
+        .map(|p| p.into_path().map_err(CommandError::message))
         .transpose()
 }
 #[tauri::command(async)]
@@ -78,16 +70,16 @@ pub fn work_import(
     state: State<Bridge>,
     path: PathBuf,
     revision: u64,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     let record = work::read_work(&path)?;
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
+    let mut session = state.session()?;
     session.lifecycle(revision)?;
     session.restore_work_record(window.label(), record)?;
     drop(session);
-    let mut agent = state.agent.lock().map_err(|e| e.to_string())?;
+    let mut agent = state.agent.lock()?;
     agent.token = None;
     agent.proposal = None;
-    app.emit("app:document", ()).map_err(|e| e.to_string())
+    app.emit("app:document", ()).map_err(CommandError::from)
 }
 #[tauri::command(async)]
 pub fn work_export(
@@ -95,8 +87,8 @@ pub fn work_export(
     state: State<Bridge>,
     id: String,
     path: PathBuf,
-) -> Result<(), String> {
-    let mut s = state.session.lock().map_err(|e| e.to_string())?;
+) -> Result<(), CommandError> {
+    let mut s = state.session()?;
     let item = s
         .recovered_items
         .get(window.label())
@@ -127,8 +119,7 @@ pub fn work_export(
             name: s.recovered_name.clone(),
             window: window.label().into(),
             saved_at: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map_err(|e| e.to_string())?
+                .duration_since(std::time::UNIX_EPOCH)?
                 .as_secs(),
             file_path: None,
             confirmed_revision: s.revision,
@@ -143,19 +134,16 @@ pub fn work_export(
 #[tauri::command(async)]
 pub fn diagnostic_private_records(
     state: tauri::State<Bridge>,
-) -> Result<Vec<crate::recovery::drafts::Record>, String> {
+) -> Result<Vec<crate::recovery::drafts::Record>, CommandError> {
     if state.diagnostic.is_none() {
         return Err("Diagnostic inactive".into());
     }
-    let s = state.session.lock().map_err(|e| e.to_string())?;
+    let s = state.session()?;
     let mut records = vec![];
     if let Ok(generations) = std::fs::read_dir(s.root.join("drafts")) {
         for generation in generations.flatten() {
             if generation.file_type().is_ok_and(|t| t.is_dir()) {
-                for entry in std::fs::read_dir(generation.path())
-                    .map_err(|e| e.to_string())?
-                    .flatten()
-                {
+                for entry in std::fs::read_dir(generation.path())?.flatten() {
                     if entry.path().extension().is_some_and(|e| e == "json") {
                         let record = crate::recovery::drafts::read(&entry.path())?;
                         crate::session::Session::from_checkpoint(
@@ -174,7 +162,7 @@ pub fn diagnostic_private_records(
 /// Fixed handshake with the external native recipe runner. No arbitrary filesystem access.
 #[cfg(feature = "recipe-driver")]
 #[tauri::command(async)]
-pub fn diagnostic_external_ready(state: State<Bridge>) -> Result<bool, String> {
+pub fn diagnostic_external_ready(state: State<Bridge>) -> Result<bool, CommandError> {
     if !state
         .diagnostic
         .as_deref()
@@ -183,11 +171,9 @@ pub fn diagnostic_external_ready(state: State<Bridge>) -> Result<bool, String> {
         return Err("Publication diagnostic inactive".into());
     }
     state
-        .session
-        .lock()
-        .map_err(|e| e.to_string())?
+        .session()?
         .root
         .join("external-ready")
         .try_exists()
-        .map_err(|e| e.to_string())
+        .map_err(CommandError::from)
 }

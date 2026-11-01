@@ -9,6 +9,7 @@ import { installResources, type ImageResource } from './resource-commands'
 import { draftGuard } from './snapshot-operation'
 import { focusEditorSelection } from './editor-focus'
 import { retainWidgetSelection } from './planned-selection'
+import { errorCode } from './command-error'
 
 export interface StructuredCommand {
   id: string
@@ -69,12 +70,8 @@ export async function executeStructured(
       request,
     })
   const result = await invoke('prepare_structured_commands').catch((error: unknown) => {
-    let code: string | undefined
-    try {
-      code = JSON.parse(String(error)).code
-    } catch {
-      /* Transport failures carry no documentary code. */
-    }
+    // Transport failures and plain messages carry no documentary code.
+    const code = errorCode(error)
     throw new Error(
       tr(
         code === 'wrong_document' || code === 'stale_revision'

@@ -12,6 +12,7 @@ import { contextPanel } from './context-panel'
 import { replaceText } from './text-edits'
 import { inlineTarget } from './object-commands'
 import { executeStructured } from './structured-commands'
+import { errorText } from './command-error'
 export interface Hit {
   from: number
   to: number
@@ -277,7 +278,7 @@ export function mountProofing(
         if (current()) bands.close(true, editor.state.selection.getBookmark())
       } catch (reason) {
         if (current())
-          panel.error.textContent = reason instanceof Error ? reason.message : String(reason)
+          panel.error.textContent = reason instanceof Error ? reason.message : errorText(reason)
       } finally {
         pending = false
         for (const button of controls) button.disabled = false
@@ -321,7 +322,7 @@ export function mountProofing(
             close()
             check()
           })
-          .catch((reason) => message(String(reason), true))
+          .catch((reason) => message(errorText(reason), true))
       },
     })
     bands.open(panel, { from: issue.from, to: issue.to, placement: 'text' }, () => band.remove())
@@ -353,7 +354,7 @@ export function mountProofing(
         } else choices.textContent = tr('Aucune suggestion disponible.')
       })
       .catch((reason) => {
-        if (target()) panel.error.textContent = String(reason)
+        if (target()) panel.error.textContent = errorText(reason)
       })
   }
   document.addEventListener('proofing:open', open)

@@ -11,9 +11,11 @@ export interface TypeCard {
   canCreate: boolean
 }
 
+export type CreationCatalogue = Pick<Catalogue, 'types' | 'typeGroups' | 'typeCards'>
+
 /** Discovery cards may be inspected before their executable type is implemented. */
 export function documentTypePicker(
-  catalogue: Catalogue,
+  catalogue: CreationCatalogue,
   changed: (choice: { type: DocumentType; model: Model } | null) => void,
 ) {
   const root = document.createElement('section')

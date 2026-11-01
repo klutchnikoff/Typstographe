@@ -1,3 +1,4 @@
+use crate::error::CommandError;
 mod persistence;
 #[cfg(feature = "recipe-driver")]
 pub fn open_for_recipe(
@@ -8,15 +9,15 @@ pub fn open_for_recipe(
         &str,
         &typstographe_core::assets::Assets,
         crate::rendering::RenderContext<'_>,
-    ) -> Result<(), String>,
-) -> Result<serde_json::Value, String> {
+    ) -> Result<(), CommandError>,
+) -> Result<serde_json::Value, CommandError> {
     persistence::open_project(session, path, revision, validate)
 }
 #[cfg(feature = "recipe-driver")]
 pub fn close_for_recipe(
     session: &mut crate::session::Session,
     revision: u64,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     persistence::close_project(session, revision)
 }
 use crate::{Bridge, session::Snapshot, settings::Settings};
@@ -24,24 +25,24 @@ use std::path::PathBuf;
 use tauri::{Emitter, State};
 use tauri_plugin_dialog::DialogExt;
 #[tauri::command]
-pub fn quit_app(app: tauri::AppHandle, state: State<Bridge>) -> Result<(), String> {
+pub fn quit_app(app: tauri::AppHandle, state: State<Bridge>) -> Result<(), CommandError> {
     {
-        let session = state.session.lock().map_err(|e| e.to_string())?;
+        let session = state.session()?;
         session.lifecycle(session.revision)?;
     }
     app.exit(0);
     Ok(())
 }
 #[tauri::command]
-pub fn set_window_title(window: tauri::WebviewWindow, title: String) -> Result<(), String> {
-    window.set_title(&title).map_err(|e| e.to_string())
+pub fn set_window_title(window: tauri::WebviewWindow, title: String) -> Result<(), CommandError> {
+    window.set_title(&title).map_err(CommandError::from)
 }
 #[tauri::command]
 pub async fn choose_file(
     app: tauri::AppHandle,
     save: bool,
     default_name: Option<String>,
-) -> Result<Option<String>, String> {
+) -> Result<Option<String>, CommandError> {
     let (tx, rx) = tokio::sync::oneshot::channel();
     let dialog = app
         .dialog()
@@ -67,12 +68,11 @@ pub async fn choose_file(
             let _ = tx.send(path);
         });
     }
-    rx.await
-        .map_err(|e| e.to_string())?
+    rx.await?
         .map(|p| {
             p.into_path()
                 .map(|p| p.to_string_lossy().into_owned())
-                .map_err(|e| e.to_string())
+                .map_err(CommandError::message)
         })
         .transpose()
 }
@@ -83,18 +83,16 @@ pub async fn export_editing_draft(
     window: tauri::WebviewWindow,
     state: State<'_, Bridge>,
     mut draft: serde_json::Value,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     if draft["format"] != "typstographe-rejected-draft-v1" {
         return Err("Format de brouillon invalide.".into());
     }
     {
-        let mut session = state.session.lock().map_err(|e| e.to_string())?;
+        let mut session = state.session()?;
         if draft["generation"].as_str() == Some(session.generation.as_str()) {
-            draft["confirmed"] =
-                serde_json::to_value(session.recovery_checkpoint()?).map_err(|e| e.to_string())?;
+            draft["confirmed"] = serde_json::to_value(session.recovery_checkpoint()?)?;
             draft["rejectedEdition"] =
-                serde_json::to_value(session.ensure_owner()?.draft(window.label())?)
-                    .map_err(|e| e.to_string())?;
+                serde_json::to_value(session.ensure_owner()?.draft(window.label())?)?;
         }
     }
     let (tx, rx) = tokio::sync::oneshot::channel();
@@ -105,30 +103,28 @@ pub async fn export_editing_draft(
         .save_file(move |path| {
             let _ = tx.send(path);
         });
-    let Some(path) = rx.await.map_err(|e| e.to_string())? else {
+    let Some(path) = rx.await? else {
         return Ok(());
     };
-    let path = path.into_path().map_err(|e| e.to_string())?;
+    let path = path.into_path().map_err(CommandError::message)?;
     tauri::async_runtime::spawn_blocking(move || {
-        let mut file = atomic_write_file::AtomicWriteFile::open(path).map_err(|e| e.to_string())?;
-        serde_json::to_writer(&mut file, &draft).map_err(|e| e.to_string())?;
-        file.commit().map_err(|e| e.to_string())
+        let mut file = atomic_write_file::AtomicWriteFile::open(path)?;
+        serde_json::to_writer(&mut file, &draft)?;
+        file.commit().map_err(CommandError::from)
     })
-    .await
-    .map_err(|e| e.to_string())?
+    .await?
 }
 #[tauri::command]
-pub async fn choose_export_folder(app: tauri::AppHandle) -> Result<Option<String>, String> {
+pub async fn choose_export_folder(app: tauri::AppHandle) -> Result<Option<String>, CommandError> {
     let (tx, rx) = tokio::sync::oneshot::channel();
     app.dialog().file().pick_folder(move |path| {
         let _ = tx.send(path);
     });
-    rx.await
-        .map_err(|e| e.to_string())?
+    rx.await?
         .map(|path| {
             path.into_path()
                 .map(|p| p.to_string_lossy().into_owned())
-                .map_err(|e| e.to_string())
+                .map_err(CommandError::message)
         })
         .transpose()
 }
@@ -138,7 +134,7 @@ pub async fn save_file(
     path: PathBuf,
     snapshot: Snapshot,
     update: Vec<u8>,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     let session = state.session.clone();
     let renderer = state.renderer.clone();
     tauri::async_runtime::spawn_blocking(move || {
@@ -150,8 +146,7 @@ pub async fn save_file(
             |source, assets, settings| renderer.validate(source, assets, settings),
         )
     })
-    .await
-    .map_err(|e| e.to_string())?
+    .await?
 }
 #[tauri::command]
 pub async fn open_file(
@@ -159,14 +154,11 @@ pub async fn open_file(
     state: State<'_, Bridge>,
     path: PathBuf,
     revision: u64,
-) -> Result<serde_json::Value, String> {
+) -> Result<serde_json::Value, CommandError> {
     let session = state.session.clone();
-    session
-        .lock()
-        .map_err(|e| e.to_string())?
-        .lifecycle(revision)?;
+    session.lock()?.lifecycle(revision)?;
     let renderer = state.renderer.clone();
-    state.agent.lock().map_err(|e| e.to_string())?.token = None;
+    state.agent.lock()?.token = None;
     let opened_path = path.clone();
     let response = tauri::async_runtime::spawn_blocking(move || {
         persistence::open_project(
@@ -176,11 +168,9 @@ pub async fn open_file(
             |source, assets, settings| renderer.validate(source, assets, settings),
         )
     })
-    .await
-    .map_err(|e| e.to_string())??;
+    .await??;
     let _ = crate::preferences::remember(&app, &path);
-    app.emit("app:document", path.to_string_lossy().as_ref())
-        .map_err(|e| e.to_string())?;
+    app.emit("app:document", path.to_string_lossy().as_ref())?;
     Ok(response)
 }
 
@@ -191,17 +181,17 @@ pub fn new_document(
     settings: Settings,
     revision: u64,
     resources: Option<Vec<crate::session::Resource>>,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     create(
-        &mut *state.session.lock().map_err(|e| e.to_string())?,
+        &mut *state.session()?,
         settings,
         revision,
         resources.unwrap_or_default(),
     )?;
-    let mut agent = state.agent.lock().map_err(|e| e.to_string())?;
+    let mut agent = state.agent.lock()?;
     agent.token = None;
     agent.proposal = None;
-    app.emit("app:document", ()).map_err(|e| e.to_string())
+    app.emit("app:document", ()).map_err(CommandError::from)
 }
 /// Same document lifecycle for Tauri and its browser recipe transport.
 pub fn create(
@@ -209,10 +199,10 @@ pub fn create(
     settings: Settings,
     revision: u64,
     resources: Vec<crate::session::Resource>,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     settings
         .validate()
-        .map_err(|e| typstographe_i18n::content_error(&e))?;
+        .map_err(CommandError::localized_content)?;
     session.lifecycle(revision)?;
     let mut assets = typstographe_core::assets::Assets::default();
     if let Some(signature) = settings.metadata.signature_path() {
@@ -236,13 +226,13 @@ pub fn close_document(
     app: tauri::AppHandle,
     state: State<Bridge>,
     revision: u64,
-) -> Result<(), String> {
-    let mut session = state.session.lock().map_err(|e| e.to_string())?;
+) -> Result<(), CommandError> {
+    let mut session = state.session()?;
     persistence::close_project(&mut session, revision)?;
-    let mut agent = state.agent.lock().map_err(|e| e.to_string())?;
+    let mut agent = state.agent.lock()?;
     agent.token = None;
     agent.proposal = None;
-    app.emit("app:document", ()).map_err(|e| e.to_string())
+    app.emit("app:document", ()).map_err(CommandError::from)
 }
 
 #[cfg(test)]

@@ -305,7 +305,8 @@ fn an_old_checkpoint_cannot_acknowledge_a_new_transition() {
     };
     assert_eq!(
         s.acknowledge_transition("main", acknowledgement())
-            .unwrap_err(),
+            .unwrap_err()
+            .to_string(),
         "recovery_transition_not_conserved"
     );
     let path = drafts::path(&s.root, &s.generation, "main").unwrap();
@@ -316,7 +317,10 @@ fn an_old_checkpoint_cannot_acknowledge_a_new_transition() {
     assert!(s.transition_status(&transition.id).unwrap().ready());
     s.revision += 1;
     assert_eq!(
-        s.transition_status(&transition.id).err().unwrap(),
+        s.transition_status(&transition.id)
+            .err()
+            .unwrap()
+            .to_string(),
         "recovery_transition_obsolete"
     );
 }

@@ -4,6 +4,7 @@ import * as Y from 'yjs'
 import { documentContent } from './shared-inline-marks'
 import { settingsFor } from './state'
 import { stableJSON, type Bootstrap, type Provider, type Transport } from './provider'
+import { errorText } from './command-error'
 
 const marker = 'Private publication note é😀 — にほん'
 async function until(check: () => boolean | Promise<boolean>, label: string) {
@@ -70,7 +71,7 @@ export async function publicationDiagnostic(
       await operation()
     } catch (error) {
       failed = true
-      reason = String(error)
+      reason = errorText(error)
     }
     if (!failed) throw new Error(`Unexpected successful ${label}`)
     if (label === 'external modification refusal' && !reason.includes('modifié en dehors'))
@@ -163,7 +164,7 @@ export async function publicationDiagnostic(
   } catch (error) {
     if (!obsolete)
       await transport.invoke('diagnostic_finish', {
-        report: { success: false, checks, error: String(error) },
+        report: { success: false, checks, error: errorText(error) },
       })
   }
 }

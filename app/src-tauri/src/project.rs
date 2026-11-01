@@ -1,4 +1,5 @@
 //! Archive ownership outside the live Yjs engine; application-owned runtime libraries.
+use crate::error::CommandError;
 use std::sync::Mutex;
 use typstographe_core::{
     assets::Assets,
@@ -11,16 +12,14 @@ use typstographe_core::{
 };
 
 pub const MAX_RECOVERY_BYTES: u64 = 1024 * 1024 * 1024;
-pub fn read_recovery_file(path: &std::path::Path) -> Result<Vec<u8>, String> {
+pub fn read_recovery_file(path: &std::path::Path) -> Result<Vec<u8>, CommandError> {
     use std::io::Read;
-    let file = std::fs::File::open(path).map_err(|e| e.to_string())?;
-    if file.metadata().map_err(|e| e.to_string())?.len() > MAX_RECOVERY_BYTES {
+    let file = std::fs::File::open(path)?;
+    if file.metadata()?.len() > MAX_RECOVERY_BYTES {
         return Err("recovery_too_large".into());
     }
     let mut bytes = Vec::new();
-    file.take(MAX_RECOVERY_BYTES + 1)
-        .read_to_end(&mut bytes)
-        .map_err(|e| e.to_string())?;
+    file.take(MAX_RECOVERY_BYTES + 1).read_to_end(&mut bytes)?;
     if bytes.len() as u64 > MAX_RECOVERY_BYTES {
         return Err("recovery_too_large".into());
     }
@@ -47,8 +46,8 @@ impl Context {
             backup: Mutex::new(None),
         }
     }
-    pub fn recovery(&self, current: Archive) -> Result<RecoveryContext, String> {
-        let mut cache = self.backup.lock().map_err(|e| e.to_string())?;
+    pub fn recovery(&self, current: Archive) -> Result<RecoveryContext, CommandError> {
+        let mut cache = self.backup.lock()?;
         if let Some((template, model, backup)) = &*cache
             && *template == current.template
             && *model == current.model_id
@@ -67,8 +66,8 @@ impl Context {
         })
     }
 }
-pub fn error(e: typstographe_core::content::archive::Error) -> String {
-    typstographe_i18n::archive_error(&e)
+pub fn error(e: typstographe_core::content::archive::Error) -> CommandError {
+    CommandError::localized_archive(e)
 }
 pub fn archive(
     state: State,
@@ -86,7 +85,7 @@ pub fn archive(
         dependencies,
     }
 }
-pub fn recovery_for_state(state: State, update: Vec<u8>) -> Result<RecoveryContext, String> {
+pub fn recovery_for_state(state: State, update: Vec<u8>) -> Result<RecoveryContext, CommandError> {
     let dependencies = typstographe_core::packages::for_template(&state.settings.template);
     let project =
         Project::new(archive(state, update, Assets::default(), dependencies)).map_err(error)?;
@@ -97,7 +96,7 @@ pub fn recovery_for_state(state: State, update: Vec<u8>) -> Result<RecoveryConte
 }
 
 impl crate::session::Session {
-    pub fn stored_project(&mut self) -> Result<Project, String> {
+    pub fn stored_project(&mut self) -> Result<Project, CommandError> {
         let owner = self.ensure_owner()?;
         let state = owner.state().clone();
         let update = owner.update_bytes();
@@ -120,7 +119,7 @@ impl crate::session::Session {
     pub fn render_snapshot(
         &self,
         snapshot: &crate::session::Snapshot,
-    ) -> Result<(String, Assets, crate::settings::Settings, Dependencies), String> {
+    ) -> Result<(String, Assets, crate::settings::Settings, Dependencies), CommandError> {
         let source = self.validate(snapshot)?;
         let settings = snapshot
             .settings
@@ -145,7 +144,7 @@ impl crate::session::Session {
         &self,
         state: State,
         update: Vec<u8>,
-    ) -> Result<RecoveryContext, String> {
+    ) -> Result<RecoveryContext, CommandError> {
         let dependencies = self.dependencies_for(&state.settings);
         let current = archive(state, update, self.assets.clone(), dependencies);
         if self.project.get().is_none() {

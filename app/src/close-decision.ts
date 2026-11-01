@@ -1,5 +1,6 @@
 import { actionRow, keyboardScope } from './keyboard-navigation'
 import { tr } from './i18n'
+import { errorText } from './command-error'
 export type CloseChoice = 'clean' | 'saved' | 'keep' | 'discard'
 /** The same dialog governs window close, document replacement and quit. */
 export async function decideClose(options: {
@@ -85,7 +86,7 @@ export async function decideClose(options: {
         }
         finish(choice)
       } catch (reason) {
-        error.textContent = String(reason)
+        error.textContent = errorText(reason)
         primary.textContent = tr('Réessayer')
         busy = false
         actions.querySelectorAll('button').forEach((b) => (b.disabled = false))

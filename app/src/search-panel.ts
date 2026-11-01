@@ -6,6 +6,7 @@ import { tr } from './i18n'
 import { searchState } from './proofing'
 import { proofingKey } from './proofing'
 import { replaceText } from './text-edits'
+import { errorText } from './command-error'
 
 export function navigateSearch(editor: Editor, backwards = false, focus = true) {
   const hits = proofingKey.getState(editor.state)?.hits || []
@@ -81,7 +82,7 @@ export function searchPanel(content: HTMLElement, editor: Editor) {
       if (currentPanel()) fill()
     } catch (reason) {
       if (currentPanel())
-        error.textContent = reason instanceof Error ? reason.message : String(reason)
+        error.textContent = reason instanceof Error ? reason.message : errorText(reason)
     } finally {
       pending = false
       current.disabled = all.disabled = false

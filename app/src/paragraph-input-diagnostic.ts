@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/core'
 import type { Bootstrap, Provider, Transport } from './provider'
 import { ParagraphSelection } from './paragraph-selection'
+import { errorText } from './command-error'
 
 /** Actual desktop WebView, native menus and IPC; never loaded in a normal build. */
 export async function paragraphInputDiagnostic(
@@ -137,9 +138,9 @@ export async function paragraphInputDiagnostic(
       if (current?.opened && current.generation !== openingGeneration) return
       navigating = false
     }
-    report.error = String(error)
+    report.error = errorText(error)
     await log('failed', {
-      error: String(error),
+      error: errorText(error),
       stack: error instanceof Error ? error.stack : null,
       state: state(),
     })
