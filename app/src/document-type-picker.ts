@@ -37,7 +37,6 @@ export function documentTypePicker(
   scroller.append(cards)
   const band = document.createElement('section')
   band.className = 'type-model-band'
-  const heading = document.createElement('h3')
   const description = document.createElement('p')
   description.className = 'type-choice-description'
   description.setAttribute('aria-live', 'polite')
@@ -45,7 +44,7 @@ export function documentTypePicker(
   models.className = 'model-card-gallery'
   models.setAttribute('role', 'group')
   models.setAttribute('aria-label', tr('Modèle'))
-  band.append(heading, description, models)
+  band.append(description, models)
 
   let selected: TypeCard | undefined = catalogue.typeCards.find((card) => card.canCreate)
   let modelId: string | undefined
@@ -69,7 +68,6 @@ export function documentTypePicker(
     modelId =
       available.find((model) => model.id === rememberedModels.get(selected!.id))?.id ||
       available[0]?.id
-    heading.textContent = selected ? tr('Modèles · {type}', { type: selected.label }) : tr('Modèle')
     description.textContent = !selected
       ? tr('Choisissez un type de document.')
       : selected.canCreate

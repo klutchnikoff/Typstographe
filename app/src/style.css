@@ -2179,10 +2179,6 @@ li:has(.interline-band-gap[data-marker])::marker {
   border-top: 1px solid var(--border);
   background: var(--panel);
 }
-.type-model-band h3 {
-  margin: 0 0 10px;
-  font-size: 13px;
-}
 .type-choice-description {
   margin: 0;
   min-height: 125px;
@@ -2199,7 +2195,7 @@ li:has(.interline-band-gap[data-marker])::marker {
   margin: -3px;
 }
 .model-card {
-  flex: 0 0 118px;
+  flex: 0 0 146px;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -2209,14 +2205,20 @@ li:has(.interline-band-gap[data-marker])::marker {
   background: transparent;
   color: var(--text);
 }
+.model-card:hover,
+.model-card:active,
+.model-card[aria-pressed='true'] {
+  background: transparent;
+  color: var(--text);
+}
 .model-thumbnail {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: 86px;
-  height: 122px;
+  width: 118px;
+  height: 168px;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 3px;

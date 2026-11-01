@@ -1195,6 +1195,5 @@ type-picker-unavailable = This type is planned and cannot be created yet.
 # New document gallery
 type-picker-instruction = Choose what you want to write, then its presentation.
 type-picker-empty = Choose a document type.
-type-picker-models = Models · { "{type}" }
 type-picker-available = Available
 type-picker-preview-unavailable = Preview unavailable
