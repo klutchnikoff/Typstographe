@@ -12,7 +12,14 @@ import { bindPresenceCaret } from './presence-caret'
 import { ySyncPlugin, yUndoPluginKey, ySyncPluginKey } from '@tiptap/y-tiptap'
 import type * as Y from 'yjs'
 import type { Provider } from './provider'
-import { bindEditingHistory, editingProvider, historyFor } from './editing-history'
+import {
+  bindEditingHistory,
+  bindSharedHistory,
+  editingProvider,
+  historyFor,
+  sharedHistorySelection,
+  changeSharedHistory,
+} from './editing-history'
 import { bindEditorTarget, type RecordRoot } from './editor-targets'
 import { bindCommandContext } from './command-context'
 import { capabilityAvailability, editingAvailability } from './command-availability'
@@ -20,6 +27,7 @@ import { runFormatting } from './formatting'
 import { syncNativeTextSelection } from './native-selection'
 import { Plugin } from '@tiptap/pm/state'
 import { ContextBand } from './band-layout'
+import { confirmEnclosingScope } from './keyboard-navigation'
 import { DocumentInput, SoftBreak, TypstInlineInput } from './editing'
 import { DocumentWhitespace } from './document-whitespace'
 import { HorizontalSpace } from './horizontal-space'
@@ -138,7 +146,14 @@ export function richZoneExtensions(
     extensions.push(
       Extension.create({
         name: 'sharedZoneFragment',
-        addProseMirrorPlugins: () => [ySyncPlugin(binding.fragment)],
+        addProseMirrorPlugins: () => {
+          const manager =
+            !native && yUndoPluginKey.getState(binding.historyOwner.state)?.undoManager
+          return [
+            ySyncPlugin(binding.fragment),
+            ...(manager ? [sharedHistorySelection(manager)] : []),
+          ]
+        },
         addCommands() {
           const change =
             (redo: boolean): RawCommands['undo'] =>
@@ -150,7 +165,9 @@ export function richZoneExtensions(
               if (!(redo ? history?.redoStack.length : history?.undoStack.length)) return false
               if (dispatch) {
                 history!.stopCapturing()
-                if (redo) history!.redo()
+                if (!native) {
+                  changeSharedHistory(this.editor, redo)
+                } else if (redo) history!.redo()
                 else history!.undo()
               }
               return true
@@ -390,6 +407,7 @@ export function createRichZone(options: RichZoneOptions): Editor {
             openLink(owner)
             return true
           }
+          if (confirmEnclosingScope(view.dom, event)) return true
         }
         return false
       },
@@ -407,6 +425,7 @@ export function createRichZone(options: RichZoneOptions): Editor {
   } else if (binding?.kind === 'fragment' && binding.target)
     bindEditorTarget(editor, binding.target)
   if (native) bindEditingHistory(editor, native)
+  else if (binding?.kind === 'fragment') bindSharedHistory(editor, binding.historyOwner)
   bindCommandContext(
     editor,
     binding?.kind === 'fragment' ? binding.historyOwner : editor,
