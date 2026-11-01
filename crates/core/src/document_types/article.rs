@@ -280,6 +280,11 @@ pub const GROUPS: &[FieldGroup] = &[
         sections: &[],
     },
     FieldGroup {
+        id: "abstracts",
+        label_key: "group-article-abstracts",
+        sections: &[],
+    },
+    FieldGroup {
         id: "affiliations",
         label_key: "field-article-affiliations",
         sections: &[],
@@ -287,11 +292,6 @@ pub const GROUPS: &[FieldGroup] = &[
     FieldGroup {
         id: "authors",
         label_key: "field-article-authors",
-        sections: &[],
-    },
-    FieldGroup {
-        id: "abstracts",
-        label_key: "group-article-abstracts",
         sections: &[],
     },
     FieldGroup {
@@ -307,9 +307,9 @@ pub(super) fn schema() -> serde_json::Value {
     let rich = |key, label, inline| json!({"key":key,"label_key":label,"kind":if inline {"rich_inline"} else {"rich"},"default":RichText::default()});
     json!({"outline":{"parameter":"show_outline","field":"article.show_outline"},"bibliography":{"tab":"bibliography","files":"references","field":"article.references","style":"citation_style","style_field":"article.citation_style"},"panels":[
         {"id":"titles","collection":"localizations","fields":["language","title","subtitle","short-title"]},
+        {"id":"abstracts","collection":"localizations","fields":["language","abstract","keywords"]},
         {"id":"affiliations","collection":"affiliations","editing":"dialog"},
-        {"id":"authors","collection":"authors","editing":"dialog"},
-        {"id":"abstracts","collection":"localizations","fields":["language","abstract","keywords"]}
+        {"id":"authors","collection":"authors","editing":"dialog"}
     ],"collections":[
         {"field":"article.references","parameter":"references","label_key":"field-bibliography","item_label_key":"field-reference-file","title_key":"name","schema":schemars::schema_for!(Vec<crate::bibliography::ReferenceFile>),"fields":[
             {"key":"name","label_key":"field-reference-file","kind":"text","default":""},
@@ -403,13 +403,18 @@ mod tests {
                 }));
             }
         }
-        assert_eq!(panels[0]["collection"], panels[3]["collection"]);
+        let titles = panels.iter().find(|panel| panel["id"] == "titles").unwrap();
+        let abstracts = panels
+            .iter()
+            .find(|panel| panel["id"] == "abstracts")
+            .unwrap();
+        assert_eq!(titles["collection"], abstracts["collection"]);
         assert_eq!(
-            panels[0]["fields"],
+            titles["fields"],
             serde_json::json!(["language", "title", "subtitle", "short-title"])
         );
         assert_eq!(
-            panels[3]["fields"],
+            abstracts["fields"],
             serde_json::json!(["language", "abstract", "keywords"])
         );
     }
