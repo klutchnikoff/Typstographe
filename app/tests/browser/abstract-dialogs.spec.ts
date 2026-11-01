@@ -15,7 +15,7 @@ async function create(page: Page) {
   await page.goto('/?client=main&welcome=1')
   await page.waitForFunction(() => window.__spike?.ready)
   await page.getByRole('button', { name: 'Nouveau document', exact: true }).first().click()
-  await page.locator('dialog select').first().selectOption('article')
+  await page.locator('dialog [data-type="article"]').click()
   await confirmNewDocument(page)
   await page.locator('#metadata-tab-titles').click()
   await openRecordCard(page)

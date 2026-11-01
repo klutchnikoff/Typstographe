@@ -1,6 +1,7 @@
 import { mountAssistance } from './assistance'
 import { mountCommandSurfaces } from './command-surfaces'
 import type { Capability } from './commands'
+import type { TypeCard } from './document-type-picker'
 import type { StructuredMetadata } from './metadata-records'
 import { mountProofing } from './proofing'
 import { registerInterfaceCommands, shellCommands } from './shell-commands'
@@ -67,6 +68,8 @@ export interface DocumentType {
 export interface Catalogue {
   messages: Record<string, string>
   locale: string
+  typeGroups: { id: string; label: string }[]
+  typeCards: TypeCard[]
   types: DocumentType[]
   entries: Capability[]
   papers: { value: string; label: string }[]

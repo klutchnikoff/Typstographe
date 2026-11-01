@@ -131,25 +131,48 @@ it('fills a new document from the profile and the current date without sharing d
   expect(letter.metadata.fields.sender_name).toBe('')
 })
 
-it('offers creatable types and their models, then submits the choice', () => {
+it('keeps planned cards inspectable but submits only the selected executable type and model', () => {
   const overlay = document.createElement('dialog')
-  overlay.showModal = vi.fn()
+  overlay.showModal = vi.fn(() => overlay.setAttribute('open', ''))
   document.body.append(overlay)
   const submit = vi.fn()
+  const hidden = { ...report, id: 'hidden', canCreate: false, models: [] }
+  const types = [letter, report, hidden]
   newDocumentDialog(
     overlay,
-    [letter, report, { ...report, id: 'hidden', canCreate: false }],
+    {
+      types,
+      typeGroups: [{ id: 'test', label: 'Test' }],
+      typeCards: types.map((type) => ({
+        id: type.id,
+        label: type.label,
+        description: 'Usage',
+        groups: ['test'],
+        runtimeType: type.id,
+        canCreate: type.canCreate,
+      })),
+    },
     submit,
   )
   expect(overlay.showModal).toHaveBeenCalled()
-  const [type, model] = overlay.querySelectorAll('select')
-  expect([...type.options].map((o) => o.value)).toEqual(['courrier', 'rapport'])
+  expect(overlay.querySelectorAll('[data-type]')).toHaveLength(3)
+  const model = overlay.querySelector<HTMLSelectElement>('[aria-label="Modèle"]')!
   expect([...model.options].map((o) => o.value)).toEqual(['personal', 'free'])
-  type.value = 'rapport'
-  type.dispatchEvent(new Event('change'))
+  overlay.querySelector<HTMLButtonElement>('[data-type="hidden"]')!.click()
+  const confirm = overlay.querySelector<HTMLButtonElement>('[data-default]')!
+  expect(confirm.disabled).toBe(true)
+  confirm.click()
+  expect(submit).not.toHaveBeenCalled()
+  overlay.querySelector<HTMLButtonElement>('[data-type="rapport"]')!.click()
+  expect(confirm.disabled).toBe(false)
   expect([...model.options].map((o) => o.value)).toEqual(['report'])
-  overlay.querySelector<HTMLButtonElement>('[data-default]')!.click()
-  expect(submit).toHaveBeenCalledWith(report, report.models[0])
+  confirm.click()
+  expect(submit).toHaveBeenLastCalledWith(report, report.models[0])
+  overlay.querySelector<HTMLButtonElement>('[data-type="courrier"]')!.click()
+  model.value = 'free'
+  model.dispatchEvent(new Event('change'))
+  confirm.click()
+  expect(submit).toHaveBeenLastCalledWith(letter, letter.models[1])
 })
 
 it('labels recovered inputs with the vocabulary of the document type', () => {

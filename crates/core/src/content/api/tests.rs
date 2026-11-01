@@ -514,3 +514,45 @@ fn semantic_type_restrictions_cannot_be_bypassed_by_generic_nodes_or_archives() 
 
 #[path = "guarantee_tests.rs"]
 mod guarantees;
+
+#[test]
+fn planned_type_profiles_are_discoverable_without_becoming_executable() {
+    let mut session = Session::new();
+    let listing = session.query("document_types.list", json!({})).unwrap();
+    assert_eq!(
+        listing["types"].as_array().unwrap().len(),
+        crate::document_types::DocumentType::ALL.len()
+    );
+    let cards = listing["discovery"]["types"].as_array().unwrap();
+    assert_eq!(cards.iter().filter(|p| p["can_create"] == true).count(), 2);
+    for profile in cards {
+        let id = profile["id"].as_str().unwrap();
+        let description = session
+            .query("document_types.describe", json!({"type":id}))
+            .unwrap();
+        assert_eq!(description["profile"]["id"], profile["id"]);
+        assert_eq!(description["profile"]["status"], profile["status"]);
+        assert!(
+            !description["profile"]["information"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+        assert!(profile.get("information").is_none());
+        if !profile["can_create"].as_bool().unwrap() {
+            assert!(description["models"].as_array().unwrap().is_empty());
+            assert!(session.execute("document.new", json!({"type":id})).is_err());
+            assert!(!session.is_open());
+        }
+        if profile["runtime_type"].is_null() {
+            assert!(description["metadata"].is_null());
+            assert!(description["capabilities"].as_array().unwrap().is_empty());
+        }
+    }
+    assert!(
+        session
+            .query("document_types.describe", json!({"type":"unknown"}))
+            .is_err()
+    );
+    assert!(!session.is_open());
+}

@@ -209,7 +209,7 @@ export function shellDocuments(
     setActive(true)
     metadata.render()
   }
-  const create = () => newDocumentDialog(layout.overlay, catalogue.types, createDocument)
+  const create = () => newDocumentDialog(layout.overlay, catalogue, createDocument)
   const openChosen = () => confirmDiscard(() => ctx.guarded(() => open()))
   const createChosen = () => confirmDiscard(create)
 

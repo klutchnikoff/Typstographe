@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use typstographe_core::{
     content::catalogue,
     document::{DocumentLanguage, PaperFormat},
-    document_types::{DocumentType, Metadata, models::Model},
+    document_types::{DocumentType, Metadata, discovery, models::Model},
 };
 use typstographe_i18n::text;
 
@@ -119,7 +119,16 @@ pub fn content_catalogue() -> Value {
         PaperFormat::ALL.map(|paper| json!({"value":paper,"label":text(paper.label_key())}));
     let languages = DocumentLanguage::ALL
         .map(|language| json!({"value":language,"label":text(language.label_key())}));
+    let groups: Vec<_> = discovery::catalogue()
+        .groups
+        .iter()
+        .map(|group| json!({"id":group.id,"label":text(&group.label_key)}))
+        .collect();
+    let cards: Vec<_> = discovery::catalogue().types.iter().map(|profile|
+        json!({"id":profile.id,"label":text(&profile.label_key),"description":text(&profile.description_key),"groups":profile.groups,"runtimeType":profile.runtime_type,"canCreate":profile.can_create()})
+    ).collect();
     json!({
+        "typeGroups":groups,"typeCards":cards,
         "types":types,"entries":entries,"messages":typstographe_i18n::web_messages(),
         "locale":typstographe_i18n::language(),"papers":papers,"languages":languages
     })

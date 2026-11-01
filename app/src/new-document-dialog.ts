@@ -1,4 +1,5 @@
 import { tr } from './i18n'
+import { documentTypePicker, type CreationCatalogue } from './document-type-picker'
 import { actionRow } from './keyboard-navigation'
 import type { Preferences } from './preferences-panel'
 import type { DocumentType, Model } from './shell'
@@ -24,25 +25,12 @@ export function newDocumentMetadata(
 /** Fills `overlay` with the type and model choice and opens it as a modal dialog. */
 export function newDocumentDialog(
   overlay: HTMLDialogElement,
-  documentTypes: DocumentType[],
+  catalogue: CreationCatalogue,
   submit: (type: DocumentType, model: Model) => void,
 ) {
   overlay.replaceChildren()
   const heading = document.createElement('h2')
   heading.textContent = tr('Nouveau document')
-  const types = documentTypes.filter((t) => t.canCreate)
-  const type = document.createElement('select')
-  type.setAttribute('aria-label', tr('Type de document'))
-  for (const t of types) type.add(new Option(t.label, t.id))
-  const model = document.createElement('select')
-  model.setAttribute('aria-label', tr('Modèle'))
-  const fill = () => {
-    model.replaceChildren()
-    for (const m of types.find((t) => t.id === type.value)!.models)
-      model.add(new Option(m.label, m.id))
-  }
-  type.onchange = fill
-  fill()
   const controls = actionRow()
   const cancel = document.createElement('button')
   cancel.textContent = tr('Annuler')
@@ -51,14 +39,15 @@ export function newDocumentDialog(
   confirm.className = 'primary'
   confirm.dataset.default = ''
   confirm.textContent = tr('Créer')
+  let choice: { type: DocumentType; model: Model } | null = null
+  const picker = documentTypePicker(catalogue, (value) => {
+    choice = value
+    confirm.disabled = value === null
+  })
   confirm.onclick = () => {
-    const t = types.find((t) => t.id === type.value)!
-    submit(
-      t,
-      t.models.find((m) => m.id === model.value)!,
-    )
+    if (choice) submit(choice.type, choice.model)
   }
   controls.append(cancel, confirm)
-  overlay.append(heading, type, model, controls)
+  overlay.append(heading, picker, controls)
   overlay.showModal()
 }

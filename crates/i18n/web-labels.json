@@ -116,7 +116,7 @@
   "Chargement…": "web-loading",
   "Contenu à corriger · dernier rendu conservé": "web-invalid-content",
   "Modifications locales · hors connexion": "web-local-edits-offline",
-  "Aperçu": "web-preview",
+  "Aperçu": "web-versions-13",
   "Aperçu ({count} page)": "web-preview-single-page",
   "Aperçu ({count} pages)": "web-preview-multiple-pages",
   "Utilisez une adresse http, https ou mailto.": "web-invalid-link",
@@ -337,7 +337,6 @@
   "Fermer la version": "web-versions-10",
   "Affichage de la version": "web-versions-11",
   "Contenu": "web-versions-12",
-  "Aperçu": "web-versions-13",
   "Page": "web-versions-14",
   "Supprimer cette version": "web-versions-15",
   "Supprimer cette version ?": "web-versions-16",
@@ -459,5 +458,9 @@
   "Glisser pour réordonner. Au clavier : Espace, flèches, puis Entrée ou Échap.": "web-record-reorder-help",
   "Déplacement annulé.": "web-record-reorder-cancelled",
   "Nouvelle position : {position} sur {count}.": "web-record-reorder-position",
-  "Déplacement activé. Utilisez les flèches, puis Entrée ou Échap.": "web-record-reorder-started"
+  "Déplacement activé. Utilisez les flèches, puis Entrée ou Échap.": "web-record-reorder-started",
+  "Groupe de documents": "type-picker-group",
+  "Tous les types": "type-picker-all",
+  "À venir": "type-picker-planned",
+  "Ce type est prévu mais ne peut pas encore être créé.": "type-picker-unavailable"
 }

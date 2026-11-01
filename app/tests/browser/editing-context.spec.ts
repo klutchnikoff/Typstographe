@@ -102,7 +102,7 @@ test('les modales d’en-tête ne déplacent jamais le contexte d’édition du 
 }) => {
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.new"]').click()
-  await page.locator('dialog select').first().selectOption('article')
+  await page.locator('dialog [data-type="article"]').click()
   await confirmNewDocument(page)
   await page.locator('#metadata-tab-titles').click()
   const before = await snapshot(page)

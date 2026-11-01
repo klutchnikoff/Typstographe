@@ -35,6 +35,8 @@ const kind: DocumentType = {
 const catalogue: Catalogue = {
   locale: 'fr',
   messages: {},
+  typeGroups: [],
+  typeCards: [],
   types: [kind],
   entries: [],
   papers: [

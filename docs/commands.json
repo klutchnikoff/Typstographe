@@ -17008,7 +17008,7 @@
     },
     {
       "batch_step": false,
-      "description": "Describe metadata, rich header collections and capabilities of one type.",
+      "description": "Describe one type by ID. Integrated types include their actual metadata, capabilities and models; types without an implemented contract return only a product profile. Always check can_create.",
       "family": "query",
       "id": "document_types.describe",
       "params_schema": {
@@ -17456,7 +17456,7 @@
     },
     {
       "batch_step": false,
-      "description": "List built-in document types and their interchangeable visual models.",
+      "description": "List integrated document contracts and models, plus grouped product profiles. Discovery entries marked planned cannot be created; capability needs in profiles are intentions, not supported operations.",
       "family": "query",
       "id": "document_types.list",
       "params_schema": {

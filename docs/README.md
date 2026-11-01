@@ -23,6 +23,7 @@ les décisions, mesures et limites des étapes livrées.
 | Projet autonome et Versions | [Format CAS 11](a4-project-format.md), [comparateur et validation contextualisée](a4-comparison-contract.md) |
 | Conservation et récupération | [Contrat de conservation](a3-conservation.md), [parcours de reprise](a3-recovery-interface.md) |
 | Éditeur et interactions | [Zones riches](rich-zones.md), [widgets/bandeaux](editor-widgets.md), [navigation clavier](keyboard-navigation.md), [dialogues](metadata-dialogs.md), [retours/jointures](paragraph-join.md) |
+| Catalogue des usages | [Groupes, types et fiches](document-type-catalogue.md) |
 | Types, modèles et bibliographie | [Article](article-contract.md), [citations et bibliographie](article-bibliography.md), [dépendances Typst et wrappers](typst-dependencies.md) |
 | Performances et synchronisation | [Mode individuel](individual-mode.md), [rendu et méthode de mesure](tauri-preview-performance.md) |
 
