@@ -1,0 +1,287 @@
+diff --git a/node_modules/@tiptap/y-tiptap/dist/index.cjs b/node_modules/@tiptap/y-tiptap/dist/index.cjs
+index d5fd6a2..5aca8f1 100644
+--- a/node_modules/@tiptap/y-tiptap/dist/index.cjs
++++ b/node_modules/@tiptap/y-tiptap/dist/index.cjs
+@@ -1647,51 +1647,78 @@ var ProsemirrorBinding = class {
+ };
+ //#endregion
+ //#region src/lib/utils/positions/migrations/getPositionContent.ts
++                                             
++                                                                                             
++
+ const getPositionContent = (fragment, doc) => {
+ 	const characters = [];
+ 	const nodes = [];
+ 	const emptyTexts = [];
+-	if (fragment.length === 0) return {
+-		characters,
+-		nodes,
+-		emptyTexts
+-	};
++
++	if (fragment.length === 0) {
++		return { characters, nodes, emptyTexts };
++	}
++
+ 	const visit = (type, node, position) => {
+ 		const children = type.toArray();
+ 		const content = normalizePNodeContent(node);
+ 		let offset = position;
+-		if (node.content.size === 0) children.forEach((child) => {
+-			if (child instanceof yjs.XmlText && child._item) emptyTexts.push({
+-				id: child._item.id,
+-				position: position - 1,
+-				end: position
++
++		if (node.content.size === 0) {
++			children.forEach((child) => {
++				if (child instanceof yjs.XmlText && child._item) {
++					emptyTexts.push({ id: child._item.id, position: position - 1, end: position });
++				}
+ 			});
+-		});
+-		content.forEach((child, index) => {
+-			const shared = children[index];
++		}
++
++		// One normalized PM text run can originate from several adjacent XmlTexts
++		// (e.g. a Rust/Yrs producer writes each marked run separately). Walk the
++		// physical children independently, keeping every original character ID.
++		let sharedIndex = 0;
++		const skipEmptyTexts = () => {
++			while (children[sharedIndex] instanceof yjs.XmlText && children[sharedIndex].length === 0) {
++				sharedIndex++;
++			}
++		};
++		content.forEach((child) => {
+ 			if (!Array.isArray(child)) {
+-				if (!(shared instanceof yjs.XmlElement) || !shared._item) throw new Error("Position tracking requires synchronized editor content");
+-				nodes.push({
+-					id: shared._item.id,
+-					position: offset,
+-					end: offset + child.nodeSize - 1
+-				});
++				skipEmptyTexts();
++				const shared = children[sharedIndex++];
++				if (
++					!(shared instanceof yjs.XmlElement) ||
++					!shared._item ||
++					shared.nodeName !== child.type.name
++				) {
++					throw new Error("Position tracking requires synchronized editor content");
++				}
++				nodes.push({ id: shared._item.id, position: offset, end: offset + child.nodeSize - 1 });
+ 				if (!child.isLeaf) visit(shared, child, offset + 1);
+ 				offset += child.nodeSize;
+ 				return;
+ 			}
+-			if (!(shared instanceof yjs.XmlText)) throw new Error("Position tracking requires synchronized editor text");
+-			const text = getTextCharacters(shared, offset);
+-			characters.push(...text);
+-			offset += text.length;
++
++			const expected = child.map((part) => part.text ?? "").join("");
++			let actual = "";
++			while (children[sharedIndex] instanceof yjs.XmlText) {
++				const shared = children[sharedIndex++];
++				const text = getTextCharacters(shared, offset);
++				characters.push(...text);
++				actual += text.map((character) => character.text).join("");
++				offset += text.length;
++			}
++			if (actual !== expected) {
++				throw new Error("Position tracking requires synchronized editor text");
++			}
+ 		});
++		skipEmptyTexts();
++		if (sharedIndex !== children.length) {
++			throw new Error("Position tracking requires synchronized editor content");
++		}
+ 	};
++
+ 	visit(fragment, doc, 0);
+-	return {
+-		characters,
+-		nodes,
+-		emptyTexts
+-	};
++	return { characters, nodes, emptyTexts };
+ };
+ //#endregion
+ //#region src/lib/utils/positions/migrations/isNodeMarkupChange.ts
+diff --git a/node_modules/@tiptap/y-tiptap/dist/index.js b/node_modules/@tiptap/y-tiptap/dist/index.js
+index 50bcfe7..850122e 100644
+--- a/node_modules/@tiptap/y-tiptap/dist/index.js
++++ b/node_modules/@tiptap/y-tiptap/dist/index.js
+@@ -1614,51 +1614,78 @@ var ProsemirrorBinding = class {
+ };
+ //#endregion
+ //#region src/lib/utils/positions/migrations/getPositionContent.ts
++                                             
++                                                                                             
++
+ const getPositionContent = (fragment, doc) => {
+ 	const characters = [];
+ 	const nodes = [];
+ 	const emptyTexts = [];
+-	if (fragment.length === 0) return {
+-		characters,
+-		nodes,
+-		emptyTexts
+-	};
++
++	if (fragment.length === 0) {
++		return { characters, nodes, emptyTexts };
++	}
++
+ 	const visit = (type, node, position) => {
+ 		const children = type.toArray();
+ 		const content = normalizePNodeContent(node);
+ 		let offset = position;
+-		if (node.content.size === 0) children.forEach((child) => {
+-			if (child instanceof Y.XmlText && child._item) emptyTexts.push({
+-				id: child._item.id,
+-				position: position - 1,
+-				end: position
++
++		if (node.content.size === 0) {
++			children.forEach((child) => {
++				if (child instanceof Y.XmlText && child._item) {
++					emptyTexts.push({ id: child._item.id, position: position - 1, end: position });
++				}
+ 			});
+-		});
+-		content.forEach((child, index) => {
+-			const shared = children[index];
++		}
++
++		// One normalized PM text run can originate from several adjacent XmlTexts
++		// (e.g. a Rust/Yrs producer writes each marked run separately). Walk the
++		// physical children independently, keeping every original character ID.
++		let sharedIndex = 0;
++		const skipEmptyTexts = () => {
++			while (children[sharedIndex] instanceof Y.XmlText && children[sharedIndex].length === 0) {
++				sharedIndex++;
++			}
++		};
++		content.forEach((child) => {
+ 			if (!Array.isArray(child)) {
+-				if (!(shared instanceof Y.XmlElement) || !shared._item) throw new Error("Position tracking requires synchronized editor content");
+-				nodes.push({
+-					id: shared._item.id,
+-					position: offset,
+-					end: offset + child.nodeSize - 1
+-				});
++				skipEmptyTexts();
++				const shared = children[sharedIndex++];
++				if (
++					!(shared instanceof Y.XmlElement) ||
++					!shared._item ||
++					shared.nodeName !== child.type.name
++				) {
++					throw new Error("Position tracking requires synchronized editor content");
++				}
++				nodes.push({ id: shared._item.id, position: offset, end: offset + child.nodeSize - 1 });
+ 				if (!child.isLeaf) visit(shared, child, offset + 1);
+ 				offset += child.nodeSize;
+ 				return;
+ 			}
+-			if (!(shared instanceof Y.XmlText)) throw new Error("Position tracking requires synchronized editor text");
+-			const text = getTextCharacters(shared, offset);
+-			characters.push(...text);
+-			offset += text.length;
++
++			const expected = child.map((part) => part.text ?? "").join("");
++			let actual = "";
++			while (children[sharedIndex] instanceof Y.XmlText) {
++				const shared = children[sharedIndex++];
++				const text = getTextCharacters(shared, offset);
++				characters.push(...text);
++				actual += text.map((character) => character.text).join("");
++				offset += text.length;
++			}
++			if (actual !== expected) {
++				throw new Error("Position tracking requires synchronized editor text");
++			}
+ 		});
++		skipEmptyTexts();
++		if (sharedIndex !== children.length) {
++			throw new Error("Position tracking requires synchronized editor content");
++		}
+ 	};
++
+ 	visit(fragment, doc, 0);
+-	return {
+-		characters,
+-		nodes,
+-		emptyTexts
+-	};
++	return { characters, nodes, emptyTexts };
+ };
+ //#endregion
+ //#region src/lib/utils/positions/migrations/isNodeMarkupChange.ts
+diff --git a/node_modules/@tiptap/y-tiptap/src/lib/utils/positions/migrations/getPositionContent.ts b/node_modules/@tiptap/y-tiptap/src/lib/utils/positions/migrations/getPositionContent.ts
+index 755b9f1..5337030 100644
+--- a/node_modules/@tiptap/y-tiptap/src/lib/utils/positions/migrations/getPositionContent.ts
++++ b/node_modules/@tiptap/y-tiptap/src/lib/utils/positions/migrations/getPositionContent.ts
+@@ -26,32 +26,45 @@ export const getPositionContent = (fragment: Y.XmlFragment, doc: Node) => {
+       })
+     }
+ 
+-    content.forEach((child, index) => {
+-      const shared = children[index]
+-
++    // One normalized PM text run can originate from several adjacent XmlTexts
++    // (e.g. a Rust/Yrs producer writes each marked run separately). Walk the
++    // physical children independently, keeping every original character ID.
++    let sharedIndex = 0
++    const skipEmptyTexts = () => {
++      while (children[sharedIndex] instanceof Y.XmlText && (children[sharedIndex] as Y.XmlText).length === 0) {
++        sharedIndex++
++      }
++    }
++    content.forEach(child => {
+       if (!Array.isArray(child)) {
+-        if (!(shared instanceof Y.XmlElement) || !shared._item) {
++        skipEmptyTexts()
++        const shared = children[sharedIndex++]
++        if (!(shared instanceof Y.XmlElement) || !shared._item || shared.nodeName !== child.type.name) {
+           throw new Error('Position tracking requires synchronized editor content')
+         }
+-
+         nodes.push({ id: shared._item.id, position: offset, end: offset + child.nodeSize - 1 })
+-
+-        if (!child.isLeaf) {
+-          visit(shared, child, offset + 1)
+-        }
+-
++        if (!child.isLeaf) visit(shared, child, offset + 1)
+         offset += child.nodeSize
+         return
+       }
+ 
+-      if (!(shared instanceof Y.XmlText)) {
++      const expected = child.map(part => part.text ?? '').join('')
++      let actual = ''
++      while (children[sharedIndex] instanceof Y.XmlText) {
++        const shared = children[sharedIndex++] as Y.XmlText
++        const text = getTextCharacters(shared, offset)
++        characters.push(...text)
++        actual += text.map(character => character.text).join('')
++        offset += text.length
++      }
++      if (actual !== expected) {
+         throw new Error('Position tracking requires synchronized editor text')
+       }
+-
+-      const text = getTextCharacters(shared, offset)
+-      characters.push(...text)
+-      offset += text.length
+     })
++    skipEmptyTexts()
++    if (sharedIndex !== children.length) {
++      throw new Error('Position tracking requires synchronized editor content')
++    }
+   }
+ 
+   visit(fragment, doc, 0)
