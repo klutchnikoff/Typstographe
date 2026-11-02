@@ -70,6 +70,8 @@ jobs:
       - name: Formats and architecture
         if: runner.os == 'Linux' && !inputs.acceptance_only
         run: |
+          node --test .github/scripts/release.test.mjs
+          npx prettier --config app/.prettierrc.json --check .github/scripts/*.mjs
           npm run check:format
           cargo +stable fmt --all --check
           python3 -m unittest discover -s scripts/tests -v

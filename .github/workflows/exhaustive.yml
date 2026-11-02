@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       packages:
-        description: Construire aussi les paquets natifs de test (non signés pour distribution)
+        description: Construire les installateurs de test ; sur un tag, préparer une release en brouillon
         type: boolean
         default: false
       acceptance_only:
@@ -26,11 +26,31 @@ jobs:
     timeout-minutes: 5
     outputs:
       code: ${{ steps.plan.outputs.code }}
+      version: ${{ steps.release.outputs.version }}
+      commit: ${{ steps.release.outputs.commit }}
+      tag: ${{ steps.release.outputs.tag }}
+      publish: ${{ steps.release.outputs.publish }}
+      build_packages: ${{ steps.release.outputs.build_packages }}
+      matrix: ${{ steps.release.outputs.matrix }}
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
           fetch-depth: 2
+      - name: Check release version and checked-out tag
+        id: release
+        env:
+          INPUT_PACKAGES: ${{ inputs.packages }}
+          INPUT_ACCEPTANCE_ONLY: ${{ inputs.acceptance_only }}
+        run: node .github/scripts/release-plan.mjs
+      - name: Refuse moved tags and already published releases
+        if: steps.release.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_COMMIT: ${{ steps.release.outputs.commit }}
+        run: node .github/scripts/release-publish.mjs check
       - name: Last successful validation on main
         if: github.event_name == 'schedule'
         id: previous
@@ -64,27 +84,29 @@ jobs:
       native_conservation: true
       acceptance_only: ${{ github.event_name == 'workflow_dispatch' && inputs.acceptance_only }}
   packages:
-    needs: verify
-    if: github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && inputs.packages && !inputs.acceptance_only)
+    needs: [scope, verify]
+    if: needs.scope.outputs.build_packages == 'true'
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            bundle: deb
-          - os: macos-latest
-            bundle: app
-          - os: windows-latest
-            bundle: nsis
+      matrix: ${{ fromJSON(needs.scope.outputs.matrix) }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
     env:
       CARGO_BUILD_JOBS: "2"
+      # The DMG bundler reads CI itself; --ci alone does not skip Finder.
+      CI: 'true'
       RUSTUP_TOOLCHAIN: stable
+      INSTALLER_PLATFORM: ${{ matrix.id }}
+      RELEASE_VERSION: ${{ needs.scope.outputs.version }}
+      RELEASE_COMMIT: ${{ needs.scope.outputs.commit }}
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          ref: ${{ needs.scope.outputs.commit }}
       - uses: actions/setup-node@v6
         with:
           node-version: '26'
@@ -96,7 +118,12 @@ jobs:
           sudo apt-get update && sudo apt-get install -y
           build-essential pkg-config libwebkit2gtk-4.1-dev libxdo-dev
           libayatana-appindicator3-dev librsvg2-dev patchelf
-      - run: rustup toolchain install stable --profile minimal
+      - name: Rust toolchain and explicit architectures
+        env:
+          RUST_TARGETS: ${{ matrix.rustTargets }}
+        run: |
+          rustup toolchain install stable --profile minimal
+          for target in $RUST_TARGETS; do rustup target add "$target"; done
       - uses: actions/cache@v6
         with:
           path: |
@@ -104,46 +131,83 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             target
-          key: packages-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          key: packages-${{ matrix.id }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
+            packages-${{ matrix.id }}-
             packages-${{ runner.os }}-
             checks-${{ runner.os }}-
       - run: npm ci
+      - name: Remove stale bundles, retaining compiled dependencies
+        run: node .github/scripts/release-assets.mjs clean
       - name: Build a distributed binary without the recipe driver
-        shell: bash
         env:
-          BUNDLE: ${{ matrix.bundle }}
-        run: npm run tauri -- build --ci --no-sign --bundles "$BUNDLE" --config '{"bundle":{"active":true}}' -- --locked
-      # These are build artifacts, not signed/notarized public releases.
-      - name: Inspect and collect the native package
-        shell: bash
+          BUNDLES: ${{ matrix.bundles }}
+          TARGET: ${{ matrix.target }}
+        run: npm run tauri -- build --ci --no-sign --target "$TARGET" --bundles "$BUNDLES" --config '{"bundle":{"active":true,"createUpdaterArtifacts":false}}' -- --locked
+      - run: npm run check:distribution
+      - name: Inspect native installers
+        env:
+          TARGET: ${{ matrix.target }}
         run: |
-          mkdir -p output/packages
+          set -euo pipefail
+          bundle="target/$TARGET/release/bundle"
           case "$RUNNER_OS" in
             Linux)
-              for file in target/release/bundle/deb/*.deb; do
+              for file in "$bundle"/deb/*.deb; do
                 dpkg-deb --info "$file"
-                dpkg-deb --contents "$file" | grep 'usr/bin/typstographe'
-                cp "$file" output/packages/
+                dpkg-deb --contents "$file" > /tmp/typstographe-package-contents
+                grep 'usr/bin/typstographe' /tmp/typstographe-package-contents
+              done
+              for file in "$bundle"/appimage/*.AppImage; do
+                work=$(mktemp -d)
+                (cd "$work" && "$GITHUB_WORKSPACE/$file" --appimage-extract > /dev/null)
+                test -x "$work/squashfs-root/AppRun"
+                test -x "$work/squashfs-root/usr/bin/typstographe"
+                rm -rf "$work"
               done
               ;;
             macOS)
-              bundle=target/release/bundle/macos/typstOgraphe.app
-              test -f "$bundle/Contents/Info.plist"
-              test -x "$bundle/Contents/MacOS/typstographe"
-              plutil -lint "$bundle/Contents/Info.plist"
-              tar -czf output/packages/typstOgraphe-macOS.tgz -C target/release/bundle/macos typstOgraphe.app
+              app="$bundle/macos/typstOgraphe.app"
+              test -x "$app/Contents/MacOS/typstographe"
+              plutil -lint "$app/Contents/Info.plist"
+              lipo -verify_arch x86_64 arm64 "$app/Contents/MacOS/typstographe"
+              for file in "$bundle"/dmg/*.dmg; do hdiutil verify "$file"; done
               ;;
             Windows)
-              for file in target/release/bundle/nsis/*.exe; do
-                test -s "$file"
-                cp "$file" output/packages/
-              done
+              for file in "$bundle"/nsis/*.exe; do test -s "$file"; done
               ;;
           esac
+      - name: Collect exact-version installers and provenance
+        run: node .github/scripts/release-assets.mjs collect
       - uses: actions/upload-artifact@v7
         with:
-          name: packages-${{ runner.os }}
-          path: output/packages/
+          name: installers-${{ matrix.id }}
+          path: output/packages/${{ matrix.id }}/
           if-no-files-found: error
+          overwrite: true
           retention-days: 14
+  draft-release:
+    needs: [scope, packages]
+    if: needs.scope.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Builders only read the repository; this is the single asset-writing job.
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.scope.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.scope.outputs.version }}
+      RELEASE_COMMIT: ${{ needs.scope.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ needs.scope.outputs.commit }}
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: installers-*
+          path: output/downloads
+      - name: Verify all installers and create or complete the draft
+        run: node .github/scripts/release-publish.mjs publish
