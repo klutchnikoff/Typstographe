@@ -20,8 +20,10 @@ async function create(page: Page) {
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.new"]').click()
   await page.locator('dialog [data-type="article"]').click()
-  await expect(page.getByRole('dialog').getByLabel('Modèle', { exact: true })).toHaveValue(
-    'article.model.working',
+  const models = page.getByRole('dialog').getByRole('group', { name: 'Modèle', exact: true })
+  await expect(models.locator('[data-model="article.model.working"]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
   )
   await confirmNewDocument(page)
   await tab(page, 'titles')
