@@ -404,6 +404,10 @@ identités et droits, transport, stockage, confidentialité, coûts et maintenan
 
 **Lot Publication des applications — validé le 2 novembre 2026 :**
 
+La chaîne H.1 est implémentée ; la [procédure et les vérifications locales](docs/releases.md)
+sont disponibles. Sa première qualification complète des installateurs sur les
+runners et le dépôt réel sur un nouveau tag restent à effectuer.
+
 1. **H.1 — Installateurs et release en brouillon.** Sur un tag de version,
    attendre la validation complète du même commit, construire les paquets et les
    joindre à une seule release GitHub en brouillon. Première matrice : `.dmg`

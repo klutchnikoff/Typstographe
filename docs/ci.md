@@ -10,7 +10,7 @@ conservation des documents restent vérifiées sur chaque PR.
 | Poussée sur `main` | Tests Rust, Clippy, compilation native et contrats sur Ubuntu, macOS et Windows. Tests web sur Ubuntu seulement. Couverture dans un workflow séparé. |
 | Validation complète manuelle | Même chaîne sur les trois systèmes, tous les parcours graphiques, audits et compatibilité WebAssembly. Paquets natifs en option. |
 | Lundi à 03:41 UTC | Validation complète uniquement si du code a changé depuis la dernière exécution réussie sur `main`. |
-| Tag `v*` | Validation complète, puis construction et inspection des paquets natifs. |
+| Tag `v*` | Vérification version/commit, validation complète, construction et inspection des installateurs, puis ajout à une release en brouillon. |
 
 ## Une seule chaîne de contrôle
 
@@ -72,15 +72,32 @@ avec activité, même sans changement de lockfile. Pour contrôler des avis de
 sécurité apparus pendant une période sans activité, lancer la validation manuelle.
 
 Sur un tag, les trois validations doivent réussir avant le packaging : `.deb`
-Linux, `.app` macOS conservée dans une archive tar pour ses permissions, et
-installateur NSIS Windows. Le packaging utilise le lanceur Tauri habituel avec
-les langues générées depuis Fluent, un binaire release sans `recipe-driver`,
-et les versions verrouillées. Les paquets sont inspectés puis conservés comme
-artefacts pendant 14 jours. Les tests d'archives et d'exports autonomes hors ligne
-font partie de la validation Rust commune.
+et AppImage Linux x86_64, `.dmg` macOS universel (Intel et Apple Silicon), et
+installateur NSIS Windows x64. Une validation complète sert tous les formats.
+Le packaging utilise le lanceur Tauri habituel avec les langues générées depuis
+Fluent, un binaire release sans `recipe-driver` et les dépendances verrouillées.
+Les paquets sont inspectés puis conservés comme artefacts pendant 14 jours.
+Un job central vérifie leurs empreintes et leur provenance avant de les joindre
+à une seule release en brouillon, avec manifeste et `SHA256SUMS`. Seul ce job a
+le droit d'écrire dans les releases ; une release publiée est refusée.
 
-Ces artefacts sont des paquets de test : l'installation interactive, la signature,
-la notarisation et la publication d'une version ne sont pas automatisées ici.
+Sur une branche, `packages=true` produit seulement les artefacts de test. Pour
+préparer ou compléter un brouillon, relancer explicitement sur le tag exact :
+
+```sh
+gh workflow run exhaustive.yml --ref vX.Y.Z
+```
+
+Le tag doit correspondre aux versions Cargo/npm/Tauri et au commit validé. Les
+paquets sont construits depuis ce commit, même si la branche a avancé. Le mode
+`acceptance_only=true` n'emballe ni ne dépose de release, y compris sur un tag.
+Les garde-fous et les contrôles d'intégrité sont testés sur chaque PR avec
+`node --test .github/scripts/release.test.mjs`.
+
+La [procédure de publication](releases.md) précise les formats, la relance et
+la validation manuelle avant publication. L'installation interactive, la
+signature/notarisation et les mises à jour restent les lots H.2/H.3. Les tests
+d'archives et d'exports autonomes hors ligne font partie de la validation Rust commune.
 Les mesures de latence et de mémoire sur un vrai bureau restent des recettes
 manuelles décrites dans [la méthode de mesure](tauri-preview-performance.md).
 

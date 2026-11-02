@@ -310,6 +310,10 @@ avec participants lents, collages volumineux, reconnexions et reprise du serveur
 
 **Découpage validé le 2 novembre 2026 — publication des applications :**
 
+H.1 dispose désormais de la chaîne de packaging/dépôt, de tests de provenance
+et d'un essai natif macOS ARM64 ; voir les [résultats et limites](docs/releases.md#vérification-locale-du-lot-h1).
+La matrice complète et le premier dépôt réel restent à qualifier en CI.
+
 - **H.1 :** conserver la validation complète comme préalable, puis réutiliser
   le packaging Tauri pour macOS universel (`.dmg`), Linux x86_64 (`.deb`,
   AppImage) et Windows x64 (NSIS). Vérifier la concordance tag/versions/commit,
