@@ -308,6 +308,29 @@ avec participants lents, collages volumineux, reconnexions et reprise du serveur
 
 ## H. Distribution et vérification — continu
 
+**Découpage validé le 2 novembre 2026 — publication des applications :**
+
+- **H.1 :** conserver la validation complète comme préalable, puis réutiliser
+  le packaging Tauri pour macOS universel (`.dmg`), Linux x86_64 (`.deb`,
+  AppImage) et Windows x64 (NSIS). Vérifier la concordance tag/versions/commit,
+  inspecter et collecter les paquets, puis les joindre à une release unique en
+  brouillon, avec empreintes SHA-256. N'accorder l'écriture GitHub qu'au job
+  de dépôt des fichiers, une fois toutes les constructions réussies.
+  La relance opère sur le tag immuable ; elle peut compléter un brouillon,
+  mais ne modifie pas une release publiée. La publication est manuelle.
+  Les constructions manuelles de branche restent des artefacts de test.
+- **H.2 :** vérifier le contenu final puis l'installation et le fonctionnement
+  des paquets sur les trois systèmes, avec modèles, polices, langues et
+  compilation/export hors ligne. Distinguer inspection du paquet et recette
+  de l'application réellement installée.
+- **H.3 :** signature/notarisation, tap Homebrew après publication et manifeste
+  de mise à jour signé ; comptes, clés, canaux et reprise sur échec à valider.
+  Aucun contournement de sidecars n'est nécessaire pour le moteur Typst intégré.
+
+Ne pas relancer les tests complets par format : une validation du commit suivie
+des constructions/inspections natives et d'un dépôt central des fichiers suffit.
+Le premier lot prépare les installateurs non signés, pas une mise à jour automatique.
+
 **Jalon d’export volontaire à développer :** figer l’état ayant produit un PDF
 réussi, puis proposer de créer sa version sans bloquer la rédaction ni l’export.
 La capture ne doit pas prendre un état ultérieur ; annulation/échec ne déclenche

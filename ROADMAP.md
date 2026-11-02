@@ -402,6 +402,29 @@ identités et droits, transport, stockage, confidentialité, coûts et maintenan
 
 ## H — Préparer une première diffusion
 
+**Lot Publication des applications — validé le 2 novembre 2026 :**
+
+1. **H.1 — Installateurs et release en brouillon.** Sur un tag de version,
+   attendre la validation complète du même commit, construire les paquets et les
+   joindre à une seule release GitHub en brouillon. Première matrice : `.dmg`
+   macOS universel (Intel et Apple Silicon), `.deb` et AppImage Linux x86_64,
+   installateur NSIS Windows x64. Une relance explicite reprend le tag exact,
+   sans le déplacer ni construire une autre révision sous le même nom.
+   La publication reste manuelle ; une release publiée n'est pas modifiée par
+   cette voie. Les premiers paquets ne sont pas signés/notarisés pour diffusion.
+2. **H.2 — Vérification des paquets installés.** Contrôler ressources, polices,
+   modèles et langues dans les paquets finaux, puis installation, lancement,
+   ouverture d'un `.typsto` et export hors ligne sur les trois systèmes.
+3. **H.3 — Canaux de diffusion.** Décider signature et notarisation, puis tap
+   Homebrew et mises à jour. Actualiser le tap seulement après publication des
+   fichiers définitifs, avec leurs empreintes ; distinguer signature du système
+   et signature des mises à jour. Microsoft Store reste une piste distincte.
+
+Réutiliser la chaîne Tauri et la validation existantes, sans refaire les suites
+coûteuses pour chaque format de paquet. Les workflows de DBV Typst Editor
+servent de référence ; son organisation autour de sidecars ne s'applique pas
+à notre moteur Typst intégré en Rust.
+
 **Versions après export PDF — à implémenter :** après un export réussi, proposer
 « Créer une version de cet export », volontairement et sans modale. Capturer
 l’état exact qui a produit le PDF même si la rédaction a continué. Aucun jalon
