@@ -23,6 +23,11 @@ async function create(page: Page, rows = '2', columns = '2') {
   await panel.getByRole('spinbutton', { name: 'Colonnes', exact: true }).fill(columns)
   await panel.getByRole('spinbutton', { name: 'Colonnes', exact: true }).press('Enter')
   await expect(page.locator('[data-editor-widget="tableFigure"]')).toHaveCount(1)
+  // The table is installed before the guarded commit releases the editors;
+  // the caret reaches its first cell only once the band has closed.
+  await expect(panel).toBeHidden()
+  await page.waitForFunction(() => !window.__spike!.provider.historyBusy)
+  await expect(page.locator('.tiptap[data-rich-zone-profile="document"]')).toBeFocused()
   return page.locator('[data-editor-widget="tableFigure"]')
 }
 test('un seul widget, légende riche, navigation clavier et insertion au curseur', async ({
