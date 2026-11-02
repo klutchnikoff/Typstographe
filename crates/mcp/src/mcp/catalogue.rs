@@ -1,19 +1,67 @@
 use super::types::DocumentRef;
 use rmcp::model::{Tool, ToolAnnotations};
 use serde_json::json;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use typstographe_core::content::api;
 pub fn tools(attached: bool) -> Vec<Tool> {
-    let mut entries:Vec<_>=api::catalogue()["entries"].as_array().unwrap().iter().filter(|s|!attached||attached_support(s["id"].as_str().unwrap())).map(|spec|{
-        let id=spec["id"].as_str().unwrap();let mut schema=spec["params_schema"].clone();
-        let reference=serde_json::to_value(schemars::schema_for!(DocumentRef)).unwrap();
-        for (key,value) in reference["$defs"].as_object().unwrap(){schema["$defs"][key]=value.clone();}
-        schema["properties"]["document"]=json!({"$ref":"#/$defs/DocumentRef"});
-        let mut doc=reference;doc.as_object_mut().unwrap().remove("$schema");doc.as_object_mut().unwrap().remove("$defs");schema["$defs"]["DocumentRef"]=doc;
-        if !matches!(id,"document.inspect"|"document.new"|"document.open"|"commands.list"|"document_types.list"|"document_types.describe"|"capabilities.describe"|"spelling.suggestions") {schema.as_object_mut().unwrap().entry("required").or_insert_with(||json!([])).as_array_mut().unwrap().push(json!("document"));}
-        let mut tool=Tool::new(id.to_owned(),format!("{} Pass the latest outer document reference to document calls. See capabilities.describe. Attached edits require a human-reviewed proposal; the human may accept independent groups in the shared comparator.",spec["description"].as_str().unwrap()),Arc::new(schema.as_object().unwrap().clone()));
-        tool.annotations=Some(ToolAnnotations::new().read_only(api::is_query(id)).open_world(false));tool
-    }).collect();
+    static AUTONOMOUS: OnceLock<Vec<Tool>> = OnceLock::new();
+    static ATTACHED: OnceLock<Vec<Tool>> = OnceLock::new();
+    if attached { &ATTACHED } else { &AUTONOMOUS }
+        .get_or_init(|| build_tools(attached))
+        .clone()
+}
+
+fn build_tools(attached: bool) -> Vec<Tool> {
+    let mut entries: Vec<_> = api::catalogue()["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|s| !attached || attached_support(s["id"].as_str().unwrap()))
+        .map(|spec| {
+            let id = spec["id"].as_str().unwrap();
+            let mut schema = spec["params_schema"].clone();
+            let reference = serde_json::to_value(schemars::schema_for!(DocumentRef)).unwrap();
+            for (key, value) in reference["$defs"].as_object().unwrap() {
+                schema["$defs"][key] = value.clone();
+            }
+            schema["properties"]["document"] = json!({"$ref":"#/$defs/DocumentRef"});
+            let mut doc = reference;
+            doc.as_object_mut().unwrap().remove("$schema");
+            doc.as_object_mut().unwrap().remove("$defs");
+            schema["$defs"]["DocumentRef"] = doc;
+            if !matches!(
+                id,
+                "document.inspect"
+                    | "document.new"
+                    | "document.open"
+                    | "commands.list"
+                    | "document_types.list"
+                    | "document_types.describe"
+                    | "capabilities.describe"
+                    | "spelling.suggestions"
+            ) {
+                schema
+                    .as_object_mut()
+                    .unwrap()
+                    .entry("required")
+                    .or_insert_with(|| json!([]))
+                    .as_array_mut()
+                    .unwrap()
+                    .push(json!("document"));
+            }
+            let mut tool = Tool::new(
+                id.to_owned(),
+                spec["description"].as_str().unwrap().to_owned(),
+                Arc::new(schema.as_object().unwrap().clone()),
+            );
+            tool.annotations = Some(
+                ToolAnnotations::new()
+                    .read_only(api::is_query(id))
+                    .open_world(false),
+            );
+            tool
+        })
+        .collect();
     if attached {
         let defs = serde_json::to_value(schemars::schema_for!(DocumentRef)).unwrap();
         for (name, description, properties, required) in [
@@ -56,6 +104,11 @@ pub fn tools(attached: bool) -> Vec<Tool> {
             );
             entries.push(tool);
         }
+    }
+    for tool in &mut entries {
+        let mut schema = serde_json::Value::Object((*tool.input_schema).clone());
+        crate::discovery::prune_schema(&mut schema);
+        tool.input_schema = Arc::new(schema.as_object().unwrap().clone());
     }
     entries.sort_by(|a, b| a.name.cmp(&b.name));
     entries

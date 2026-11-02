@@ -17,7 +17,6 @@ use tauri::{Emitter, State};
 use typstographe_core::content::{
     Node,
     api::{self, Call},
-    catalogue,
     contract::{Guard, State as ContentState},
 };
 use typstographe_mcp::local::Invitation;
@@ -389,41 +388,49 @@ fn dispatch_outcome(
         return Ok(json!(p));
     }
     if method == "document_types.list" {
-        return Ok(api::types());
+        return Ok(typstographe_mcp::discovery::types());
     }
     if method == "document_types.describe" {
-        let kind = serde_json::from_value(params["type"].clone())?;
-        return Ok(api::type_description(kind));
+        return typstographe_mcp::discovery::describe_type(
+            params["type"].as_str().ok_or("Type absent")?,
+        )
+        .ok_or_else(|| "Unknown document type".into());
     }
     if method == "commands.list" {
-        let mut c = api::catalogue();
-        for entry in c["entries"].as_array_mut().unwrap() {
-            entry["attached_direct"] = json!(typstographe_mcp::attached_support(
-                entry["id"].as_str().unwrap()
-            ));
-            entry["attached_proposal"] = json!(
-                entry["batch_step"] == true
-                    && typstographe_mcp::attached_id(entry["id"].as_str().unwrap())
-            );
-        }
-        return Ok(c);
+        return Ok(typstographe_mcp::discovery::commands(true));
     }
     if method == "capabilities.describe" {
-        return api::describe(params["id"].as_str().ok_or("ID absent")?)
-            .ok_or_else(|| "Unknown capability".into());
+        return typstographe_mcp::discovery::describe(
+            params["id"].as_str().ok_or("ID absent")?,
+            true,
+        )
+        .ok_or_else(|| "Unknown capability".into());
     }
     if method == "resource.read" {
         let uri = params["uri"].as_str().unwrap_or("");
         return match uri {
-            "typstographe://guide" => {
-                Ok(json!({"instructions":typstographe_mcp::instructions(true)}))
+            "typstographe://overview" => {
+                let kind = session
+                    .ensure_owner()?
+                    .state()
+                    .settings
+                    .metadata
+                    .document_type();
+                Ok(typstographe_mcp::discovery::overview(true, Some(kind)))
             }
-            "typstographe://types" => Ok(api::types()),
+            "typstographe://guide" => Ok(json!({"instructions":typstographe_mcp::guide(true)})),
+            "typstographe://types" => Ok(typstographe_mcp::discovery::types()),
             "typstographe://commands" => {
                 dispatch_outcome(session, state, "commands.list", &json!({}))
             }
             "typstographe://content-capabilities" => {
-                Ok(json!({"entries":catalogue::ALL,"commands":api::catalogue()}))
+                let kind = session
+                    .ensure_owner()?
+                    .state()
+                    .settings
+                    .metadata
+                    .document_type();
+                Ok(typstographe_mcp::discovery::capabilities(Some(kind)))
             }
             "typstographe://document" => {
                 dispatch_outcome(session, state, "document.inspect", &json!({}))

@@ -17,18 +17,29 @@ externe ou préférence personnelle n’est exposé. stdout est réservé au pro
 
 ## Découverte
 
-1. `document_types.list`, puis `document_types.describe {"type":"article"}` :
-   métadonnées initiales, champs et collections, capacités et fiches de modèles.
-   Le champ `discovery` ajoute les groupes et les résumés des profils de types à venir.
-   La fiche complète est obtenue à la demande avec `document_types.describe`.
-   Un profil `planned` n’est pas créable ; ses `capability_needs` décrivent
-   des besoins envisagés, jamais des opérations garanties. Par exemple,
-   `document_types.describe {"type":"cv"}` expose sa fiche sans contrat
-   de métadonnées ni modèle exécutable. Voir le [catalogue](document-type-catalogue.md).
-2. `commands.list` et `tools/list` : opérations réelles et schémas d’entrée.
-3. `capabilities.describe {"id":"insert.footnote"}` : signature sémantique,
-   présentation et **étapes exécutables** (`inline.replace` dans ce cas).
-4. `document.inspect`, puis `document.structure` : état confirmé et zones ciblables.
+Le parcours est [progressif](mcp-discovery.md) : commencer par
+`typstographe://overview` pour le type actif, ses capacités et les règles de session.
+
+1. `document_types.list` : fiches **compactes** des types et modèles, avec les
+   groupes et profils à venir dans `discovery`. Aucun schéma ni en-tête complet.
+2. `document_types.describe {"type":"article"}` : métadonnées initiales,
+   champs et collections, index des capacités et fiches de modèles. Un profil
+   `planned` n’est pas créable ; ses `capability_needs` sont des intentions,
+   jamais des opérations garanties. La fiche `cv` reste consultable sans contrat
+   exécutable. Voir le [catalogue](document-type-catalogue.md).
+3. `commands.list` : opérations et support de l’adaptateur, **sans schémas**.
+   `execution.direct_tool` indique un outil exposé ; `execution.proposal_step`
+   indique une étape autorisée dans une proposition rattachée. Les permissions
+   et la validité de l’édition restent contrôlées à l’exécution.
+4. `capabilities.describe {"id":"insert.footnote"}` : une signature sémantique,
+   ses contraintes et ses **étapes exécutables** (`inline.replace` dans ce cas).
+   L’appel accepte aussi les identifiants d’opérations et des outils `proposals.*`.
+   Pour un outil exposé, son schéma inclut la référence MCP `document`.
+5. Lire `typstographe://guide` avant d’éditer, puis `document.inspect` et
+   `document.structure` pour l’état confirmé et les zones ciblables.
+
+`tools/list` conserve les schémas d’entrée complets de tous les outils nommés ;
+les définitions inutilisées ne sont plus recopiées dans chacun d’eux.
 
 Les capacités sémantiques n’ont pas nécessairement un outil de même nom : une
 citation en bloc, une liste ou une image utilise `block.insert/replace`, une note
@@ -43,8 +54,9 @@ restrictions sont exposés par `capabilities.describe` et `tools/list`.
 `document.set_model` reçoit son identifiant et son source Typst, sans import
 implicite depuis un chemin. Les collections d’en-tête utilisent des IDs stables.
 
-Les six ressources virtuelles `typstographe://guide`, `types`, `commands`,
-`content-capabilities`, `document`, `models` complètent les outils. Elles sont
+Les sept ressources virtuelles `typstographe://overview`, `guide`, `types`,
+`commands`, `content-capabilities`, `document`, `models` complètent les outils.
+Les index sont compacts ; les détails se demandent individuellement. Elles sont
 lues dans la même file que les commandes et décrivent un état confirmé cohérent.
 Les URI `file:` et chemins arbitraires sont refusés. Relire après une modification.
 

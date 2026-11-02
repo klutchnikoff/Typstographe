@@ -301,6 +301,10 @@ les brouillons isolés et les contrôles de concurrence sont décrits dans
 
 L’orientation ACP reste retenue : un client commun aux agents dans l’application,
 MCP pour les capacités documentaires et l’acceptation explicite des propositions.
+La [découverte MCP progressive](docs/mcp-discovery.md), commune aux modes autonome
+et rattaché, est en place : aperçu compact, index puis signatures et exemples à
+la demande. Préserver ce parcours lors des ajouts de capacités ; une nouvelle
+recette avec un agent sans contexte pourra en évaluer la clarté avant le parcours ACP.
 
 - Maquetter et valider le parcours de conversation sur l’interface Tauri actuelle.
   Piste principale : panneau ouvert depuis la barre latérale, question de hauteur

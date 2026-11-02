@@ -165,3 +165,56 @@ async fn cancellation_before_dispatch_drops_a_queued_request() {
     client.cancel().await.unwrap();
     server.cancel().await.unwrap();
 }
+
+#[test]
+fn compact_discovery_can_drive_document_creation_and_a_typed_edit_without_repository_context() {
+    let mut host = host::Host::new(vec![], vec![], false).unwrap();
+    let overview = host.resource("typstographe://overview").unwrap().value;
+    assert_eq!(overview["outcome"]["document_open"], false);
+    let types = run(&mut host, "document_types.list", json!({}));
+    let letter = types["outcome"]["types"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["id"] == "courrier")
+        .unwrap();
+    let created = run(
+        &mut host,
+        "document.new",
+        json!({"type":letter["id"],"model":letter["models"][0]["id"]}),
+    );
+    let doc = created["document"].clone();
+    let description = run(
+        &mut host,
+        "document_types.describe",
+        json!({"type":"courrier"}),
+    );
+    assert!(
+        description["outcome"]["capabilities"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|entry| entry["id"] == "insert.footnote")
+    );
+    let details = run(
+        &mut host,
+        "capabilities.describe",
+        json!({"id":"insert.footnote"}),
+    );
+    let changed = run(
+        &mut host,
+        "document.batch",
+        json!({"document":doc,"steps":details["outcome"]["examples"]}),
+    );
+    assert_ne!(changed["document"], doc);
+    let overview = host.resource("typstographe://overview").unwrap().value;
+    assert_eq!(overview["outcome"]["document_type"], "courrier");
+    assert_eq!(overview["document"], changed["document"]);
+    let guide = host.resource("typstographe://guide").unwrap().value;
+    assert!(
+        guide["outcome"]["instructions"]
+            .as_str()
+            .unwrap()
+            .contains("UTF-16")
+    );
+}

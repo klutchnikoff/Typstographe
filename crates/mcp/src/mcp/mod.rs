@@ -15,7 +15,7 @@ use rmcp::{ErrorData, RoleServer, ServerHandler, ServiceExt, model::*, service::
 use serde_json::{Map, Value, json};
 use tokio::sync::{mpsc, oneshot};
 use typstographe_core::{content::api, protocol::CommandError};
-pub fn instructions(attached: bool) -> String {
+pub fn guide(attached: bool) -> String {
     let common = "Discover document_types.list and commands.list, then document_types.describe and capabilities.describe. All operations use the same structured Rust contract as the editor. Document targets are zone paths in the current guard; text offsets are UTF-16, inline objects count as one. Never reuse a target after edits without reading again. Commands and queries expose actual parameter schemas. Use literal prose, never Typst markup: text.insert carries explicit marks (bold/italic/link); text.bold/italic format a nonempty typed range. Documentary batches contain only typed edits (not context operations); one final validation, one undo entry. Selector conveniences resolve exact text on the evolving draft, without regex or fuzzy search. Header collections use stable record IDs. Models are interchangeable visual presentations; metadata/options remain subject to the type/model contract. Read resources for the guide, types, commands, document and models. No skill or repository access is required.";
     format!(
         "{common} {}",
@@ -24,6 +24,16 @@ pub fn instructions(attached: bool) -> String {
         } else {
             "This is an autonomous session. For private future typing use context.set/context.style, context.insert, then switch styles off. File access requires explicit independent read/write roots; paths are relative to the launch directory, parent components are refused and symlinks resolved. Writable opening locks before reading. Read-only opening can inspect the last saved copy under another writer's lock. Editing remains in memory until an explicit save; export is separate and never marks it saved. A batch may save only as its final action, and failure publishes/saves nothing. Pass the latest outer document reference to calls. Refresh document.inspect after a stale-reference error. No tools execute programs, access networks, modify preferences or recover arbitrary files."
         }
+    )
+}
+pub fn instructions(attached: bool) -> String {
+    let mode = if attached {
+        "Attached mode: inspect the published document; propose body edits with proposals.submit. Only the human can accept changes. Never edit directly, approve, poll pending proposals, auto-retry stale edits, or write files."
+    } else {
+        "Autonomous mode: create/open a document, edit in memory, save explicitly. File access is limited to configured read/write roots; export does not save."
+    };
+    format!(
+        "Start with typstographe://overview for the current type, capabilities and rules. document_types.list and commands.list are compact indexes. Request one type with document_types.describe and one signature/example with capabilities.describe. Read typstographe://guide before editing. Use literal prose, not Typst markup, explicit marks, UTF-16 targets and the latest outer document reference. No repository access or skill is needed. {mode}"
     )
 }
 struct Request {

@@ -168,7 +168,21 @@ impl Host {
         } else {
             None
         };
-        let outcome = if name == "render.page" {
+        let outcome = if name == "document_types.list" {
+            crate::discovery::types()
+        } else if name == "document_types.describe" {
+            match crate::discovery::describe_type(params["type"].as_str().unwrap()) {
+                Some(description) => description,
+                None => self.session.query(name, params)?,
+            }
+        } else if name == "commands.list" {
+            crate::discovery::commands(false)
+        } else if name == "capabilities.describe" {
+            match crate::discovery::describe(params["id"].as_str().unwrap(), false) {
+                Some(description) => description,
+                None => self.session.query(name, params)?,
+            }
+        } else if name == "render.page" {
             json!({"guard":self.session.guard(),"page":params["page"]})
         } else if api::is_query(name) {
             self.session.query(name, params)?
@@ -181,15 +195,19 @@ impl Host {
         })
     }
     pub fn resource(&mut self, uri: &str) -> Result<Reply, CommandError> {
+        let kind = self
+            .session
+            .state()
+            .ok()
+            .map(|state| state.settings.metadata.document_type());
         let outcome = match uri {
+            "typstographe://overview" => crate::discovery::overview(false, kind),
             "typstographe://guide" => {
-                json!({"instructions":super::instructions(false),"resources":super::resources::list()})
+                json!({"instructions":super::guide(false),"resources":super::resources::list()})
             }
-            "typstographe://types" => api::types(),
-            "typstographe://commands" => api::catalogue(),
-            "typstographe://content-capabilities" => {
-                json!({"entries":typstographe_core::content::catalogue::ALL,"commands":api::catalogue()})
-            }
+            "typstographe://types" => crate::discovery::types(),
+            "typstographe://commands" => crate::discovery::commands(false),
+            "typstographe://content-capabilities" => crate::discovery::capabilities(kind),
             "typstographe://document" => {
                 if self.session.is_open() {
                     json!({"inspect":self.session.query("document.inspect",json!({}))?,"structure":self.session.query("document.structure",json!({}))?,"metadata":self.session.query("metadata.get",json!({}))?})
@@ -201,7 +219,7 @@ impl Host {
                 if self.session.is_open() {
                     self.session.query("models.list", json!({}))?
                 } else {
-                    api::types()
+                    json!({"types":crate::discovery::types()["types"].as_array().unwrap().iter().map(|kind|json!({"type":kind["id"],"models":kind["models"]})).collect::<Vec<_>>()})
                 }
             }
             _ => {

@@ -199,6 +199,12 @@ Typst et détecte les régressions propres à typstOgraphe.
 pour le premier parcours ; MCP reste le contrat documentaire. Aucun couplage à
 ACP ou à un fournisseur d’agent dans le cœur documentaire.
 
+Conserver la [découverte MCP progressive](docs/mcp-discovery.md) : vues compactes
+partagées, détails canoniques à la demande, définitions de schémas accessibles
+par référence et support de l’adaptateur distinct des permissions. Reprendre
+ces générateurs pour ACP, sans ajouter de catalogue parallèle. Le contrat
+CLI/cœur reste complet ; les vues MCP allègent sa présentation.
+
 ### F.1 Design à valider
 
 Maquette du panneau ouvert depuis la barre latérale : question de hauteur

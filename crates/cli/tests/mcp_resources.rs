@@ -4,6 +4,7 @@ mod mcp_support;
 use mcp_support::*;
 use rmcp::model::*;
 use serde_json::{Value, json};
+use std::collections::BTreeSet;
 async fn read(c: &Client, uri: &str) -> Value {
     let r = c
         .read_resource(ReadResourceRequestParams::new(uri))
@@ -19,7 +20,28 @@ fn virtual_resources_follow_confirmed_state_history_and_lifecycle() {
     runtime().block_on(async {
         let d = tempfile::tempdir().unwrap();
         let c = start(d.path(), ProtocolVersion::default(), &[]).await;
-        assert_eq!(c.list_all_resources().await.unwrap().len(), 6);
+        let resources = c.list_all_resources().await.unwrap();
+        let uris: BTreeSet<_> = resources
+            .iter()
+            .map(|resource| resource.uri.as_str())
+            .collect();
+        assert_eq!(resources.len(), uris.len(), "resource URIs must be unique");
+        assert_eq!(
+            uris,
+            BTreeSet::from([
+                "typstographe://overview",
+                "typstographe://content-capabilities",
+                "typstographe://guide",
+                "typstographe://types",
+                "typstographe://commands",
+                "typstographe://document",
+                "typstographe://models",
+            ])
+        );
+        let overview = read(&c, "typstographe://overview").await;
+        assert_eq!(overview["outcome"]["mode"], "autonomous");
+        assert_eq!(overview["outcome"]["document_open"], false);
+        assert_eq!(overview["outcome"]["next"]["content"], "document.inspect");
         assert_eq!(
             read(&c, "typstographe://document").await["outcome"]["open"],
             false
@@ -36,6 +58,10 @@ fn virtual_resources_follow_confirmed_state_history_and_lifecycle() {
             );
         }
         let r = call(&c, "document.new", json!({"type":"article"})).await;
+        let overview = read(&c, "typstographe://overview").await;
+        assert_eq!(overview["document"], r["document"]);
+        assert_eq!(overview["outcome"]["document_open"], true);
+        assert_eq!(overview["outcome"]["document_type"], "article");
         let snapshot = read(&c, "typstographe://document").await;
         assert_eq!(snapshot["document"], r["document"]);
         assert_eq!(
@@ -56,6 +82,10 @@ fn virtual_resources_follow_confirmed_state_history_and_lifecycle() {
         .await;
         assert_eq!(
             read(&c, "typstographe://document").await["outcome"]["open"],
+            false
+        );
+        assert_eq!(
+            read(&c, "typstographe://overview").await["outcome"]["document_open"],
             false
         );
         assert!(
