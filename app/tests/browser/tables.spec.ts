@@ -274,6 +274,11 @@ test('poignées : bandeau ciblé, conservation des données, clavier et curseur 
   await page.keyboard.press('Enter')
   await panel.getByRole('button', { name: 'Au-dessus', exact: true }).click()
   await expect(widget.locator('tr')).toHaveCount(4)
+  // The row is installed before the guarded commit releases the editors; only
+  // then is the caret placed in the new row and the zone editable again.
+  await expect(panel).toBeHidden()
+  await page.waitForFunction(() => !window.__spike!.provider.historyBusy)
+  await expect(page.locator('.tiptap[data-rich-zone-profile="document"]')).toBeFocused()
   await page.keyboard.type('Nouvelle ligne')
   await expect(widget.locator('tr').nth(2).locator('td').first()).toContainText('Nouvelle ligne')
   await expect(widget.locator('tr').nth(1).locator('td').first()).toContainText('Étudiants')
