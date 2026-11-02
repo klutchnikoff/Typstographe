@@ -20,7 +20,9 @@ export const platforms = [
     os: 'macos-latest',
     target: 'universal-apple-darwin',
     rustTargets: 'aarch64-apple-darwin x86_64-apple-darwin',
-    bundles: 'dmg',
+    // Keep the .app for inspection; Tauri deletes the intermediate .app when
+    // only dmg is requested. The release still contains just the disk image.
+    bundles: 'app,dmg',
     files: [['dmg', '.dmg']],
   },
   {

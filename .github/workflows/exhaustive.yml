@@ -96,6 +96,8 @@ jobs:
         shell: bash
     env:
       CARGO_BUILD_JOBS: "2"
+      # The DMG bundler reads CI itself; --ci alone does not skip Finder.
+      CI: 'true'
       RUSTUP_TOOLCHAIN: stable
       INSTALLER_PLATFORM: ${{ matrix.id }}
       RELEASE_VERSION: ${{ needs.scope.outputs.version }}
