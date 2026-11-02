@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { withMcp } from './mcp-client.mjs'
-import { bodyTarget, lastBody, catalogueShape, until, hash } from './closure-tools.mjs'
+import { bodyTarget, lastBody, until, hash } from './closure-tools.mjs'
+import { assertMcpCatalogue } from './closure-catalogue.mjs'
 
 export async function attachedRecipe(binary, invitation, cli, project, catalogue) {
   return withMcp(binary, ['--mcp', '--invitation', invitation], async ({ request, call }) => {
@@ -11,10 +12,11 @@ export async function attachedRecipe(binary, invitation, cli, project, catalogue
       !tools.tools.some((t) => /save|export|accept/.test(t.name)),
       'Attached file or acceptance permission leaked',
     )
-    assert.deepEqual(
-      catalogueShape((await call('commands.list')).outcome),
-      catalogueShape(catalogue),
-    )
+    const catalogueCheck = await assertMcpCatalogue({ request, call }, catalogue, [
+      'proposals.cancel',
+      'proposals.get',
+      'proposals.submit',
+    ])
     let inspected = await call('document.inspect')
     assert.deepEqual(inspected.outcome.state, cli(['inspect', project]).document.state)
     const locked = cli(
@@ -98,6 +100,7 @@ export async function attachedRecipe(binary, invitation, cli, project, catalogue
     return {
       status: 'passed',
       tools: tools.tools.length,
+      catalogue: catalogueCheck,
       statuses,
       lockedWriter: locked.code,
       headerProposalRefused: true,
@@ -110,10 +113,7 @@ export async function autonomousRecipe(binary, root, project, expected, catalogu
     binary,
     ['mcp', '--read-root', root, '--write-root', root],
     async ({ request, call }) => {
-      assert.deepEqual(
-        catalogueShape((await call('commands.list')).outcome),
-        catalogueShape(catalogue),
-      )
+      const catalogueCheck = await assertMcpCatalogue({ request, call }, catalogue)
       let response = await call('document.open', { path: project })
       let reference = response.document
       const inspect = async () => (await call('document.inspect')).outcome
@@ -243,6 +243,7 @@ export async function autonomousRecipe(binary, root, project, expected, catalogu
         state: edited,
         pages,
         directory,
+        catalogue: catalogueCheck,
         checks: {
           atomicRefusal: true,
           privateContext: true,

@@ -70,6 +70,11 @@ modification documentaire lors de la découverte. Une recette autonome découvre
 le type et les exemples d’une note, crée un courrier et applique cette note par
 un lot typé. La recette rattachée vérifie aussi les fiches prévues et la découverte
 de `proposals.submit`, sans créer ni approuver une proposition.
+La recette native de clôture A.5 compare le catalogue MCP à celui de la CLI :
+mêmes identifiants dans l’index compact, puis, pour chaque identifiant, schéma
+obtenu par `capabilities.describe`, identique à celui de `tools/list` et, une
+fois retirée la seule référence `document` ajoutée par l’adaptateur, équivalent
+au schéma de la CLI à définitions `$defs` non référencées près.
 
 Mesures locales du serveur **réel**, transport MCP stdio autonome, sans document
 ni racines de fichiers configurées. Tailles des réponses JSON-RPC UTF-8 compactes,

@@ -50,6 +50,12 @@ test('le retour depuis Typst centre le curseur et repère temporairement le mot 
       { timeout: 15000 },
     )
     .toBe(true)
+  // The compiler can map the point before the preview has rendered that page.
+  await page.waitForFunction((index) => {
+    const page = document.querySelector(`#pages [data-page="${index}"]`)
+    const image = page?.querySelector<HTMLElement>('canvas,img')
+    return !!image && image.getBoundingClientRect().width > 0 && !!page!.querySelector('svg')
+  }, point!.page)
   // Use a real forward-mapped Typst point to exercise the complete backward path.
   const click = await page.evaluate((point) => {
     const page = document.querySelector<HTMLElement>(`#pages [data-page="${point.page}"]`)!
