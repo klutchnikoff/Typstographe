@@ -33,21 +33,38 @@ async function startDrag(page: Page) {
 }
 
 async function selectText(page: Page) {
-  const points = await page.evaluate(() => {
-    const editor = window.__spike!.editor
-    editor.view.focus()
-    return [2, 9].map((pos) => {
-      const rect = editor.view.coordsAtPos(pos)
+  // Raw mouse coordinates do not get locator actionability checks. Wait for
+  // the text target to settle after the cancelled resize (toolbar reflow), and
+  // let the real mouse gesture focus the editor rather than forcing its old caret.
+  await page.getByRole('textbox', { name: 'Corps du document' }).locator('p').first().hover()
+  const pointAt = (pos: number) =>
+    page.evaluate((pos) => {
+      const rect = window.__spike!.editor.view.coordsAtPos(pos)
       return { x: rect.left, y: (rect.top + rect.bottom) / 2 }
-    })
-  })
-  await page.mouse.move(points[0].x, points[0].y)
+    }, pos)
+  const start = await pointAt(2)
+  await page.mouse.move(start.x, start.y)
   await page.mouse.down()
-  // Observe the start of the native selection before extending it. Sending the
-  // complete drag while Chromium still processes focus/selectionchange can
-  // leave only a collapsed caret on a busy runner.
-  await expect.poll(() => page.evaluate(() => window.__spike!.editor.state.selection.from)).toBe(2)
-  await page.mouse.move(points[1].x, points[1].y, { steps: 5 })
+  // Observe the browser's native anchor before extending the drag. The editor
+  // state is synchronized by selectionchange; it need not already reflect a
+  // pointer gesture that is still in progress. Check that state after mouseup.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const selection = window.getSelection()
+        const view = window.__spike!.editor.view
+        if (!selection?.anchorNode || !view.dom.contains(selection.anchorNode)) return null
+        return {
+          anchor: view.posAtDOM(selection.anchorNode, selection.anchorOffset),
+          collapsed: selection.isCollapsed,
+        }
+      }),
+    )
+    .toEqual({ anchor: 2, collapsed: true })
+  // Focusing the editor may change its layout. Resolve the endpoint only after
+  // the native anchor is established, rather than reusing pre-focus coordinates.
+  const end = await pointAt(9)
+  await page.mouse.move(end.x, end.y, { steps: 5 })
   await page.mouse.up()
   await expect.poll(() => page.evaluate(() => window.getSelection()?.toString())).toBe('n texte')
   await expect
@@ -88,22 +105,42 @@ test('redimensionner les colonnes ne sélectionne pas le texte et conserve le cu
 })
 
 for (const interruption of ['pointercancel', 'lostpointercapture', 'blur'] as const) {
-  test(`une interruption ${interruption} rétablit la sélection normale`, async ({ page }) => {
-    const point = await startDrag(page)
-    await page.mouse.move(point.x - 100, point.y, { steps: 5 })
-    await page.evaluate((interruption) => {
-      const splitter = document.querySelector<HTMLElement>('.splitter')!
-      const pointerId = Number(splitter.dataset.pointer)
-      if (interruption === 'blur') window.dispatchEvent(new Event('blur'))
-      else if (interruption === 'lostpointercapture') splitter.releasePointerCapture(pointerId)
-      else splitter.dispatchEvent(new PointerEvent('pointercancel', { pointerId }))
-    }, interruption)
-    await page.mouse.move(point.x - 110, point.y)
-    await page.mouse.up()
-    await expect(page.locator('html')).not.toHaveClass(/resizing-columns/)
-    await selectText(page)
-    await startDrag(page)
-    await page.mouse.up()
-    await expect(page.locator('html')).not.toHaveClass(/resizing-columns/)
-  })
+  // Edited-area checks run on Chromium only; keep this WebKit regression in
+  // the two-engine smoke suite without requesting all graphical recipes.
+  test(
+    `une interruption ${interruption} rétablit la sélection normale`,
+    {
+      tag: interruption === 'lostpointercapture' ? ['@smoke'] : [],
+    },
+    async ({ page }) => {
+      const splitter = page.getByRole('separator', { name: 'Largeur des colonnes' })
+      const initialWidth = await splitter.getAttribute('aria-valuenow')
+      const point = await startDrag(page)
+      await page.mouse.move(point.x - 100, point.y, { steps: 5 })
+      await expect(splitter).not.toHaveAttribute('aria-valuenow', initialWidth!)
+      await page.evaluate((interruption) => {
+        const splitter = document.querySelector<HTMLElement>('.splitter')!
+        const pointerId = Number(splitter.dataset.pointer)
+        if (interruption === 'blur') window.dispatchEvent(new Event('blur'))
+        else if (interruption === 'lostpointercapture') splitter.releasePointerCapture(pointerId)
+        else splitter.dispatchEvent(new PointerEvent('pointercancel', { pointerId }))
+      }, interruption)
+      await page.mouse.move(point.x - 110, point.y)
+      // Cancellation must restore the width before mouseup, which would otherwise
+      // hide a missed interruption by finishing the resize as an ordinary commit.
+      await expect(page.locator('html')).not.toHaveClass(/resizing-columns/)
+      await expect(splitter).toHaveAttribute('aria-valuenow', initialWidth!)
+      expect(
+        await page.evaluate(() => {
+          const { from, to } = window.__spike!.editor.state.selection
+          return { from, to }
+        }),
+      ).toEqual({ from: 4, to: 4 })
+      await page.mouse.up()
+      await selectText(page)
+      await startDrag(page)
+      await page.mouse.up()
+      await expect(page.locator('html')).not.toHaveClass(/resizing-columns/)
+    },
+  )
 }
