@@ -9,7 +9,6 @@ import {
   cliClient,
   bodyTarget,
   lastBody,
-  catalogueShape,
   compareExports,
   comparePages,
   hash,
@@ -270,7 +269,7 @@ try {
       cli: { atomicRefusal: true, explicitPreview: true, singleBatchHistory: true, png: true },
       mcp: mcp.checks,
       attached: tauri.attached,
-      catalogueEntries: catalogueShape(catalogue).length,
+      catalogueEntries: catalogue.entries.length,
     })
   }
   report.success = true

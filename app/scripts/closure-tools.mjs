@@ -31,11 +31,6 @@ export function lastBody(structure) {
   assert.ok(zone, 'No body insertion zone')
   return zone
 }
-export function catalogueShape(catalogue) {
-  return catalogue.entries
-    .map(({ id, params_schema }) => ({ id, params_schema }))
-    .sort((a, b) => a.id.localeCompare(b.id))
-}
 export async function files(directory, prefix = '') {
   const result = []
   for (const entry of await readdir(path.join(directory, prefix), { withFileTypes: true })) {
