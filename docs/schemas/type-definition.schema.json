@@ -244,6 +244,16 @@
               "default": false,
               "type": "boolean"
             },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "required-for-export": {
               "default": false,
               "type": "boolean"
@@ -287,6 +297,16 @@
             "label-key": {
               "type": "string"
             },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "required-for-export": {
               "default": false,
               "type": "boolean"
@@ -323,7 +343,10 @@
               ]
             },
             "default": {
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "id": {
               "type": "string"
@@ -334,6 +357,16 @@
             },
             "label-key": {
               "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "required-for-export": {
               "default": false,
@@ -348,8 +381,7 @@
             "kind",
             "id",
             "label-key",
-            "choices",
-            "default"
+            "choices"
           ],
           "type": "object"
         },
@@ -379,6 +411,16 @@
             },
             "label-key": {
               "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "required-for-export": {
               "default": false,
@@ -425,6 +467,16 @@
             },
             "label-key": {
               "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "required-for-export": {
               "default": false,
@@ -475,6 +527,16 @@
             },
             "label-key": {
               "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "profile": {
               "$ref": "#/$defs/RichProfile"
@@ -528,6 +590,16 @@
             },
             "on-target-remove": {
               "$ref": "#/$defs/ReferenceRemoval"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "required-for-export": {
               "default": false,
@@ -632,6 +704,16 @@
         "type"
       ],
       "type": "object"
+    },
+    "OptionId": {
+      "enum": [
+        "paper",
+        "landscape",
+        "bullet-marker",
+        "citation-style",
+        "outline"
+      ],
+      "type": "string"
     },
     "ReferenceRemoval": {
       "enum": [

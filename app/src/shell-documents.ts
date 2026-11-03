@@ -186,7 +186,12 @@ export function shellDocuments(
         layout.overlay.close()
         await ctx.switchDocument((revision) =>
           transport.invoke('new_document', {
-            settings: { metadata: documentMetadata, template: m.source, modelId: m.id },
+            settings: {
+              metadata: documentMetadata,
+              template: m.source,
+              modelManifest: m.manifest,
+              modelId: m.id,
+            },
             resources: t.id === 'courrier' && preferences.signature ? [preferences.signature] : [],
             revision,
           }),
@@ -195,7 +200,12 @@ export function shellDocuments(
       return
     }
     provider.doc.transact(() => {
-      setDocument(provider, { metadata: documentMetadata, template: m.source, modelId: m.id })
+      setDocument(provider, {
+        metadata: documentMetadata,
+        template: m.source,
+        modelManifest: m.manifest,
+        modelId: m.id,
+      })
       editor.commands.clearContent()
     })
     if (t.id === 'courrier' && preferences.signature) {

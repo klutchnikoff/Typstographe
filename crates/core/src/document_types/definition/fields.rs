@@ -17,6 +17,8 @@ macro_rules! fields {
                 required_for_export: bool,
                 #[serde(default, skip_serializing_if = "Option::is_none")]
                 control: Option<FieldControl>,
+                #[serde(default, skip_serializing_if = "Option::is_none")]
+                presentation: Option<crate::document_types::model_options::OptionId>,
                 #[serde(default)]
                 statistics: bool,
                 $($members)*
@@ -35,10 +37,14 @@ macro_rules! fields {
             pub fn control(&self) -> Option<FieldControl> {
                 match self { $(Self::$variant {control, ..} => *control,)* }
             }
+            pub fn presentation(&self) -> Option<crate::document_types::model_options::OptionId> {
+                match self { $(Self::$variant {presentation, ..} => *presentation,)* }
+            }
             pub fn statistics(&self) -> bool {
                 match self { $(Self::$variant {statistics, ..} => *statistics,)* }
             }
             pub fn default_value(&self) -> Value {
+                if self.presentation().is_some() { return Value::Null; }
                 match self { $(Self::$variant {default, ..} => serde_json::to_value(default).expect("typed field default"),)* }
             }
         }
@@ -58,7 +64,8 @@ fields! {
     },
     Choice {
         choices: Vec<String>,
-        default: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        default: Option<String>,
     },
     Language {
         #[serde(default)]

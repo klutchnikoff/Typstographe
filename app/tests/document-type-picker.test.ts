@@ -16,7 +16,7 @@ const type: DocumentType = {
     label: id,
     description: '',
     source: id,
-    fixedPage: null,
+    manifest: 'fixture',
   })),
 }
 const catalogue: CreationCatalogue = {

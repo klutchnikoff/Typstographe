@@ -23,14 +23,15 @@ order:
   - bibliography
 fields:
 - id: article.citation_style
+  presentation: citation-style
   kind: choice
   label-key: field-citation-style
   choices:
   - chicago-author-date
   - apa
   - ieee
-  default: chicago-author-date
 - id: article.show_outline
+  presentation: outline
   kind: boolean
   label-key: field-show-outline
   control: outline

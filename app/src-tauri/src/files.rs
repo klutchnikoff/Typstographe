@@ -244,8 +244,8 @@ mod tests {
 
     #[test]
     fn existing_article_opens_and_compiles_with_its_original_model_and_history() {
-        let path =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/article-working.typsto");
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/projects/article-working.typsto");
         let before = std::fs::read(&path).unwrap();
         let archive = typstographe_core::content::project::Project::read(&path)
             .unwrap()
@@ -288,8 +288,8 @@ mod tests {
             ))
         ));
 
-        let original =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/article-working.typsto");
+        let original = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/projects/article-working.typsto");
         let corrupt = dir.path().join("corrupt.typsto");
         let mut source = zip::ZipArchive::new(std::fs::File::open(original).unwrap()).unwrap();
         let manifest: serde_json::Value =

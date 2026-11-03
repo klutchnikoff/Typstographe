@@ -43,7 +43,7 @@ Ce texte présente un exemple fictif destiné à illustrer la mise en page d’u
 fn sample_metadata(kind: DocumentType) -> Metadata {
     let mut metadata = Metadata::demo(kind);
     if let Metadata::Article(article) = &mut metadata {
-        article.show_outline = false;
+        article.show_outline = Some(false);
         let summary = "Cet article examine les transformations de l’organisation du travail universitaire à partir des activités quotidiennes des équipes. Il s’intéresse aux échanges entre collègues, à la circulation des documents et aux conventions qui soutiennent la coopération. La démarche proposée associe des entretiens et l’observation des pratiques pour comprendre les ajustements entre objectifs individuels et collectifs. Cet exemple fictif met en perspective la diversité des situations et le rôle des outils numériques, sans supposer une évolution uniforme des établissements. Il invite à porter attention aux conditions concrètes dans lesquelles se construisent les pratiques de travail.";
         article.localizations[0].summary = serde_json::from_value(serde_json::json!({
             "type": "doc", "content": [{"type": "paragraph", "content": [{
@@ -78,10 +78,11 @@ pub fn model_thumbnail(model_id: String) -> Result<String, CommandError> {
     let mut world = TypstWorld::default();
     world.set_dependencies(&typstographe_core::packages::for_template(model.source));
     let document = world
-        .compile_with_template(
+        .compile_with_model(
             sample(model.kind),
             &sample_metadata(model.kind),
             model.source,
+            model.manifest,
         )
         .map_err(CommandError::message)?;
     let page = document.pages().first().ok_or("empty_model_preview")?;

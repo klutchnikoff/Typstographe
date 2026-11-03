@@ -29,7 +29,7 @@ pub(super) fn session(kind: DocumentType) -> SharedSession {
         {"type":"table","content":[{"type":"tableRow","content":[{"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"text","text":"Cellule"}]}]}]}]},
         {"type":"paragraph","content":[{"type":"text","text":"Avant"},{"type":"footnote","attrs":{"text":"Note 😀"}},{"type":"text","text":" après"}]},
         {"type":"paragraph"}
-    ]})).unwrap(), Settings { metadata, template:kind.default_model(), model_id:kind.models().next().unwrap().model.id().into() });
+    ]})).unwrap(), Settings { metadata, model_manifest:kind.default_model_manifest().into(), template:kind.default_model(), model_id:kind.models().next().unwrap().model.id().into() });
     SharedSession::open(
         Guard {
             document: "project".into(),

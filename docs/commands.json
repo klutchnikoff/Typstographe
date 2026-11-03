@@ -6831,6 +6831,9 @@
                   "params": {
                     "additionalProperties": false,
                     "properties": {
+                      "manifest": {
+                        "type": "string"
+                      },
                       "model_id": {
                         "type": "string"
                       },
@@ -6840,7 +6843,8 @@
                     },
                     "required": [
                       "model_id",
-                      "source"
+                      "source",
+                      "manifest"
                     ],
                     "type": "object"
                   }
@@ -13890,7 +13894,7 @@
     },
     {
       "batch_step": true,
-      "description": "Set the model ID and full pure Typst source together. The model must implement this document type; publication validates its policy.",
+      "description": "Set model_id, full pure Typst source and YAML manifest together. Every option regime and supported language is validated. Retained choices survive model switches; metadata.get reports effective values and substitutions.",
       "family": "edit",
       "id": "document.set_model",
       "params_schema": {
@@ -14326,6 +14330,9 @@
         },
         "additionalProperties": false,
         "properties": {
+          "manifest": {
+            "type": "string"
+          },
           "model_id": {
             "type": "string"
           },
@@ -14335,7 +14342,8 @@
         },
         "required": [
           "model_id",
-          "source"
+          "source",
+          "manifest"
         ],
         "type": "object"
       }
@@ -21264,7 +21272,7 @@
     },
     {
       "batch_step": false,
-      "description": "Read document metadata and field/collection definitions.",
+      "description": "Read metadata, fields and resolved model_options: choice (null = follow model), effective, regime, allowed/default and substituted warning. Language remains documentary data.",
       "family": "query",
       "id": "metadata.get",
       "params_schema": {

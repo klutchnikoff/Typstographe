@@ -2,7 +2,6 @@
 // Référence : DL 110 × 220 mm, fenêtre 100 × 35 mm à 20 mm du bas et de droite.
 // GPV 60013 / ES35F110 : https://myprint.gpvfrance.fr/products/60013-boite-de-500-enveloppes-blanches-dl-110x220-90-g-m2-fenetre-35x100-bande-de-protection-es35f110
 // Feuille A4 pliée à 99 et 198 mm. Vérification papier à 100 % indispensable.
-#let editor-options = (bullet-markers: (), custom-bullet-marker: false)
 
 #import "capabilities/dates.typ": format-date
 #import "capabilities/correspondence.typ": postscript, attachment, letter-notes

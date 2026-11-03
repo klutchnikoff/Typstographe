@@ -7,6 +7,7 @@ mod validation;
 mod values;
 
 pub use fields::{Field, FieldControl, ReferenceRemoval, RichProfile};
+pub(crate) use loader::decode_yaml;
 pub use loader::{LoadError, MAX_SOURCE_BYTES, load_yaml};
 pub use schema::manifest_schema;
 pub use structures::{AssemblyOrder, HeaderStructure};

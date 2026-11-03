@@ -258,12 +258,12 @@
         "apa",
         "ieee"
       ],
-      "default": "chicago-author-date",
       "id": "article.citation_style",
       "kind": "choice",
       "label-key": "field-citation-style",
       "required-for-export": false,
-      "statistics": false
+      "statistics": false,
+      "presentation": "citation-style"
     },
     {
       "control": "outline",
@@ -272,7 +272,8 @@
       "kind": "boolean",
       "label-key": "field-show-outline",
       "required-for-export": false,
-      "statistics": false
+      "statistics": false,
+      "presentation": "outline"
     }
   ],
   "header": {

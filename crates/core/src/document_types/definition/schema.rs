@@ -121,6 +121,9 @@ fn field_properties(fields: &[Field]) -> Map<String, Value> {
                     "x-target-collection":target_collection,"x-on-target-remove":on_target_remove
                 }),
             };
+            if let Some(option) = f.presentation() {
+                schema = json!({"anyOf":[schema,{"type":"null"}],"x-presentation-option":option});
+            }
             schema["default"] = f.default_value();
             schema["x-label-key"] = json!(f.label_key());
             schema["x-required-for-export"] = json!(f.required_for_export());

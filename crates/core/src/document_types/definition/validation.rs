@@ -104,6 +104,30 @@ impl Check {
         for (i, field) in fields.iter().enumerate() {
             let at = format!("{path}/{i}");
             self.name(field.label_key(), format!("{at}/label-key"));
+            if let Some(option) = field.presentation() {
+                use crate::document_types::model_options::OptionId;
+                if record
+                    || field.required_for_export()
+                    || !matches!(
+                        (option, field),
+                        (OptionId::Outline, Field::Boolean { .. })
+                            | (OptionId::CitationStyle, Field::Choice { .. })
+                    )
+                {
+                    self.issue(
+                        DiagnosticCode::UnsupportedPolicy,
+                        format!("{at}/presentation"),
+                        "unsupported presentation option binding",
+                    );
+                }
+                if fields[..i].iter().any(|f| f.presentation() == Some(option)) {
+                    self.issue(
+                        DiagnosticCode::DuplicateIdentifier,
+                        format!("{at}/presentation"),
+                        "duplicate presentation option",
+                    );
+                }
+            }
             if let Some(control) = field.control() {
                 let supported = !record
                     && match control {
@@ -148,7 +172,13 @@ impl Check {
                             v.is_empty() || v.len() > 1000 || v.chars().any(char::is_control)
                         })
                         || choices.iter().collect::<BTreeSet<_>>().len() != choices.len()
-                        || !choices.contains(default)
+                        || if field.presentation().is_some() {
+                            default.is_some()
+                        } else {
+                            default
+                                .as_ref()
+                                .is_none_or(|value| !choices.contains(value))
+                        }
                     {
                         self.issue(
                             DiagnosticCode::InvalidDefault,

@@ -1200,3 +1200,13 @@ type-picker-empty = Choisissez un type de document.
 type-picker-available = Disponible
 type-picker-preview-unavailable = Aperçu indisponible
 type-picker-enlarged-preview = Aperçu agrandi · { "{name}" }
+
+web-follow-model = Selon le modèle
+web-model-option-substituted = Le modèle utilise son défaut pour certains réglages. Vos choix sont conservés.
+web-no = Non
+web-yes = Oui
+web-custom-list-marker = Marqueur personnalisé
+
+model-language-unsupported = Ce modèle ne prend pas en charge la langue du document.
+model-option-not-allowed = Ce réglage n’est pas autorisé par le modèle actif.
+web-retained-unavailable-choice = Choix conservé, non disponible

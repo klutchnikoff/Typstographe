@@ -99,6 +99,7 @@ mod tests {
 
                 metadata: Metadata::demo(DocumentType::Courrier),
                 template: template.into(),
+                model_manifest: DocumentType::Courrier.default_model_manifest().into(),
                 assets: Default::default(),
                 dependencies: crate::packages::for_template(template),
             };

@@ -180,7 +180,7 @@ mod tests {
                 .is_err()
         );
         metadata.courrier_mut().adresse.clear();
-        metadata.options_mut().landscape = true;
+        metadata.options_mut().landscape = Some(true);
         assert!(
             world
                 .compile_with_template("Bonjour.", &metadata, template)
@@ -204,8 +204,8 @@ mod tests {
             (PaperFormat::A3, 297.0, 420.0),
         ] {
             for landscape in [false, true] {
-                metadata.options_mut().paper = paper;
-                metadata.options_mut().landscape = landscape;
+                metadata.options_mut().paper = Some(paper);
+                metadata.options_mut().landscape = Some(landscape);
                 let doc = world
                     .compile_with_template("CONTENUTEST", &metadata, &template)
                     .unwrap();

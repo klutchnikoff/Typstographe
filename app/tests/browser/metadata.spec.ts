@@ -133,13 +133,11 @@ test('Général compact : format et orientation libres, choix utiles et langue i
   await page.getByRole('button', { name: 'Général', exact: true }).click()
   const panel = page.locator('#metadata-content')
   await expect(panel.getByRole('combobox')).toHaveCount(4)
-  await expect(page.getByRole('combobox', { name: 'Format', exact: true })).toHaveValue('a4')
-  await expect(page.getByRole('combobox', { name: 'Orientation', exact: true })).toHaveValue(
-    'false',
-  )
+  await expect(page.getByRole('combobox', { name: 'Format', exact: true })).toHaveValue('')
+  await expect(page.getByRole('combobox', { name: 'Orientation', exact: true })).toHaveValue('')
   await expect(panel.locator('output, #document-page-policy')).toHaveCount(0)
   await expect(panel.locator('input[type=file]')).toHaveCount(0)
-  await expect(panel.getByText('Puces des listes', { exact: true })).toHaveCount(0)
+  await expect(panel.getByText('Puces des listes', { exact: true })).toBeHidden()
   const model = page.getByRole('combobox', { name: 'Modèle', exact: true })
   const language = page.getByRole('combobox', { name: 'Langue du document', exact: true })
   const geometry = await panel.evaluate((element) => {
@@ -197,7 +195,7 @@ test('tous les formats du catalogue sont réellement compilés en portrait et pa
     await paper
       .locator('option')
       .evaluateAll((options) => options.map((option) => (option as HTMLOptionElement).value)),
-  ).toEqual(Object.keys(sizes))
+  ).toEqual(['', ...Object.keys(sizes)])
   for (const [format, [width, height]] of Object.entries(sizes)) {
     await paper.selectOption(format)
     for (const landscape of ['false', 'true']) {

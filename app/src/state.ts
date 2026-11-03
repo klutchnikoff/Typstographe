@@ -5,6 +5,7 @@ import type { Catalogue, DocumentType } from './shell'
 export interface Settings {
   metadata: { type: string; fields: Record<string, unknown> & { options: Record<string, unknown> } }
   template: string
+  modelManifest: string
   modelId: string
 }
 let catalogue: Catalogue
@@ -18,6 +19,7 @@ export function initializeSettings(provider: Provider, c: Catalogue, fallback?: 
       fallback || {
         metadata: kind.metadata,
         template: kind.models[0].source,
+        modelManifest: kind.models[0].manifest,
         modelId: kind.models[0].id,
       },
     )

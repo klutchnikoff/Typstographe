@@ -6,6 +6,7 @@ pub mod courrier;
 pub mod definition;
 pub mod discovery;
 mod fields;
+pub mod model_options;
 pub mod models;
 mod runtime;
 pub use fields::{FieldValue, MetadataField};
@@ -52,6 +53,12 @@ impl DocumentType {
         self.models()
             .next()
             .map_or(String::new(), |model| model.source.into())
+    }
+    pub fn default_model_manifest(self) -> &'static str {
+        self.models().next().map_or(
+            include_str!("../../templates/compte-rendu-internal.model.yaml"),
+            |m| m.manifest,
+        )
     }
     pub fn can_create(self) -> bool {
         self.models().next().is_some()
@@ -108,7 +115,14 @@ impl Metadata {
             Self::CompteRendu(meta) => &mut meta.options,
         }
     }
+    /// Source using the supplied default model; project callers resolve their embedded manifest.
     pub fn main_source(&self) -> String {
+        model_options::load(self.document_type().default_model_manifest())
+            .and_then(|m| m.resolve(self))
+            .expect("default model options")
+            .main_source()
+    }
+    pub(crate) fn raw_main_source(&self) -> String {
         let data = serde_json::to_value(self).expect("typed metadata");
         runtime::source(self.document_type(), &data["fields"], self.options())
     }
@@ -180,21 +194,6 @@ pub enum FieldKind {
     Records,
     Text,
     Date,
-}
-/// Libertés explicitement accordées par le créateur du modèle, en pur Typst.
-/// Par défaut la charte reste entièrement automatique.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ModelPresentation {
-    pub bullet_markers: Vec<String>,
-    pub custom_bullet_marker: bool,
-    pub outline: bool,
-    pub citation_styles: Vec<String>,
-}
-impl ModelPresentation {
-    pub fn allows_bullet_marker(&self, marker: &str) -> bool {
-        crate::document::valid_bullet_marker(marker)
-            && (self.custom_bullet_marker || self.bullet_markers.iter().any(|s| s == marker))
-    }
 }
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]

@@ -22,7 +22,7 @@ class CIPlanTests(unittest.TestCase):
                      "assets/font.ttf", "examples/article.typsto", ".cargo/config.toml",
                      "new-component/config.json", "docs/commands.json", "app/src/embedded.md",
                      "crates/core/assets/vendor/README.md", "crates/core/types/article/type.yaml",
-                     "docs/schemas/type-definition.schema.json", "docs/proposals/b1/article-authorship.yaml"]:
+                     "docs/schemas/model-manifest.schema.json", "docs/schemas/type-definition.schema.json", "docs/proposals/b1/article-authorship.yaml"]:
             self.assertTrue(planner.plan([name])["code"], name)
 
     def test_manifests_locks_and_ci_changes_keep_dependency_audits(self):
@@ -84,6 +84,7 @@ class CIPlanTests(unittest.TestCase):
                           "tests/browser/document-types.spec.ts", "tests/browser/metadata.spec.ts"])
         self.assertEqual(planner.browser_recipes(["crates/core/structures/authorship.yaml"], root),
                          planner.browser_recipes(["crates/core/types/article/type.yaml"], root))
+        self.assertIn("tests/browser/model-options.spec.ts", planner.browser_recipes(["crates/core/templates/article-working.model.yaml"], root))
         # A shared helper selects each recipe importing it.
         self.assertIn("tests/browser/title-dialogs.spec.ts",
                       planner.browser_recipes(["app/tests/browser/record-dialog-controls.ts"], root))

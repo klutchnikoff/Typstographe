@@ -26,13 +26,10 @@ fn document_type(kind: DocumentType) -> Value {
                 Model::Personal => text("model-personal-letter"),
                 Model::ArticleWorking => text("model-working-article"),
             };
-            let page = model
-                .page
-                .map(|(paper, landscape)| json!({"paper":paper,"landscape":landscape}));
             json!({
                 "id":model.model.id(), "label":label, "description":model.description,
-                "keywords":model.keywords, "source":model.source, "fixedPage":page,
-                "policy":typstographe_core::rendering::TypstWorld::default().model_presentation(model.source).expect("bundled model policy")
+                "keywords":model.keywords, "source":model.source, "manifest":model.manifest,
+                "policy":typstographe_core::document_types::model_options::describe(model.manifest,&metadata).expect("bundled model policy")
             })
         })
         .collect();

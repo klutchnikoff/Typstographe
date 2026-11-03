@@ -197,6 +197,7 @@ test('changer de modèle garde les fragments Article et entre dans l’historiqu
           metadata: setup.metadata,
           modelId: 'article.project',
           template: setup.model.source + '\n// project model',
+          modelManifest: setup.model.manifest,
         },
       },
     },

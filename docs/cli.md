@@ -43,7 +43,7 @@ Resource data is base64 in `resource.add`; models use their pure Typst source in
 | `document.open` | session | Open a self-contained structured .typsto; writable access acquires a cooperative lock before reading. |
 | `document.save` | session | Save the current project under its existing lock, checking external changes. |
 | `document.save_as` | session | Save an independent copy; existing targets are refused. |
-| `document.set_model` | edit | Set the model ID and full pure Typst source together. The model must implement this document type; publication validates its policy. |
+| `document.set_model` | edit | Set model_id, full pure Typst source and YAML manifest together. Every option regime and supported language is validated. Retained choices survive model switches; metadata.get reports effective values and substitutions. |
 | `document.set_signature` | edit | Typed structured document operation; discover targets and parameters in params_schema. |
 | `document.source` | query | Read generated Typst without changing the source of truth. |
 | `document.statistics` | query | Count Unicode words and signs in the body and optional target. |
@@ -59,7 +59,7 @@ Resource data is base64 in `resource.add`; models use their pure Typst source in
 | `list.item.exit` | edit | Remove an entirely empty item and create/reuse a continuation paragraph after its list. Remove the whole list only when it was the last item. A badge is content: an item containing a note cannot be exited as empty. |
 | `list.item.join` | edit | Join adjacent bullet/numbered items of the same list, concatenating the last left paragraph and first right paragraph without an added space or break. Keep the left item and prefix. An empty right item is removed. Refuse description term/definition boundaries and different lists. |
 | `list.item.split` | edit | Split a flat bullet/numbered list item at one paragraph range, or a description item at its definition range. Preserve the left item and prefix; the suffix and following paragraphs become a new item. Description terms remain separate, and the new term is empty. Empty-item exit is a separate operation. |
-| `metadata.get` | query | Read document metadata and field/collection definitions. |
+| `metadata.get` | query | Read metadata, fields and resolved model_options: choice (null = follow model), effective, regime, allowed/default and substituted warning. Language remains documentary data. |
 | `metadata.set` | edit | Set a typed metadata, record field or document option. Values are validated against the type and model policy. |
 | `models.list` | query | Read brief visual model cards, including the active embedded model. |
 | `node.set_attrs` | edit | Typed structured document operation; discover targets and parameters in params_schema. |

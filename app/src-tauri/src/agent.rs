@@ -536,6 +536,7 @@ fn dispatch_outcome(
             &after.settings.template,
             prepared.assets(&session.assets),
             &base.dependencies,
+            &after.settings.model_manifest,
         )?;
         let candidate = crate::project::archive(
             after.clone(),

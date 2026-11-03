@@ -104,6 +104,24 @@ fn set_field(
     if let crate::content::commands::FieldTarget::Option { name } = target {
         return super::settings::set_option(doc, state, *name, value);
     }
+    let mut presentation = false;
+    if let FieldTarget::Metadata { field } = target {
+        let kind = state.settings.metadata.document_type();
+        let field_id = serde_json::to_value(field).expect("field identity");
+        if let Some(id) = kind
+            .definition()
+            .definition()
+            .fields
+            .iter()
+            .find(|f| f.id() == field_id.as_str().unwrap())
+            .and_then(|f| f.presentation())
+        {
+            crate::document_types::model_options::load(&state.settings.model_manifest)
+                .and_then(|m| m.check_write(id, value))
+                .map_err(super::projection::invalid)?;
+            presentation = true;
+        }
+    }
     let (map, key, before, kind) = targets::field(doc, &doc.transact(), state, target)?;
     let valid = match kind.as_str() {
         "text" | "multiline" | "source" | "language" | "choice" => value.is_string(),
@@ -118,7 +136,7 @@ fn set_field(
             ));
         }
     };
-    if !valid {
+    if !valid && !(presentation && value.is_null()) {
         return Err(parameter("value"));
     }
     if kind == "language"

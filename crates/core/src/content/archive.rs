@@ -31,6 +31,7 @@ pub struct Archive {
     pub document: Node,
     pub metadata: Metadata,
     pub template: String,
+    pub model_manifest: String,
     pub model_id: String,
     pub assets: Assets,
     pub dependencies: Dependencies,
@@ -56,6 +57,7 @@ impl Archive {
             super::contract::Settings {
                 metadata: self.metadata.clone(),
                 template: self.template.clone(),
+                model_manifest: self.model_manifest.clone(),
                 model_id: self.model_id.clone(),
             },
         )
@@ -110,7 +112,7 @@ mod tests {
     fn fixture() -> Archive {
         let metadata = Metadata::blank(crate::document_types::DocumentType::Courrier);
         let template = metadata.document_type().default_model();
-        Archive{document:serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Un texte é😀"},{"type":"footnote","attrs":{"text":"Une note."}}]}]})).unwrap(),metadata,dependencies:crate::packages::for_template(&template),template,model_id:"courrier.model.personal".into(),assets:Assets::default(),yjs:vec![]}
+        Archive{model_manifest:crate::document_types::DocumentType::Courrier.default_model_manifest().into(),document:serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Un texte é😀"},{"type":"footnote","attrs":{"text":"Une note."}}]}]})).unwrap(),metadata,dependencies:crate::packages::for_template(&template),template,model_id:"courrier.model.personal".into(),assets:Assets::default(),yjs:vec![]}
     }
     #[test]
     fn saved_model_snapshot_remains_self_contained_after_catalogue_changes() {

@@ -147,7 +147,11 @@ pub enum Command {
     #[serde(rename = "document.set_signature")]
     SetSignature { path: Option<String> },
     #[serde(rename = "document.set_model")]
-    SetModel { model_id: String, source: String },
+    SetModel {
+        model_id: String,
+        source: String,
+        manifest: String,
+    },
     #[serde(rename = "text.insert")]
     Insert {
         target: TextTarget,

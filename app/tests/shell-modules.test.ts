@@ -43,8 +43,8 @@ const letter: DocumentType = {
     fields: { sender_name: '', date: '', options: { language: 'fr' } },
   },
   models: [
-    { id: 'personal', label: 'Personnel', description: '', source: 'Typst', fixedPage: null },
-    { id: 'free', label: 'Libre', description: '', source: 'Typst libre', fixedPage: null },
+    { id: 'personal', label: 'Personnel', description: '', source: 'Typst', manifest: 'fixture' },
+    { id: 'free', label: 'Libre', description: '', source: 'Typst libre', manifest: 'fixture' },
   ],
 }
 const report: DocumentType = {
@@ -52,7 +52,7 @@ const report: DocumentType = {
   id: 'rapport',
   label: 'Rapport',
   fields: [],
-  models: [{ id: 'report', label: 'Rapport', description: '', source: 'R', fixedPage: null }],
+  models: [{ id: 'report', label: 'Rapport', description: '', source: 'R', manifest: 'fixture' }],
 }
 
 afterEach(() => document.body.replaceChildren())

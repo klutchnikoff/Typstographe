@@ -54,8 +54,8 @@ pub(super) fn main(loaded: &LoadedDefinition, raw: &Value, options: &DocumentOpt
     }
     source.push_str(&format!(
         "  options: (paper: {}, landscape: {}, language: {}, bullet-marker: {}),\n)\n#include \"contenu.typ\"\n",
-        typst_string(options.paper.typst_name()),options.landscape,typst_string(options.language.code()),
-        options.bullet_marker.as_deref().map_or_else(||"auto".into(),typst_string),
+        typst_string(options.paper.expect("resolved paper").typst_name()),options.landscape.expect("resolved orientation"),typst_string(options.language.code()),
+        options.bullet_marker.as_deref().filter(|v| *v != "auto").map_or_else(||"auto".into(),typst_string),
     ));
     source
 }
@@ -75,7 +75,7 @@ fn render(field: &Field, value: &Value) -> String {
                 .collect::<String>();
             format!("({text})")
         }
-        Field::Boolean { .. } => value.as_bool().expect("typed boolean").to_string(),
-        _ => typst_string(value.as_str().expect("typed literal text")),
+        Field::Boolean { .. } => value.as_bool().expect("resolved boolean").to_string(),
+        _ => typst_string(value.as_str().expect("resolved literal text")),
     }
 }

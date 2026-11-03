@@ -79,10 +79,8 @@ error_family! { StorageError {
 } }
 
 error_family! { TemplateError {
-    BulletMarkerNotAllowed => "model-bullet-marker-not-allowed";
     Compilation { error: String } => "core-external-error";
     ContractMissing { function: String } => "model-contract-missing";
-    InvalidEditorOptions => "model-invalid-editor-options";
 } }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

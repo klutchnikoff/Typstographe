@@ -1,12 +1,13 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { documentOptions } from '../src/document-options'
-import type { Catalogue, DocumentType } from '../src/shell'
+import type { Catalogue, DocumentType, ModelPolicy } from '../src/shell'
 import type { MetadataCommands } from '../src/metadata-commands'
 import type { Settings } from '../src/state'
 
 const settings: Settings = {
   modelId: 'personal',
   template: 'Typst',
+  modelManifest: 'fixture',
   metadata: {
     type: 'courrier',
     fields: { options: { paper: 'a3', landscape: true, language: 'fr' } },
@@ -27,9 +28,15 @@ const kind: DocumentType = {
       label: 'Courrier personnel',
       description: '',
       source: 'Typst',
-      fixedPage: { paper: 'a4', landscape: false },
+      manifest: 'fixture',
     },
-    { id: 'free', label: 'Modèle libre', description: '', source: 'Typst libre', fixedPage: null },
+    {
+      id: 'free',
+      label: 'Modèle libre',
+      description: '',
+      source: 'Typst libre',
+      manifest: 'fixture',
+    },
   ],
 }
 const catalogue: Catalogue = {
@@ -63,10 +70,54 @@ function mount() {
     watch: () => () => {},
     composing: () => {},
   } as unknown as MetadataCommands
-  const rendered = documentOptions(root, kind, catalogue, current, {
-    commands,
-    read: () => current,
+  const policy = (): ModelPolicy => ({
+    languages: ['fr', 'en'],
+    options:
+      current.modelId === 'personal' && current.template === 'Typst'
+        ? {
+            paper: {
+              regime: 'imposed',
+              value: 'a4',
+              choice: 'a3',
+              effective: 'a4',
+              substituted: false,
+            },
+            landscape: {
+              regime: 'imposed',
+              value: false,
+              choice: true,
+              effective: false,
+              substituted: false,
+            },
+          }
+        : {
+            paper: {
+              regime: 'free',
+              default: 'a4',
+              choice: current.metadata.fields.options.paper,
+              effective: current.metadata.fields.options.paper,
+              substituted: false,
+            },
+            landscape: {
+              regime: 'free',
+              default: false,
+              choice: true,
+              effective: true,
+              substituted: false,
+            },
+          },
   })
+  const rendered = documentOptions(
+    root,
+    kind,
+    catalogue,
+    current,
+    {
+      commands,
+      read: () => current,
+    },
+    policy,
+  )
   const view = {
     update: (value: Settings) => {
       current = value
@@ -114,7 +165,7 @@ it('un modèle libre retrouve les choix conservés et les menus gardent leurs li
   model.dispatchEvent(new Event('input'))
   expect(set).toHaveBeenLastCalledWith(
     { kind: 'model' },
-    { model_id: 'personal', source: 'Typst' },
+    { model_id: 'personal', source: 'Typst', manifest: 'fixture' },
     expect.any(Function),
   )
 })
@@ -144,7 +195,31 @@ it('une ancienne copie du modèle reste embarquée sans emprunter les contrainte
   model.dispatchEvent(new Event('input'))
   expect(set).toHaveBeenLastCalledWith(
     { kind: 'model' },
-    { model_id: 'personal', source: 'Typst' },
+    { model_id: 'personal', source: 'Typst', manifest: 'fixture' },
     expect.any(Function),
   )
+})
+
+it('Selon le modèle publie une absence de choix et garde les mêmes contrôles', () => {
+  const { root, view, set } = mount()
+  view.update({ ...settings, modelId: 'free' })
+  const paper = root.querySelector<HTMLSelectElement>('#document-option-paper')!
+  paper.value = ''
+  paper.dispatchEvent(new Event('input'))
+  expect(set).toHaveBeenLastCalledWith(
+    { kind: 'option', name: 'paper' },
+    null,
+    expect.any(Function),
+  )
+  paper.focus()
+  view.update({
+    ...settings,
+    modelId: 'free',
+    metadata: {
+      ...settings.metadata,
+      fields: { options: { ...settings.metadata.fields.options, paper: null } },
+    },
+  })
+  expect(document.activeElement).toBe(paper)
+  expect(paper.value).toBe('')
 })

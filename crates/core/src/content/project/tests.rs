@@ -11,7 +11,7 @@ pub(super) fn fixture(kind: DocumentType, text: &str) -> Archive {
     let model_id = kind.models().next().unwrap().model.id().into();
     Archive {
         document: serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":text}]}]})).unwrap(),
-        metadata, dependencies: crate::packages::for_template(&template), template, model_id,
+        model_manifest:kind.default_model_manifest().into(), metadata, dependencies: crate::packages::for_template(&template), template, model_id,
         assets: Assets::default(), yjs: vec![],
     }
 }

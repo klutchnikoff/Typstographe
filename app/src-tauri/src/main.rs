@@ -407,6 +407,7 @@ async fn export_document(
             &settings.template,
             &assets,
             &dependencies,
+            &settings.model_manifest,
         )?;
         renderer.render(
             source,

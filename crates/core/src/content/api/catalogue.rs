@@ -76,7 +76,7 @@ const QUERIES: &[(&str, &str)] = &[
     ),
     (
         "metadata.get",
-        "Read document metadata and field/collection definitions.",
+        "Read metadata, fields and resolved model_options: choice (null = follow model), effective, regime, allowed/default and substituted warning. Language remains documentary data.",
     ),
     (
         "models.list",
@@ -317,7 +317,7 @@ fn command_description(id: &str) -> String {
         "inline.replace" => "Replace one typed rich range with a footnote, citation, softBreak (a Typst space) or hardBreak (forced line break). Breaks are unavailable in single-line header fields and plain fields. A break is one UTF-16 unit; paragraph separation uses block.split. No implicit CR/LF interpretation in text.insert. Discover objects via capabilities.describe.",
         "block.insert" | "block.replace" | "block.splice" => "Edit a guarded tree with explicit nodes (quote, list, figure, postscript…). Discover examples via capabilities.describe.",
         "resource.add" => "Admit immutable image bytes (base64), validated before use; a batch may add the resource then insert its figure or signature.",
-        "document.set_model" => "Set the model ID and full pure Typst source together. The model must implement this document type; publication validates its policy.",
+        "document.set_model" => "Set model_id, full pure Typst source and YAML manifest together. Every option regime and supported language is validated. Retained choices survive model switches; metadata.get reports effective values and substitutions.",
         "metadata.set" => "Set a typed metadata, record field or document option. Values are validated against the type and model policy.",
         "insert.table" => "Insert a table figure. header marks the first row as column headers; row_headers marks the first column as row headers. They are independent, including a one-cell table. No merged cells.",
         "table.header" => "Set a header axis on an existing tableFigure: axis columns (default) labels columns using the first row; axis rows labels rows using the first column. Text and other cells are preserved. Leading-track insertions and removals retain the chosen roles.",

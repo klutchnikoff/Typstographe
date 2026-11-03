@@ -60,6 +60,7 @@ pub enum MetadataField {
 pub struct FieldValue {
     pub field: MetadataField,
     pub value: serde_json::Value,
+    pub presentation: Option<super::model_options::OptionId>,
     pub parameter: &'static str,
     pub group: &'static str,
     pub multiline: bool,

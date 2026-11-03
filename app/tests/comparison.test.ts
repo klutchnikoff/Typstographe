@@ -28,6 +28,7 @@ const snapshot = (text: string) => ({
       metadata: { type: 'courrier', fields: { options: {} } },
       template: '',
       modelId: 'personal',
+      modelManifest: 'fixture',
     },
   },
   resources: [],

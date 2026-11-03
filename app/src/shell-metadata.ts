@@ -36,25 +36,39 @@ export function shellMetadata(ctx: ShellContext, context: HTMLElement) {
   let recordPanel: RecordPanel | undefined
   const metadataEditor = metadataCommands(editor, provider)
   const policies = new Map<string, ModelPolicy>(),
-    loadingPolicies = new Set<string>()
+    loadingPolicies = new Set<string>(),
+    latestPolicies = new Map<string, ModelPolicy>()
   const currentPolicy = (): ModelPolicy | undefined => {
-    const current = settingsFor(provider),
-      kind = documentType(provider)
-    const bundled = kind.models.find(
-      (model) => model.id === current.modelId && model.source === current.template,
-    )
-    if (bundled?.policy) return bundled.policy
-    if (!policies.has(current.template) && !loadingPolicies.has(current.template)) {
-      loadingPolicies.add(current.template)
+    const current = settingsFor(provider)
+    const kind = documentType(provider)
+    const key = JSON.stringify([
+      current.modelManifest,
+      current.metadata.fields.options,
+      ...kind.fields.filter((f) => f.presentation).map((f) => current.metadata.fields[f.parameter]),
+    ])
+    if (!policies.has(key) && !loadingPolicies.has(key)) {
+      loadingPolicies.add(key)
       void transport
-        .invoke<ModelPolicy>('model_policy', { template: current.template })
+        .invoke<ModelPolicy>('model_policy', {
+          manifest: current.modelManifest,
+          metadata: current.metadata,
+        })
         .then((policy) => {
-          policies.set(current.template, policy)
+          policies.set(key, policy)
+          if (policies.size > 16) policies.delete(policies.keys().next().value!)
+          latestPolicies.set(current.modelManifest, policy)
+          if (latestPolicies.size > 16) latestPolicies.delete(latestPolicies.keys().next().value!)
           render()
         })
-        .catch(() => {})
+        .catch(ctx.reportError)
+        .finally(() => loadingPolicies.delete(key))
     }
-    return policies.get(current.template)
+    // Domains stay stable while only the retained choice changes; keep the control and focus.
+    return (
+      policies.get(key) ||
+      latestPolicies.get(current.modelManifest) ||
+      kind.models.find((model) => model.manifest === current.modelManifest)?.policy
+    )
   }
 
   function render() {

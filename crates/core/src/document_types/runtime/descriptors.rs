@@ -59,6 +59,11 @@ pub(super) fn build(loaded: &LoadedDefinition) -> (Vec<RootField>, Vec<FieldGrou
             .map_or("general", |tab| tab.id());
         fields.push(RootField {
             public: serde_json::from_value(json!(id)).expect("registered metadata identity"),
+            presentation: def
+                .fields
+                .iter()
+                .find(|field| field.id() == binding.source())
+                .and_then(Field::presentation),
             parameter: binding.metadata_key().into(),
             label_key: label.into(),
             group: group.into(),

@@ -68,6 +68,7 @@ function fixture() {
           metadata: { type: 'courrier', fields: { options: {} } },
           template: '',
           modelId: 'personal',
+          modelManifest: 'fixture',
         },
       },
       resources: [],
@@ -263,6 +264,7 @@ it('renders archived image bytes and citation labels without sharing the active 
         metadata: { type: 'article', fields: { options: {} } },
         template: '',
         modelId: 'working',
+        modelManifest: 'fixture',
       },
     },
     references: [

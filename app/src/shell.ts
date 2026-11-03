@@ -21,19 +21,26 @@ import { shellRecovered } from './shell-recovered'
 import { shellRecovery } from './shell-recovery'
 import { mountWindowEvents } from './shell-window'
 import type { Settings } from './state'
+export type ModelOption = 'paper' | 'landscape' | 'bullet-marker' | 'citation-style' | 'outline'
+export type OptionResolution = (
+  | { regime: 'free'; default: unknown }
+  | { regime: 'restricted'; default: unknown; allowed: unknown[] }
+  | { regime: 'imposed'; value: unknown }
+) & { choice: unknown; effective: unknown; substituted: boolean; domain?: unknown[] }
 export interface ModelPolicy {
-  outline: boolean
-  citation_styles: string[]
+  languages: string[]
+  options: Partial<Record<ModelOption, OptionResolution>>
 }
 export interface Model {
   id: string
   label: string
   description: string
   source: string
-  fixedPage: { paper: string; landscape: boolean } | null
+  manifest: string
   policy?: ModelPolicy
 }
 export interface Field {
+  presentation?: ModelOption | null
   field: string
   parameter: string
   label: string

@@ -206,6 +206,9 @@ fn validate_fields(
             ));
             continue;
         };
+        if v.is_null() && field.presentation().is_some() {
+            continue;
+        }
         let valid = match field {
             Field::Text { multiline, .. } => {
                 v.as_str().is_some_and(|s| valid_text(s, 16000, *multiline))

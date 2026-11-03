@@ -232,7 +232,7 @@ fn drafts_are_valid_without_required_export_fields_and_models_are_embedded() {
     let template = s.state().unwrap().settings.template.clone() + "\n// project-owned version\n";
     s.execute(
         "document.set_model",
-        json!({"model_id":"article.model.working","source":template}),
+        json!({"model_id":"article.model.working","source":template,"manifest":s.state().unwrap().settings.model_manifest}),
     )
     .unwrap();
     assert_eq!(

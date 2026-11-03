@@ -71,10 +71,11 @@ impl SharedSession {
             world.set_assets(&assets);
             world.set_dependencies(&crate::packages::for_template(&archive.template));
             world
-                .validate_model(
+                .validate_with_model(
                     &state.validate(&assets)?,
                     &archive.metadata,
                     &archive.template,
+                    &archive.model_manifest,
                 )
                 .map_err(|e| Error::InvalidSettings {
                     reason: e.to_string(),

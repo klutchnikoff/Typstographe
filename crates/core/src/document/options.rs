@@ -92,8 +92,8 @@ impl DocumentLanguage {
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DocumentOptions {
-    pub paper: PaperFormat,
-    pub landscape: bool,
+    pub paper: Option<PaperFormat>,
+    pub landscape: Option<bool>,
     pub language: DocumentLanguage,
     /// None laisse au modèle le choix du marqueur selon sa charte et la langue.
     pub bullet_marker: Option<String>,

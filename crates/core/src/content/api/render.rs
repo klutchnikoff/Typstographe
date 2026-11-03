@@ -61,7 +61,12 @@ impl Session {
         self.world.set_dependencies(&archive.dependencies);
         let doc = self
             .world
-            .compile_with_template(&source, &archive.metadata, &archive.template)
+            .compile_with_model(
+                &source,
+                &archive.metadata,
+                &archive.template,
+                &archive.model_manifest,
+            )
             .map_err(|e| CommandError::with_cause(ErrorCode::Template, "export_compile", e))?;
         let sync = RenderSync::new(self.guard().unwrap().revision, self.world.clone(), doc, map);
         let ranges = ranges(self.state()?);

@@ -128,6 +128,7 @@ function seed(type: 'courrier' | 'article') {
     metadata: kind.metadata,
     template: kind.models[0].source,
     modelId: kind.models[0].id,
+    modelManifest: 'fixture',
   })
   if (type === 'article')
     settings.metadata.fields.references = [

@@ -17,6 +17,7 @@ pub(super) struct Runtime {
 }
 pub(super) struct RootField {
     pub public: MetadataField,
+    pub presentation: Option<super::model_options::OptionId>,
     pub parameter: String,
     pub label_key: String,
     pub group: String,
@@ -122,6 +123,7 @@ pub(super) fn fields(kind: DocumentType, raw: &Value) -> Vec<FieldValue> {
         .iter()
         .map(|f| FieldValue {
             field: f.public,
+            presentation: f.presentation,
             value: raw[&f.parameter].clone(),
             parameter: &f.parameter,
             group: &f.group,

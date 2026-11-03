@@ -128,7 +128,7 @@ fn article_reopening_preserves_original_bibliography_image_caption_and_citation(
         {"type":"paragraph","content":[{"type":"text","text":"Une référence "},{"type":"citation","attrs":{"items":[{"file_id":"sources","key":"martin2026"}],"form":"normal"}}]},
         {"type":"figure","attrs":{"src":"images/signature.svg","alt":"Illustration"},"content":[{"type":"text","text":"Légende"}]},
         {"type":"paragraph"}
-    ]})).unwrap(), Settings { metadata, template:DocumentType::Article.default_model(), model_id:DocumentType::Article.models().next().unwrap().model.id().into() });
+    ]})).unwrap(), Settings { metadata, model_manifest:DocumentType::Article.default_model_manifest().into(), template:DocumentType::Article.default_model(), model_id:DocumentType::Article.models().next().unwrap().model.id().into() });
     let mut assets = Assets::default();
     assets.insert(
         "images/signature.svg".into(),

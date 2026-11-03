@@ -24,24 +24,9 @@ pub fn validate_bibliography(document: Node, metadata: Metadata) -> Result<(), C
 }
 #[tauri::command]
 pub fn model_policy(
-    state: tauri::State<crate::Bridge>,
-    template: String,
-) -> Result<typstographe_core::document_types::ModelPresentation, CommandError> {
-    policy(&*state.session()?, template)
-}
-pub(crate) fn policy(
-    session: &crate::session::Session,
-    template: String,
-) -> Result<typstographe_core::document_types::ModelPresentation, CommandError> {
-    if template.len() > 2 * 1024 * 1024 {
-        return Err("Model too large".into());
-    }
-    let mut settings = session.settings.clone();
-    settings.template = template.clone();
-    let dependencies = session.dependencies_for(&settings);
-    let mut world = typstographe_core::rendering::TypstWorld::default();
-    world.set_dependencies(&dependencies);
-    world
-        .model_presentation(&template)
-        .map_err(CommandError::message)
+    metadata: Metadata,
+    manifest: String,
+) -> Result<serde_json::Value, CommandError> {
+    typstographe_core::document_types::model_options::describe(&manifest, &metadata)
+        .map_err(CommandError::Message)
 }

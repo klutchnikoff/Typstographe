@@ -28,6 +28,18 @@ pub(super) fn set_option(
     name: OptionName,
     value: &Value,
 ) -> Result<(), Error> {
+    use crate::document_types::model_options::{self, OptionId};
+    let id = match name {
+        OptionName::Paper => Some(OptionId::Paper),
+        OptionName::Landscape => Some(OptionId::Landscape),
+        OptionName::BulletMarker => Some(OptionId::BulletMarker),
+        _ => None,
+    };
+    if let Some(id) = id {
+        model_options::load(&state.settings.model_manifest)
+            .and_then(|m| m.check_write(id, value))
+            .map_err(projection::invalid)?;
+    }
     let mut options = serde_json::to_value(state.settings.metadata.options()).expect("options");
     let key = name.key();
     if options[key] == *value {
@@ -39,7 +51,7 @@ pub(super) fn set_option(
     if options
         .bullet_marker
         .as_ref()
-        .is_some_and(|v| !crate::document::valid_bullet_marker(v))
+        .is_some_and(|v| v != "auto" && !crate::document::valid_bullet_marker(v))
     {
         return Err(parameter("value"));
     }
@@ -107,7 +119,11 @@ pub(super) fn apply(doc: &Doc, state: &State, command: &Command) -> Result<(), E
             }
             set(doc, "signature", &json!(path));
         }
-        Command::SetModel { model_id, source } => {
+        Command::SetModel {
+            model_id,
+            source,
+            manifest,
+        } => {
             if model_id.trim().is_empty() || model_id.len() > 256 || source.len() > 1024 * 1024 {
                 return Err(parameter("model"));
             }
@@ -117,7 +133,10 @@ pub(super) fn apply(doc: &Doc, state: &State, command: &Command) -> Result<(), E
             if builtin.is_some_and(|m| m.kind != state.settings.metadata.document_type()) {
                 return Err(parameter("model"));
             }
-            if state.settings.model_id == *model_id && state.settings.template == *source {
+            if state.settings.model_id == *model_id
+                && state.settings.template == *source
+                && state.settings.model_manifest == *manifest
+            {
                 return Ok(());
             }
             // Update the scalar base only: collections, rich fragments and overrides retain identity.
@@ -131,13 +150,8 @@ pub(super) fn apply(doc: &Doc, state: &State, command: &Command) -> Result<(), E
             let mut base = serde_json::to_value(value).map_err(|_| parameter("model"))?;
             base["modelId"] = json!(model_id);
             base["template"] = json!(source);
+            base["modelManifest"] = json!(manifest);
             set(doc, "document", &base);
-            if let Some((paper, landscape)) =
-                builtin.filter(|m| m.source == source).and_then(|m| m.page)
-            {
-                set(doc, "options.paper", &json!(paper));
-                set(doc, "options.landscape", &json!(landscape));
-            }
         }
         _ => unreachable!(),
     }
@@ -154,7 +168,12 @@ pub(super) fn validate_model(state: &State, assets: &Assets) -> Result<(), Error
     world.set_assets(assets);
     world.set_dependencies(&dependencies);
     world
-        .validate_model(&source, &state.settings.metadata, template)
+        .validate_with_model(
+            &source,
+            &state.settings.metadata,
+            template,
+            &state.settings.model_manifest,
+        )
         .map_err(|e| projection::invalid(format!("model_validation: {e}")))?;
     Ok(())
 }

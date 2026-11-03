@@ -20,6 +20,7 @@ fn state(kind: DocumentType) -> State {
         Settings {
             metadata,
             template,
+            model_manifest: kind.default_model_manifest().into(),
             model_id,
         },
     )
@@ -71,6 +72,63 @@ fn all_document_types_bootstrap_and_roundtrip_without_an_interface() {
     }
     fn send_sync<T: Send + Sync>() {}
     send_sync::<SharedSession>();
+}
+
+#[test]
+fn shared_deltas_preserve_inactive_choices_but_cannot_edit_an_imposed_option() {
+    use crate::document_types::model_options::{self, OptionId, Policy};
+    let mut original = state(DocumentType::Courrier);
+    original.settings.metadata.options_mut().paper = Some(crate::document::PaperFormat::A3);
+    let mut manifest = model_options::load(&original.settings.model_manifest).unwrap();
+    manifest
+        .options
+        .insert(OptionId::Paper, Policy::Imposed { value: json!("a5") });
+    original.settings.model_manifest = yaml_serde::to_string(&manifest).unwrap();
+    let session = SharedSession::open(
+        guard(),
+        &SharedDocument::from_state(&original).unwrap().update(),
+        Assets::default(),
+    )
+    .unwrap();
+    let before = session.update();
+    let remote = peer(&session);
+    remote.doc.get_or_insert_map("settings").insert(
+        &mut remote.doc.transact_mut(),
+        "options.paper",
+        yrs::Any::from("a4"),
+    );
+    assert!(
+        session
+            .prepare(session.guard(), &[remote.update()])
+            .is_err()
+    );
+    assert_eq!(session.update(), before);
+    assert!(
+        session
+            .prepare_history(session.guard(), &[remote.update()])
+            .is_ok()
+    );
+    let remote = peer(&session);
+    manifest
+        .options
+        .insert(OptionId::Paper, Policy::Imposed { value: json!("a4") });
+    original.settings.model_manifest = yaml_serde::to_string(&manifest).unwrap();
+    remote.doc.get_or_insert_map("settings").insert(
+        &mut remote.doc.transact_mut(),
+        "document",
+        yrs::Any::from_json(&serde_json::to_string(&original.settings).unwrap()).unwrap(),
+    );
+    let prepared = session
+        .prepare(session.guard(), &[remote.update()])
+        .unwrap();
+    assert_eq!(
+        prepared.state().settings.metadata.options().paper,
+        Some(crate::document::PaperFormat::A3)
+    );
+    assert_eq!(
+        prepared.state().settings.resolve_model().unwrap().options[&OptionId::Paper].effective,
+        json!("a4")
+    );
 }
 
 #[test]

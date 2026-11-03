@@ -39,7 +39,7 @@ pub fn load_yaml(source: &str) -> Result<LoadedDefinition, LoadError> {
 }
 
 /// The same strict YAML decoder is used for a type and its registered fragments.
-pub(super) fn decode_yaml<T: DeserializeOwned>(source: &str) -> Result<T, LoadError> {
+pub(crate) fn decode_yaml<T: DeserializeOwned>(source: &str) -> Result<T, LoadError> {
     if source.len() > MAX_SOURCE_BYTES {
         return Err(LoadError::SourceTooLarge {
             max_bytes: MAX_SOURCE_BYTES,

@@ -38,25 +38,15 @@ pub struct Metadata {
     #[serde(default)]
     pub references: Vec<crate::bibliography::ReferenceFile>,
     #[serde(default = "default_citation_style")]
-    pub citation_style: String,
+    pub citation_style: Option<String>,
     #[serde(default)]
-    pub show_outline: bool,
+    pub show_outline: Option<bool>,
     pub authors: Vec<Author>,
     pub affiliations: Vec<Affiliation>,
     pub localizations: Vec<Localization>,
 }
-fn default_citation_style() -> String {
-    super::DocumentType::Article
-        .definition()
-        .definition()
-        .fields
-        .iter()
-        .find(|f| f.id() == "article.citation_style")
-        .expect("citation style field")
-        .default_value()
-        .as_str()
-        .expect("style default")
-        .into()
+fn default_citation_style() -> Option<String> {
+    None
 }
 impl Default for Metadata {
     fn default() -> Self {
@@ -237,6 +227,7 @@ mod tests {
             document: serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Le corps de l’article et sa note."},{"type":"footnote","attrs":{"text":"Note scientifique."}}]}]})).unwrap(),
             metadata: DocumentMetadata::Article(fixture()),
             dependencies: crate::packages::for_template(&template),
+            model_manifest: crate::document_types::DocumentType::Article.default_model_manifest().into(),
             template,
             model_id: Model::ArticleWorking.id().into(),
             assets: Default::default(),
@@ -264,6 +255,7 @@ mod tests {
         let request = crate::rendering::RenderRequest {
             source: body,
             metadata: restored.metadata,
+            model_manifest: restored.model_manifest,
             template: restored.template,
             assets: restored.assets,
             dependencies: restored.dependencies,

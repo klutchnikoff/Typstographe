@@ -1,6 +1,6 @@
 import { metadataCommands } from './metadata-commands'
 import type { StructuredCommand } from './structured-commands'
-import { bindMetadataInput } from './metadata-input'
+import { modelOptionControl } from './model-option-control'
 import { documentContent } from './shared-inline-marks'
 import type { Editor } from '@tiptap/core'
 import type { Provider, Transport } from './provider'
@@ -31,18 +31,20 @@ export function bibliographyPanel(
   const root = document.createElement('div')
   root.className = 'bibliography-settings'
   parent.append(root)
-  const style = document.createElement('label')
-  style.className = 'bibliography-style'
-  const select = document.createElement('select')
-  select.setAttribute('aria-label', tr('Style bibliographique'))
-  style.append(document.createTextNode(tr('Style bibliographique')), select)
-  select.onchange = () => {
-    commands.set(
-      { kind: 'metadata', field: descriptor.style_field },
-      select.value,
-      () => settingsFor(provider).metadata.fields[descriptor.style],
-    )
-  }
+  const styleBinding = modelOptionControl(
+    root,
+    'citation-style',
+    tr('Style bibliographique'),
+    [
+      { value: 'chicago-author-date', label: tr('Chicago auteur–date') },
+      { value: 'apa', label: 'APA' },
+      { value: 'ieee', label: tr('IEEE (numérique)') },
+    ],
+    { kind: 'metadata', field: descriptor.style_field },
+    commands,
+    () => settingsFor(provider).metadata.fields[descriptor.style],
+    policy,
+  )
   const rows = document.createElement('div'),
     actions = actionRow(),
     status = document.createElement('p')
@@ -203,30 +205,11 @@ export function bibliographyPanel(
       if (alive) status.textContent = errorText(error)
     }
   }
-  root.append(style, rows, actions, input, confirm.element, status)
-  const styleBinding = bindMetadataInput(
-    select,
-    commands,
-    { kind: 'metadata', field: descriptor.style_field },
-    () => settingsFor(provider).metadata.fields[descriptor.style],
-  )
+  root.append(rows, actions, input, confirm.element, status)
   function refresh() {
     add.disabled = busy
-    select.disabled = busy
-    const allowed = policy()?.citation_styles || []
-    style.hidden = allowed.length < 2
-    if ([...select.options].map((option) => option.value).join() !== allowed.join()) {
-      select.replaceChildren()
-      const names: Record<string, string> = {
-        'chicago-author-date': tr('Chicago auteur–date'),
-        apa: 'APA',
-        ieee: tr('IEEE (numérique)'),
-      }
-      for (const value of allowed) select.add(new Option(names[value] || value, value))
-    }
-    const current = String(settingsFor(provider).metadata.fields[descriptor.style])
-    select.value = allowed.includes(current) ? current : allowed[0] || ''
     styleBinding.refresh()
+    styleBinding.select.disabled ||= busy
     const files = referenceFiles(provider)
     for (const child of [...rows.children])
       if (!files.some((file) => file.id === (child as HTMLElement).dataset.fileId)) child.remove()
