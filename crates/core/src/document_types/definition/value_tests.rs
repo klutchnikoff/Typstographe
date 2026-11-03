@@ -7,8 +7,9 @@ use serde_json::{Value, json};
 
 fn sample() -> (LoadedDefinition, Value) {
     let source = include_str!("../../../../../docs/proposals/b1/article-authorship.yaml")
-        .replace("id: article\n", "id: custom-document\n");
+        .replace("id: article", "id: custom-document");
     let loaded = load_yaml(&source).unwrap();
+    assert_eq!(loaded.definition().id, "custom-document");
     let mut author = loaded.record_defaults("authors").unwrap();
     author.extend([
         (String::from("id"), json!("alice")),

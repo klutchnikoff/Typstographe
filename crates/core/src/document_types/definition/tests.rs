@@ -82,6 +82,13 @@ fn source_errors_keep_locations_and_reject_multiple_documents() {
 }
 
 #[test]
+fn yaml_declarations_have_the_same_meaning_with_lf_and_crlf() {
+    let lf = FIXTURE.replace("\r\n", "\n");
+    let crlf = lf.replace('\n', "\r\n");
+    assert_eq!(load_yaml(&lf).unwrap(), load_yaml(&crlf).unwrap());
+}
+
+#[test]
 fn duplicate_yaml_keys_cannot_override_any_declaration_level() {
     for text in [
         format!("{FIXTURE}\nid: another\n"),

@@ -2,5 +2,8 @@
 *.typ text eol=lf
 # Prettier utilise LF ; garder les sources web identiques lors du checkout Windows.
 app/** text=auto eol=lf
+# Les contrats de types et leurs fixtures sont des entrées de compilation/test.
+crates/core/types/** text=auto eol=lf
+docs/proposals/b1/*.yaml text eol=lf
 # Préserver les octets des paquets amont, y compris leurs fins de ligne.
 templates/packages/** -text
