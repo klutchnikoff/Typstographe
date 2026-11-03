@@ -46,12 +46,6 @@ pub(super) fn main(loaded: &LoadedDefinition, raw: &Value, options: &DocumentOpt
         };
         source.push_str(&format!("  {}: {text},\n", binding.parameter()));
     }
-    if let Some(signature) = &def.signature {
-        let value = raw["signature"]
-            .as_str()
-            .map_or_else(|| "none".into(), typst_string);
-        source.push_str(&format!("  {}: {value},\n", signature.parameter));
-    }
     source.push_str(&format!(
         "  options: (paper: {}, landscape: {}, language: {}, bullet-marker: {}),\n)\n#include \"contenu.typ\"\n",
         typst_string(options.paper.expect("resolved paper").typst_name()),options.landscape.expect("resolved orientation"),typst_string(options.language.code()),
@@ -74,6 +68,9 @@ fn render(field: &Field, value: &Value) -> String {
                 .map(|v| format!("{},", typst_string(v.as_str().expect("typed string"))))
                 .collect::<String>();
             format!("({text})")
+        }
+        Field::ResourceReference { .. } => {
+            value.as_str().map_or_else(|| "none".into(), typst_string)
         }
         Field::Date { .. } => {
             serde_json::from_value::<Option<crate::dates::DateValue>>(value.clone())

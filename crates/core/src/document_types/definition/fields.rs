@@ -62,6 +62,13 @@ fields! {
         #[serde(default)]
         default: Option<crate::dates::DateValue>,
     },
+    ResourceReference {
+        resource_kind: crate::resources::ResourceKind,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        profile_default: Option<crate::resources::ProfileDefault>,
+        #[serde(default)]
+        default: Option<crate::resources::ResourceReference>,
+    },
     Boolean {
         #[serde(default)]
         default: bool,

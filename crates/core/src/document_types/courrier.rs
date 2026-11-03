@@ -12,7 +12,7 @@ pub struct Metadata {
     pub organisme: String,
     pub adresse_expediteur: String,
     pub telephone: String,
-    pub signature: Option<String>,
+    pub signature: Option<crate::resources::ResourceReference>,
     pub destinataire: String,
     pub adresse: String,
     pub objet: String,
@@ -307,7 +307,7 @@ mod tests {
         let custom = format!(
             r#"
 #let decoration-interne(body) = block(width: 100%, inset: 8pt, stroke: 0.5pt)[#body]
-#let courrier({arguments}, signature: none, options: (paper: "a4", landscape: false, language: "fr"), body) = {{
+#let courrier({arguments}, options: (paper: "a4", landscape: false, language: "fr"), body) = {{
   set page(paper: options.paper, flipped: options.landscape)
   set text(lang: options.language)
   decoration-interne[#text(weight: "bold")[#objet] #body]
@@ -365,9 +365,16 @@ mod tests {
                 1,
                 "each metadata field has exactly one editing location"
             );
-            if field.kind == super::super::FieldKind::Date {
+            if matches!(
+                field.kind,
+                super::super::FieldKind::Date | super::super::FieldKind::ResourceReference
+            ) {
                 assert!(field.value.is_null());
-                assert!(metadata.main_source().contains("date: none"));
+                assert!(
+                    metadata
+                        .main_source()
+                        .contains(&format!("{}: none", field.parameter))
+                );
                 continue;
             }
             let DocumentMetadata::Courrier(fields) = &mut metadata else {

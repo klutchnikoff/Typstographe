@@ -85,7 +85,7 @@ pub fn zones(state: &State) -> Vec<Zone> {
     let mut out = vec![];
     walk(&state.document, &mut vec![], &TreeRoot::Body, &mut out);
     for field in state.settings.metadata.field_values() {
-        if field.presentation.is_some() {
+        if field.presentation.is_some() || field.resource.is_some() {
             continue;
         }
         if let Some(text) = field.value.as_str() {

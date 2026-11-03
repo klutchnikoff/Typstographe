@@ -14,7 +14,12 @@ impl LoadedDefinition {
         let mut generator = schemars::SchemaGenerator::default();
         let rich = generator.subschema_for::<crate::content::editorial::RichText>();
         let date = generator.subschema_for::<Option<crate::dates::DateValue>>();
+        let resource = generator.subschema_for::<Option<crate::resources::ResourceReference>>();
         let mut definitions = generator.take_definitions(false);
+        definitions.insert(
+            "ResourceReferenceOrNull".into(),
+            serde_json::to_value(resource).expect("resource schema"),
+        );
         definitions.insert(
             "DateValueOrNull".into(),
             serde_json::to_value(date).expect("date schema"),
@@ -107,6 +112,7 @@ fn field_properties(fields: &[Field]) -> Map<String, Value> {
                         r"^[^\u0000-\u0009\u000b-\u001f\u007f-\u009f]*$"
                     } else { r"^[^\u0000-\u001f\u007f-\u009f]*$" }
                 }),
+                Field::ResourceReference { resource_kind, profile_default, .. } => json!({"$ref":"#/$defs/ResourceReferenceOrNull", "x-resource-kind":resource_kind, "x-profile-default":profile_default}),
                 Field::Date { .. } => json!({"$ref":"#/$defs/DateValueOrNull"}),
                 Field::Boolean { .. } => json!({"type":"boolean"}),
                 Field::Choice { choices, .. } => json!({"type":"string","enum":choices}),

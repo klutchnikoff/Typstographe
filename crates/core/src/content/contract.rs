@@ -155,16 +155,11 @@ impl State {
         )?;
         crate::bibliography::validate_document(&self.document, &self.settings.metadata)
             .map_err(|reason| Error::InvalidDocument { reason })?;
-        if self
-            .settings
-            .metadata
-            .signature_path()
-            .is_some_and(|path| !assets.contains_key(path))
-        {
-            return Err(Error::InvalidDocument {
-                reason: "missing_signature".into(),
-            });
-        }
+        crate::resources::validate_references(&self.settings.metadata, assets).map_err(
+            |error| Error::InvalidDocument {
+                reason: format!("missing_resource: {error:?}"),
+            },
+        )?;
         source(&self.document, assets).map_err(|reason| Error::InvalidDocument { reason })
     }
 }

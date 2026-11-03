@@ -205,12 +205,16 @@ pub fn create(
         .map_err(CommandError::localized_content)?;
     session.lifecycle(revision)?;
     let mut assets = typstographe_core::assets::Assets::default();
-    if let Some(signature) = settings.metadata.signature_path() {
-        let resource = resources
-            .iter()
-            .find(|r| r.path == signature)
-            .ok_or("Signature absente des ressources.")?;
-        assets.insert(signature.into(), resource.decoded()?.into());
+    for path in settings.metadata.resource_paths() {
+        let resource = resources.iter().find(|r| r.path == path).ok_or_else(|| {
+            CommandError::localized_core(
+                typstographe_core::errors::StorageError::ImageResourceMissing {
+                    path: path.clone(),
+                }
+                .into(),
+            )
+        })?;
+        assets.insert(path, resource.decoded()?.into());
     }
     let document: typstographe_core::content::Node =
         serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph"}]}))

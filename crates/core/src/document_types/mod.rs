@@ -102,11 +102,13 @@ impl Metadata {
             Self::CompteRendu(meta) => &meta.options,
         }
     }
-    pub fn signature_path(&self) -> Option<&str> {
-        match self {
-            Self::Courrier(meta) => meta.signature.as_deref(),
-            Self::CompteRendu(_) | Self::Article(_) => None,
-        }
+    /// All declared resource fields participate in validation, retention and exports.
+    pub fn resource_paths(&self) -> Vec<String> {
+        self.field_values()
+            .into_iter()
+            .filter(|f| f.kind == FieldKind::ResourceReference)
+            .filter_map(|f| f.value.as_str().map(str::to_owned))
+            .collect()
     }
     pub fn options_mut(&mut self) -> &mut DocumentOptions {
         match self {
@@ -191,6 +193,8 @@ pub struct FieldSection {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FieldKind {
+    #[serde(rename = "resource-reference")]
+    ResourceReference,
     Records,
     Text,
     Date,

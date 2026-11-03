@@ -125,6 +125,10 @@ fn set_field(
     let (map, key, before, kind) = targets::field(doc, &doc.transact(), state, target)?;
     let valid = match kind.as_str() {
         "text" | "multiline" | "source" | "language" | "choice" => value.is_string(),
+        "resource-reference" => {
+            serde_json::from_value::<Option<crate::resources::ResourceReference>>(value.clone())
+                .is_ok()
+        }
         "date" => serde_json::from_value::<Option<crate::dates::DateValue>>(value.clone()).is_ok(),
         "boolean" => value.is_boolean(),
         "tokens" | "references" => value
@@ -392,9 +396,7 @@ fn format(
 }
 pub(super) fn apply(doc: &Doc, state: &State, command: &Command) -> Result<(), Error> {
     match command {
-        Command::SetModel { .. } | Command::SetSignature { .. } => {
-            super::settings::apply(doc, state, command)
-        }
+        Command::SetModel { .. } => super::settings::apply(doc, state, command),
         Command::AddResource { .. } => {
             unreachable!("resource commands are prepared with their private assets")
         }

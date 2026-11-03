@@ -308,7 +308,7 @@ pub fn retained_assets_for_paths(
     if assets.is_empty() {
         return Ok(assets.clone());
     }
-    required.extend(metadata.signature_path().map(str::to_owned));
+    required.extend(metadata.resource_paths());
     fn declared_paths(
         node: &typst_syntax::SyntaxNode,
         required: &mut std::collections::BTreeSet<String>,

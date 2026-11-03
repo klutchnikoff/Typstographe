@@ -32,8 +32,6 @@ pub struct Definition {
     pub order: AssemblyOrder,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings_heading_key: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub signature: Option<Signature>,
     #[serde(default)]
     pub export_requirements: Vec<ExportRequirement>,
     #[serde(default)]
@@ -219,13 +217,6 @@ pub enum SectionLayout {
     Compact,
     Inline,
     Editorial,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct Signature {
-    pub tab: String,
-    pub parameter: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

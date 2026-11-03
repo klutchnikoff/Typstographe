@@ -164,8 +164,11 @@ mod tests {
             Command::AddResource {
                 resource: resource.clone(),
             },
-            Command::SetSignature {
-                path: Some(resource.path.clone()),
+            Command::SetField {
+                target: typstographe_core::content::commands::FieldTarget::Metadata {
+                    field: typstographe_core::document_types::MetadataField::SenderSignature,
+                },
+                value: serde_json::json!(resource.path.clone()),
             },
         ];
         assert_eq!(
@@ -201,6 +204,15 @@ mod tests {
             .unwrap()
             .state()
             .unwrap();
-        assert!(state.settings.metadata.signature_path().is_none());
+        assert!(
+            state
+                .settings
+                .metadata
+                .resource_paths()
+                .into_iter()
+                .next()
+                .as_deref()
+                .is_none()
+        );
     }
 }

@@ -175,10 +175,6 @@ mod tests {
                     original["required_for_export"]
                 );
             }
-            assert_eq!(
-                view["structured"]["signature"].is_object(),
-                definition.signature.is_some()
-            );
         }
     }
 

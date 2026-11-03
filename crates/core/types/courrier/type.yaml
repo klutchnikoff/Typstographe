@@ -51,9 +51,11 @@ fields:
 - id: letter.date
   kind: date
   label-key: field-date
-signature:
-  tab: sender
-  parameter: signature
+- id: sender.signature
+  kind: resource-reference
+  resource-kind: image
+  profile-default: signature
+  label-key: web-document-signature
 capabilities:
 - block.paragraph
 - block.heading_1
@@ -98,6 +100,8 @@ bindings:
   typst-parameter: lieu
 - field: letter.date
   typst-parameter: date
+- field: sender.signature
+  typst-parameter: signature
 header:
   tabs:
   - id: sender
@@ -123,6 +127,11 @@ header:
       - sender.department
       - sender.role
       layout: compact
+    - id: signature
+      label-key: web-document-signature
+      fields:
+      - sender.signature
+      layout: editorial
   - id: header
     label-key: group-editorial-header
     view: form

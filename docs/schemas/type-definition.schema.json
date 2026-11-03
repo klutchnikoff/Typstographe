@@ -386,6 +386,80 @@
               ]
             },
             "default": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ResourceReference"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "resource-reference",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "profile-default": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ProfileDefault"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "resource-kind": {
+              "$ref": "#/$defs/ResourceKind"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key",
+            "resource-kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
               "default": false,
               "type": "boolean"
             },
@@ -816,10 +890,28 @@
       ],
       "type": "string"
     },
+    "ProfileDefault": {
+      "enum": [
+        "signature"
+      ],
+      "type": "string"
+    },
     "ReferenceRemoval": {
       "enum": [
         "restrict"
       ],
+      "type": "string"
+    },
+    "ResourceKind": {
+      "enum": [
+        "image"
+      ],
+      "type": "string"
+    },
+    "ResourceReference": {
+      "description": "Logical project path, serialized as a string; bytes belong to the immutable pool.",
+      "maxLength": 128,
+      "pattern": "^images/[A-Za-z0-9_-]+\\.(png|jpg|svg)$",
       "type": "string"
     },
     "RichProfile": {
@@ -863,22 +955,6 @@
         "editorial"
       ],
       "type": "string"
-    },
-    "Signature": {
-      "additionalProperties": false,
-      "properties": {
-        "parameter": {
-          "type": "string"
-        },
-        "tab": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "tab",
-        "parameter"
-      ],
-      "type": "object"
     },
     "Tab": {
       "oneOf": [
@@ -1058,16 +1134,6 @@
       "type": [
         "string",
         "null"
-      ]
-    },
-    "signature": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/Signature"
-        },
-        {
-          "type": "null"
-        }
       ]
     },
     "structures": {

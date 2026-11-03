@@ -44,7 +44,6 @@ Resource data is base64 in `resource.add`; models use their pure Typst source in
 | `document.save` | session | Save the current project under its existing lock, checking external changes. |
 | `document.save_as` | session | Save an independent copy; existing targets are refused. |
 | `document.set_model` | edit | Set model_id, full pure Typst source and YAML manifest together. Every option regime and supported language is validated. Retained choices survive model switches; metadata.get reports effective values and substitutions. |
-| `document.set_signature` | edit | Typed structured document operation; discover targets and parameters in params_schema. |
 | `document.source` | query | Read generated Typst without changing the source of truth. |
 | `document.statistics` | query | Count Unicode words and signs in the body and optional target. |
 | `document.structure` | query | Read trees and all typed text zones; paths are revision-relative, offsets UTF-16. |

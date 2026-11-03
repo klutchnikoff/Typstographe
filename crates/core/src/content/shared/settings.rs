@@ -1,4 +1,4 @@
-//! Options, signature and model changes preserve all existing shared branches.
+//! Options and model changes preserve all existing shared branches.
 use super::{projection, records};
 use crate::{
     assets::Assets,
@@ -99,26 +99,6 @@ pub(super) fn set_option(
 }
 pub(super) fn apply(doc: &Doc, state: &State, command: &Command) -> Result<(), Error> {
     match command {
-        Command::SetSignature { path } => {
-            if state
-                .settings
-                .metadata
-                .document_type()
-                .definition()
-                .definition()
-                .signature
-                .is_none()
-            {
-                return Err(parameter("signature"));
-            }
-            if path.as_ref().is_some_and(|p| !crate::assets::valid_path(p)) {
-                return Err(parameter("path"));
-            }
-            if state.settings.metadata.signature_path() == path.as_deref() {
-                return Ok(());
-            }
-            set(doc, "signature", &json!(path));
-        }
         Command::SetModel {
             model_id,
             source,

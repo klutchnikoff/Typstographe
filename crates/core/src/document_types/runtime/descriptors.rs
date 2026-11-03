@@ -18,7 +18,9 @@ pub(super) fn build(loaded: &LoadedDefinition) -> (Vec<RootField>, Vec<FieldGrou
                             ..
                         }
                     ),
-                    if matches!(f, Field::Date { .. }) {
+                    if matches!(f, Field::ResourceReference { .. }) {
+                        FieldKind::ResourceReference
+                    } else if matches!(f, Field::Date { .. }) {
                         FieldKind::Date
                     } else if matches!(f, Field::Text { .. } | Field::Choice { .. }) {
                         FieldKind::Text
@@ -59,6 +61,25 @@ pub(super) fn build(loaded: &LoadedDefinition) -> (Vec<RootField>, Vec<FieldGrou
             .map_or("general", |tab| tab.id());
         fields.push(RootField {
             public: serde_json::from_value(json!(id)).expect("registered metadata identity"),
+            resource: def
+                .fields
+                .iter()
+                .find(|f| f.id() == binding.source())
+                .and_then(|f| {
+                    if let Field::ResourceReference {
+                        resource_kind,
+                        profile_default,
+                        ..
+                    } = f
+                    {
+                        Some(crate::resources::ResourceDescriptor {
+                            kind: *resource_kind,
+                            profile_default: *profile_default,
+                        })
+                    } else {
+                        None
+                    }
+                }),
             presentation: def
                 .fields
                 .iter()
@@ -100,7 +121,7 @@ pub(super) fn build(loaded: &LoadedDefinition) -> (Vec<RootField>, Vec<FieldGrou
             },
         })
         .collect();
-    let structured = if def.collections.is_empty() && def.signature.is_none() {
+    let structured = if def.collections.is_empty() {
         None
     } else {
         Some(structured(loaded))
@@ -194,9 +215,6 @@ fn structured(loaded: &LoadedDefinition) -> Value {
             result["outline"] = json!({"parameter":binding.metadata_key(),"field":field.id()});
         }
     }
-    if let Some(signature) = &def.signature {
-        result["signature"] = json!({"tab":signature.tab});
-    }
     result
 }
 fn record_field(field: &Field) -> Value {
@@ -205,6 +223,7 @@ fn record_field(field: &Field) -> Value {
             multiline: true, ..
         } => "multiline",
         Field::Text { .. } => "text",
+        Field::ResourceReference { .. } => "resource-reference",
         Field::Date { .. } => "date",
         Field::Boolean { .. } => "boolean",
         Field::Choice { .. } => "choice",

@@ -24,6 +24,7 @@ pub(super) struct RootField {
     pub multiline: bool,
     pub kind: FieldKind,
     pub required_for_export: bool,
+    pub resource: Option<crate::resources::ResourceDescriptor>,
 }
 
 pub(super) fn get(kind: DocumentType) -> &'static Runtime {
@@ -100,9 +101,6 @@ pub(super) fn initial_fields(loaded: &LoadedDefinition, options: &DocumentOption
         );
     }
     raw.insert("options".into(), json!(options));
-    if loaded.definition().signature.is_some() {
-        raw.insert("signature".into(), Value::Null);
-    }
     Value::Object(raw)
 }
 
@@ -124,6 +122,7 @@ pub(super) fn fields(kind: DocumentType, raw: &Value) -> Vec<FieldValue> {
         .map(|f| FieldValue {
             field: f.public,
             presentation: f.presentation,
+            resource: f.resource,
             value: raw[&f.parameter].clone(),
             parameter: &f.parameter,
             group: &f.group,

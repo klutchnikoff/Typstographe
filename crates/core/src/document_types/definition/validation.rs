@@ -141,9 +141,9 @@ impl Check {
                     );
                 }
             }
-            if record && matches!(field, Field::Date { .. }) {
+            if record && matches!(field, Field::Date { .. } | Field::ResourceReference { .. }) {
                 self.issue(DiagnosticCode::UnsupportedPolicy, &at,
-                    "date fields are supported in root forms; record date controls are not registered yet");
+                    "date/resource fields are supported in root forms; their record controls are not registered yet");
             }
             if record && field.id() == "id" {
                 self.issue(
@@ -183,6 +183,12 @@ impl Check {
                             "choices must be distinct and contain the default",
                         );
                     }
+                }
+                Field::ResourceReference {
+                    default: Some(_), ..
+                } => {
+                    self.issue(DiagnosticCode::InvalidDefault, format!("{at}/default"),
+                        "resource defaults must be null; profile initialization is explicit in the host");
                 }
                 Field::Date {
                     default: Some(value),
@@ -647,33 +653,6 @@ fn check_views(definition: &Definition, check: &mut Check) {
 fn check_registered(definition: &Definition, check: &mut Check) {
     if let Some(key) = &definition.settings_heading_key {
         check.name(key, "/settings-heading-key");
-    }
-    if let Some(signature) = &definition.signature {
-        if !definition
-            .header
-            .tabs
-            .iter()
-            .any(|t| t.id() == signature.tab && matches!(t, Tab::Form { .. }))
-        {
-            check.issue(
-                DiagnosticCode::UnknownReference,
-                "/signature/tab",
-                &signature.tab,
-            );
-        }
-        if !typst_identifier(&signature.parameter)
-            || signature.parameter == "options"
-            || definition
-                .bindings
-                .iter()
-                .any(|b| b.parameter() == signature.parameter || b.metadata_key() == "signature")
-        {
-            check.issue(
-                DiagnosticCode::InvalidIdentifier,
-                "/signature/parameter",
-                &signature.parameter,
-            );
-        }
     }
     for (i, requirement) in definition.export_requirements.iter().enumerate() {
         let super::ExportRequirement::PrimaryLanguage {

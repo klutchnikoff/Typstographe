@@ -507,3 +507,35 @@ fn unregistered_record_date_controls_are_refused_instead_of_falling_back_to_text
         "/collections/1/fields/0",
     );
 }
+
+#[test]
+fn image_reference_fields_are_generic_nullable_and_export_requirements_do_not_block_drafts() {
+    let field = json!({"id":"logo","kind":"resource-reference","resource-kind":"image","label-key":"logo", "required-for-export":true,"profile-default":"signature"});
+    let value = scalar_fixture(json!([field]));
+    let loaded = load(&value).unwrap();
+    let schema = loaded.values_schema();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    for image in [json!(null), json!("images/logo.svg")] {
+        let values = json!({"logo":image});
+        loaded.validate_values(&values).unwrap();
+        assert!(validator.is_valid(&values));
+    }
+    let defaults = Value::Object(loaded.defaults());
+    assert_eq!(defaults["logo"], Value::Null);
+    assert!(
+        !loaded
+            .export_diagnostics(&defaults, crate::document::DocumentLanguage::French)
+            .is_empty()
+    );
+    for image in [json!("/tmp/x.png"), json!("images/x.pdf"), json!(true)] {
+        let values = json!({"logo":image});
+        assert!(loaded.validate_values(&values).is_err());
+        assert!(!validator.is_valid(&values));
+    }
+    let mut invalid_default = value.clone();
+    invalid_default["fields"][0]["default"] = json!("images/logo.svg");
+    assert!(load(&invalid_default).is_err());
+    let mut unknown = value;
+    unknown["fields"][0]["resource-kind"] = json!("executable");
+    assert!(load(&unknown).is_err());
+}

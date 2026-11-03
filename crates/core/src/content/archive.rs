@@ -71,21 +71,9 @@ impl Archive {
         self.metadata.validate().map_err(Error::document)?;
         crate::bibliography::validate_document(&self.document, &self.metadata)
             .map_err(Error::document)?;
-        for (path, data) in &self.assets {
-            if !crate::assets::valid_path(path) {
-                return Err(StorageError::UnexpectedEntry { name: path.clone() }.into());
-            }
-            crate::assets::decode(data, path.rsplit('.').next().unwrap_or(""))
-                .map_err(CoreError::from)?;
-        }
-        if let Some(signature) = self.metadata.signature_path()
-            && !self.assets.contains_key(signature)
-        {
-            return Err(StorageError::ImageResourceMissing {
-                path: signature.into(),
-            }
-            .into());
-        }
+        crate::resources::validate_pool(&self.assets)?;
+        crate::resources::validate_references(&self.metadata, &self.assets)
+            .map_err(CoreError::from)?;
         let source = source(&self.document, &self.assets).map_err(Error::document)?;
         let state = self.state();
         state.settings.validate()?;
