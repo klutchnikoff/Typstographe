@@ -4,8 +4,8 @@ Révisée le **3 novembre 2026**. Objectif : transformer le prototype validé en
 application de rédaction utilisable au quotidien, pour l’administration,
 l’enseignement et la recherche en sciences humaines et sociales.
 
-Cette feuille de route ne contient que le travail restant. Les réalisations,
-mesures et décisions historiques restent dans Git et les bilans de docs/.
+Cette feuille distingue le socle livré des travaux restants. Les réalisations
+détaillées, mesures et décisions historiques restent dans Git et les bilans de docs/.
 Le [plan technique](ROADMAP-ARCHITECTURE.md) précise les dépendances et les
 conditions de sortie ; il ne constitue pas une seconde liste de fonctionnalités.
 
@@ -89,6 +89,13 @@ candidat sur les trois systèmes reste distincte des résultats macOS locaux.
 Le socle ne constitue pas encore un outil de rédaction complet : les lots
 ci-dessous portent les fonctionnalités restantes et leurs arbitrages.
 
+B.1 est clôturé après relecture le 3 novembre 2026 ; le
+[bilan de clôture](docs/b1-closure-results.md) rassemble les critères acquis,
+les contrats, les preuves et les limites. Déclarations de types, `authorship`,
+options de modèles, dates et références d’images sont raccordés aux adaptateurs.
+Courrier et Article sont créables ; le Compte-rendu reste un contrat interne
+sans modèle fourni. Le chantier B continue pour les autres types.
+
 ## B — Définir les types utiles et leurs contrats
 
 Le [catalogue validé et les fiches par type](docs/document-type-catalogue.md)
@@ -135,175 +142,23 @@ ils ne sont pas diffusés ni sauvegardés avant confirmation. La
 [décision détaillée](docs/types-modeles-libertes.md#interface-de-len-tête--décision-du-27-octobre-2026)
 et le [contrat Article](docs/article-contract.md) servent de référence.
 
-### B.1 — Formaliser les structures réutilisables et leur définition déclarative
+### Extensions des contrats — différées
 
-**Orientation retenue le 3 novembre 2026 :** une définition déclarative compose
-des **structures d’en-tête** et des **capacités documentaires** déjà prises en
-charge par l’application. Le travail principal consiste à définir ce vocabulaire
-et ses contrats, avant de migrer les types existants. Un fichier de description
-ne peut pas créer à lui seul un nouveau comportement d’édition.
+B.1 est clôturé. Les extensions suivantes restent à examiner selon les besoins,
+sans retarder le prochain lot C.1 :
 
-- Formaliser les structures proposées : champs simples, collections ordonnées,
-  références entre collections, ensembles multilingues, zones de texte riche
-  avec profil et références de ressources. Décrire données, validations,
-  dépendances, opérations autorisées et présentation commune.
-- Éprouver cette frontière avec les auteurs et affiliations de l’Article :
-  affiliations en texte libre, identifiants stables, références des auteurs,
-  réordonnancement et règles de suppression. Une nouvelle structure ou capacité
-  nécessitant un comportement inédit reste un développement du moteur et de
-  l’éditeur ; les types pourront ensuite la réutiliser sans le recopier.
-- Retenir **YAML comme format de rédaction**, dans un **répertoire par type**,
-  avec un fichier principal `type.yaml` et des ressources séparées lorsque cela
-  est utile (traductions Fluent, documentation). Les modèles restent des paquets
-  Typst distincts. Valider l’arborescence exacte sur un exemple avant migration.
-- Réutiliser **Serde** pour charger un contrat typé en Rust et **JSON Schema**
-  pour sa description et sa validation structurelle. JSON reste un format
-  d’échange pour les interfaces et les outils. YAML, TOML et JSON ne définissent
-  pas les règles métier : celles-ci appartiennent au contrat commun du moteur.
+- Types installables, codecs de données arbitraires et personnalisation des
+  fragments partagés : les identités et comportements restent intégrés ;
+  modifier une déclaration livrée demande une reconstruction.
+- Paramètres entièrement propres à un modèle : étendre les régimes et contrôles
+  communs après validation dans D.
+- Dates ou ressources en collections, nouveaux genres de ressources et précision
+  calendaire supplémentaire : valider leurs contrôles avant d’étendre le
+  vocabulaire ; les formes non prises en charge sont refusées.
 
-**Sortie B.1 :** inventaire des structures et capacités exposées, exemple
-déclaratif auteurs/affiliations et schéma associé, puis validation commune des
-choix principaux avant l’implémentation. Le chargement de types externes n’est
-pas un prérequis : commencer par les types fournis avec l’application.
-
-L’[inventaire et le premier contrat à discuter](docs/b1-type-contracts.md)
-préparent cette validation. Inclure dans B.1 les contrats des cibles de renvois,
-des formules et de la bibliothèque bibliographique ; leur développement suit
-les lots C.1 à C.4 ci-dessous et ne bloque pas la préparation du format déclaratif.
-
-**Raccordement B.1 implémenté :** [contrats YAML intégrés et adaptateurs](docs/type-definitions.md)
-pour Courrier, Article et le contrat interne Compte-rendu. Champs, collections,
-onglets, capacités, défauts, validations et liaisons Typst dérivent des déclarations
-communes ; les listes Rust manuelles correspondantes sont retirées. Les parcours
-Courrier/Article sont vérifiés entre Tauri, CLI et MCP ; les sources et le fichier
-de travail sont conservés. Les options, dates structurées et références de
-ressources communes sont décrites ci-dessous.
-Les codecs de valeurs restent typés en Rust ; le chargeur n’installe pas de nouveaux types externes.
-
-**Mutualisation validée le 3 novembre 2026 :** un catalogue de structures
-d’en-tête réutilisables permet leur sélection par raccourci dans un type.
-Commencer par `authorship`, qui possède auteurs, affiliations, relations,
-validations, cartes/modales, onglets et liaisons Typst. Le chargeur développe
-le raccourci vers le contrat commun complet avant sa validation ; Tauri, CLI
-et MCP utilisent ce même résultat. Les structures sont réutilisées à l’identique.
-Le type choisit leur présence et l’ordre des onglets ; quelques paramètres
-ciblés pourront être discutés ultérieurement selon les besoins. Les modèles
-gardent la présentation Typst.
-
-**Mutualisation implémentée :** `crates/core/structures/authorship.yaml` est
-sélectionné par l’Article avec `structures: [authorship]`. Les codecs partagés
-sont dans `document_types::authorship`. Un ordre explicite complet place les
-membres résolus ; collisions et redéfinitions sont refusées. Le
-[contrat détaillé](docs/type-definitions.md#structures-den-tête-réutilisables)
-décrit cette composition, sans changement des données ni du contrat Article résolu.
-
-
-**Options de modèles — décisions validées le 3 novembre 2026 :**
-
-- Un manifeste `model.yaml` accompagne le Typst pur, dans le projet autonome ;
-  il remplace `editor-options`, sans seconde autorité pour les politiques.
-- Le contrat commun définit les genres et valeurs valides. Le modèle déclare
-  chaque option de présentation disponible : libre avec défaut, restreinte avec
-  liste non vide et défaut autorisé, ou imposée avec valeur valide. Les
-  manifestes inconnus, incomplets ou contradictoires sont refusés.
-- Une absence de choix explicite signifie « Selon le modèle ». Un choix
-  autorisé s’applique ; un choix exclu est conservé et utilise le défaut avec
-  avertissement ; une valeur imposée n’écrase jamais le choix conservé.
-- Les contrôles imposés sont masqués. Les interfaces documentaires exposent
-  choix conservé, valeur effective, régime et domaine autorisé ; une nouvelle
-  édition interdite par le modèle actif est refusée dans le moteur commun.
-- La langue documentaire reste celle de l’auteur. Le manifeste déclare les
-  langues prises en charge ; un modèle incompatible est signalé et refusé,
-  sans changement implicite de langue ni conversion du contenu.
-- Premier périmètre : format, orientation, marqueur de puces, style de citation
-  et sommaire. Les options entièrement propres à un modèle sont différées.
-  Calcul effectif unique pour Tauri, CLI, MCP, aperçu, stockage et exports ;
-  recette brouillon → modèle contraint → brouillon, avec annulation et réouverture.
-
-**Régimes implémentés :** [contrat et recette des options de modèles](docs/model-options.md).
-Manifeste YAML embarqué, choix explicites facultatifs, résolution commune,
-contrôles génériques et exposition Tauri/CLI/MCP pour format, orientation,
-puces, style bibliographique et sommaire. La langue documentaire n’est jamais
-substituée ; les modèles incompatibles sont refusés. Les paramètres propres à
-un modèle restent différés ; les références d’images sont raccordées ci-dessous.
-
-**Dates structurées — décisions validées le 3 novembre 2026 :**
-
-- Genre commun `date` : absence `null`, date grégorienne complète
-  `{kind: calendar, iso: "2026-11-03"}` ou texte personnalisé
-  `{kind: custom, text: "Début novembre 2026"}`. Aucune déduction depuis
-  une chaîne, aucune conversion silencieuse d’une date impossible ; les dates
-  partielles et intervalles restent du texte personnalisé.
-- « Aujourd’hui » insère la date locale fixe fournie par l’adaptateur. La
-  corbeille permet toujours l’absence, même si l’export exige une date.
-  Le cœur et Typst ne consultent jamais l’horloge pour cette valeur.
-- Contrôle commun compact avec modes Date/Texte personnalisé, navigation,
-  préédition IME et conservation des saisies refusées/récupérables communes.
-  Changer de mode ne supprime pas la valeur confirmée avant la nouvelle saisie.
-- Transmission Typst native : `none`, `datetime` ou chaîne échappée.
-  `format-date` reste le wrapper de Datify ; le modèle choisit `long` (défaut),
-  `short` ou `iso`, selon la langue documentaire, sans nouveau réglage utilisateur.
-- Dans le courrier, « le/Le » appartient au modèle et concerne uniquement une
-  date calendaire. Un texte personnalisé reste littéral ; le lieu et la ponctuation
-  relèvent de la composition Typst. Pas de rétrocompatibilité expérimentale ;
-  préserver les fichiers locaux et régénérer seulement les exemples versionnés.
-
-**Dates structurées implémentées :** [contrat commun et recette](docs/structured-dates.md).
-Genre YAML `date`, valeurs typées strictes, contrôle compact commun, brouillons
-refusés/récupérables, annulation et commandes Tauri/CLI/MCP. Transmission native
-`none`/`datetime`/texte et wrapper Datify avec formats choisis par le modèle.
-Le courrier réserve le préfixe de date aux valeurs calendaires. Format CAS 13,
-générateur 4 ; les références d’images communes sont raccordées dans le lot suivant.
-
-**Ressources communes — décisions validées le 3 novembre 2026 :**
-
-- Premier périmètre : références d’images (PNG, JPEG, SVG), en commençant par
-  la signature du courrier. Réutiliser le stockage, le décodeur et les lots
-  atomiques actuels ; bibliographie, polices et paquets gardent leurs contrats.
-- Champ déclarable facultatif : `null` ou référence typée vers un chemin logique
-  interne. Les octets sont incorporés au projet ; aucun chemin du disque de
-  l’utilisateur ne devient une dépendance. Genre, libellé, emplacement et
-  obligation éventuelle à l’export sont décrits par le type.
-- Contrôle commun : aperçu, choix, remplacement, suppression et, si déclaré,
-  retour à la signature des préférences. La création copie explicitement la
-  valeur et ses octets ; les changements du profil ne modifient aucun projet.
-- Import et affectation forment un lot atomique annulable. Remplacement immuable,
-  références absentes/incompatibles refusées ; annulation, brouillons privés et
-  snapshots protègent les octets nécessaires. Sauvegarde et export conservent
-  les ressources utiles à leurs états, y compris celles du modèle.
-- Tauri, CLI et MCP emploient le même champ et les mêmes validations, avec leurs
-  permissions respectives. Typst reçoit un chemin interne échappé ou `none` ;
-  présentation et place manuscrite sans signature restent définies par le modèle.
-- Migrer la signature entière vers cette brique, retirer les accès spécialisés
-  devenus inutiles et vérifier les garanties partagées avec les figures du corps.
-
-**Références de ressources implémentées :** [contrat commun et recette](docs/resource-references.md).
-La signature est un champ `resource-reference` ordinaire, avec type d’image et
-source de profil déclarés. Le contrôle, la création, `metadata.set`, la validation,
-la conservation et les exports suivent les champs déclarés. L’ancien bloc YAML
-`signature`, la commande dédiée et la clé partagée spéciale sont retirés.
-Les saisies refusées conservent leurs octets privés jusqu’à validation. Format
-CAS 14, générateur 4 inchangé ; préférences privées et projet restent distincts.
-Les nouveaux genres de fichiers, contrôles en collections et paramètres propres
-aux modèles restent des extensions à discuter avant leur implémentation.
-
-**Autres décisions à mettre en œuvre et arbitrages avant refonte :**
-
-- Détailler en B.1 la frontière entre composition déclarative et comportements
-  implémentés, puis le plan de migration des types intégrés actuels.
-- Étendre ultérieurement les régimes implémentés aux paramètres propres aux
-  modèles, avec identités, genres et contrôles communs ; conserver la séparation
-  entre options de présentation et contenu de l’auteur.
-- Étendre si nécessaire les dates structurées communes, en conservant Datify
-  et la composition dans le modèle Typst ; aucun formatage dans Fluent.
-- Listes d’enregistrements et champs facultatifs : préciser les genres et les
-  valeurs absentes. Pour les options de présentation, distinguer choix conservé
-  et valeur effective : un modèle imposé ne réécrit pas le choix ; une valeur
-  exclue utilise le défaut avec avertissement. Le retour au modèle précédent
-  retrouve le choix conservé lorsqu’il est de nouveau autorisé.
-
-**Sortie :** une fiche par type retenu et une matrice type/capacité/modèle,
-compréhensibles pour l’utilisateur, le créateur de modèles et les agents.
+**Suite du chantier B :** définir les prochains types et fournir une fiche et
+une matrice type/capacité/modèle, au rythme des besoins et des capacités livrées.
+Le Document libre et les nouveaux contrats de types restent à préciser.
 
 ## C — Compléter les capacités à partir des besoins des types
 
@@ -341,8 +196,9 @@ les primitives natives simples n’ont pas besoin d’un wrapper systématique.
 
 ### Lots validés le 3 novembre 2026 — après les contrats de B.1
 
-L’ordre retenu est **B.1 → C.1 → C.2 → C.3 → C.4**. Préparer les contrats en
-B.1, puis valider les choix détaillés et les interfaces avant de coder chaque
+B.1 est clôturé. L’ordre de réalisation validé est désormais
+**C.1 → C.2 → C.3 → C.4**, à partir des contrats préparatoires consignés en B.1.
+Valider ensemble les choix détaillés et les interfaces avant de coder chaque
 lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C.
 
 1. **C.1 — Labels et références croisées.** Cibles à identité stable pour titres,
@@ -406,7 +262,8 @@ vérifiés, avec la même disponibilité dans les interfaces qui exposent la cap
 - Vérifier les conventions typographiques et les langues sur des exemples réels ;
   garder leur composition dans Typst et les règles de modèles.
 
-**Choix à valider :** format des manifestes et des paquets, paramètres exposés,
+**Choix à valider :** format des paquets installables, extensions du manifeste
+`model.yaml` livré en B.1 et paramètres propres aux modèles,
 polices et licences d’incorporation, import, stockage et politique de mise à jour.
 
 **Accessibilité des exports :** viser PDF/UA-1, avec un profil PDF/A pour
@@ -712,12 +569,17 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 ## Prochain lot proposé
 
-1. Vérifier la qualification CI du candidat A.5, puis préciser ensemble le
-   prochain périmètre de types et capacités (**B/C**).
-2. Reprendre le périmètre administratif restant, un type à la fois,
-   avec un modèle utile et une recette représentative.
-3. Engager ACP après stabilisation du contrat documentaire et validation de sa
-   maquette (**F**), sans attendre la livraison de tous les types SHS/enseignement.
+**C.1 — Labels et références croisées**, après la clôture de B.1.
 
-Ce prochain lot est une proposition à discuter ; cette réécriture documentaire
-n’autorise pas à implémenter d’avance les choix encore ouverts.
+1. Valider ensemble les identités et labels lisibles, les formes de renvois,
+   les règles de copie/suppression des cibles utilisées et les paramètres
+   laissés aux modèles. Commencer par titres, images et tableaux.
+2. Maquetter le sélecteur et les badges avec les composants communs, préciser
+   clavier et cibles CLI/MCP, puis implémenter le lot après validation.
+3. Poursuivre dans l’ordre C.2, C.3, C.4 et compléter les types/modèles selon
+   leurs besoins. L’assistance ACP conserve son propre parcours de validation
+   et de maquette dans F ; elle n’attend pas tous les types SHS/enseignement.
+
+La qualification CI du candidat reste à consulter avant fusion. La clôture
+locale de B.1 ne vaut pas qualification multisystème ni autorisation d’implémenter
+les choix encore ouverts de C.1.
