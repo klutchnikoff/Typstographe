@@ -1,6 +1,6 @@
 # Plan technique de développement
 
-Révisé le **31 octobre 2026**. Ce document accompagne la [roadmap produit](ROADMAP.md)
+Révisé le **3 novembre 2026**. Ce document accompagne la [roadmap produit](ROADMAP.md)
 et ne conserve que les décisions à prendre et les travaux techniques restants.
 Les anciennes phases, leurs réalisations et leurs inventaires historiques sont
 dans les bilans de docs/ et l’historique Git.
@@ -78,9 +78,71 @@ sans écrasement ; un choix imposé reste temporaire tant que ce modèle est act
 Vérifier notamment brouillon → revue à style imposé → brouillon : les citations
 restent intactes et le choix initial redevient effectif s’il est autorisé.
 
-Décider avant implémentation :
+### B.1 — Contrats des structures d’en-tête et définition déclarative
 
-1. Types Rust ou définition déclarative ; migration et limites d’un type installable.
+**Orientation retenue le 3 novembre 2026 :** séparer les structures d’en-tête
+réutilisables, les capacités du corps et leur composition dans un type. La
+frontière des comportements exposés doit être formalisée avant de remplacer
+les déclarations Rust actuelles. Le format de fichier ne remplace pas ce travail.
+
+Pour chaque structure exposée, définir :
+
+- les données typées, valeurs absentes et défauts, identifiants et ordre ;
+- les validations structurelles et métier, les dépendances, les références
+  entre collections et le comportement des opérations (ajout, modification,
+  suppression, réordonnancement) ;
+- les profils des zones riches, les composants d’interface communs, leurs
+  interactions et les commandes partagées entre Tauri, CLI et MCP ;
+- la sérialisation vers le contrat Typst, sans injection de source par les
+  valeurs saisies et sans déplacer la présentation dans le type.
+
+Les premières briques à évaluer sont les champs simples, collections ordonnées,
+références entre collections, ensembles multilingues, zones riches à profils et
+références de ressources. Éprouver leur composition sur les auteurs et
+affiliations : texte officiel libre pour une affiliation, références par
+identifiants, auteurs sans affiliation possibles, règles explicites pour retirer
+une affiliation référencée. Distinguer les contraintes génériques réutilisables
+des règles métier implémentées dans le moteur ; ne pas construire un langage de
+programmation de validations ou d’interactions dans le manifeste.
+
+**Format de rédaction : YAML**, chargé avec Serde dans un contrat Rust typé,
+avec un **répertoire par type** et un fichier principal `type.yaml`. Traductions
+Fluent et documentation peuvent rester dans des fichiers séparés ; les modèles
+Typst restent distincts. L’arborescence exacte et la granularité des fichiers
+seront validées sur l’exemple, sans multiplier les fichiers par défaut. Commencer
+par les types livrés avec l’application ; le chargement de types externes reste
+un sujet distinct.
+
+Réutiliser une bibliothèque YAML maintenue compatible avec Serde ; évaluer
+`yaml_serde` avant de l’intégrer, sans ajouter `serde_yaml`, qui n’est plus
+maintenue. Fixer les conventions de lecture et les diagnostics (champs inconnus,
+clés dupliquées, références invalides), sans écrire de parseur spécifique.
+
+**JSON et JSON Schema** servent aux échanges, à la documentation du contrat et
+aux contrôles structurels, en réutilisant les outils déjà présents lorsque cela
+convient. Aucun de ces formats n’est intrinsèquement plus riche pour nos besoins :
+le vocabulaire du contrat détermine ce qui est exprimable. Les références
+`$ref` de JSON Schema relient des schémas ; elles ne vérifient pas les liens entre
+identifiants d’auteurs et d’affiliations. Les dépendances métier et la cohérence
+des éditions restent validées dans le moteur commun, pour tous les adaptateurs.
+
+**Sortie B.1 :** inventaire et contrats des structures/capacités, exemple YAML
+auteurs/affiliations et schéma associé, distinction explicite entre déclarations
+et comportements implémentés, puis validation commune avant migration. Vérifier
+ensuite cette frontière sur Courrier et Article avant de l’étendre aux prochains
+types. Une capacité inédite (par exemple les équations) peut demander du code
+moteur/éditeur ; sa disponibilité et ses paramètres seront ensuite déclarables.
+
+L’[inventaire B.1 et l’exemple déclaratif](docs/b1-type-contracts.md) constituent
+le premier support de validation, pas un nouveau contrat exécutable. Préparer
+aussi les contrats des cibles de références, formules et notices bibliographiques,
+puis réaliser les lots C.1–C.4 dans cet ordre. Une capacité encore absente ne
+doit pas être annoncée comme exécutable par le manifeste ou le MCP.
+
+### Arbitrages complémentaires avant implémentation
+
+1. Détails du contrat déclaratif de B.1, migration des types Rust actuels et limites
+   d’un éventuel type installable.
 2. Champs simples et listes d’enregistrements, valeurs absentes et défauts ;
    conserver les genres jusqu’à la sérialisation Typst et empêcher l’injection
    de source par les valeurs saisies.
@@ -112,6 +174,59 @@ Les éléments de présentation ne font pas partie du document partagé.
 Pour une dépendance Typst, conserver un adaptateur public stable et mettre à jour
 l’inventaire des paquets, versions, ressources et licences. Vérifier la compilation
 de l’export déplacé dans un environnement sans cache de paquets.
+
+### C.1–C.4 — Ordre et périmètres validés le 3 novembre 2026
+
+**Dépendance :** B.1 prépare les contrats, puis C.1 (renvois), C.2 (mathématiques),
+C.3 (bibliographie du projet) et C.4 (bibliothèque personnelle). Préciser ensemble
+les paramètres et les maquettes avant chaque implémentation. B.1 ne doit pas
+attendre la réalisation complète de ces capacités.
+
+- **C.1 — Cibles et renvois.** Séparer identité documentaire stable, éventuel
+  label lisible et numéro composé par Typst. Référencer titres, images et tableaux,
+  puis étendre le même contrat aux équations et théorèmes. Sélection de cible,
+  badge et édition par le cadre commun ; préciser les collisions, copies et
+  suppressions de cibles utilisées. Garder des espaces de noms sûrs pour les
+  labels documentaires et les clés bibliographiques dans le Typst dérivé.
+- **C.2 — Mathématiques.** Un contrat de formule avec source, langage Typst ou
+  LaTeX, description accessible et présentation en ligne/en bloc. Les blocs
+  peuvent être ciblés par C.1 ; les modèles règlent numérotation et présentation.
+  Saisie de code et aperçu en premier, éditeur visuel ensuite, sans conversion
+  bidirectionnelle implicite. MiTeX passe par un adaptateur Typst public stable ;
+  inventorier et embarquer sa version et ses dépendances pour les fichiers et
+  exports hors ligne. Définir le périmètre du code accepté et les diagnostics
+  avant de relier la saisie au compilateur.
+- **C.3 — Notices du projet.** Remplacer les multiples fichiers originaux par
+  une bibliothèque Hayagriva unique, matérialisée dans le `.typsto` et l’export.
+  Réutiliser la crate Hayagriva pour import et sérialisation ; évaluer la
+  conversion BibLaTeX (champs, macros, relations, accents et contenu riche),
+  signaler les pertes et arbitrer les collisions sans écrasement silencieux.
+  Décider la conservation éventuelle des sources importées comme provenance,
+  sans seconde autorité active. Préserver les identités/clés des notices et les
+  liens des citations ; remplacer les cibles actuelles `file_id`/`key` par le
+  contrat retenu, sans couche de compatibilité artificielle.
+  Le gestionnaire utilise une grande modale commune : liste filtrée et recherche
+  fuzzy titre/auteurs à gauche, formulaire par genre à droite, création par +.
+  Les éditions restent des brouillons récupérables avant validation ; changement
+  de notice ou fermeture propose enregistrer, abandonner ou continuer.
+  « Créer et citer » valide la notice et l’insertion dans un seul lot annulable.
+  La suppression d’une notice citée est protégée. UI, CLI et MCP partagent
+  les validations et opérations ; aucun second formulaire pour l’insertion.
+- **C.4 — Bibliothèque personnelle.** Recherche locale au projet avant recherche
+  personnelle ; copie d’une notice lors de son utilisation, liens de provenance
+  conservés et échanges de corrections explicites. Les deux stockages ont leurs
+  révisions et protections contre l’écrasement ; aucune transaction atomique entre
+  eux n’est présumée. Aucune modification personnelle ne réécrit silencieusement
+  un projet. Le gestionnaire de C.3 est réutilisé avec un choix de bibliothèque.
+  Les principes de citekeep (identités, clés locales stables, conflits explicites,
+  planification avant écriture) servent de référence ; son moteur Python et son
+  format BibTeX ne sont pas retenus implicitement. Évaluer leur réutilisation
+  séparément, ainsi que le stockage et le format personnels.
+
+Les contrats actuels de bibliographie restent exécutables jusqu’à leur
+remplacement par C.3. Ces décisions décrivent le futur lot ; elles ne changent
+pas à elles seules le format courant. Recherche en ligne et gestion de PDF ne
+sont pas nécessaires à ce premier parcours.
 
 **Sortie C :** contrat partagé GUI/CLI/MCP, recette clavier et aller-retour du
 fichier ; absence de logique spécifique dupliquée dans les déclencheurs.

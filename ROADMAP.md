@@ -1,6 +1,6 @@
 # Feuille de route de typstOgraphe
 
-Révisée le **1er novembre 2026**. Objectif : transformer le prototype validé en une
+Révisée le **3 novembre 2026**. Objectif : transformer le prototype validé en une
 application de rédaction utilisable au quotidien, pour l’administration,
 l’enseignement et la recherche en sciences humaines et sociales.
 
@@ -127,18 +127,54 @@ formulaires ; le dernier est une zone composée de sections décrites par le typ
 avec les informations propres au document. Ces contrôles éditent les valeurs
 structurées existantes, sans duplication dans le corps ni dépendance aux fonctions
 internes des modèles. Pour l’Article : Général, Titres (titre, sous-titre et titre
-court par langue), Affiliations, Auteurs, Résumés (résumé riche et mots-clés par
-langue) et Bibliographie. Les mêmes enregistrements multilingues alimentent
+court par langue), Résumés (résumé riche et mots-clés par langue), Affiliations,
+Auteurs et Bibliographie. Les mêmes enregistrements multilingues alimentent
 Titres et Résumés.
 Les ajouts par + sont provisoires jusqu’à validation et annulables par Échap ;
 ils ne sont pas diffusés ni sauvegardés avant confirmation. La
 [décision détaillée](docs/types-modeles-libertes.md#interface-de-len-tête--décision-du-27-octobre-2026)
 et le [contrat Article](docs/article-contract.md) servent de référence.
 
-**Décisions à mettre en œuvre et arbitrages avant refonte :**
+### B.1 — Formaliser les structures réutilisables et leur définition déclarative
 
-- Types intégrés en Rust ou définition déclarative : la note propose une évolution,
-  qui doit être validée avant de remplacer l’organisation actuelle.
+**Orientation retenue le 3 novembre 2026 :** une définition déclarative compose
+des **structures d’en-tête** et des **capacités documentaires** déjà prises en
+charge par l’application. Le travail principal consiste à définir ce vocabulaire
+et ses contrats, avant de migrer les types existants. Un fichier de description
+ne peut pas créer à lui seul un nouveau comportement d’édition.
+
+- Formaliser les structures proposées : champs simples, collections ordonnées,
+  références entre collections, ensembles multilingues, zones de texte riche
+  avec profil et références de ressources. Décrire données, validations,
+  dépendances, opérations autorisées et présentation commune.
+- Éprouver cette frontière avec les auteurs et affiliations de l’Article :
+  affiliations en texte libre, identifiants stables, références des auteurs,
+  réordonnancement et règles de suppression. Une nouvelle structure ou capacité
+  nécessitant un comportement inédit reste un développement du moteur et de
+  l’éditeur ; les types pourront ensuite la réutiliser sans le recopier.
+- Retenir **YAML comme format de rédaction**, dans un **répertoire par type**,
+  avec un fichier principal `type.yaml` et des ressources séparées lorsque cela
+  est utile (traductions Fluent, documentation). Les modèles restent des paquets
+  Typst distincts. Valider l’arborescence exacte sur un exemple avant migration.
+- Réutiliser **Serde** pour charger un contrat typé en Rust et **JSON Schema**
+  pour sa description et sa validation structurelle. JSON reste un format
+  d’échange pour les interfaces et les outils. YAML, TOML et JSON ne définissent
+  pas les règles métier : celles-ci appartiennent au contrat commun du moteur.
+
+**Sortie B.1 :** inventaire des structures et capacités exposées, exemple
+déclaratif auteurs/affiliations et schéma associé, puis validation commune des
+choix principaux avant l’implémentation. Le chargement de types externes n’est
+pas un prérequis : commencer par les types fournis avec l’application.
+
+L’[inventaire et le premier contrat à discuter](docs/b1-type-contracts.md)
+préparent cette validation. Inclure dans B.1 les contrats des cibles de renvois,
+des formules et de la bibliothèque bibliographique ; leur développement suit
+les lots C.1 à C.4 ci-dessous et ne bloque pas la préparation du format déclaratif.
+
+**Autres décisions à mettre en œuvre et arbitrages avant refonte :**
+
+- Détailler en B.1 la frontière entre composition déclarative et comportements
+  implémentés, puis le plan de migration des types intégrés actuels.
 - Mettre en œuvre le choix validé pour les modèles : options de présentation
   libres, restreintes ou imposées, y compris pour les capacités du type. Le type
   définit les capacités disponibles ; tous ses modèles doivent les présenter,
@@ -189,6 +225,42 @@ dans tous les types où elle est disponible. Les modèles en définissent la
 présentation et les défauts. Les identifiants publics restent anglais ou latins.
 Une dépendance ou une logique Typst spécifique passe par un adaptateur stable ;
 les primitives natives simples n’ont pas besoin d’un wrapper systématique.
+
+### Lots validés le 3 novembre 2026 — après les contrats de B.1
+
+L’ordre retenu est **B.1 → C.1 → C.2 → C.3 → C.4**. Préparer les contrats en
+B.1, puis valider les choix détaillés et les interfaces avant de coder chaque
+lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C.
+
+1. **C.1 — Labels et références croisées.** Cibles à identité stable pour titres,
+   images et tableaux, extensibles aux équations et théorèmes ; insertion depuis
+   un sélecteur, badge éditable et protection des cibles référencées. Typst et le
+   modèle composent les numéros et le texte des renvois.
+2. **C.2 — Formules mathématiques.** Saisie de code Typst ou LaTeX via MiTeX,
+   dans le texte ou en bloc ; conserver le langage et la source, prévoir la
+   description accessible et les références aux blocs. L’éditeur visuel viendra
+   ensuite sur le même objet, sans promettre une conversion réversible des
+   syntaxes.
+3. **C.3 — Bibliographie du projet.** Consolider les imports BibLaTeX et Hayagriva
+   dans un unique fichier Hayagriva interne au `.typsto` et à l’export. Remplacer
+   le contrat actuel de plusieurs fichiers originaux après évaluation des pertes
+   de conversion, des collisions et de la conservation des citations.
+   Ajouter un gestionnaire dans une grande modale : à gauche, recherche fuzzy
+   sur titres et auteurs, notices filtrées et bouton + ; à droite, formulaire
+   adapté au genre de la notice. Création, modification et suppression protégée
+   des notices citées ; brouillon local avec Annuler/Enregistrer et choix explicite
+   avant de quitter une notice modifiée. Réutiliser le formulaire depuis
+   l’insertion de citation avec « Créer et citer », en une opération annulable.
+4. **C.4 — Bibliothèque bibliographique personnelle.** Recherche projet d’abord,
+   bibliothèque personnelle ensuite ; copier la notice dans le projet lors de
+   l’insertion. Échanges et corrections explicites, identités et clés stables,
+   conflits soumis à décision, aucune mise à jour silencieuse des documents.
+   Réutiliser le gestionnaire avec un choix Projet/Bibliothèque personnelle.
+
+La séparation bibliothèque personnelle/projet et les garanties de citekeep
+servent de référence de conception ; son intégration comme moteur et le format
+de la bibliothèque personnelle ne sont pas décidés. Chaque projet reste autonome
+et utilisable hors ligne, indépendamment de cette bibliothèque.
 
 **Choix à valider :** périmètre par capacité, paramètres, contenus et imbrications
 autorisés, saisie, clavier et cibles MCP ; fonctions natives ou paquet externe.

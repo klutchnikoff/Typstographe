@@ -38,6 +38,11 @@ reste indépendante. Les noms publics de capacités sont anglais ou latins.
 
 ## Bilans et références historiques
 
+Préparation en cours : [B.1 — inventaire et contrats déclaratifs proposés](b1-type-contracts.md),
+avec un [fragment YAML auteurs/affiliations](proposals/b1/article-authorship.yaml).
+Ces propositions attendent validation ; elles ne décrivent pas un chargeur
+disponible ni un remplacement des contrats courants.
+
 - [A.1 — application principale](application-layout.md), [retrait d’egui](egui-retirement-results.md).
 - [A.2 — convergence des adaptateurs](a2-closure-results.md), [transformations](a2-transformations-results.md).
 - [A.3 — conservation après incident](a3-closure-results.md), avec résultats CI natifs multisystème.
