@@ -1,6 +1,6 @@
 # Plan technique de développement
 
-Révisé le **3 novembre 2026**. Ce document accompagne la [roadmap produit](ROADMAP.md)
+Révisé le **4 novembre 2026**. Ce document accompagne la [roadmap produit](ROADMAP.md)
 et distingue le socle livré des décisions et travaux techniques restants.
 Les réalisations détaillées et les inventaires historiques sont
 dans les bilans de docs/ et l’historique Git.
@@ -130,12 +130,32 @@ C.3 (bibliographie du projet) et C.4 (bibliothèque personnelle). Préciser ense
 les paramètres, commandes/cibles et maquettes avant chaque implémentation ;
 la livraison de tous les types de B n’est pas un prérequis.
 
-- **C.1 — Cibles et renvois.** Séparer identité documentaire stable, éventuel
-  label lisible et numéro composé par Typst. Référencer titres, images et tableaux,
-  puis étendre le même contrat aux équations et théorèmes. Sélection de cible,
-  badge et édition par le cadre commun ; préciser les collisions, copies et
-  suppressions de cibles utilisées. Garder des espaces de noms sûrs pour les
-  labels documentaires et les clés bibliographiques dans le Typst dérivé.
+- **C.1 — Cibles et renvois.** Séparer identité documentaire stable, label Typst
+  dérivé et numéro composé par Typst. **Décision du 4 novembre :** les labels
+  sont automatiques, opaques et cachés ; réutiliser l’identité du bloc comme
+  ancrage plutôt qu’un slug dépendant du titre ou de la légende. Une modification
+  conserve l’identité ; une copie reçoit une nouvelle identité. Les renvois
+  copiés avec leur cible pointent vers sa copie ; ceux copiés seuls conservent
+  leur cible. Protéger la suppression des cibles référencées par une décision
+  explicite commune à tous les adaptateurs. Référencer titres, images et tableaux,
+  puis étendre le même contrat aux équations et théorèmes. Prévoir des ancres
+  pour les autres blocs sans leur attribuer artificiellement une numérotation.
+  Sélection de cible, badge et édition passent par le cadre commun. Garder des
+  espaces de noms sûrs pour les labels documentaires et les clés bibliographiques
+  dans le Typst dérivé ; la recherche présente des intitulés documentaires.
+  **Formes validées :** libellé complet, page, libellé + page ; aucun choix de
+  style ou « Selon le modèle » dans ce sélecteur. Le modèle compose toujours
+  numéros, suppléments, ponctuation et combinaison des deux composantes. Ne pas
+  confondre le libellé complet destiné au lecteur et l’identifiant interne.
+  Représentation proposée : deux cases « Libellé complet » / « Page », avec
+  au moins une active, à confirmer dans la maquette. Préciser les comportements
+  sans numérotation et les diagnostics avant de figer le contrat.
+  **Différé :** mode temporaire « Choisir dans l’aperçu », activé depuis le
+  sélecteur. Réutiliser la chaîne de correspondance backward rendu → source →
+  cible structurée ; un clic sélectionne, la validation insère le renvoi. Annuler
+  quitte le mode sans édition. En cas d’ambiguïté, demander un choix explicite,
+  sans recherche géométrique arbitraire du label le plus proche. La navigation
+  backward ordinaire reste inchangée ; ce mode ne conditionne pas la sortie C.1.
 - **C.2 — Mathématiques.** Un contrat de formule avec source, langage Typst ou
   LaTeX, description accessible et présentation en ligne/en bloc. Les blocs
   peuvent être ciblés par C.1 ; les modèles règlent numérotation et présentation.

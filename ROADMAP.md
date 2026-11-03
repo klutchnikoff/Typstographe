@@ -1,6 +1,6 @@
 # Feuille de route de typstOgraphe
 
-Révisée le **3 novembre 2026**. Objectif : transformer le prototype validé en une
+Révisée le **4 novembre 2026**. Objectif : transformer le prototype validé en une
 application de rédaction utilisable au quotidien, pour l’administration,
 l’enseignement et la recherche en sciences humaines et sociales.
 
@@ -203,8 +203,21 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
 
 1. **C.1 — Labels et références croisées.** Cibles à identité stable pour titres,
    images et tableaux, extensibles aux équations et théorèmes ; insertion depuis
-   un sélecteur, badge éditable et protection des cibles référencées. Typst et le
-   modèle composent les numéros et le texte des renvois.
+   un sélecteur, badge éditable et protection des cibles référencées. Les labels
+   sont automatiques, opaques et invisibles : modifier un titre ou une légende
+   ne change pas l’identité de la cible. L’utilisateur choisit un élément par
+   son titre, sa légende ou son contenu, sans devoir nommer un label.
+   **Formes validées le 4 novembre :** libellé complet, page, libellé + page,
+   avec des cases à cocher. Le modèle définit toujours leur présentation,
+   numérotation, vocabulaire et ponctuation ; « Selon le modèle » n’est pas une
+   forme concurrente et « Numéro seul » ne fait pas partie de ce premier choix.
+   Pour représenter ces trois formes, la présentation proposée est deux cases
+   « Libellé complet » et « Page », avec au moins une composante sélectionnée ;
+   cette disposition reste à confirmer dans la maquette actualisée.
+   **Amélioration différée :** depuis le sélecteur, activer explicitement
+   « Choisir dans l’aperçu », puis cliquer sur une cible du rendu pour la
+   sélectionner avant confirmation. Réutiliser la correspondance backward,
+   sans changer la navigation ordinaire ni choisir arbitrairement un label voisin.
 2. **C.2 — Formules mathématiques.** Saisie de code Typst ou LaTeX via MiTeX,
    dans le texte ou en bloc ; conserver le langage et la source, prévoir la
    description accessible et les références aux blocs. L’éditeur visuel viendra
@@ -571,11 +584,12 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 **C.1 — Labels et références croisées**, après la clôture de B.1.
 
-1. Valider ensemble les identités et labels lisibles, les formes de renvois,
-   les règles de copie/suppression des cibles utilisées et les paramètres
-   laissés aux modèles. Commencer par titres, images et tableaux.
-2. Maquetter le sélecteur et les badges avec les composants communs, préciser
-   clavier et cibles CLI/MCP, puis implémenter le lot après validation.
+1. Partir des labels automatiques et des trois formes validées le 4 novembre.
+   Préciser les cas sans numérotation et les contrats de copie/suppression pour
+   titres, images et tableaux, en conservant la présentation dans les modèles.
+2. Actualiser et valider la maquette du sélecteur et des badges avec les cases
+   à cocher ; préciser clavier et cibles CLI/MCP, puis implémenter le lot.
+   La sélection par clic dans le rendu est différée et ne bloque pas C.1.
 3. Poursuivre dans l’ordre C.2, C.3, C.4 et compléter les types/modèles selon
    leurs besoins. L’assistance ACP conserve son propre parcours de validation
    et de maquette dans F ; elle n’attend pas tous les types SHS/enseignement.
