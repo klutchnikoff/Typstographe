@@ -25,6 +25,18 @@ pub fn for_id(id: &str) -> Vec<Call> {
         "block.quote" => {
             json!({"type":"quote","content":[paragraph("Quoted text"),{"type":"quoteAttribution","content":[{"type":"text","text":"Author, source"}]}]})
         }
+        "insert.reference" => {
+            return vec![
+                Call {
+                    id: "block.insert".into(),
+                    params: json!({"parent":{"root":{"kind":"body"}},"index":1,"node":{"type":"heading","attrs":{"level":1,"anchor":"example-target"},"content":[{"type":"text","text":"Method"}]}}),
+                },
+                Call {
+                    id: "inline.replace".into(),
+                    params: json!({"target":at(),"node":{"type":"crossReference","attrs":{"target":"example-target","include_label":true,"include_page":false}}}),
+                },
+            ];
+        }
         "insert.footnote" => json!({"type":"footnote","attrs":{"text":"A plain-text note."}}),
         "insert.citation" => {
             json!({"type":"citation","attrs":{"items":[{"file_id":"main","key":"example2026"}],"form":"normal"}})

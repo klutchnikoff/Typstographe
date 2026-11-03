@@ -1,3 +1,4 @@
+#import "capabilities/cross-references.typ": cross-reference
 // A restrained working article. All presentation choices belong to this model.
 #import "capabilities/authorship.typ": prepare-authorship, show-authorship
 #import "capabilities/abstracts.typ": show-abstracts, abstract-labels
@@ -17,6 +18,7 @@
   show figure.where(kind: table): set block(breakable: true)
   set text(font: "Libertinus Serif", size: 11pt, lang: options.language, fill: ink)
   set page(
+    numbering: "1",
     paper: options.paper, flipped: options.landscape,
     margin: if compact { (x: 17mm, top: 21mm, bottom: 19mm) } else { (x: 28mm, top: 29mm, bottom: 25mm) },
     header-ascent: 50%,

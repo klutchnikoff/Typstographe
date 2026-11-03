@@ -111,6 +111,14 @@ fn split(doc: &Doc, state: &State, target: &TextTarget) -> Result<(), Error> {
     let mut next = before.clone();
     let mut right = before.content[part].clone();
     right.content = suffix(&right.content, target.to)?;
+    if let Some(attrs) = right
+        .attrs
+        .as_mut()
+        .and_then(serde_json::Value::as_object_mut)
+    {
+        attrs.remove("anchor");
+    }
+    crate::content::references::assign(&mut right);
     if description {
         next.content[0].content.clear();
         next.content[1] = right;

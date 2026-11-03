@@ -42,6 +42,7 @@
     "insert.image",
     "insert.table",
     "insert.citation",
+    "insert.reference",
     "insert.footnote"
   ],
   "collections": [

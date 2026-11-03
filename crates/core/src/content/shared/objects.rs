@@ -38,7 +38,10 @@ fn attributes(
                     let external = hint["storage"] == "structure"
                         || matches!(hint["placement"].as_str(), Some("structure" | "creation"))
                         || (hint["placement"] == "body"
-                            && !matches!(element.tag().as_ref(), "footnote" | "citation"));
+                            && !matches!(
+                                element.tag().as_ref(),
+                                "footnote" | "citation" | "crossReference"
+                            ));
                     (attribute == key && !external).then_some(field)
                 })
             })
@@ -73,7 +76,7 @@ fn attributes(
 }
 fn inline(doc: &Doc, state: &State, target: &TextTarget, node: &Node) -> Result<(), Error> {
     let line_break = matches!(node.kind.as_str(), "softBreak" | "hardBreak");
-    if !line_break && !["footnote", "citation"].contains(&node.kind.as_str()) {
+    if !line_break && !["footnote", "citation", "crossReference"].contains(&node.kind.as_str()) {
         return Err(parameter("node"));
     }
     if line_break

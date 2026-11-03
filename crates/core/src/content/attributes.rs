@@ -29,7 +29,7 @@ pub(super) fn validate(node: &Node, internal_mapping: bool) -> Result<(), String
                     let external = hint["storage"] == "structure"
                         || matches!(hint["placement"].as_str(), Some("structure" | "creation"))
                         || (hint["placement"] == "body"
-                            && !matches!(kind, "footnote" | "citation"));
+                            && !matches!(kind, "footnote" | "citation" | "crossReference"));
                     if !external {
                         map.entry(kind)
                             .or_default()
@@ -57,9 +57,15 @@ pub(super) fn validate(node: &Node, internal_mapping: bool) -> Result<(), String
         map
     });
     for key in attrs.keys() {
+        if key == "anchor" && super::references::ANCHOR_KINDS.contains(&node.kind.as_str()) {
+            continue;
+        }
         if internal_mapping
             && key == "_mapping"
-            && matches!(node.kind.as_str(), "text" | "footnote" | "citation")
+            && matches!(
+                node.kind.as_str(),
+                "text" | "footnote" | "citation" | "crossReference"
+            )
         {
             continue;
         }

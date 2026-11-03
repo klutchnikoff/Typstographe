@@ -1,3 +1,4 @@
+#import "capabilities/cross-references.typ": cross-reference
 // Courrier personnel ; la disposition pour enveloppe à fenêtre est réservée à A4 portrait.
 // Référence : DL 110 × 220 mm, fenêtre 100 × 35 mm à 20 mm du bas et de droite.
 // GPV 60013 / ES35F110 : https://myprint.gpvfrance.fr/products/60013-boite-de-500-enveloppes-blanches-dl-110x220-90-g-m2-fenetre-35x100-bande-de-protection-es35f110
@@ -60,6 +61,7 @@
 
   // Le fond utilise les coordonnées de la feuille, indépendamment des marges.
   set page(
+    numbering: "1",
     paper: options.paper,
     flipped: options.landscape,
     margin: if window-layout { (left: 25mm, right: 25mm, top: 25mm, bottom: 23mm) } else { 18mm },

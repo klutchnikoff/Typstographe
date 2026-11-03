@@ -331,7 +331,7 @@ impl Session {
                     .models()
                     .find(|m| p.model.as_ref().is_none_or(|id| m.model.id() == *id))
                     .ok_or_else(|| error("creation_model"))?;
-                let state = State::new(
+                let mut state = State::new(
                     serde_json::from_value(json!({"type":"doc","content":[{"type":"paragraph"}]}))
                         .unwrap(),
                     Settings {
@@ -341,6 +341,7 @@ impl Session {
                         model_id: model.model.id().into(),
                     },
                 );
+                crate::content::references::assign(&mut state.document);
                 let archive = Self::archive_for(
                     &state,
                     SharedDocument::from_state(&state)

@@ -21,7 +21,7 @@ fn ranges(state: &State) -> Vec<(TextZone, usize, usize)> {
         }
         if matches!(
             n.kind.as_str(),
-            "footnote" | "citation" | "softBreak" | "hardBreak"
+            "footnote" | "citation" | "crossReference" | "softBreak" | "hardBreak"
         ) {
             return 1;
         }

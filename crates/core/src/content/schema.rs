@@ -31,7 +31,7 @@ impl Node {
     pub(crate) fn inline_len(&self) -> usize {
         match self.kind.as_str() {
             "text" => self.text.as_deref().unwrap_or("").encode_utf16().count(),
-            "softBreak" | "hardBreak" | "footnote" | "citation" => 1,
+            "softBreak" | "hardBreak" | "footnote" | "citation" | "crossReference" => 1,
             _ => self.content.iter().map(Self::inline_len).sum(),
         }
     }
@@ -58,6 +58,7 @@ pub(super) fn generate(document: &Node, assets: &Assets, mapped: bool) -> Result
     if document.kind != "doc" || document.text.is_some() || !document.marks.is_empty() {
         return Err("Un document structuré est attendu.".into());
     }
+    super::references::validate(document)?;
     let mut count = 0;
     limits(document, 0, &mut count, mapped)?;
     let mut result = blocks(&document.content, assets, mapped)?;
@@ -69,6 +70,13 @@ pub(super) fn generate(document: &Node, assets: &Assets, mapped: bool) -> Result
     }
     if citations(document) {
         result = format!("#import \"capabilities/references.typ\": citation\n\n{result}");
+    }
+    fn cross_references(node: &Node) -> bool {
+        node.kind == "crossReference" || node.content.iter().any(cross_references)
+    }
+    if cross_references(document) {
+        result =
+            format!("#import \"capabilities/cross-references.typ\": cross-reference\n\n{result}");
     }
     if notes(document) {
         result = format!(
@@ -100,7 +108,7 @@ fn limits(node: &Node, depth: usize, count: &mut usize, mapped: bool) -> Result<
     }
     if !matches!(
         node.kind.as_str(),
-        "text" | "softBreak" | "hardBreak" | "footnote" | "citation"
+        "text" | "softBreak" | "hardBreak" | "footnote" | "citation" | "crossReference"
     ) && !node.marks.is_empty()
     {
         return Err("Style hors d'un contenu en ligne.".into());
@@ -118,7 +126,7 @@ fn blocks(nodes: &[Node], assets: &Assets, mapped: bool) -> Result<String, Strin
         .map(|s| s.join("\n\n"))
 }
 fn block(node: &Node, assets: &Assets, mapped: bool) -> Result<String, String> {
-    Ok(match node.kind.as_str() {
+    let result = match node.kind.as_str() {
         "paragraph" => format!("#par[{}]", inline(&node.content, mapped)?),
         "heading" => {
             let level = node.integer("level", 1);
@@ -214,6 +222,14 @@ fn block(node: &Node, assets: &Assets, mapped: bool) -> Result<String, String> {
             format!("#{}[{}]", node.kind, inline(&node.content, mapped)?)
         }
         other => return Err(format!("Structure non prise en charge : {other}")),
+    };
+    Ok(if let Some(id) = super::references::anchor(node) {
+        format!(
+            "{result}#label({})",
+            typst_string(&super::references::label(id))
+        )
+    } else {
+        result
     })
 }
 fn table_figure(
@@ -337,6 +353,30 @@ pub(super) fn inline(nodes: &[Node], mapped: bool) -> Result<String, String> {
                         .collect::<String>();
                     let expression =
                         format!("#citation(form: {})[{items}]", typst_string(&citation.form));
+                    if mapped {
+                        format!(
+                            "/*@typstographe:{}:{}*/{expression}",
+                            node.integer("_mapping", 0),
+                            expression.len()
+                        )
+                    } else {
+                        expression
+                    }
+                }
+                "crossReference" if node.content.is_empty() => {
+                    let mut attrs = node.attrs.clone().unwrap_or_default();
+                    if let Some(a) = attrs.as_object_mut() {
+                        a.remove("_mapping");
+                    }
+                    let r: super::references::Reference =
+                        serde_json::from_value(attrs).map_err(|_| "invalid_cross_reference")?;
+                    r.validate()?;
+                    let expression = format!(
+                        "#cross-reference(label({}), include-label: {}, include-page: {})",
+                        typst_string(&super::references::label(&r.target)),
+                        r.include_label,
+                        r.include_page
+                    );
                     if mapped {
                         format!(
                             "/*@typstographe:{}:{}*/{expression}",

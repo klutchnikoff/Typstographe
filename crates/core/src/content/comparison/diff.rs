@@ -68,8 +68,9 @@ pub(super) fn groups(before: &Archive, after: &Archive) -> Vec<Group> {
         .iter()
         .map(|n| serde_json::to_string(n).unwrap())
         .collect();
-    let coupled =
-        before.state().settings != after.state().settings || before.assets != after.assets;
+    let coupled = before.state().settings != after.state().settings
+        || before.assets != after.assets
+        || crate::content::references::dependent_changes(&before.document, &after.document);
     if coupled {
         let (changes, before_highlights, after_highlights) =
             words(&before.document.content, &after.document.content);

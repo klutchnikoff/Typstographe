@@ -29,7 +29,7 @@ pub fn policy(id: &str) -> Policy {
             Policy::Heading
         }
         "block.bullet" | "block.numbered" | "block.description" => Policy::List,
-        "insert.footnote" | "insert.citation" => Policy::Inline,
+        "insert.footnote" | "insert.citation" | "insert.reference" => Policy::Inline,
         "insert.table" => Policy::Table,
         _ => Policy::Block,
     }
@@ -161,7 +161,10 @@ impl<'a> Target<'a> {
             Selection::Node { target } => {
                 let root = root(state, &target.root)?;
                 let node = at(&root, &target.path)?;
-                let inline_node = matches!(node.kind.as_str(), "footnote" | "citation");
+                let inline_node = matches!(
+                    node.kind.as_str(),
+                    "footnote" | "citation" | "crossReference"
+                );
                 let mut path = target.path.clone();
                 if inline_node {
                     path.pop();

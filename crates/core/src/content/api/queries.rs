@@ -291,6 +291,7 @@ pub fn run(
         .transpose()
         .map_err(|_| invalid("target"))?;
     Ok(match id {
+        "references.list" => json!({"targets":super::super::references::targets(&state.document)}),
         "document.validate" => {
             let valid = state.validate(assets);
             json!({"valid":valid.is_ok(),"ready_for_export":valid.is_ok()&&state.settings.metadata.ready_for_export(),"diagnostics":valid.err().map(|e|json!(e)).into_iter().collect::<Vec<_>>()})
