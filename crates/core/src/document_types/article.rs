@@ -1,27 +1,11 @@
 //! Scientific article: canonical authors, official free-text affiliations and localized rich frontmatter.
+use super::authorship::{Affiliation, Author};
 use crate::{
     content::editorial::RichText,
     document::{DocumentLanguage, DocumentOptions},
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct Author {
-    pub id: String,
-    pub name: String,
-    #[serde(rename = "affiliation-ids")]
-    pub affiliation_ids: Vec<String>,
-    pub email: String,
-    pub orcid: String,
-    pub corresponding: bool,
-}
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct Affiliation {
-    pub id: String,
-    pub text: String,
-}
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Localization {

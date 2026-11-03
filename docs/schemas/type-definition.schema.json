@@ -1,5 +1,30 @@
 {
   "$defs": {
+    "AssemblyOrder": {
+      "additionalProperties": false,
+      "description": "Exact permutations, not filters or overrides. Empty lists retain assembly order.",
+      "properties": {
+        "bindings": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "collections": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "tabs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "Binding": {
       "anyOf": [
         {
@@ -552,6 +577,12 @@
       },
       "type": "object"
     },
+    "HeaderStructure": {
+      "enum": [
+        "authorship"
+      ],
+      "type": "string"
+    },
     "Identity": {
       "enum": [
         "stable-id"
@@ -837,6 +868,9 @@
     "label-key": {
       "type": "string"
     },
+    "order": {
+      "$ref": "#/$defs/AssemblyOrder"
+    },
     "settings-heading-key": {
       "type": [
         "string",
@@ -852,6 +886,12 @@
           "type": "null"
         }
       ]
+    },
+    "structures": {
+      "items": {
+        "$ref": "#/$defs/HeaderStructure"
+      },
+      "type": "array"
     }
   },
   "required": [

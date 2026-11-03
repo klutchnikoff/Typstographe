@@ -183,7 +183,14 @@ fn registered_views_controls_and_storage_bindings_cannot_redefine_business_struc
                 definition["collections"][0]["fields"] =
                     json!([{"kind":"text","id":"script","label-key":"script"}])
             }
-            "missing-style" => definition["header"]["tabs"][4]["style-field"] = json!("missing"),
+            "missing-style" => {
+                definition["header"]["tabs"]
+                    .as_array_mut()
+                    .unwrap()
+                    .iter_mut()
+                    .find(|tab| tab["view"] == "bibliography")
+                    .unwrap()["style-field"] = json!("missing");
+            }
             "wrong-outline" => definition["fields"][0]["control"] = json!("outline"),
             "storage-collision" => definition["bindings"][1]["metadata-key"] = json!("authors"),
             _ => unreachable!(),

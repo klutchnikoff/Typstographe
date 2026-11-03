@@ -22,6 +22,8 @@ pub enum DiagnosticCode {
     MissingValue,
     DuplicateValue,
     UnresolvedReference,
+    InvalidStructure,
+    InvalidOrder,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -234,6 +236,10 @@ impl Check {
 
 impl Definition {
     pub fn validate(self) -> Result<LoadedDefinition, Vec<Diagnostic>> {
+        super::structures::expand(self)?.validate_expanded()
+    }
+
+    fn validate_expanded(self) -> Result<LoadedDefinition, Vec<Diagnostic>> {
         let mut check = Check::default();
         if self.contract_version != 1 {
             check.issue(

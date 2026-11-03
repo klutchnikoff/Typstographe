@@ -82,6 +82,8 @@ class CIPlanTests(unittest.TestCase):
         self.assertEqual(planner.browser_recipes(["crates/core/types/article/type.yaml"], root),
                          ["tests/browser/article.spec.ts", "tests/browser/bibliography.spec.ts",
                           "tests/browser/document-types.spec.ts", "tests/browser/metadata.spec.ts"])
+        self.assertEqual(planner.browser_recipes(["crates/core/structures/authorship.yaml"], root),
+                         planner.browser_recipes(["crates/core/types/article/type.yaml"], root))
         # A shared helper selects each recipe importing it.
         self.assertIn("tests/browser/title-dialogs.spec.ts",
                       planner.browser_recipes(["app/tests/browser/record-dialog-controls.ts"], root))

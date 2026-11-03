@@ -470,7 +470,7 @@ fn article_frontmatter_citations_and_bibliography_are_published_and_undone_as_on
     };
     metadata
         .affiliations
-        .push(crate::document_types::article::Affiliation {
+        .push(crate::document_types::authorship::Affiliation {
             id: "official".into(),
             text: "Official free-text affiliation".into(),
         });

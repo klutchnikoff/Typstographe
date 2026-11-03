@@ -1,4 +1,4 @@
-# Built-in type contract. Presentation belongs to the Typst model.
+# Built-in type contract. Shared headers expand before validation.
 ---
 contract-version: 1
 id: article
@@ -7,6 +7,20 @@ description-key: type-card-article-description
 settings-heading-key: article-settings-heading
 composition:
   function: article
+structures:
+- authorship
+order:
+  collections:
+  - references
+  - authors
+  - affiliations
+  - localizations
+  tabs:
+  - titles
+  - abstracts
+  - affiliations
+  - authors
+  - bibliography
 fields:
 - id: article.citation_style
   kind: choice
@@ -29,48 +43,6 @@ collections:
   item-label-key: field-reference-file
   summary-field: name
   fields: []
-- id: authors
-  kind: ordered-records
-  identity: stable-id
-  max-items: 100
-  label-key: field-article-authors
-  item-label-key: article-author
-  summary-field: name
-  fields:
-  - id: name
-    kind: text
-    label-key: field-full-name
-    required-for-export: true
-  - id: affiliation-ids
-    kind: record-references
-    label-key: field-article-affiliations
-    target-collection: affiliations
-    unique: true
-    on-target-remove: restrict
-  - id: email
-    kind: text
-    label-key: field-email
-  - id: orcid
-    kind: text
-    label-key: field-orcid
-  - id: corresponding
-    kind: boolean
-    label-key: field-corresponding
-  summary:
-  - corresponding
-- id: affiliations
-  kind: ordered-records
-  identity: stable-id
-  max-items: 100
-  label-key: field-article-affiliations
-  item-label-key: article-affiliation
-  summary-field: text
-  fields:
-  - id: text
-    kind: text
-    label-key: field-official-affiliation
-    multiline: true
-    required-for-export: true
 - id: localizations
   kind: ordered-records
   identity: stable-id
@@ -123,10 +95,6 @@ capabilities:
 - insert.citation
 - insert.footnote
 bindings:
-- collection: authors
-  typst-parameter: authors
-- collection: affiliations
-  typst-parameter: affiliations
 - collection: localizations
   typst-parameter: localizations
 - collection: references
@@ -162,18 +130,6 @@ header:
     - abstract
     - keywords
     item-label-key: field-abstract
-  - id: affiliations
-    label-key: field-article-affiliations
-    view: record-cards
-    collection: affiliations
-    summary-field: text
-    editing: dialog
-  - id: authors
-    label-key: field-article-authors
-    view: record-cards
-    collection: authors
-    summary-field: name
-    editing: dialog
   - id: bibliography
     label-key: field-bibliography
     view: bibliography

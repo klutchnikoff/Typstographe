@@ -5,7 +5,7 @@ use crate::content::{
 };
 use crate::document_types::{
     DocumentType, Metadata,
-    article::{Affiliation, Author},
+    authorship::{Affiliation, Author},
 };
 use serde_json::{Value, json};
 use yrs::{XmlFragment, types::SharedRef};

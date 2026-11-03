@@ -1,5 +1,5 @@
 use super::{Definition, LoadedDefinition};
-use serde::{Deserialize, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 pub const MAX_SOURCE_BYTES: usize = 256 * 1024;
 
@@ -30,8 +30,16 @@ impl From<yaml_serde::Error> for LoadError {
     }
 }
 
-/// One in-memory document only: no filesystem, network, imports or registration.
+/// One in-memory document plus registered fragments: no external I/O or registration.
 pub fn load_yaml(source: &str) -> Result<LoadedDefinition, LoadError> {
+    let definition: Definition = decode_yaml(source)?;
+    definition
+        .validate()
+        .map_err(|diagnostics| LoadError::InvalidDefinition { diagnostics })
+}
+
+/// The same strict YAML decoder is used for a type and its registered fragments.
+pub(super) fn decode_yaml<T: DeserializeOwned>(source: &str) -> Result<T, LoadError> {
     if source.len() > MAX_SOURCE_BYTES {
         return Err(LoadError::SourceTooLarge {
             max_bytes: MAX_SOURCE_BYTES,
@@ -42,10 +50,7 @@ pub fn load_yaml(source: &str) -> Result<LoadedDefinition, LoadError> {
     let value: yaml_serde::Value = yaml_serde::from_str(source)?;
     json_subset(&value, "")?;
     // Decode from the original source to retain the library's line/column paths.
-    let definition = Definition::deserialize(yaml_serde::Deserializer::from_str(source))?;
-    definition
-        .validate()
-        .map_err(|diagnostics| LoadError::InvalidDefinition { diagnostics })
+    Ok(T::deserialize(yaml_serde::Deserializer::from_str(source))?)
 }
 
 fn json_subset(value: &yaml_serde::Value, path: &str) -> Result<(), LoadError> {

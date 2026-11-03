@@ -1,5 +1,6 @@
 //! Types intégrés à l’application. Leurs modèles sont des implémentations Typst.
 pub mod article;
+pub mod authorship;
 pub mod compte_rendu;
 pub mod courrier;
 pub mod definition;

@@ -2,12 +2,14 @@
 mod fields;
 mod loader;
 mod schema;
+mod structures;
 mod validation;
 mod values;
 
 pub use fields::{Field, FieldControl, ReferenceRemoval, RichProfile};
 pub use loader::{LoadError, MAX_SOURCE_BYTES, load_yaml};
 pub use schema::manifest_schema;
+pub use structures::{AssemblyOrder, HeaderStructure};
 pub use validation::{Diagnostic, DiagnosticCode};
 
 use schemars::JsonSchema;
@@ -23,6 +25,10 @@ pub struct Definition {
     pub label_key: String,
     pub description_key: String,
     pub composition: Composition,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub structures: Vec<HeaderStructure>,
+    #[serde(default, skip_serializing_if = "AssemblyOrder::is_empty")]
+    pub order: AssemblyOrder,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings_heading_key: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
