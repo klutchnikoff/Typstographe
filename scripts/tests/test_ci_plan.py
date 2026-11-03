@@ -21,7 +21,8 @@ class CIPlanTests(unittest.TestCase):
         for name in ["app/src/main.ts", "crates/core/src/lib.rs", "scripts/check_file_length.py",
                      "assets/font.ttf", "examples/article.typsto", ".cargo/config.toml",
                      "new-component/config.json", "docs/commands.json", "app/src/embedded.md",
-                     "crates/core/assets/vendor/README.md"]:
+                     "crates/core/assets/vendor/README.md", "crates/core/types/article/type.yaml",
+                     "docs/schemas/type-definition.schema.json", "docs/proposals/b1/article-authorship.yaml"]:
             self.assertTrue(planner.plan([name])["code"], name)
 
     def test_manifests_locks_and_ci_changes_keep_dependency_audits(self):
@@ -78,6 +79,9 @@ class CIPlanTests(unittest.TestCase):
                          ["tests/browser/tables.spec.ts"])
         self.assertIn("tests/browser/bands.spec.ts",
                       planner.browser_recipes(["patches/@tiptap+y-tiptap+3.0.10.patch"], root))
+        self.assertEqual(planner.browser_recipes(["crates/core/types/article/type.yaml"], root),
+                         ["tests/browser/article.spec.ts", "tests/browser/bibliography.spec.ts",
+                          "tests/browser/document-types.spec.ts", "tests/browser/metadata.spec.ts"])
         # A shared helper selects each recipe importing it.
         self.assertIn("tests/browser/title-dialogs.spec.ts",
                       planner.browser_recipes(["app/tests/browser/record-dialog-controls.ts"], root))

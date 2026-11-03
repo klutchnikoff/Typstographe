@@ -134,6 +134,58 @@ mod tests {
     use super::*;
 
     #[test]
+    fn localized_type_views_and_capabilities_follow_the_same_loaded_contract_as_cli_and_mcp() {
+        for kind in DocumentType::ALL {
+            let view = document_type(kind);
+            let canonical = typstographe_core::content::api::type_description(kind);
+            let definition = kind.definition().definition();
+            assert_eq!(view["settingsHeading"], text(kind.settings_heading_key()));
+            assert_eq!(
+                view["groups"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|g| g["id"].as_str().unwrap())
+                    .collect::<Vec<_>>(),
+                definition
+                    .header
+                    .tabs
+                    .iter()
+                    .map(|t| t.id())
+                    .collect::<Vec<_>>()
+            );
+            assert_eq!(
+                view["capabilities"].as_array().unwrap().len(),
+                definition.capabilities.len()
+            );
+            assert!(
+                view["capabilities"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|id| definition.capabilities.iter().any(|d| json!(d) == *id))
+            );
+            for field in view["fields"].as_array().unwrap() {
+                let original = canonical["fields"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|f| f["field"] == field["field"])
+                    .unwrap();
+                assert_eq!(field["parameter"], original["parameter"]);
+                assert_eq!(
+                    field["required_for_export"],
+                    original["required_for_export"]
+                );
+            }
+            assert_eq!(
+                view["structured"]["signature"].is_object(),
+                definition.signature.is_some()
+            );
+        }
+    }
+
+    #[test]
     fn editorial_sections_keep_localized_labels_and_canonical_field_bindings() {
         let letter = document_type(DocumentType::Courrier);
         let groups = letter["groups"].as_array().unwrap();
