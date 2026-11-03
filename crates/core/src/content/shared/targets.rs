@@ -134,6 +134,8 @@ pub(in crate::content) fn field<T: ReadTxn>(
                     crate::document_types::model_options::OptionId::Outline => "boolean",
                     _ => "choice",
                 }
+            } else if descriptor.kind == crate::document_types::FieldKind::Date {
+                "date"
             } else if descriptor.value.is_string() {
                 "text"
             } else if descriptor.value.is_boolean() {

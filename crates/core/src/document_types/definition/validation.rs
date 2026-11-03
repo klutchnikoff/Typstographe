@@ -131,13 +131,6 @@ impl Check {
             if let Some(control) = field.control() {
                 let supported = !record
                     && match control {
-                        FieldControl::Date => matches!(
-                            field,
-                            Field::Text {
-                                multiline: false,
-                                ..
-                            }
-                        ),
                         FieldControl::Outline => matches!(field, Field::Boolean { .. }),
                     };
                 if !supported {
@@ -147,6 +140,10 @@ impl Check {
                         "control is incompatible with the field",
                     );
                 }
+            }
+            if record && matches!(field, Field::Date { .. }) {
+                self.issue(DiagnosticCode::UnsupportedPolicy, &at,
+                    "date fields are supported in root forms; record date controls are not registered yet");
             }
             if record && field.id() == "id" {
                 self.issue(
@@ -186,6 +183,16 @@ impl Check {
                             "choices must be distinct and contain the default",
                         );
                     }
+                }
+                Field::Date {
+                    default: Some(value),
+                    ..
+                } if !value.valid() => {
+                    self.issue(
+                        DiagnosticCode::InvalidDefault,
+                        format!("{at}/default"),
+                        "invalid documentary date",
+                    );
                 }
                 Field::Text {
                     default, multiline, ..

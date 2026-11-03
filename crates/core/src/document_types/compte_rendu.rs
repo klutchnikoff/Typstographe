@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct Metadata {
     pub options: DocumentOptions,
     pub titre: String,
-    pub date: String,
+    pub date: Option<crate::dates::DateValue>,
     pub lieu: String,
     pub redacteur: String,
     pub participants: String,
@@ -25,7 +25,7 @@ impl Metadata {
     pub fn demo() -> Self {
         Self {
             titre: "Préparation de la rencontre associative".into(),
-            date: "21 octobre 2026".into(),
+            date: crate::dates::DateValue::calendar("2026-10-21"),
             lieu: "Salle des Tilleuls".into(),
             redacteur: "Camille Martin".into(),
             participants: "Camille Martin\nAlex Dupont".into(),

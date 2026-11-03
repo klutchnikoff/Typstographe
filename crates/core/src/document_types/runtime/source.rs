@@ -75,6 +75,11 @@ fn render(field: &Field, value: &Value) -> String {
                 .collect::<String>();
             format!("({text})")
         }
+        Field::Date { .. } => {
+            serde_json::from_value::<Option<crate::dates::DateValue>>(value.clone())
+                .expect("validated date")
+                .map_or_else(|| "none".into(), |date| date.typst())
+        }
         Field::Boolean { .. } => value.as_bool().expect("resolved boolean").to_string(),
         _ => typst_string(value.as_str().expect("resolved literal text")),
     }

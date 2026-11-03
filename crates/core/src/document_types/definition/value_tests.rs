@@ -204,3 +204,57 @@ fn registered_views_controls_and_storage_bindings_cannot_redefine_business_struc
         );
     }
 }
+
+#[test]
+fn structured_dates_keep_absence_drafts_and_calendar_validation_separate_from_export() {
+    let source = include_str!("../../../types/courrier/type.yaml").replace(
+        "id: letter.date\n  kind: date",
+        "id: letter.date\n  kind: date\n  required-for-export: true",
+    );
+    let loaded = load_yaml(&source).unwrap();
+    let mut values = Value::Object(loaded.defaults());
+    assert!(values["letter.date"].is_null());
+    loaded.validate_values(&values).unwrap();
+    assert!(
+        loaded
+            .export_diagnostics(&values, DocumentLanguage::French)
+            .iter()
+            .any(|d| d.path == "/letter.date")
+    );
+    let schema = loaded.values_schema();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    for date in [
+        json!(null),
+        json!({"kind":"calendar","iso":"2024-02-29"}),
+        json!({"kind":"custom","text":"2026-02-30"}),
+    ] {
+        values["letter.date"] = date;
+        loaded.validate_values(&values).unwrap();
+        assert!(validator.is_valid(&values));
+    }
+    for date in [
+        json!("2026-01-01"),
+        json!({"kind":"calendar","iso":"2025-02-29"}),
+        json!({"kind":"calendar","iso":"today"}),
+        json!({"kind":"custom","text":"  "}),
+        json!({"kind":"custom","text":"deux\nlignes"}),
+        json!({"kind":"custom","text":"date","iso":"2026-11-03"}),
+    ] {
+        values["letter.date"] = date;
+        has(
+            &loaded,
+            &values,
+            DiagnosticCode::InvalidValue,
+            "/letter.date",
+        );
+    }
+    // Invalid calendar defaults fail at load time, not when compiling a document.
+    assert!(
+        load_yaml(&source.replace(
+            "kind: date",
+            "kind: date\n  default: {kind: calendar, iso: '2025-02-29'}"
+        ))
+        .is_err()
+    );
+    assert!(load_yaml(&source.replace("kind: date", "kind: text\n  control: date")).is_err());
+}

@@ -18,7 +18,7 @@ pub struct Metadata {
     pub objet: String,
     pub reference: String,
     pub lieu: String,
-    pub date: String,
+    pub date: Option<crate::dates::DateValue>,
 }
 impl Default for Metadata {
     fn default() -> Self {
@@ -37,7 +37,7 @@ impl Default for Metadata {
             objet: "Demande de réservation d’une salle".into(),
             reference: "VA / 2026 / 042".into(),
             lieu: "Valmont".into(),
-            date: "2026-10-19".into(),
+            date: crate::dates::DateValue::calendar("2026-10-19"),
         }
     }
 }
@@ -78,7 +78,7 @@ mod tests {
         let template = Model::Personal.source();
         let mut world = TypstWorld::default();
         let mut metadata = DocumentMetadata::blank(DocumentType::Courrier);
-        metadata.courrier_mut().date = "2026-10-01".into();
+        metadata.courrier_mut().date = crate::dates::DateValue::calendar("2026-10-01");
         metadata.courrier_mut().lieu = "Rennes".into();
         for (language, month) in [
             (DocumentLanguage::French, "octobre"),
@@ -101,7 +101,10 @@ mod tests {
                 assert!(rendered.contains("1er"));
             }
         }
-        let custom = template.replace("#format-date(date, lang: options.language)", "#date");
+        let custom = template.replace(
+            "#format-date(date, lang: options.language)",
+            "#format-date(date, lang: options.language, format: \"iso\")",
+        );
         let document = world
             .compile_with_template("Bonjour.", &metadata, &custom)
             .unwrap();
@@ -121,7 +124,7 @@ mod tests {
             ("", "", ""),
         ] {
             metadata.courrier_mut().lieu = place.into();
-            metadata.courrier_mut().date = date.into();
+            metadata.courrier_mut().date = crate::dates::DateValue::calendar(date);
             let document = world
                 .compile_with_template("CORPS", &metadata, &template)
                 .unwrap();
@@ -138,11 +141,60 @@ mod tests {
         }
         // A language without a date prefix must also compile without a place.
         metadata.options_mut().language = DocumentLanguage::English;
-        metadata.courrier_mut().date = "1875-01-19".into();
+        metadata.courrier_mut().date = crate::dates::DateValue::calendar("1875-01-19");
         let document = world
             .compile_with_template("CORPS", &metadata, &template)
             .unwrap();
         assert!(text(&document.pages()[0].frame).contains("January"));
+    }
+
+    #[test]
+    fn custom_dates_are_literal_and_models_choose_the_calendar_format() {
+        use crate::dates::DateValue;
+        let template = Model::Personal.source();
+        let mut world = TypstWorld::default();
+        let mut metadata = DocumentMetadata::blank(DocumentType::Courrier);
+        for (place, custom, expected) in [
+            (
+                "Rennes",
+                "début novembre 2026",
+                "Rennes, début novembre 2026",
+            ),
+            ("", "début novembre 2026", "début novembre 2026"),
+            ("", "2026-02-30", "2026-02-30"),
+            ("", "#panic(échec)", "#panic(échec)"),
+        ] {
+            metadata.courrier_mut().lieu = place.into();
+            metadata.courrier_mut().date = Some(DateValue::Custom {
+                text: custom.into(),
+            });
+            let document = world
+                .compile_with_template("CORPS", &metadata, &template)
+                .unwrap();
+            let rendered = text(&document.pages()[0].frame);
+            assert!(rendered.contains(expected), "{rendered}");
+            assert!(!rendered.contains("Le "), "{rendered}");
+            assert!(!rendered.contains(", le "), "{rendered}");
+        }
+        metadata.courrier_mut().date = DateValue::calendar("2026-10-01");
+        for (format, expected) in [
+            ("long", "1er octobre 2026"),
+            ("short", "01/10/2026"),
+            ("iso", "2026-10-01"),
+        ] {
+            let model = template.replace(
+                "#format-date(date, lang: options.language)",
+                &format!("#format-date(date, lang: options.language, format: \"{format}\")"),
+            );
+            let document = world
+                .compile_with_template("CORPS", &metadata, &model)
+                .unwrap();
+            assert!(
+                text(&document.pages()[0].frame).contains(expected),
+                "{}",
+                text(&document.pages()[0].frame)
+            );
+        }
     }
 
     #[test]
@@ -313,6 +365,11 @@ mod tests {
                 1,
                 "each metadata field has exactly one editing location"
             );
+            if field.kind == super::super::FieldKind::Date {
+                assert!(field.value.is_null());
+                assert!(metadata.main_source().contains("date: none"));
+                continue;
+            }
             let DocumentMetadata::Courrier(fields) = &mut metadata else {
                 unreachable!()
             };

@@ -50,7 +50,7 @@ Resource data is base64 in `resource.add`; models use their pure Typst source in
 | `document.structure` | query | Read trees and all typed text zones; paths are revision-relative, offsets UTF-16. |
 | `document.text` | query | Read plain text of the body or a typed text target. |
 | `document.validate` | query | Validate the structured draft and report export readiness separately. |
-| `document_types.describe` | query | Describe one type by ID. Integrated types include their actual metadata, capabilities and models; types without an implemented contract return only a product profile. Always check can_create. |
+| `document_types.describe` | query | Describe one type by ID. Integrated types include actual metadata, values_schema, capabilities and models; types without an implemented contract return only a product profile. Always check can_create. |
 | `document_types.list` | query | List integrated document contracts and models, plus grouped product profiles. Discovery entries marked planned cannot be created; capability needs in profiles are intentions, not supported operations. |
 | `edit.redo` | session | Redo this participant's contribution. |
 | `edit.undo` | session | Undo this participant's last confirmed contribution. |
@@ -60,7 +60,7 @@ Resource data is base64 in `resource.add`; models use their pure Typst source in
 | `list.item.join` | edit | Join adjacent bullet/numbered items of the same list, concatenating the last left paragraph and first right paragraph without an added space or break. Keep the left item and prefix. An empty right item is removed. Refuse description term/definition boundaries and different lists. |
 | `list.item.split` | edit | Split a flat bullet/numbered list item at one paragraph range, or a description item at its definition range. Preserve the left item and prefix; the suffix and following paragraphs become a new item. Description terms remain separate, and the new term is empty. Empty-item exit is a separate operation. |
 | `metadata.get` | query | Read metadata, fields and resolved model_options: choice (null = follow model), effective, regime, allowed/default and substituted warning. Language remains documentary data. |
-| `metadata.set` | edit | Set a typed metadata, record field or document option. Values are validated against the type and model policy. |
+| `metadata.set` | edit | Set a typed metadata, record field or document option. Values are validated against the type and model policy. Date fields accept null, {kind: calendar, iso: YYYY-MM-DD}, or {kind: custom, text: literal text}; never a raw string. Today must be resolved to a fixed local date by the caller. Discover documentary values_schema with document_types.describe. |
 | `models.list` | query | Read brief visual model cards, including the active embedded model. |
 | `node.set_attrs` | edit | Typed structured document operation; discover targets and parameters in params_schema. |
 | `record.add` | edit | Edit a header collection using stable record IDs. Forward references inside an atomic lot are checked only on its final state. |

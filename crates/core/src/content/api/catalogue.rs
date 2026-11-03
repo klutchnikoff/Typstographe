@@ -5,6 +5,7 @@ pub fn type_description(kind: DocumentType) -> Value {
     let metadata = Metadata::blank(kind);
     json!({"id":kind,"can_create":kind.can_create(),"metadata":metadata,
         "definition":kind.definition().definition(),
+        "values_schema":kind.definition().values_schema(),
         "profile":discovery::catalogue().types.iter().find(|p|p.runtime_type==Some(kind)).map(discovery::describe),
         "fields":metadata.field_values(),"structured_metadata":kind.structured_metadata(),
         "capabilities":capabilities::for_type(kind).map(|c|describe(c.id).unwrap()).collect::<Vec<_>>(),
@@ -36,7 +37,7 @@ const QUERIES: &[(&str, &str)] = &[
     ),
     (
         "document_types.describe",
-        "Describe one type by ID. Integrated types include their actual metadata, capabilities and models; types without an implemented contract return only a product profile. Always check can_create.",
+        "Describe one type by ID. Integrated types include actual metadata, values_schema, capabilities and models; types without an implemented contract return only a product profile. Always check can_create.",
     ),
     (
         "commands.list",
@@ -318,7 +319,7 @@ fn command_description(id: &str) -> String {
         "block.insert" | "block.replace" | "block.splice" => "Edit a guarded tree with explicit nodes (quote, list, figure, postscript…). Discover examples via capabilities.describe.",
         "resource.add" => "Admit immutable image bytes (base64), validated before use; a batch may add the resource then insert its figure or signature.",
         "document.set_model" => "Set model_id, full pure Typst source and YAML manifest together. Every option regime and supported language is validated. Retained choices survive model switches; metadata.get reports effective values and substitutions.",
-        "metadata.set" => "Set a typed metadata, record field or document option. Values are validated against the type and model policy.",
+        "metadata.set" => "Set a typed metadata, record field or document option. Values are validated against the type and model policy. Date fields accept null, {kind: calendar, iso: YYYY-MM-DD}, or {kind: custom, text: literal text}; never a raw string. Today must be resolved to a fixed local date by the caller. Discover documentary values_schema with document_types.describe.",
         "insert.table" => "Insert a table figure. header marks the first row as column headers; row_headers marks the first column as row headers. They are independent, including a one-cell table. No merged cells.",
         "table.header" => "Set a header axis on an existing tableFigure: axis columns (default) labels columns using the first row; axis rows labels rows using the first column. Text and other cells are preserved. Leading-track insertions and removals retain the chosen roles.",
         "record.add" | "record.remove" | "record.move" => "Edit a header collection using stable record IDs. Forward references inside an atomic lot are checked only on its final state.",

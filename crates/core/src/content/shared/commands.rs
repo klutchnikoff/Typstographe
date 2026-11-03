@@ -125,6 +125,7 @@ fn set_field(
     let (map, key, before, kind) = targets::field(doc, &doc.transact(), state, target)?;
     let valid = match kind.as_str() {
         "text" | "multiline" | "source" | "language" | "choice" => value.is_string(),
+        "date" => serde_json::from_value::<Option<crate::dates::DateValue>>(value.clone()).is_ok(),
         "boolean" => value.is_boolean(),
         "tokens" | "references" => value
             .as_array()

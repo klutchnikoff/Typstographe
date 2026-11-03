@@ -17016,7 +17016,7 @@
     },
     {
       "batch_step": false,
-      "description": "Describe one type by ID. Integrated types include their actual metadata, capabilities and models; types without an implemented contract return only a product profile. Always check can_create.",
+      "description": "Describe one type by ID. Integrated types include actual metadata, values_schema, capabilities and models; types without an implemented contract return only a product profile. Always check can_create.",
       "family": "query",
       "id": "document_types.describe",
       "params_schema": {
@@ -21714,7 +21714,7 @@
     },
     {
       "batch_step": true,
-      "description": "Set a typed metadata, record field or document option. Values are validated against the type and model policy.",
+      "description": "Set a typed metadata, record field or document option. Values are validated against the type and model policy. Date fields accept null, {kind: calendar, iso: YYYY-MM-DD}, or {kind: custom, text: literal text}; never a raw string. Today must be resolved to a fixed local date by the caller. Discover documentary values_schema with document_types.describe.",
       "family": "edit",
       "id": "metadata.set",
       "params_schema": {

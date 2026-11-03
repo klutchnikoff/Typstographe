@@ -20,7 +20,7 @@
   objet: "",
   reference: "",
   lieu: "",
-  date: "",
+  date: none,
   options: (paper: "a4", landscape: false, language: "fr", bullet-marker: auto),
   // Outil de maquette, sans commande ni réglage de composition dans l'éditeur.
   controle: false,
@@ -137,8 +137,8 @@
     align(right, block(width: 82mm, destinataire-bloc))
     v(6mm)
   }
-  let datation = if date == "" { lieu } else {
-    let prefix = labels.date-prefix
+  let datation = if date == none { lieu } else {
+    let prefix = if type(date) == datetime { labels.date-prefix } else { "" }
     if lieu == "" and prefix != "" {
       prefix = upper(prefix.slice(0, 1)) + prefix.slice(1)
     }

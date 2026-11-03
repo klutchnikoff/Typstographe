@@ -13,7 +13,12 @@ impl LoadedDefinition {
         // must resolve to definitions rather than to the documentary-values root.
         let mut generator = schemars::SchemaGenerator::default();
         let rich = generator.subschema_for::<crate::content::editorial::RichText>();
+        let date = generator.subschema_for::<Option<crate::dates::DateValue>>();
         let mut definitions = generator.take_definitions(false);
+        definitions.insert(
+            "DateValueOrNull".into(),
+            serde_json::to_value(date).expect("date schema"),
+        );
         definitions.insert(
             "EditorialValue".into(),
             serde_json::to_value(rich).expect("editorial schema"),
@@ -102,6 +107,7 @@ fn field_properties(fields: &[Field]) -> Map<String, Value> {
                         r"^[^\u0000-\u0009\u000b-\u001f\u007f-\u009f]*$"
                     } else { r"^[^\u0000-\u001f\u007f-\u009f]*$" }
                 }),
+                Field::Date { .. } => json!({"$ref":"#/$defs/DateValueOrNull"}),
                 Field::Boolean { .. } => json!({"type":"boolean"}),
                 Field::Choice { choices, .. } => json!({"type":"string","enum":choices}),
                 Field::Language { .. } => json!({"type":"string","enum":

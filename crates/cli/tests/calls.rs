@@ -164,6 +164,10 @@ fn active_type_queries_publish_the_loaded_contract_without_a_parallel_cli_schema
         );
         let declared = &result["outcome"]["definition"];
         assert_eq!(declared, &json!(kind.definition().definition()));
+        assert_eq!(
+            result["outcome"]["values_schema"],
+            kind.definition().values_schema()
+        );
         let capabilities = result["outcome"]["capabilities"].as_array().unwrap();
         assert_eq!(
             capabilities.len(),
@@ -176,5 +180,43 @@ fn active_type_queries_publish_the_loaded_contract_without_a_parallel_cli_schema
                 .contains(&c["capability"]["id"])
         }));
         assert_eq!(result["outcome"]["can_create"], kind.can_create());
+    }
+}
+
+#[test]
+fn structured_dates_survive_save_reopen_and_refused_edits_leave_the_file_unchanged() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("dates.typsto");
+    fixture(&path, "Documentary date");
+    for value in [
+        json!({"kind":"calendar","iso":"2024-02-29"}),
+        json!({"kind":"custom","text":"2026-02-30"}),
+        json!(null),
+    ] {
+        let params =
+            json!({"target":{"kind":"metadata","field":"letter.date"},"value":value}).to_string();
+        response(
+            cli()
+                .args(["run", "metadata.set"])
+                .arg(&path)
+                .args(["--params", &params, "--save"]),
+            0,
+        );
+        let result = response(cli().args(["query", "metadata.get"]).arg(&path), 0);
+        let fields = result["outcome"]["fields"].as_array().unwrap();
+        assert_eq!(
+            fields.iter().find(|f| f["field"] == "letter.date").unwrap()["value"],
+            value
+        );
+        let bytes = std::fs::read(&path).unwrap();
+        let invalid = json!({"target":{"kind":"metadata","field":"letter.date"},"value":{"kind":"calendar","iso":"2025-02-29"}}).to_string();
+        response(
+            cli()
+                .args(["run", "metadata.set"])
+                .arg(&path)
+                .args(["--params", &invalid, "--save"]),
+            1,
+        );
+        assert_eq!(std::fs::read(&path).unwrap(), bytes);
     }
 }

@@ -58,6 +58,10 @@ fields! {
         #[serde(default)]
         default: String,
     },
+    Date {
+        #[serde(default)]
+        default: Option<crate::dates::DateValue>,
+    },
     Boolean {
         #[serde(default)]
         default: bool,
@@ -106,6 +110,5 @@ pub enum ReferenceRemoval {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum FieldControl {
-    Date,
     Outline,
 }

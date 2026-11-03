@@ -496,3 +496,14 @@ fn size_limits_use_utf8_bytes_and_schema_preserves_collection_bounds() {
     values["authors"] = json!(vec![author; 101]);
     assert!(!validator.is_valid(&values));
 }
+
+#[test]
+fn unregistered_record_date_controls_are_refused_instead_of_falling_back_to_text() {
+    let mut value = raw();
+    value["collections"][1]["fields"][0] = json!({"id":"name","kind":"date","label-key":"name"});
+    invalid(
+        &value,
+        DiagnosticCode::UnsupportedPolicy,
+        "/collections/1/fields/0",
+    );
+}

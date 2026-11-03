@@ -29,7 +29,7 @@ pub(super) fn session(kind: DocumentType) -> SharedSession {
         {"type":"table","content":[{"type":"tableRow","content":[{"type":"tableCell","content":[{"type":"paragraph","content":[{"type":"text","text":"Cellule"}]}]}]}]},
         {"type":"paragraph","content":[{"type":"text","text":"Avant"},{"type":"footnote","attrs":{"text":"Note 😀"}},{"type":"text","text":" après"}]},
         {"type":"paragraph"}
-    ]})).unwrap(), Settings { metadata, model_manifest:kind.default_model_manifest().into(), template:kind.default_model(), model_id:kind.models().next().unwrap().model.id().into() });
+    ]})).unwrap(), Settings { metadata, model_manifest:kind.default_model_manifest().into(), template:kind.default_model(), model_id:kind.models().next().map_or("compte-rendu.internal", |model| model.model.id()).into() });
     SharedSession::open(
         Guard {
             document: "project".into(),
@@ -607,4 +607,47 @@ fn bad_link_parameters_duplicate_styles_and_oversized_batches_never_mutate_state
         Err(Error::StateLimitExceeded)
     ));
     assert_eq!(s.update(), before);
+}
+
+#[test]
+fn date_commands_are_atomic_and_never_accept_ambiguous_strings_or_text_offsets() {
+    for (kind, field) in [
+        (DocumentType::Courrier, "letter.date"),
+        (DocumentType::CompteRendu, "meeting.date"),
+    ] {
+        let mut s = session(kind);
+        for value in [
+            json!({"kind":"calendar","iso":"2024-02-29"}),
+            json!({"kind":"custom","text":"2025-02-29"}),
+            json!(null),
+        ] {
+            execute(
+                &mut s,
+                vec![command(
+                    "metadata.set",
+                    json!({"target":{"kind":"metadata","field":field},"value":value}),
+                )],
+            );
+            assert_eq!(fields(&s)["date"], value);
+            assert!(
+                s.inspect_zone(
+                    s.guard(),
+                    &serde_json::from_value(json!({"kind":"metadata","field":field})).unwrap()
+                )
+                .is_err()
+            );
+        }
+        let before = s.state().clone();
+        for value in [
+            json!("today"),
+            json!({"kind":"calendar","iso":"2025-02-29"}),
+            json!({"kind":"custom","text":""}),
+        ] {
+            assert!(s.prepare_commands(s.guard(), &[
+                command("metadata.set",json!({"target":{"kind":"metadata","field":field},"value":{"kind":"calendar","iso":"2026-11-03"}})),
+                command("metadata.set",json!({"target":{"kind":"metadata","field":field},"value":value})),
+            ]).is_err());
+            assert_eq!(*s.state(), before);
+        }
+    }
 }

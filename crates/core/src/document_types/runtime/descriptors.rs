@@ -18,7 +18,7 @@ pub(super) fn build(loaded: &LoadedDefinition) -> (Vec<RootField>, Vec<FieldGrou
                             ..
                         }
                     ),
-                    if f.control() == Some(FieldControl::Date) {
+                    if matches!(f, Field::Date { .. }) {
                         FieldKind::Date
                     } else if matches!(f, Field::Text { .. } | Field::Choice { .. }) {
                         FieldKind::Text
@@ -205,6 +205,7 @@ fn record_field(field: &Field) -> Value {
             multiline: true, ..
         } => "multiline",
         Field::Text { .. } => "text",
+        Field::Date { .. } => "date",
         Field::Boolean { .. } => "boolean",
         Field::Choice { .. } => "choice",
         Field::Language { .. } => "language",

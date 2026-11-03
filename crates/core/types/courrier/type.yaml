@@ -49,9 +49,8 @@ fields:
   kind: text
   label-key: field-place
 - id: letter.date
-  kind: text
+  kind: date
   label-key: field-date
-  control: date
 signature:
   tab: sender
   parameter: signature

@@ -13,9 +13,8 @@ fields:
   label-key: field-meeting-title
   required-for-export: true
 - id: meeting.date
-  kind: text
+  kind: date
   label-key: field-date
-  control: date
 - id: meeting.place
   kind: text
   label-key: field-meeting-place

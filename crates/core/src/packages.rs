@@ -265,11 +265,11 @@ mod tests {
         let template = r#"
 #import "capabilities/dates.typ": format-date
 #let courrier(..args) = {
-  for value in ("", "mars 2026", "today", "2024-02-29", datetime(year: 2026, month: 10, day: 1)) {
+  for value in (none, "mars 2026", "today", "2024-02-29", datetime(year: 2026, month: 10, day: 1)) {
     assert(type(format-date(value)) == content)
     assert(type(format-date(value, lang: "en")) == content)
   }
-  format-date("2026-10-01")
+  format-date(datetime(year: 2026, month: 10, day: 1))
 }
 "#;
         let mut world = crate::rendering::TypstWorld::default();
@@ -279,10 +279,23 @@ mod tests {
         world
             .compile_with_template("", &metadata, template)
             .unwrap();
-        for invalid in ["2026-02-30", "2026-13-01"] {
+        // ISO-looking custom strings remain literal, even when not calendar dates.
+        for custom in ["2026-02-30", "2026-13-01"] {
+            world
+                .compile_with_template("", &metadata, &template.replace("2024-02-29", custom))
+                .unwrap();
+        }
+        for invalid in ["42", "true", "(year: 2026)"] {
             assert!(
                 world
-                    .compile_with_template("", &metadata, &template.replace("2024-02-29", invalid))
+                    .compile_with_template(
+                        "",
+                        &metadata,
+                        &template.replace(
+                            "format-date(datetime(year: 2026, month: 10, day: 1))",
+                            &format!("format-date({invalid})")
+                        )
+                    )
                     .is_err()
             );
         }

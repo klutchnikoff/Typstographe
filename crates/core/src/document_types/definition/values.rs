@@ -213,6 +213,9 @@ fn validate_fields(
             Field::Text { multiline, .. } => {
                 v.as_str().is_some_and(|s| valid_text(s, 16000, *multiline))
             }
+            Field::Date { .. } => {
+                serde_json::from_value::<Option<crate::dates::DateValue>>(v.clone()).is_ok()
+            }
             Field::Boolean { .. } => v.is_boolean(),
             Field::Choice { choices, .. } => {
                 v.as_str().is_some_and(|s| choices.iter().any(|c| c == s))
