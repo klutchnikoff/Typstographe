@@ -1,7 +1,7 @@
 # Exemples
 
 [article-working.typsto](article-working.typsto) est un article de démonstration
-au format CAS 12, avec le générateur Typst 3 (guillemets et apostrophes typographiques, manifeste du modèle embarqué),
+au format CAS 13, avec le générateur Typst 4 (guillemets et apostrophes typographiques, manifeste du modèle embarqué),
 régénéré depuis le contenu versionné : auteurs et affiliations, résumés bilingues, sommaire, titres, citation
 en bloc, note de bas de page, liste, tableau et citations bibliographiques.
 

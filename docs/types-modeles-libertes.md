@@ -10,8 +10,9 @@ régimes de paramètres et l’interchangeabilité des modèles décrits aux sec
 2 et 3 sont validés le 26 octobre 2026 ; le premier périmètre est
 implémenté le 3 novembre 2026, voir le [contrat courant](model-options.md).
 Le passage aux déclarations YAML est validé le 3 novembre 2026 ; les propositions
-de formatage des dates ci-dessous restent exploratoires et ne remplacent pas
-le contrat Typst/Datify courant.
+de formatage des dates ci-dessous sont remplacées par le
+[contrat de dates structurées et Typst/Datify](structured-dates.md) implémenté le
+3 novembre 2026. Le formatage reste dans Typst, sans passage par Fluent.
 L’organisation de l’en-tête décrite ci-dessous est validée le 27 octobre 2026.
 
 **Implémentation au 3 novembre 2026 :** les déclarations YAML des types intégrés

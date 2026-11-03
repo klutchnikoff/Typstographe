@@ -3,14 +3,15 @@
 **Statut : stockage CAS, adaptateurs, Versions et comparateur commun avec reprise complète implémentés le 31 octobre 2026.**
 Le **CAS est retenu** après [évaluation](a4-snapshot-storage-evaluation.md).
 L’organisation ci-dessous est implémentée par `content::project::Project`.
-Tauri, CLI et MCP lisent et écrivent ce même format 12 ; le lecteur/écrivain
-de format 11 a été retiré.
-La version 12 est retenue pour cette rupture, sans lecteur de compatibilité
+Tauri, CLI et MCP lisent et écrivent ce même format 13 ; les lecteurs de formats
+antérieurs ont été retirés.
+La version 13 est retenue pour cette rupture, sans lecteur de compatibilité
 préventif ni conversion silencieuse des anciens projets de développement.
 L’exemple Article a été régénéré explicitement depuis son contenu versionné.
 La version 12 embarque le manifeste du modèle dans chaque état CAS ; le source
 `main.typ` utilise les options effectives, tandis que les métadonnées conservent
-les choix de l’auteur. Le générateur de sources est en version 3.
+les choix de l’auteur. La version 13 ajoute les dates structurées explicites et leurs arguments Typst
+natifs (`none`, `datetime`, chaîne) ; le générateur de sources est en version 4.
 
 ## Conteneur et organisation
 
@@ -52,7 +53,7 @@ incorporée devient au contraire une ressource autonome du document.
 | Champ | Rôle |
 | --- | --- |
 | `format` | Valeur fixe `typstOgraphe`. |
-| `version` | Version du conteneur ; `12` retenue. |
+| `version` | Version du conteneur ; `13` retenue. |
 | `project_id` | UUID stable indépendant du chemin du fichier. |
 | `current` | Référence CAS du descripteur de l’état courant confirmé. |
 
@@ -90,7 +91,7 @@ comme dans le contrat existant. Les métadonnées et le modèle doivent égaleme
 correspondre aux valeurs documentaires partagées. Un arbre ou un source Typst
 isolé n’autorise pas à remplacer silencieusement un état partagé contradictoire.
 Les sources Typst sont conservées mais restent dérivées, hors de la voie d’édition.
-Le générateur courant est **2** : les apostrophes et guillemets du
+Le générateur courant est **4** : les apostrophes et guillemets du
 texte rédigé gardent la syntaxe `smartquote` de Typst, au lieu d’être échappés.
 Le modèle et la langue du document déterminent les caractères rendus. Les
 chaînes de code (chemins, URL et paramètres) restent encodées séparément.

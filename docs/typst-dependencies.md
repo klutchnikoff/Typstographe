@@ -52,3 +52,11 @@ ordinaire et sans écraser silencieusement le fichier d’origine. Ce chantier
 n’est pas implémenté à ce stade ; aucune couche de rétrocompatibilité n’est
 requise pour les fichiers du prototype. Le contrôle actuel des formats et schémas
 inconnus reste en place.
+
+## Dates structurées
+
+Le [contrat des dates](structured-dates.md) transmet `none`, `datetime` ou une
+chaîne personnalisée au modèle. `format-date(value, lang: "fr", format: "long")`
+masque Datify et datify-core pour les formats localisés `long`/`short` ; `iso`
+utilise le formatage natif Typst. Les versions des paquets restent inchangées.
+Une chaîne n’est jamais analysée comme date et aucune horloge n’est consultée.

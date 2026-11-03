@@ -176,9 +176,9 @@ pour Courrier, Article et le contrat interne Compte-rendu. Champs, collections,
 onglets, capacités, défauts, validations et liaisons Typst dérivent des déclarations
 communes ; les listes Rust manuelles correspondantes sont retirées. Les parcours
 Courrier/Article sont vérifiés entre Tauri, CLI et MCP ; les sources et le fichier
-de travail sont conservés. Restent les contrats de dates structurées, ressources
-génériques. Les régimes d’options sont raccordés dans le lot suivant. Les codecs de valeurs restent typés
-en Rust ; le chargeur n’installe pas de nouveaux types externes.
+de travail sont conservés. Restent les contrats de ressources
+génériques. Les régimes d’options et dates structurées sont décrits ci-dessous.
+Les codecs de valeurs restent typés en Rust ; le chargeur n’installe pas de nouveaux types externes.
 
 **Mutualisation validée le 3 novembre 2026 :** un catalogue de structures
 d’en-tête réutilisables permet leur sélection par raccourci dans un type.
@@ -225,7 +225,7 @@ Manifeste YAML embarqué, choix explicites facultatifs, résolution commune,
 contrôles génériques et exposition Tauri/CLI/MCP pour format, orientation,
 puces, style bibliographique et sommaire. La langue documentaire n’est jamais
 substituée ; les modèles incompatibles sont refusés. Les paramètres propres à
-un modèle restent différés, ainsi que les dates structurées et ressources génériques.
+un modèle et les ressources génériques restent différés.
 
 **Dates structurées — décisions validées le 3 novembre 2026 :**
 
@@ -248,6 +248,13 @@ un modèle restent différés, ainsi que les dates structurées et ressources g�
   relèvent de la composition Typst. Pas de rétrocompatibilité expérimentale ;
   préserver les fichiers locaux et régénérer seulement les exemples versionnés.
 
+**Dates structurées implémentées :** [contrat commun et recette](docs/structured-dates.md).
+Genre YAML `date`, valeurs typées strictes, contrôle compact commun, brouillons
+refusés/récupérables, annulation et commandes Tauri/CLI/MCP. Transmission native
+`none`/`datetime`/texte et wrapper Datify avec formats choisis par le modèle.
+Le courrier réserve le préfixe de date aux valeurs calendaires. Format CAS 13,
+générateur 4 ; les ressources génériques restent le prochain contrat à préciser.
+
 **Autres décisions à mettre en œuvre et arbitrages avant refonte :**
 
 - Détailler en B.1 la frontière entre composition déclarative et comportements
@@ -255,9 +262,8 @@ un modèle restent différés, ainsi que les dates structurées et ressources g�
 - Étendre ultérieurement les régimes implémentés aux paramètres propres aux
   modèles, avec identités, genres et contrôles communs ; conserver la séparation
   entre options de présentation et contenu de l’auteur.
-- Dates : conserver une valeur structurée et la langue du document ; décider
-  de l’évolution éventuelle du contrat en tenant compte de l’adaptateur Typst
-  et de Datify. Ne pas déplacer implicitement la composition vers Fluent.
+- Étendre si nécessaire les dates structurées communes, en conservant Datify
+  et la composition dans le modèle Typst ; aucun formatage dans Fluent.
 - Listes d’enregistrements et champs facultatifs : préciser les genres et les
   valeurs absentes. Pour les options de présentation, distinguer choix conservé
   et valeur effective : un modèle imposé ne réécrit pas le choix ; une valeur

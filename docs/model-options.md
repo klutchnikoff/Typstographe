@@ -84,9 +84,11 @@ supported `languages`. `document.set_model` requires `model_id`, `source` and
 `manifest`. Machine commands and GUI edits use the same document engine.
 
 First scope: paper, orientation, bullet marker, citation style and outline.
-Model-private parameters, structured dates and generic resource contracts remain
-separate work. This introduces container format 12 and source generator 3,
-without a compatibility reader for development files. The committed Article
+Model-private parameters and generic resource contracts remain separate work.
+[Structured dates](structured-dates.md) are implemented as documentary values,
+with formatting selected in Typst by the model. The options lot introduced
+container format 12 and source generator 3; structured dates subsequently advance
+them to 13 and 4. There is no compatibility reader for development files. The committed Article
 sample is regenerated from its Git content; mutable local work is untouched.
 Tests use an immutable sample under `fixtures/projects/`, independently of a
 user's edits under `examples/`.

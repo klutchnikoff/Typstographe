@@ -116,6 +116,7 @@ reste compilé et n’autorise aucun chemin de fichier fourni par un manifeste.
 | Déclaration | Sémantique et défaut |
 | --- | --- |
 | `text` | Chaîne littérale, vide par défaut ; `multiline: false` par défaut. Aucune source Typst injectée par la valeur. |
+| `date` | Absence `null`, date calendaire complète ou texte personnalisé explicite ; défaut absent, transmission Typst native. |
 | `boolean` | Booléen, `false` par défaut. |
 | `choice` | Liste fermée de chaînes distinctes et défaut explicite appartenant à cette liste. |
 | `language` | Langue documentaire du vocabulaire commun, français par défaut. Distincte de la langue d’interface. |
@@ -132,13 +133,15 @@ plus être de simples identifiants Typst, sans point ni mot-clé.
 L’identifiant `id` d’un enregistrement est réservé à son identité ; il n’est
 pas redéclaré comme champ éditable.
 
-Le contrôle `date` s’applique à un champ texte et conserve le contrat actuel :
-valeur fixe, éventuellement vide ou personnalisée, composée par Typst/Datify.
-Il n’introduit pas de nouveau format de date ni de lecture de l’horloge par le
-moteur. Le contrôle `outline` expose le booléen commun dans Général.
+Le genre [`date`](structured-dates.md) conserve explicitement l’absence, une
+valeur calendaire complète ou un texte personnalisé. Il possède un contrôle
+commun avec modes, Aujourd’hui fixe et corbeille ; aucune inférence depuis le
+texte et aucune lecture de l’horloge dans le cœur. Typst reçoit `none`, un
+`datetime` ou une chaîne échappée ; `format-date` conserve Datify derrière son
+interface stable. Le contrôle `outline` expose le booléen commun dans Général.
 La structure `signature` déclare son onglet et le paramètre Typst ; les opérations
-sur l’image restent celles du moteur de ressources. Les dates structurées,
-ressources génériques restent à préciser séparément. Les [régimes de modèles](model-options.md) sont implémentés.
+sur l’image restent celles du moteur de ressources. Les ressources génériques
+restent à préciser séparément. Les [régimes de modèles](model-options.md) sont implémentés.
 
 ### Collections, liaisons et vues
 

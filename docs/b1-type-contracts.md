@@ -32,7 +32,7 @@ son développement et les règles d’ordre, sans personnalisation de son conten
 | Brique | État vérifié | Travail de B.1 |
 | --- | --- | --- |
 | Identité et disponibilité du type | `DocumentType` est une énumération Rust ; création conditionnée à un modèle enregistré. | Définir identité, description, groupes et lien vers les modèles sans promettre de type installable. |
-| Texte et date | Courrier et Compte-rendu : structures Rust, `TextField`, `FieldKind`, sections et obligations à l’export. Les dates sont encore des chaînes. | Formaliser genres, absence, défauts, contraintes et liaison au paramètre Typst ; traiter le contrat de date séparément de son formatage. |
+| Texte et date | Courrier et Compte-rendu : structures Rust, `TextField`, `FieldKind`, sections et obligations à l’export. Les dates possèdent désormais un genre structuré commun (voir le contrat courant). | Formaliser genres, absence, défauts, contraintes et liaison au paramètre Typst ; traiter le contrat de date séparément de son formatage. |
 | Collections ordonnées | Article : auteurs, affiliations et ensembles multilingues ; schéma descriptif construit en JSON dans Rust. | Remplacer les descriptions dispersées par un contrat typé qui alimente schémas et interfaces. |
 | Identités et relations | Identifiants uniques par collection ; auteurs liés aux affiliations par identifiants ; ordre conservé séparément dans Yrs. | Décrire ces relations et leurs contraintes sans exposer les détails du stockage partagé. |
 | Texte riche | Profils frontend `document`, `rich-text`, `inline-text` ; données riches validées côté Rust. | Référencer les profils communs ; ne pas déclarer une liste d’extensions par champ. Vérifier l’accord des profils et validations entre adaptateurs. |
@@ -184,6 +184,6 @@ Références de conception : [invariants](https://github.com/klutchnikoff/citeke
 Le [premier vocabulaire, ses schémas et le chargeur](type-definitions.md) sont
 implémentés avec yaml_serde. La tranche verticale du chargement aux commandes,
 à l’interface et à la compilation Typst est raccordée pour les types intégrés.
-Les [régimes de modèles](model-options.md) sont raccordés ; dates structurées et ressources génériques restent à
-formaliser ; les composants enregistrés conservent le contrat courant des dates,
-signatures et fichiers bibliographiques.
+Les [régimes de modèles](model-options.md) et les [dates structurées](structured-dates.md)
+sont raccordés ; les ressources génériques restent à formaliser. Les composants
+enregistrés conservent les contrats des signatures et fichiers bibliographiques.

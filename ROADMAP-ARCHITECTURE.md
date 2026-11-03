@@ -148,7 +148,7 @@ et le drapeau `letter_only` sont retirés. Le [contrat courant](docs/type-defini
 décrit les composants enregistrés pour signature, date et fichiers bibliographiques,
 la conservation des sources et les recettes. Les structures Rust restent les
 codecs des valeurs ; aucun registre concurrent ni chargeur externe n’est ajouté.
-Restent les dates structurées et ressources génériques.
+Restent les ressources génériques.
 
 **Structures d’en-tête — choix validé le 3 novembre 2026 :** enregistrer des
 fragments déclaratifs communs et les développer avant la validation finale du
@@ -198,7 +198,7 @@ Manifeste YAML embarqué, choix explicites facultatifs, résolution commune,
 contrôles génériques et exposition Tauri/CLI/MCP pour format, orientation,
 puces, style bibliographique et sommaire. La langue documentaire n’est jamais
 substituée ; les modèles incompatibles sont refusés. Les paramètres propres à
-un modèle restent différés, ainsi que les dates structurées et ressources génériques.
+un modèle et les ressources génériques restent différés.
 
 **Dates structurées — décisions validées le 3 novembre 2026 :**
 
@@ -221,6 +221,13 @@ un modèle restent différés, ainsi que les dates structurées et ressources g�
   relèvent de la composition Typst. Pas de rétrocompatibilité expérimentale ;
   préserver les fichiers locaux et régénérer seulement les exemples versionnés.
 
+**Dates structurées implémentées :** [contrat commun et recette](docs/structured-dates.md).
+Genre YAML `date`, valeurs typées strictes, contrôle compact commun, brouillons
+refusés/récupérables, annulation et commandes Tauri/CLI/MCP. Transmission native
+`none`/`datetime`/texte et wrapper Datify avec formats choisis par le modèle.
+Le courrier réserve le préfixe de date aux valeurs calendaires. Format CAS 13,
+générateur 4 ; les ressources génériques restent le prochain contrat à préciser.
+
 ### Arbitrages complémentaires avant implémentation
 
 1. Détails du contrat déclaratif de B.1, migration des types Rust actuels et limites
@@ -232,8 +239,8 @@ un modèle restent différés, ainsi que les dates structurées et ressources g�
    identités, stockage des choix, genres et contrôles génériques.
 4. Étendre les recettes de conformité aux prochains types et capacités, sans
    perte ou réécriture implicite du contenu.
-5. Dates : valeur structurée/ISO, insertion fixe d’aujourd’hui, langue du document,
-   format demandé au modèle et rôle de l’adaptateur Typst/Datify.
+5. Dates structurées : contrat commun implémenté ; discuter toute extension
+   (précision, collections) avant d’ajouter de nouveaux genres de valeurs.
 6. Étendre le manifeste aux paquets installables et à leurs ressources,
    dépendances et licence des polices.
 
