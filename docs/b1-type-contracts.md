@@ -185,5 +185,6 @@ Le [premier vocabulaire, ses schémas et le chargeur](type-definitions.md) sont
 implémentés avec yaml_serde. La tranche verticale du chargement aux commandes,
 à l’interface et à la compilation Typst est raccordée pour les types intégrés.
 Les [régimes de modèles](model-options.md) et les [dates structurées](structured-dates.md)
-sont raccordés ; les ressources génériques restent à formaliser. Les composants
-enregistrés conservent les contrats des signatures et fichiers bibliographiques.
+sont raccordés ; les [références communes de ressources](resource-references.md)
+migrent maintenant la signature. Les fichiers bibliographiques conservent leur
+contrat métier jusqu’à C.3.

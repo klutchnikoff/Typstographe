@@ -84,7 +84,8 @@ supported `languages`. `document.set_model` requires `model_id`, `source` and
 `manifest`. Machine commands and GUI edits use the same document engine.
 
 First scope: paper, orientation, bullet marker, citation style and outline.
-Model-private parameters and generic resource contracts remain separate work.
+Model-private parameters remain separate work. [Shared resource references](resource-references.md)
+now cover the Letter signature independently of model presentation policies.
 [Structured dates](structured-dates.md) are implemented as documentary values,
 with formatting selected in Typst by the model. The options lot introduced
 container format 12 and source generator 3; structured dates subsequently advance

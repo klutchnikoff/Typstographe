@@ -60,3 +60,11 @@ chaîne personnalisée au modèle. `format-date(value, lang: "fr", format: "long
 masque Datify et datify-core pour les formats localisés `long`/`short` ; `iso`
 utilise le formatage natif Typst. Les versions des paquets restent inchangées.
 Une chaîne n’est jamais analysée comme date et aucune horloge n’est consultée.
+
+## Références d’images
+
+Les [références communes](resource-references.md) transmettent au modèle un
+chemin interne ou `none`. La signature emploie directement `image` de Typst,
+sans wrapper supplémentaire ni nouveau paquet. Les ressources privées du profil
+sont copiées explicitement ; les fichiers nécessaires du modèle restent conservés
+par la résolution commune du projet.

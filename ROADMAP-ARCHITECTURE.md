@@ -148,7 +148,7 @@ et le drapeau `letter_only` sont retirés. Le [contrat courant](docs/type-defini
 décrit les composants enregistrés pour signature, date et fichiers bibliographiques,
 la conservation des sources et les recettes. Les structures Rust restent les
 codecs des valeurs ; aucun registre concurrent ni chargeur externe n’est ajouté.
-Restent les ressources génériques.
+Les références d’images communes sont raccordées ci-dessous.
 
 **Structures d’en-tête — choix validé le 3 novembre 2026 :** enregistrer des
 fragments déclaratifs communs et les développer avant la validation finale du
@@ -198,7 +198,7 @@ Manifeste YAML embarqué, choix explicites facultatifs, résolution commune,
 contrôles génériques et exposition Tauri/CLI/MCP pour format, orientation,
 puces, style bibliographique et sommaire. La langue documentaire n’est jamais
 substituée ; les modèles incompatibles sont refusés. Les paramètres propres à
-un modèle et les ressources génériques restent différés.
+un modèle restent différés ; les références d’images sont raccordées ci-dessous.
 
 **Dates structurées — décisions validées le 3 novembre 2026 :**
 
@@ -226,7 +226,7 @@ Genre YAML `date`, valeurs typées strictes, contrôle compact commun, brouillon
 refusés/récupérables, annulation et commandes Tauri/CLI/MCP. Transmission native
 `none`/`datetime`/texte et wrapper Datify avec formats choisis par le modèle.
 Le courrier réserve le préfixe de date aux valeurs calendaires. Format CAS 13,
-générateur 4 ; les ressources génériques restent le prochain contrat à préciser.
+générateur 4 ; les références d’images communes sont raccordées dans le lot suivant.
 
 **Ressources communes — décisions validées le 3 novembre 2026 :**
 
@@ -249,6 +249,16 @@ générateur 4 ; les ressources génériques restent le prochain contrat à pré
   présentation et place manuscrite sans signature restent définies par le modèle.
 - Migrer la signature entière vers cette brique, retirer les accès spécialisés
   devenus inutiles et vérifier les garanties partagées avec les figures du corps.
+
+**Références de ressources implémentées :** [contrat commun et recette](docs/resource-references.md).
+La signature est un champ `resource-reference` ordinaire, avec type d’image et
+source de profil déclarés. Le contrôle, la création, `metadata.set`, la validation,
+la conservation et les exports suivent les champs déclarés. L’ancien bloc YAML
+`signature`, la commande dédiée et la clé partagée spéciale sont retirés.
+Les saisies refusées conservent leurs octets privés jusqu’à validation. Format
+CAS 14, générateur 4 inchangé ; préférences privées et projet restent distincts.
+Les nouveaux genres de fichiers, contrôles en collections et paramètres propres
+aux modèles restent des extensions à discuter avant leur implémentation.
 
 ### Arbitrages complémentaires avant implémentation
 

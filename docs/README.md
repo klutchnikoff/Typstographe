@@ -22,12 +22,13 @@ les décisions, mesures et limites des étapes livrées.
 | Architecture, adaptateurs et autorité | [Contrat général](interface-contract.md), [contrat structuré](structured-contract.md), [adaptateurs](structured-adapters.md) |
 | Commandes et paramètres exécutables | [Catalogue généré](commands.md), [schémas JSON](commands.json), `typstographe-cli commands describe ID` |
 | Cibles, texte, structures et contextes | [Commandes structurées](structured-commands.md), [contextes privés](structured-editing-contexts.md), [transformations](a2-transformations-inventory.md) |
-| Projet autonome et Versions | [Format CAS 13](a4-project-format.md), [comparateur et validation contextualisée](a4-comparison-contract.md) |
+| Projet autonome et Versions | [Format CAS 14](a4-project-format.md), [comparateur et validation contextualisée](a4-comparison-contract.md) |
 | Conservation et récupération | [Contrat de conservation](a3-conservation.md), [parcours de reprise](a3-recovery-interface.md) |
 | Éditeur et interactions | [Zones riches](rich-zones.md), [widgets/bandeaux](editor-widgets.md), [navigation clavier](keyboard-navigation.md), [dialogues](metadata-dialogs.md), [retours/jointures](paragraph-join.md) |
 | Catalogue des usages | [Groupes, types et fiches](document-type-catalogue.md) |
 | Types, modèles et bibliographie | [Article](article-contract.md), [citations et bibliographie](article-bibliography.md), [dépendances Typst et wrappers](typst-dependencies.md) |
 | Déclarations de types | [Contrat YAML et raccordement des types actifs](type-definitions.md), [schéma du manifeste](schemas/type-definition.schema.json) |
+| Ressources documentaires | [Références typées, signature et conservation](resource-references.md) |
 | Dates documentaires | [Valeurs typées, saisie et wrapper Datify](structured-dates.md) |
 | Options des modèles | [Régimes, choix conservés et valeurs effectives](model-options.md), [schéma du manifeste](schemas/model-manifest.schema.json) |
 | Performances et synchronisation | [Mode individuel](individual-mode.md), [rendu et méthode de mesure](tauri-preview-performance.md) |

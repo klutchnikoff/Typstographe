@@ -87,9 +87,10 @@ continues to own the place, punctuation and layout; the author owns the date.
 
 ## Development format
 
-Container format **13** and source generator **4** record this explicit date
+The dates lot introduced container format **13** and source generator **4** for this explicit date
 contract and native Typst arguments. There is no compatibility reader for
-experimental formats. The committed Article example and immutable test fixture
+experimental formats. [Shared resources](resource-references.md) subsequently
+advance the container to **14**, keeping generator **4**. The committed Article example and immutable test fixture
 are regenerated from the previous Git example; mutable local documents remain
 untouched.
 

@@ -116,6 +116,7 @@ reste compilé et n’autorise aucun chemin de fichier fourni par un manifeste.
 | Déclaration | Sémantique et défaut |
 | --- | --- |
 | `text` | Chaîne littérale, vide par défaut ; `multiline: false` par défaut. Aucune source Typst injectée par la valeur. |
+| `resource-reference` | Référence interne d’image facultative, `null` par défaut ; contrôle commun et copie de profil si déclarée. |
 | `date` | Absence `null`, date calendaire complète ou texte personnalisé explicite ; défaut absent, transmission Typst native. |
 | `boolean` | Booléen, `false` par défaut. |
 | `choice` | Liste fermée de chaînes distinctes et défaut explicite appartenant à cette liste. |
@@ -139,9 +140,10 @@ commun avec modes, Aujourd’hui fixe et corbeille ; aucune inférence depuis le
 texte et aucune lecture de l’horloge dans le cœur. Typst reçoit `none`, un
 `datetime` ou une chaîne échappée ; `format-date` conserve Datify derrière son
 interface stable. Le contrôle `outline` expose le booléen commun dans Général.
-La structure `signature` déclare son onglet et le paramètre Typst ; les opérations
-sur l’image restent celles du moteur de ressources. Les ressources génériques
-restent à préciser séparément. Les [régimes de modèles](model-options.md) sont implémentés.
+Le genre [`resource-reference`](resource-references.md) déclare les images
+facultatives et leur éventuelle source de profil. La signature du Courrier
+utilise cette brique, ses commandes et son contrôle commun ; l’ancienne structure
+`signature` est supprimée. Les [régimes de modèles](model-options.md) sont implémentés.
 
 ### Collections, liaisons et vues
 
