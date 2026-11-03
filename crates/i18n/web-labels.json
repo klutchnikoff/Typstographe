@@ -477,5 +477,7 @@
   "Saisissez une date complète et valide, ou supprimez la date.": "web-date-invalid",
   "Saisissez une date personnalisée sur une seule ligne, ou supprimez la date.": "web-date-custom-invalid",
   "Renseignez la nouvelle date ou annulez.": "web-date-pending",
-  "Date": "field-date"
+  "Date": "field-date",
+  "Supprimer l’image": "web-remove-resource-image",
+  "Aucune image": "web-no-resource-image"
 }

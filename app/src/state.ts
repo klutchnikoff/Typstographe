@@ -42,7 +42,6 @@ export function settingsFor(provider: Provider): Settings {
   for (const key of ['paper', 'language', 'landscape', 'bullet_marker', 'spelling_ignored'])
     if (map.has(`options.${key}`)) base.metadata.fields.options[key] = map.get(`options.${key}`)
   if (kind.structured) snapshotRecords(provider, kind.structured, base.metadata.fields)
-  if (map.has('signature')) base.metadata.fields.signature = map.get('signature')
   return base
 }
 export function setSetting(provider: Provider, key: string, value: unknown) {

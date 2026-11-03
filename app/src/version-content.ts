@@ -121,22 +121,23 @@ export function versionContent(
     )
   if (options && 'bullet_marker' in options)
     field(tr('Puces des listes'), options.bullet_marker ?? tr('Automatique (modèle)'))
-  if ('signature' in fields) {
-    const url = typeof fields.signature === 'string' ? resources.get(fields.signature) : undefined
-    if (url) {
-      const row = document.createElement('div'),
-        label = document.createElement('strong'),
-        image = document.createElement('img')
-      row.className = 'version-field'
-      label.textContent = tr('Signature du document')
-      image.src = url
-      image.alt = tr('Signature du document')
-      image.className = 'version-signature'
-      row.append(label, image)
-      information.append(row)
-    } else field(tr('Signature du document'), tr('Sans signature'))
+  for (const definition of kind?.fields || []) {
+    const value = fields[definition.parameter]
+    if (definition.resource) {
+      const url = typeof value === 'string' ? resources.get(value) : undefined
+      if (url) {
+        const row = document.createElement('div'),
+          label = document.createElement('strong'),
+          image = document.createElement('img')
+        row.className = 'version-field'
+        label.textContent = image.alt = definition.label
+        image.src = url
+        image.className = 'version-signature'
+        row.append(label, image)
+        information.append(row)
+      } else field(definition.label, tr('Aucune image'))
+    } else field(definition.label, value)
   }
-  for (const definition of kind?.fields || []) field(definition.label, fields[definition.parameter])
   const collections = kind?.structured?.collections || []
   for (const collection of collections) {
     const records = fields[collection.parameter]

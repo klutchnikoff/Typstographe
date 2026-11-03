@@ -126,7 +126,10 @@ it('fills a new document from the profile and the current date without sharing d
     { 'sender.name': 'Ada', unrelated: 'x' },
     new Date(2026, 0, 5),
   )
-  expect(metadata.fields).toMatchObject({ sender_name: 'Ada', date: '2026-01-05' })
+  expect(metadata.fields).toMatchObject({
+    sender_name: 'Ada',
+    date: { kind: 'calendar', iso: '2026-01-05' },
+  })
   expect(metadata.fields).not.toHaveProperty('unrelated')
   expect(letter.metadata.fields.sender_name).toBe('')
 })
@@ -200,4 +203,28 @@ it('appends late commands to the first menu and closes menus when run', () => {
   button.click()
   expect(run).toHaveBeenCalled()
   expect(menu.querySelector('details')!.open).toBe(false)
+})
+
+it('keeps profile text away from typed resource fields when creating a document', () => {
+  const type: DocumentType = {
+    ...letter,
+    metadata: { ...letter.metadata, fields: { ...letter.metadata.fields, signature: null } },
+    fields: [
+      ...letter.fields,
+      {
+        field: 'sender.signature',
+        parameter: 'signature',
+        label: 'Signature',
+        value: null,
+        group: 'sender',
+        multiline: false,
+        kind: 'resource-reference',
+        required_for_export: false,
+        resource: { kind: 'image', profile_default: 'signature' },
+      },
+    ],
+  }
+  expect(
+    newDocumentMetadata(type, { 'sender.signature': '', 'sender.name': 'Ada' }).fields.signature,
+  ).toBeNull()
 })

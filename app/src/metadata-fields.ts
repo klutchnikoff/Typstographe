@@ -2,6 +2,11 @@ import type { Field, MetadataGroup } from './shell'
 import type { MetadataCommands } from './metadata-commands'
 import { bindMetadataInput, metadataInputBinding } from './metadata-input'
 import { metadataDate, metadataDateControl } from './metadata-date'
+import {
+  metadataResource,
+  metadataResourceControl,
+  type ResourceContext,
+} from './metadata-resource'
 
 type Section = MetadataGroup['sections'][number]
 type ChangeField = (field: string, value: unknown) => void
@@ -53,16 +58,24 @@ function metadataField(
   value: unknown,
   change: ChangeField,
   editInput: ChangeField = change,
-  binding?: { commands: MetadataCommands; read: (field: Field) => unknown },
+  binding?: {
+    commands: MetadataCommands
+    read: (field: Field) => unknown
+    resources?: ResourceContext
+  },
 ) {
   const row = document.createElement('div')
   row.className = 'field'
   const label = document.createElement('label')
   label.textContent = definition.label
-  const date =
-    definition.kind === 'date' ? metadataDate(definition, value, change, binding) : undefined
+  const date = definition.resource
+    ? metadataResource(definition, value, change, binding)
+    : definition.kind === 'date'
+      ? metadataDate(definition, value, change, binding)
+      : undefined
   const { controls, input } =
     date ?? metadataControl(definition, String(value ?? ''), change, editInput)
+  if (definition.resource) row.classList.add('metadata-resource-field')
   label.htmlFor = input.id
   row.append(label, controls)
   date?.bind()
@@ -76,9 +89,13 @@ export function metadataFields(
   definitions: Field[],
   values: Record<string, unknown>,
   change: ChangeField,
-  binding?: { commands: MetadataCommands; read: (field: Field) => unknown },
+  binding?: {
+    commands: MetadataCommands
+    read: (field: Field) => unknown
+    resources?: ResourceContext
+  },
 ) {
-  const append = (container: HTMLElement, definition: Field) => {
+  const append = (container: HTMLElement, definition: Field, hideLabel = false) => {
     const row = metadataField(
       definition,
       values[definition.parameter],
@@ -86,8 +103,9 @@ export function metadataFields(
       binding ? () => {} : change,
       binding,
     )
+    if (hideLabel) row.querySelector('label')!.classList.add('sr-only')
     container.append(row)
-    if (binding && definition.kind !== 'date')
+    if (binding && definition.kind !== 'date' && !definition.resource)
       bindMetadataInput(
         row.querySelector('input, textarea')!,
         binding.commands,
@@ -104,7 +122,14 @@ export function metadataFields(
     const { root, content } = metadataSection(section)
     for (const id of section.fields) {
       const definition = definitions.find((field) => field.field === id)
-      if (definition) append(content, definition)
+      if (definition)
+        append(
+          content,
+          definition,
+          !!definition.resource &&
+            section.fields.length === 1 &&
+            section.label === definition.label,
+        )
     }
     parent.append(root)
   }
@@ -112,6 +137,8 @@ export function metadataFields(
 
 /** Refresh shared values without rebuilding the control being edited. */
 export function refreshMetadataFields(parent: HTMLElement, values: Record<string, unknown>) {
+  for (const root of parent.querySelectorAll<HTMLElement>('[data-metadata-resource]'))
+    metadataResourceControl(root)?.refresh(values[root.dataset.metadataResource!])
   for (const root of parent.querySelectorAll<HTMLElement>('[data-metadata-date]'))
     metadataDateControl(root)?.refresh(values[root.dataset.metadataDate!])
   for (const input of parent.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
@@ -139,6 +166,8 @@ export function refreshMetadataFields(parent: HTMLElement, values: Record<string
   }
 }
 export function destroyMetadataFields(parent: HTMLElement) {
+  for (const root of parent.querySelectorAll<HTMLElement>('[data-metadata-resource]'))
+    metadataResourceControl(root)?.destroy()
   for (const root of parent.querySelectorAll<HTMLElement>('[data-metadata-date]'))
     metadataDateControl(root)?.destroy()
   for (const input of parent.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(

@@ -98,3 +98,20 @@ it('retries view registration after a transient storage failure', async () => {
   expect(writes).toHaveLength(1)
   expect(writes[0].epoch).toBe(4)
 })
+
+it('conserves prepared image bytes with an unconfirmed resource field, without admitting them to the owner', async () => {
+  const { provider, recovery, writes } = setup()
+  const resource = { path: 'images/pending.svg', data: btoa('<svg/>') }
+  provider.documentEdits!.draft = () => [
+    {
+      target: { kind: 'metadata', field: 'sender.signature' },
+      value: resource.path,
+      resources: [resource],
+    },
+  ]
+  recovery.changed()
+  await recovery.flush()
+  expect(writes[0].resources).toEqual([])
+  expect(writes[0].fields[0].resources).toEqual([resource])
+  expect(provider.resources.size).toBe(0)
+})

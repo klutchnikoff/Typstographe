@@ -1,5 +1,6 @@
 import type { Editor } from '@tiptap/core'
-import type { Provider } from './provider'
+import type { Provider, Resource } from './provider'
+import { resourceCommand } from './resource-commands'
 import { stableJSON } from './provider'
 import { executeStructured, type StructuredCommand } from './structured-commands'
 import { tr } from './i18n'
@@ -23,6 +24,7 @@ type Draft = {
   sourceId?: string
   recoveredDone?: () => Promise<void>
   error?: Error
+  resources?: Resource[]
 }
 const owners = new WeakMap<Provider, MetadataCommands>()
 const key = (target: FieldTarget) => stableJSON(target)
@@ -85,6 +87,7 @@ export class MetadataCommands {
     read: () => unknown,
     done: () => Promise<void>,
     sourceId?: string,
+    resources?: Resource[],
   ) {
     this.checkDocument()
     this.drafts.set(key(target), {
@@ -96,6 +99,7 @@ export class MetadataCommands {
       manual: true,
       recoveredDone: done,
       sourceId,
+      resources: resources ? structuredClone(resources) : undefined,
     })
     this.changed()
   }
@@ -111,12 +115,13 @@ export class MetadataCommands {
   }
   draft() {
     this.checkDocument()
-    return [...this.drafts.values()].map(({ target, value, base, sourceId }) =>
+    return [...this.drafts.values()].map(({ target, value, base, sourceId, resources }) =>
       structuredClone({
         target,
         value,
         ...(base === undefined ? {} : { base: JSON.parse(base) }),
         ...(sourceId ? { sourceId } : {}),
+        ...(resources?.length ? { resources } : {}),
       }),
     )
   }
@@ -129,19 +134,33 @@ export class MetadataCommands {
     else this.compositions.delete(input)
     this.changed()
   }
-  set(target: FieldTarget, value: unknown, read: () => unknown) {
+  set(
+    target: FieldTarget,
+    value: unknown,
+    read: () => unknown,
+    resources?: Resource[],
+    base?: string,
+  ) {
     this.checkDocument()
     const id = key(target),
       previous = this.drafts.get(id)
     if (previous?.manual) {
       previous.value = value
+      if (resources) previous.resources = structuredClone(resources)
       previous.version++
       this.changed()
       return
     }
     if (previous && !previous.error && stableJSON(previous.value) === stableJSON(value)) return
     if (!previous || previous.error)
-      this.drafts.set(id, { target, value, read, base: stableJSON(read()), version: 0 })
+      this.drafts.set(id, {
+        target,
+        value,
+        read,
+        base: base ?? stableJSON(read()),
+        version: 0,
+        resources: resources ? structuredClone(resources) : previous?.resources,
+      })
     else {
       previous.value = value
       previous.version++
@@ -162,6 +181,7 @@ export class MetadataCommands {
       ...(previous?.manual
         ? { manual: true, recoveredDone: previous.recoveredDone, sourceId: previous.sourceId }
         : {}),
+      resources: previous?.resources,
       error: new Error(message),
     })
     this.changed()
@@ -199,6 +219,7 @@ export class MetadataCommands {
               this.provider,
               this.provider.transport,
               [
+                ...(draft.resources || []).map(resourceCommand),
                 {
                   id: draft.target.kind === 'model' ? 'document.set_model' : 'metadata.set',
                   params:
@@ -232,6 +253,31 @@ export class MetadataCommands {
         this.running = undefined
         if ([...this.drafts.values()].some((draft) => !draft.error && !draft.manual)) this.pump()
       })
+  }
+  pendingResources(target: FieldTarget) {
+    return this.drafts.get(key(target))?.resources || []
+  }
+  /** File decoding is part of the save gate; refused reference edits retain their private bytes. */
+  async prepareResource(
+    target: FieldTarget,
+    read: () => unknown,
+    prepare: () => Promise<Resource>,
+  ) {
+    const base = stableJSON(read())
+    const operation = (async () => {
+      await this.flushFields()
+      const resource = await prepare()
+      this.set(target, resource.path, read, [resource], base)
+      await this.flushFields()
+    })()
+    this.operations.add(operation)
+    this.changed()
+    try {
+      await operation
+    } finally {
+      this.operations.delete(operation)
+      this.changed()
+    }
   }
   private async flushFields() {
     if (this.compositions.size) throw new Error(tr('Terminez la saisie en cours avant de décider.'))

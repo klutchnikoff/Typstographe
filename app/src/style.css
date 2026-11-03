@@ -901,23 +901,6 @@ summary svg {
 .metadata-section-compact textarea {
   padding: 4px 8px;
 }
-.metadata-signature {
-  padding: 8px 10px;
-}
-.metadata-signature-controls {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-}
-.metadata-signature-controls > input {
-  flex: 1 1 180px;
-  min-width: 0;
-  max-width: 100%;
-}
-.metadata-signature-controls .panel-actions {
-  margin: 0 0 0 auto;
-}
 @container (max-width: 560px) {
   .metadata-section-compact {
     grid-column: 1 / -1;
@@ -2330,4 +2313,26 @@ li:has(.interline-band-gap[data-marker])::marker {
   .type-model-band {
     padding: 10px 16px;
   }
+}
+
+/* Type-defined image fields share preview, input and actions in every metadata section. */
+.metadata-section .field.metadata-resource-field {
+  display: block;
+}
+.metadata-resource-preview {
+  display: block;
+  max-width: min(100%, 220px);
+  max-height: 72px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+.metadata-resource-preview[hidden] {
+  display: none;
+}
+.metadata-resource-controls input {
+  width: 100%;
+  min-width: 0;
+}
+.metadata-resource-controls .panel-actions {
+  margin: 8px 0 0;
 }

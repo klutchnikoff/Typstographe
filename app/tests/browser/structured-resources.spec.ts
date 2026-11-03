@@ -56,12 +56,12 @@ test('signature : ajout, suppression, annulation, partage et réouverture utilis
   await expect.poll(async () => (await ownerResources(page)).length).toBe(before.length + 1)
   await flush(page)
   const path = await page.evaluate(() =>
-    window.__spike!.provider.doc.getMap('settings').get('signature'),
+    window.__spike!.provider.doc.getMap('settings').get('sender.signature'),
   )
   expect(typeof path).toBe('string')
   await expect
     .poll(() =>
-      peer.evaluate(() => window.__spike!.provider.doc.getMap('settings').get('signature')),
+      peer.evaluate(() => window.__spike!.provider.doc.getMap('settings').get('sender.signature')),
     )
     .toBe(path)
   expect(
@@ -70,12 +70,14 @@ test('signature : ajout, suppression, annulation, partage et réouverture utilis
   await page.getByRole('button', { name: 'Sans signature', exact: true }).click()
   await flush(page)
   expect(
-    await page.evaluate(() => window.__spike!.provider.doc.getMap('settings').get('signature')),
+    await page.evaluate(() =>
+      window.__spike!.provider.doc.getMap('settings').get('sender.signature'),
+    ),
   ).toBeNull()
   await page.getByRole('button', { name: 'Annuler', exact: true }).click()
   await expect
     .poll(() =>
-      page.evaluate(() => window.__spike!.provider.doc.getMap('settings').get('signature')),
+      page.evaluate(() => window.__spike!.provider.doc.getMap('settings').get('sender.signature')),
     )
     .toBe(path)
   expect(await ownerResources(page)).toContain(path)
@@ -84,7 +86,9 @@ test('signature : ajout, suppression, annulation, partage et réouverture utilis
   await page.reload()
   await page.waitForFunction(() => window.__spike?.ready)
   expect(
-    await page.evaluate(() => window.__spike!.provider.doc.getMap('settings').get('signature')),
+    await page.evaluate(() =>
+      window.__spike!.provider.doc.getMap('settings').get('sender.signature'),
+    ),
   ).toBe(path)
 })
 test('options : refus concurrent explicite, puis validation sans relais brut', async ({
@@ -142,6 +146,7 @@ test('le profil reste global, puis sa signature est incorporée explicitement ou
 }) => {
   const before = await ownerResources(page)
   await page.getByRole('button', { name: 'Préférences', exact: true }).click()
+  await expect(page.getByLabel('Signature du document', { exact: true })).toHaveCount(0)
   await page.getByLabel('Signature par défaut', { exact: true }).setInputFiles(file)
   await page.getByRole('button', { name: 'Enregistrer les préférences', exact: true }).click()
   await expect(page.locator('#message')).toContainText('Préférences enregistrées')
@@ -168,6 +173,12 @@ test('le profil reste global, puis sa signature est incorporée explicitement ou
   )
   await page.evaluate(() => window.__spike!.save())
   expect(await ownerResources(page)).toEqual([preferences.signature.path])
+  const current = await page.evaluate(async () => {
+    const { settingsFor } = await import('../../src/state.ts')
+    return settingsFor(window.__spike!.provider).metadata.fields
+  })
+  expect(current.signature).toBe(preferences.signature.path)
+  expect(current.date).toMatchObject({ kind: 'calendar' })
 })
 
 test('changer de modèle garde les fragments Article et entre dans l’historique commun', async ({

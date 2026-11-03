@@ -1312,7 +1312,13 @@ it('immutable images and signatures share one guarded batch and remain available
         actor: 0,
         commands: [
           { id: 'resource.add', params: { resource } },
-          { id: 'document.set_signature', params: { path: resource.path } },
+          {
+            id: 'metadata.set',
+            params: {
+              target: { kind: 'metadata', field: 'sender.signature' },
+              value: resource.path,
+            },
+          },
         ],
       },
       { op: 'history', actor: 0, direction: 'undo' },

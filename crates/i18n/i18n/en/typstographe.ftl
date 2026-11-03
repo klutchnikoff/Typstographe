@@ -1214,3 +1214,6 @@ web-date-custom = Custom text
 web-date-invalid = Enter a complete, valid date, or clear the date.
 web-date-custom-invalid = Enter a custom date on one line, or clear the date.
 web-date-pending = Enter the replacement date or cancel.
+
+web-remove-resource-image = Remove image
+web-no-resource-image = No image

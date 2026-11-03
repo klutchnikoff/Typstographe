@@ -91,7 +91,9 @@ export function preferencesPanel(
     }
   }
   const profileInputs = new Map<string, HTMLInputElement | HTMLTextAreaElement>()
-  for (const definition of catalogue.types[0].fields.filter((f) => f.group === 'sender')) {
+  for (const definition of catalogue.types[0].fields.filter(
+    (f) => f.group === 'sender' && f.kind === 'text' && !f.resource,
+  )) {
     const input = definition.multiline
       ? document.createElement('textarea')
       : document.createElement('input')

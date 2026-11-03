@@ -5,6 +5,7 @@ import { historyFor } from './editing-history'
 import { tr } from './i18n'
 import { newDocumentDialog, newDocumentMetadata } from './new-document-dialog'
 import { privateDrafts } from './private-drafts'
+import { initialResources } from './metadata-resource'
 import type { Provider, Resource } from './provider'
 import { documentContent } from './shared-inline-marks'
 import type { DocumentType, Model } from './shell'
@@ -14,7 +15,7 @@ import { byId, type ShellLayout } from './shell-layout'
 import type { ShellMetadata } from './shell-metadata'
 import type { SidePanels } from './shell-panels'
 import { withCurrentSnapshot } from './snapshot-operation'
-import { setDocument, setSetting, settingsFor, type Settings } from './state'
+import { setDocument, settingsFor, type Settings } from './state'
 import { versionsAPI } from './versions-api'
 import { versionsPanel } from './versions-panel'
 
@@ -177,9 +178,8 @@ export function shellDocuments(
   function createDocument(t: DocumentType, m: Model) {
     const { preferences } = state
     const documentMetadata = newDocumentMetadata(t, preferences.profile)
+    const resources = initialResources(t.fields, documentMetadata.fields, preferences.signature)
     if (options.isTauri || provider.nativeEditing) {
-      if (t.id === 'courrier' && preferences.signature)
-        documentMetadata.fields.signature = preferences.signature.path
       ctx.guarded(async () => {
         await provider.flush(false)
         await state.recovery?.force()
@@ -192,7 +192,7 @@ export function shellDocuments(
               modelManifest: m.manifest,
               modelId: m.id,
             },
-            resources: t.id === 'courrier' && preferences.signature ? [preferences.signature] : [],
+            resources,
             revision,
           }),
         )
@@ -208,10 +208,7 @@ export function shellDocuments(
       })
       editor.commands.clearContent()
     })
-    if (t.id === 'courrier' && preferences.signature) {
-      provider.addResource(preferences.signature)
-      setSetting(provider, 'signature', preferences.signature.path)
-    }
+    for (const resource of resources) provider.addResource(resource)
     state.path = null
     state.dirty = false
     historyFor(editor)?.clear()

@@ -61,7 +61,6 @@ export type StructuredMetadata = {
   panels?: MetadataPanel[]
   bibliography?: BibliographyDescriptor
   outline?: { parameter: string; field: string }
-  signature?: { tab: string }
 }
 export type RecordStore = Pick<Provider, 'doc'>
 export type RecordData = Record<string, unknown> & { id: string }

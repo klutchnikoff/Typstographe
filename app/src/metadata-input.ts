@@ -52,7 +52,7 @@ export function bindMetadataInput(
     confirm: () => retry.click(),
   })
   const update = () => {
-    if (!composing) publish()
+    if (!composing && !(input instanceof HTMLInputElement && input.type === 'file')) publish()
   }
   const begin = () => {
     composing = true

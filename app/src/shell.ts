@@ -40,6 +40,7 @@ export interface Model {
   policy?: ModelPolicy
 }
 export interface Field {
+  resource?: { kind: 'image'; profile_default: 'signature' | null }
   presentation?: ModelOption | null
   field: string
   parameter: string

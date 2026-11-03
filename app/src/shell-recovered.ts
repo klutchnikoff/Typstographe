@@ -113,6 +113,7 @@ export function shellRecovered(
         read,
         () => consumeRecovered(provider, item.id),
         item.id,
+        item.payload.resources,
       )
       input.focus()
       return true

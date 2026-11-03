@@ -21,9 +21,10 @@ export function newDocumentMetadata(
 ): Settings['metadata'] {
   const metadata = structuredClone(type.metadata)
   for (const f of type.fields)
-    if (f.field in profile) metadata.fields[f.parameter] = profile[f.field]
+    if (f.kind === 'text' && !f.resource && f.field in profile)
+      metadata.fields[f.parameter] = profile[f.field]
   const date = type.fields.find((f) => f.kind === 'date')
-  if (date) metadata.fields[date.parameter] = isoDate(now)
+  if (date) metadata.fields[date.parameter] = { kind: 'calendar', iso: isoDate(now) }
   return metadata
 }
 

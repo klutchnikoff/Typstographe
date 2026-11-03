@@ -242,7 +242,7 @@ test('expéditeur compact : identité, coordonnées et organisation, clavier et 
     'Service',
     'Fonction',
   ]
-  await expect(content.locator('label')).toHaveText(labels)
+  await expect(content.locator('label:not(.sr-only)')).toHaveText(labels)
   await expect(content.locator('legend')).toHaveText([
     'Coordonnées',
     'Organisation',
@@ -259,8 +259,7 @@ test('expéditeur compact : identité, coordonnées et organisation, clavier et 
   await expect(content.getByLabel('Fonction', { exact: true })).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(content.getByLabel('Signature du document', { exact: true })).toBeFocused()
-  await page.keyboard.press('Tab')
-  await expect(content.getByRole('button', { name: 'Sans signature', exact: true })).toBeFocused()
+  await expect(content.getByRole('button', { name: 'Sans signature', exact: true })).toBeDisabled()
   const contact = content.locator('[data-section=contact]'),
     organisation = content.locator('[data-section=organisation]')
   const left = (await contact.boundingBox())!,
@@ -322,7 +321,7 @@ test('en-tête compact : destinataire, objet et référence puis lieu et date, s
   await header(page)
   const content = page.locator('#metadata-content')
   const labels = ['Destinataire', 'Adresse', 'Objet', 'Référence', 'Lieu', 'Date']
-  await expect(content.locator('label')).toHaveText(labels)
+  await expect(content.locator('label:not(.sr-only)')).toHaveText(labels)
   const recipient = content.getByRole('group', { name: 'Destinataire', exact: true })
   const information = content.getByRole('group', { name: 'Informations', exact: true })
   await expect(recipient.locator('label')).toHaveText(labels.slice(0, 2))

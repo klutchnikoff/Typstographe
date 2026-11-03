@@ -6,19 +6,21 @@ import { MetadataCommands } from '../src/metadata-commands'
 import { bindMetadataInput } from '../src/metadata-input'
 import { installKeyboardNavigation } from '../src/keyboard-navigation'
 
-const native = vi.hoisted(() => ({ calls: [] as { value: unknown; finish: () => void }[] }))
+const native = vi.hoisted(() => ({
+  calls: [] as { value: unknown; commands: any[]; finish: () => void }[],
+}))
 vi.mock('../src/structured-commands', () => ({
   executeStructured: vi.fn(async (_editor, provider, _transport, commands, current) => {
     const before = [...Y.encodeStateAsUpdate(provider.doc)]
     await new Promise<void>((resolve) =>
-      native.calls.push({ value: commands[0]?.params.value, finish: resolve }),
+      native.calls.push({ value: commands.at(-1)?.params.value, commands, finish: resolve }),
     )
     if (
       !current() ||
       JSON.stringify(before) !== JSON.stringify([...Y.encodeStateAsUpdate(provider.doc)])
     )
       throw new Error('Le document a changé. Réessayez.')
-    for (const command of commands)
+    for (const command of commands.filter((command: any) => command.id === 'metadata.set'))
       provider.doc.getMap('settings').set(command.params.target.field, command.params.value)
     return true
   }),
@@ -217,4 +219,77 @@ it('incomplete date modes share draft recovery, Escape and IME without erasing t
   await vi.waitFor(() => expect(done).toHaveBeenCalledOnce())
   expect(s.read()).toEqual({ kind: 'calendar', iso: '2024-02-29' })
   destroyMetadataFields(root)
+})
+
+it('gates saving while decoding an image and retains refused bytes for recovery and explicit retry', async () => {
+  const s = setup()
+  const resource = { path: 'images/sign.svg', data: btoa('<svg/>') }
+  let release!: (value: typeof resource) => void
+  const decoded = new Promise<typeof resource>((resolve) => {
+    release = resolve
+  })
+  const prepare = s.controller.prepareResource(s.target, s.read, () => decoded)
+  const refusal = expect(prepare).rejects.toThrow('Le document a changé')
+  expect(s.controller.dirty()).toBe(true)
+  const saved = vi.fn()
+  const flush = s.controller.flush().then(saved)
+  const blockedSave = expect(flush).rejects.toThrow('Le document a changé')
+  await Promise.resolve()
+  expect(saved).not.toHaveBeenCalled()
+  s.map.set('name', 'Peer reference')
+  release(resource)
+  await refusal
+  await blockedSave
+  expect(s.controller.draft()).toEqual([
+    { target: s.target, value: resource.path, base: 'Initial', resources: [resource] },
+  ])
+  expect(s.read()).toBe('Peer reference')
+  const recovered = s.controller.draft()[0]
+  s.controller.discardAll()
+  s.controller.restore(
+    recovered.target,
+    recovered.value,
+    s.read,
+    async () => {},
+    'source',
+    recovered.resources,
+  )
+  expect(s.controller.pendingResources(s.target)).toEqual([resource])
+  s.controller.confirm(s.target, resource.path, s.read)
+  await vi.waitFor(() => expect(native.calls).toHaveLength(1))
+  expect(native.calls[0].commands).toEqual([
+    { id: 'resource.add', params: { resource } },
+    { id: 'metadata.set', params: { target: s.target, value: resource.path } },
+  ])
+  native.calls[0].finish()
+  await s.controller.flush()
+  expect(s.read()).toBe(resource.path)
+  expect(s.controller.dirty()).toBe(false)
+})
+
+it('waits for image decoding and the atomic resource-reference publication before saving', async () => {
+  const s = setup(),
+    resource = { path: 'images/ready.svg', data: btoa('<svg/>') }
+  let release!: (value: typeof resource) => void
+  const prepared = s.controller.prepareResource(
+    s.target,
+    s.read,
+    () =>
+      new Promise((resolve) => {
+        release = resolve
+      }),
+  )
+  const saved = vi.fn(),
+    flush = s.controller.flush().then(saved)
+  await vi.waitFor(() => expect(release).toBeDefined())
+  expect(native.calls).toHaveLength(0)
+  expect(saved).not.toHaveBeenCalled()
+  release(resource)
+  await vi.waitFor(() => expect(native.calls).toHaveLength(1))
+  expect(saved).not.toHaveBeenCalled()
+  native.calls[0].finish()
+  await prepared
+  await flush
+  expect(saved).toHaveBeenCalledOnce()
+  expect(s.controller.dirty()).toBe(false)
 })

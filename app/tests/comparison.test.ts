@@ -470,7 +470,31 @@ it('shows general options and the archived signature in documentary groups', asy
       data: btoa('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>'),
     },
   ] as typeof f.state.before.resources
-  const view = comparisonView({ state: f.state, api: f.api, catalogue, error: vi.fn() })
+  const typedCatalogue = {
+    ...catalogue,
+    types: [
+      {
+        id: 'courrier',
+        label: 'Courrier',
+        models: [],
+        structured: null,
+        fields: [
+          {
+            field: 'sender.signature',
+            parameter: 'signature',
+            label: 'Signature du document',
+            resource: { kind: 'image', profile_default: 'signature' },
+          },
+        ],
+      },
+    ],
+  } as unknown as Catalogue
+  const view = comparisonView({
+    state: f.state,
+    api: f.api,
+    catalogue: typedCatalogue,
+    error: vi.fn(),
+  })
   document.body.append(view.element)
   expect(view.element.textContent).toContain('A4')
   expect(view.element.textContent).toContain('Portrait')

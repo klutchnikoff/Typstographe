@@ -1216,3 +1216,6 @@ web-date-custom = Texte personnalisé
 web-date-invalid = Saisissez une date complète et valide, ou supprimez la date.
 web-date-custom-invalid = Saisissez une date personnalisée sur une seule ligne, ou supprimez la date.
 web-date-pending = Renseignez la nouvelle date ou annulez.
+
+web-remove-resource-image = Supprimer l’image
+web-no-resource-image = Aucune image

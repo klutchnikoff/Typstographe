@@ -1,17 +1,11 @@
 import { bibliographyPanel } from './bibliography-panel'
 import { documentOptions } from './document-options'
 import { tr } from './i18n'
-import { actionRow, keyboardScope, navigationGroup } from './keyboard-navigation'
+import { keyboardScope, navigationGroup } from './keyboard-navigation'
 import { metadataCollections } from './metadata-collections'
 import { metadataCommands } from './metadata-commands'
-import {
-  destroyMetadataFields,
-  metadataFields,
-  metadataSection,
-  refreshMetadataFields,
-} from './metadata-fields'
+import { destroyMetadataFields, metadataFields, refreshMetadataFields } from './metadata-fields'
 import type { RecoveredItem } from './recovered-work'
-import { prepareImage, resourceCommand } from './resource-commands'
 import type { ModelPolicy } from './shell'
 import type { ShellContext } from './shell-context'
 import { byId } from './shell-layout'
@@ -173,12 +167,16 @@ export function shellMetadata(ctx: ShellContext, context: HTMLElement) {
             ),
           {
             commands: metadataEditor,
+            resources: {
+              provider,
+              transport,
+              profile: () => ctx.state.preferences.signature,
+              guarded: ctx.guarded,
+            },
             read: (field) => settingsFor(provider).metadata.fields[field.parameter],
           },
         )
     }
-    if (kind.structured?.signature?.tab === tab)
-      content.append(signatureSection(ctx, metadataEditor))
   }
 
   keyboardScope(context, {
@@ -217,60 +215,4 @@ export function shellMetadata(ctx: ShellContext, context: HTMLElement) {
     /** Hands a recovered form to the record panel currently shown, if it accepts it. */
     resumeRecord: (item: RecoveredItem) => recordPanel?.resume?.(item) || false,
   }
-}
-
-/** The signature controls of the sender tab, applied through the metadata commands. */
-function signatureSection(ctx: ShellContext, metadataEditor: ReturnType<typeof metadataCommands>) {
-  const { provider, transport, state } = ctx
-  const actions = actionRow()
-  for (const [label, useDefault] of [
-    [tr('Sans signature'), false],
-    [tr('Signature des préférences'), true],
-  ] as const) {
-    const button = document.createElement('button')
-    button.textContent = label
-    button.onclick = () => {
-      const { preferences } = state
-      const value = useDefault ? preferences.signature?.path || null : null
-      const before = settingsFor(provider).metadata.fields.signature
-      ctx.guarded(() =>
-        metadataEditor.run(
-          [
-            ...(value && preferences.signature ? [resourceCommand(preferences.signature)] : []),
-            { id: 'document.set_signature', params: { path: value } },
-          ],
-          () => settingsFor(provider).metadata.fields.signature === before,
-        ),
-      )
-    }
-    actions.append(button)
-  }
-  const image = document.createElement('input')
-  image.type = 'file'
-  image.accept = 'image/png,image/jpeg,image/svg+xml'
-  image.setAttribute('aria-label', tr('Signature du document'))
-  image.onchange = () =>
-    ctx.guarded(async () => {
-      const file = image.files?.[0]
-      if (!file) return
-      const before = settingsFor(provider).metadata.fields.signature
-      const resource = await prepareImage(provider, transport, file)
-      await metadataEditor.run(
-        [
-          resourceCommand(resource),
-          { id: 'document.set_signature', params: { path: resource.path } },
-        ],
-        () => settingsFor(provider).metadata.fields.signature === before,
-      )
-      image.value = ''
-    })
-  const signature = metadataSection({
-    id: 'signature',
-    label: tr('Signature du document'),
-    layout: 'editorial',
-  })
-  signature.root.classList.add('metadata-signature')
-  signature.content.classList.add('metadata-signature-controls')
-  signature.content.append(image, actions)
-  return signature.root
 }

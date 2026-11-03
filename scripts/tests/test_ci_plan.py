@@ -96,6 +96,12 @@ class CIPlanTests(unittest.TestCase):
             self.assertEqual(planner.browser_recipes([source]), [
                 "tests/browser/metadata.spec.ts", "tests/browser/structured-metadata.spec.ts"])
 
+    def test_resource_contract_changes_cover_metadata_and_recovery(self):
+        for source in ["crates/core/src/resources.rs", "app/src/metadata-resource.ts"]:
+            recipes = planner.browser_recipes([source])
+            self.assertIn("tests/browser/structured-resources.spec.ts", recipes)
+            self.assertIn("tests/browser/recovery-resume.spec.ts", recipes)
+
     def test_every_browser_area_names_existing_sources_and_recipes(self):
         root = SCRIPT.parents[2]
         files = subprocess.check_output(["git", "ls-files"], cwd=root, text=True).splitlines()
