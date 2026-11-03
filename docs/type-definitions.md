@@ -6,9 +6,10 @@ déclaration ; les types intégrés l’utilisent pour leurs champs, collections
 vues, capacités, validations et liaisons Typst. Elle **n’installe pas un type
 externe** : les identités intégrées et codecs de données restent compilés.
 
-Le [fragment auteurs/affiliations](proposals/b1/article-authorship.yaml) est une
-fixture chargée et testée. Il isole ces deux collections ; ce n’est pas la
-définition complète de l’Article actuel. Les contrats actifs sont
+La [structure commune `authorship`](../crates/core/structures/authorship.yaml)
+fournit les auteurs et affiliations à l’Article. Le
+[premier exemple auteurs/affiliations](proposals/b1/article-authorship.yaml)
+reste une fixture autonome du chargeur. Les contrats actifs sont
 [Courrier](../crates/core/types/courrier/type.yaml),
 [Article](../crates/core/types/article/type.yaml) et
 [Compte-rendu](../crates/core/types/compte-rendu/type.yaml). Ce dernier reste
@@ -64,6 +65,51 @@ ce lot ne crée pas un chargeur de documents à schéma arbitraire.
 La liste des capacités référence le catalogue exécutable commun. Une capacité
 inconnue ou simplement prévue est refusée. Les permissions d’un adaptateur et
 la disponibilité au curseur restent des contrôles distincts.
+
+## Structures d’en-tête réutilisables
+
+Un type sélectionne une structure enregistrée avec un raccourci :
+
+```yaml
+structures: [authorship]
+```
+
+`authorship` possède les collections `authors` et `affiliations`, leurs champs,
+identités, relation par identifiants, obligations d’export, vues cartes/modales,
+onglets et liaisons Typst. La suppression d’une affiliation encore référencée
+reste refusée. Les codecs Rust `Author` et `Affiliation` se trouvent dans
+`document_types::authorship`, indépendamment du type Article. Les composants
+communs de l’interface restent responsables de leur présentation.
+
+Le chargeur développe les structures embarquées **avant la validation du type**.
+La définition résolue est le seul contrat consommé par le moteur, Tauri, CLI,
+MCP et le sérialiseur Typst. Le raccourci et les instructions d’ordre sont
+consommés à cette étape, sans ajouter de nouvelle forme aux valeurs documentaires.
+Un test compare la définition Article résolue à son état antérieur complet,
+ordre compris ; les sources Typst restent également inchangées.
+
+Sans ordre explicite, les membres des structures apparaissent d’abord, dans
+l’ordre des structures sélectionnées, puis viennent les membres locaux du type.
+Celui-ci peut préciser l’ordre final sans modifier le contenu partagé :
+
+```yaml
+structures: [authorship]
+order:
+  collections: [references, authors, affiliations, localizations]
+  tabs: [titles, abstracts, affiliations, authors, bibliography]
+```
+
+Chaque liste non vide doit être une permutation complète des identifiants
+résolus. `order.bindings`, facultatif, utilise les identifiants des champs ou
+collections sources des liaisons. Un ordre incomplet, un membre inconnu ou un
+doublon est refusé : ces listes ne permettent ni filtre ni redéfinition.
+
+La première version réutilise les structures à l’identique. Les noms inconnus,
+sélections répétées, collisions avec une déclaration locale et paramètres de
+personnalisation sont refusés. Les fragments enregistrés utilisent le même
+décodeur YAML strict ; ils ne peuvent importer d’autres fragments ni changer
+l’identité, les capacités ou les politiques de modèles du type. Le catalogue
+reste compilé et n’autorise aucun chemin de fichier fourni par un manifeste.
 
 ## Vocabulaire du premier chargeur
 
@@ -145,8 +191,9 @@ Conventions :
   ni de nombres non finis ;
 - champs inconnus, variantes non prises en charge et défauts du mauvais genre
   refusés, sans coercition applicative ni exécution de contenu ;
-- aucun accès disque, import, réseau ou enregistrement dans un catalogue lors
-  de `load_yaml` : l’appelant fournit le texte à lire.
+- aucun accès disque, import externe, réseau ou enregistrement dans un catalogue
+  lors de `load_yaml` : l’appelant fournit le texte à lire ; les structures
+  enregistrées sont embarquées et mises en cache.
 
 Le passage par la valeur YAML du parseur vérifie les doublons et le sous-ensemble
 commun avec JSON ; le décodage typé repart du source pour conserver les positions
@@ -186,7 +233,8 @@ modifié. Les parcours Chromium/WebKit couvrent les en-têtes, formulaires,
 relations, conflits, citations, sauvegardes et exports, sans captures.
 
 Les changements des YAML intégrés déclenchent les contrôles CI et les recettes
-ciblées des types/en-têtes/bibliographies. Le schéma publié et la fixture YAML
+ciblées des types/en-têtes/bibliographies, y compris ceux de
+`crates/core/structures/`. Le schéma publié et la fixture YAML
 testée sous docs/ sont des entrées de vérification, pas de simples documents à
 exclure des contrôles. La qualification CI des trois systèmes et de WebAssembly
 reste distincte de ces résultats locaux.
@@ -199,3 +247,12 @@ Clippy, formatages, limite de taille et frontière des dépendances du cœur pas
 Le watcher de fichiers et les tests de sockets MCP nécessitent les notifications
 et sockets natifs macOS ; leurs essais finaux sont exécutés hors du bac à sable,
 avec les répertoires temporaires propres aux recettes.
+
+Recette de mutualisation `authorship` : 436 tests Rust du workspace réussis
+(un diagnostic de performance ignoré), puis 29 tests du chargeur rejoués après
+l’ajout des assertions d’ordre des liaisons et d’obligation d’export. Les
+12 parcours auteurs/affiliations dans Chromium et WebKit et les 17 contrôles
+Python passent, ainsi que Clippy du workspace, le formatage et les gardes
+d’architecture. Le fichier local `examples/article-working.typsto` s’ouvre avec
+le nouveau moteur et sa somme de contrôle est inchangée. Aucun test web unitaire
+supplémentaire n’est ajouté : les composants de l’interface sont conservés.

@@ -4,6 +4,11 @@ Inventaire du 3 novembre 2026, avec orientations validées. Le premier
 [contrat typé, chargeur YAML et raccordement des types actifs](type-definitions.md)
 sont implémentés. L’inventaire ci-dessous conserve les constats préparatoires ;
 les descripteurs manuels sont désormais remplacés par les déclarations intégrées.
+La structure embarquée [`authorship`](../crates/core/structures/authorship.yaml)
+regroupe désormais auteurs, affiliations, relations, vues et liaisons Typst.
+L’Article la sélectionne avec `structures: [authorship]` ; le
+[contrat courant](type-definitions.md#structures-den-tête-réutilisables) décrit
+son développement et les règles d’ordre, sans personnalisation de son contenu.
 
 ## Décisions déjà retenues
 

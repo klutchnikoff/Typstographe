@@ -162,6 +162,14 @@ permet au type de placer onglets, collections et liaisons sans modifier leur
 contenu. Vérifier la conservation exacte du contrat Article, du source Typst
 et des parcours de validation/suppression des affiliations référencées.
 
+**Mutualisation implémentée :** fragment unique dans
+`crates/core/structures/authorship.yaml`, codecs dans `document_types::authorship`
+et raccourci actif dans le manifeste Article. Le développement consomme
+`structures`/`order` avant validation et exposition aux adaptateurs. Les ordres
+non vides sont des permutations complètes, sans filtre ni remplacement. Une
+fixture du contrat Article résolu vérifie sa conservation exacte ; les sources
+Typst restent couvertes par la recette existante.
+
 ### Arbitrages complémentaires avant implémentation
 
 1. Détails du contrat déclaratif de B.1, migration des types Rust actuels et limites

@@ -190,6 +190,13 @@ Le type choisit leur présence et l’ordre des onglets ; quelques paramètres
 ciblés pourront être discutés ultérieurement selon les besoins. Les modèles
 gardent la présentation Typst.
 
+**Mutualisation implémentée :** `crates/core/structures/authorship.yaml` est
+sélectionné par l’Article avec `structures: [authorship]`. Les codecs partagés
+sont dans `document_types::authorship`. Un ordre explicite complet place les
+membres résolus ; collisions et redéfinitions sont refusées. Le
+[contrat détaillé](docs/type-definitions.md#structures-den-tête-réutilisables)
+décrit cette composition, sans changement des données ni du contrat Article résolu.
+
 **Autres décisions à mettre en œuvre et arbitrages avant refonte :**
 
 - Détailler en B.1 la frontière entre composition déclarative et comportements
