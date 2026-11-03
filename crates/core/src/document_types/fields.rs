@@ -66,24 +66,5 @@ pub struct FieldValue {
     pub kind: super::FieldKind,
     pub required_for_export: bool,
     #[serde(skip)]
-    pub editor_id: &'static str,
-    #[serde(skip)]
     pub label_key: &'static str,
-}
-
-pub(super) fn values<T>(metadata: &T, fields: &[super::TextField<T>]) -> Vec<FieldValue> {
-    fields
-        .iter()
-        .map(|f| FieldValue {
-            field: f.field,
-            value: serde_json::Value::String((f.get)(metadata).into()),
-            parameter: f.parameter,
-            group: f.group,
-            multiline: f.multiline,
-            kind: f.kind,
-            required_for_export: f.required_for_export,
-            editor_id: f.editor_id,
-            label_key: f.label_key,
-        })
-        .collect()
 }

@@ -1,8 +1,4 @@
 //! Le type Courrier : données, contrat du modèle et commandes propres au type.
-use super::{
-    FieldGroup, FieldKind, FieldSection, FieldSectionLayout, MetadataField, ModelContract,
-    TextField,
-};
 use crate::document::DocumentOptions;
 use serde::{Deserialize, Serialize};
 
@@ -48,235 +44,18 @@ impl Default for Metadata {
 
 impl Metadata {
     pub fn blank() -> Self {
-        Self {
-            options: DocumentOptions::default(),
-            expediteur: String::new(),
-            fonction: String::new(),
-            service: String::new(),
-            email: String::new(),
-            organisme: String::new(),
-            adresse_expediteur: String::new(),
-            telephone: String::new(),
-            signature: None,
-            destinataire: String::new(),
-            adresse: String::new(),
-            objet: String::new(),
-            reference: String::new(),
-            date: String::new(),
-            lieu: String::new(),
-        }
+        serde_json::from_value(super::runtime::initial_fields(
+            super::DocumentType::Courrier.definition(),
+            &DocumentOptions::default(),
+        ))
+        .expect("declared letter defaults")
     }
 }
-
-macro_rules! field {
-    ($name:ident, $field:ident, $editor:literal, $label:literal, $group:literal, $multiline:literal, $required:literal) => {
-        TextField {
-            field: MetadataField::$field,
-            parameter: stringify!($name),
-            editor_id: $editor,
-            label_key: $label,
-            group: $group,
-            multiline: $multiline,
-            kind: FieldKind::Text,
-            required_for_export: $required,
-            get: |m: &Metadata| &m.$name,
-        }
-    };
-}
-pub const FIELDS: &[TextField<Metadata>] = &[
-    field!(
-        expediteur,
-        SenderName,
-        "sender",
-        "field-full-name",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        fonction,
-        SenderRole,
-        "role",
-        "field-role",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        service,
-        SenderDepartment,
-        "service",
-        "field-service",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        email,
-        SenderEmail,
-        "email",
-        "field-email",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        organisme,
-        SenderOrganisation,
-        "organisation",
-        "field-organisation",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        adresse_expediteur,
-        SenderAddress,
-        "sender-address",
-        "field-sender-address",
-        "sender",
-        true,
-        false
-    ),
-    field!(
-        telephone,
-        SenderPhone,
-        "sender-phone",
-        "field-phone",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        destinataire,
-        RecipientName,
-        "recipient",
-        "field-recipient",
-        "recipient",
-        false,
-        true
-    ),
-    field!(
-        adresse,
-        RecipientAddress,
-        "address",
-        "field-address",
-        "recipient",
-        true,
-        false
-    ),
-    field!(
-        objet,
-        LetterSubject,
-        "subject",
-        "field-subject",
-        "information",
-        false,
-        true
-    ),
-    field!(
-        reference,
-        LetterReference,
-        "reference",
-        "field-reference",
-        "information",
-        false,
-        false
-    ),
-    field!(
-        lieu,
-        LetterPlace,
-        "place",
-        "field-place",
-        "information",
-        false,
-        false
-    ),
-    TextField {
-        kind: FieldKind::Date,
-        ..field!(
-            date,
-            LetterDate,
-            "date",
-            "field-date",
-            "information",
-            false,
-            false
-        )
-    },
-];
-pub const GROUPS: &[FieldGroup] = &[
-    FieldGroup {
-        id: "sender",
-        label_key: "group-sender",
-        sections: &[
-            FieldSection {
-                layout: FieldSectionLayout::Inline,
-                id: "identity",
-                label_key: "group-sender",
-                fields: &[MetadataField::SenderName],
-            },
-            FieldSection {
-                layout: FieldSectionLayout::Compact,
-                id: "contact",
-                label_key: "group-contact-details",
-                fields: &[
-                    MetadataField::SenderAddress,
-                    MetadataField::SenderEmail,
-                    MetadataField::SenderPhone,
-                ],
-            },
-            FieldSection {
-                layout: FieldSectionLayout::Compact,
-                id: "organisation",
-                label_key: "group-professional-details",
-                fields: &[
-                    MetadataField::SenderOrganisation,
-                    MetadataField::SenderDepartment,
-                    MetadataField::SenderRole,
-                ],
-            },
-        ],
-    },
-    FieldGroup {
-        id: "header",
-        label_key: "group-editorial-header",
-        sections: &[
-            FieldSection {
-                layout: FieldSectionLayout::Compact,
-                id: "recipient",
-                label_key: "group-recipient",
-                fields: &[
-                    MetadataField::RecipientName,
-                    MetadataField::RecipientAddress,
-                ],
-            },
-            FieldSection {
-                layout: FieldSectionLayout::Compact,
-                id: "information",
-                label_key: "group-letter-information",
-                fields: &[
-                    MetadataField::LetterSubject,
-                    MetadataField::LetterReference,
-                    MetadataField::LetterPlace,
-                    MetadataField::LetterDate,
-                ],
-            },
-        ],
-    },
-];
-pub const CONTRACT: ModelContract<Metadata> = ModelContract {
-    function: "courrier",
-    fields: FIELDS,
-    options: |m| &m.options,
-    signature_image: Some(|m| m.signature.as_deref()),
-};
 
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::super::models::Model;
-    use super::*;
     use crate::document_types::{DocumentType, Metadata as DocumentMetadata};
     use crate::rendering::TypstWorld;
 
@@ -465,9 +244,12 @@ mod tests {
         }
         // Une implémentation différente peut employer des fonctions privées
         // élaborées sans aucune déclaration supplémentaire dans l’application.
-        let arguments = FIELDS
+        let arguments = DocumentType::Courrier
+            .definition()
+            .definition()
+            .bindings
             .iter()
-            .map(|f| format!("{}: \"\"", f.parameter))
+            .map(|f| format!("{}: \"\"", f.parameter()))
             .collect::<Vec<_>>()
             .join(", ");
         let custom = format!(
@@ -507,12 +289,13 @@ mod tests {
         metadata.courrier_mut().objet = "Objet".into();
         assert!(metadata.ready_for_export());
         let mut parameters = std::collections::HashSet::new();
-        let mut editor_ids = std::collections::HashSet::new();
-        for field in FIELDS {
+        let mut identities = std::collections::HashSet::new();
+        for field in metadata.field_values() {
             assert!(parameters.insert(field.parameter));
-            assert!(editor_ids.insert(field.editor_id));
+            assert!(identities.insert(serde_json::to_string(&field.field).unwrap()));
             assert_eq!(
-                GROUPS
+                metadata
+                    .editor_groups()
                     .iter()
                     .map(|group| {
                         if group.sections.is_empty() {
@@ -521,7 +304,7 @@ mod tests {
                             group
                                 .sections
                                 .iter()
-                                .flat_map(|section| section.fields)
+                                .flat_map(|section| section.fields.iter())
                                 .filter(|&&id| id == field.field)
                                 .count()
                         }
@@ -534,14 +317,24 @@ mod tests {
                 unreachable!()
             };
             let mut values = serde_json::to_value(&*fields).unwrap();
-            values[field.parameter] = serde_json::json!(format!("{} é\\#", (field.get)(fields)));
+            values[field.parameter] = serde_json::json!(format!(
+                "{} é\\#",
+                values[field.parameter].as_str().unwrap()
+            ));
             *fields = serde_json::from_value(values).unwrap();
-            let value = (field.get)(fields);
-            assert!(CONTRACT.main_source(fields).contains(&format!(
-                "  {}: {},",
-                field.parameter,
-                crate::document::typst_string(value)
-            )));
+            let value = serde_json::to_value(&*fields).unwrap()[field.parameter]
+                .as_str()
+                .unwrap()
+                .to_owned();
+            assert!(
+                DocumentMetadata::Courrier(fields.clone())
+                    .main_source()
+                    .contains(&format!(
+                        "  {}: {},",
+                        field.parameter,
+                        crate::document::typst_string(&value)
+                    ))
+            );
         }
         assert_eq!(
             serde_json::from_str::<DocumentMetadata>(&serde_json::to_string(&metadata).unwrap())

@@ -8,6 +8,12 @@
             "field": {
               "type": "string"
             },
+            "metadata-key": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "typst-parameter": {
               "type": "string"
             }
@@ -23,6 +29,12 @@
           "properties": {
             "collection": {
               "type": "string"
+            },
+            "metadata-key": {
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "typst-parameter": {
               "type": "string"
@@ -40,6 +52,7 @@
       "additionalProperties": false,
       "properties": {
         "fields": {
+          "default": [],
           "items": {
             "$ref": "#/$defs/Field"
           },
@@ -51,14 +64,42 @@
         "identity": {
           "$ref": "#/$defs/Identity"
         },
+        "item-label-key": {
+          "type": "string"
+        },
         "kind": {
           "$ref": "#/$defs/CollectionKind"
+        },
+        "label-key": {
+          "type": "string"
+        },
+        "language-key": {
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "max-items": {
           "format": "uint32",
           "maximum": 100,
           "minimum": 1,
           "type": "integer"
+        },
+        "removal-notice-key": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "summary": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "summary-field": {
+          "type": "string"
         },
         "unique-by": {
           "default": [],
@@ -73,13 +114,16 @@
         "kind",
         "identity",
         "max-items",
-        "fields"
+        "label-key",
+        "item-label-key",
+        "summary-field"
       ],
       "type": "object"
     },
     "CollectionKind": {
       "enum": [
-        "ordered-records"
+        "ordered-records",
+        "reference-files"
       ],
       "type": "string"
     },
@@ -113,11 +157,50 @@
       ],
       "type": "string"
     },
+    "ExportRequirement": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "collection": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "primary-language",
+              "type": "string"
+            },
+            "language-field": {
+              "type": "string"
+            },
+            "value-field": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "collection",
+            "language-field",
+            "value-field"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "Field": {
       "oneOf": [
         {
           "additionalProperties": false,
           "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "default": {
               "default": "",
               "type": "string"
@@ -139,6 +222,10 @@
             "required-for-export": {
               "default": false,
               "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
             }
           },
           "required": [
@@ -151,6 +238,16 @@
         {
           "additionalProperties": false,
           "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "default": {
               "default": false,
               "type": "boolean"
@@ -166,6 +263,10 @@
               "type": "string"
             },
             "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "statistics": {
               "default": false,
               "type": "boolean"
             }
@@ -186,6 +287,16 @@
               },
               "type": "array"
             },
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "default": {
               "type": "string"
             },
@@ -202,6 +313,10 @@
             "required-for-export": {
               "default": false,
               "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
             }
           },
           "required": [
@@ -216,6 +331,16 @@
         {
           "additionalProperties": false,
           "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "default": {
               "$ref": "#/$defs/DocumentLanguage",
               "default": "fr"
@@ -233,6 +358,10 @@
             "required-for-export": {
               "default": false,
               "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
             }
           },
           "required": [
@@ -245,6 +374,16 @@
         {
           "additionalProperties": false,
           "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "default": {
               "default": [],
               "items": {
@@ -265,6 +404,10 @@
             "required-for-export": {
               "default": false,
               "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
             }
           },
           "required": [
@@ -277,6 +420,16 @@
         {
           "additionalProperties": false,
           "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "default": {
               "$ref": "#/$defs/Node",
               "default": {
@@ -304,6 +457,10 @@
             "required-for-export": {
               "default": false,
               "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
             }
           },
           "required": [
@@ -317,6 +474,16 @@
         {
           "additionalProperties": false,
           "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "default": {
               "default": [],
               "items": {
@@ -341,6 +508,10 @@
               "default": false,
               "type": "boolean"
             },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            },
             "target-collection": {
               "type": "string"
             },
@@ -359,6 +530,14 @@
           "type": "object"
         }
       ]
+    },
+    "FieldControl": {
+      "description": "Registered controls change editing, not the stored value or Typst formatting.",
+      "enum": [
+        "date",
+        "outline"
+      ],
+      "type": "string"
     },
     "Header": {
       "additionalProperties": false,
@@ -450,12 +629,40 @@
         },
         "label-key": {
           "type": "string"
+        },
+        "layout": {
+          "$ref": "#/$defs/SectionLayout",
+          "default": "compact"
         }
       },
       "required": [
         "id",
         "label-key",
         "fields"
+      ],
+      "type": "object"
+    },
+    "SectionLayout": {
+      "enum": [
+        "compact",
+        "inline",
+        "editorial"
+      ],
+      "type": "string"
+    },
+    "Signature": {
+      "additionalProperties": false,
+      "properties": {
+        "parameter": {
+          "type": "string"
+        },
+        "tab": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "tab",
+        "parameter"
       ],
       "type": "object"
     },
@@ -508,6 +715,12 @@
             "id": {
               "type": "string"
             },
+            "item-label-key": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "label-key": {
               "type": "string"
             },
@@ -526,6 +739,35 @@
             "collection",
             "summary-field",
             "editing"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "collection": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "style-field": {
+              "type": "string"
+            },
+            "view": {
+              "const": "bibliography",
+              "type": "string"
+            }
+          },
+          "required": [
+            "view",
+            "id",
+            "label-key",
+            "collection",
+            "style-field"
           ],
           "type": "object"
         }
@@ -569,6 +811,13 @@
     "description-key": {
       "type": "string"
     },
+    "export-requirements": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ExportRequirement"
+      },
+      "type": "array"
+    },
     "fields": {
       "default": [],
       "items": {
@@ -587,6 +836,22 @@
     },
     "label-key": {
       "type": "string"
+    },
+    "settings-heading-key": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "signature": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Signature"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "required": [

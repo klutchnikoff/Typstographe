@@ -1,0 +1,144 @@
+# Built-in type contract. Presentation belongs to the Typst model.
+---
+contract-version: 1
+id: courrier
+label-key: letter-type
+description-key: type-card-courrier-description
+settings-heading-key: document-settings-heading
+composition:
+  function: courrier
+fields:
+- id: sender.name
+  kind: text
+  label-key: field-full-name
+- id: sender.role
+  kind: text
+  label-key: field-role
+- id: sender.department
+  kind: text
+  label-key: field-service
+- id: sender.email
+  kind: text
+  label-key: field-email
+- id: sender.organisation
+  kind: text
+  label-key: field-organisation
+- id: sender.address
+  kind: text
+  label-key: field-sender-address
+  multiline: true
+- id: sender.phone
+  kind: text
+  label-key: field-phone
+- id: recipient.name
+  kind: text
+  label-key: field-recipient
+  required-for-export: true
+- id: recipient.address
+  kind: text
+  label-key: field-address
+  multiline: true
+- id: letter.subject
+  kind: text
+  label-key: field-subject
+  required-for-export: true
+- id: letter.reference
+  kind: text
+  label-key: field-reference
+- id: letter.place
+  kind: text
+  label-key: field-place
+- id: letter.date
+  kind: text
+  label-key: field-date
+  control: date
+signature:
+  tab: sender
+  parameter: signature
+capabilities:
+- block.paragraph
+- block.heading_1
+- block.heading_2
+- block.heading_3
+- text.bold
+- text.italic
+- text.link
+- block.bullet
+- block.numbered
+- block.description
+- block.quote
+- insert.image
+- insert.table
+- insert.footnote
+- letter.insert_postscript
+- letter.insert_attachment
+bindings:
+- field: sender.name
+  typst-parameter: expediteur
+- field: sender.role
+  typst-parameter: fonction
+- field: sender.department
+  typst-parameter: service
+- field: sender.email
+  typst-parameter: email
+- field: sender.organisation
+  typst-parameter: organisme
+- field: sender.address
+  typst-parameter: adresse_expediteur
+- field: sender.phone
+  typst-parameter: telephone
+- field: recipient.name
+  typst-parameter: destinataire
+- field: recipient.address
+  typst-parameter: adresse
+- field: letter.subject
+  typst-parameter: objet
+- field: letter.reference
+  typst-parameter: reference
+- field: letter.place
+  typst-parameter: lieu
+- field: letter.date
+  typst-parameter: date
+header:
+  tabs:
+  - id: sender
+    label-key: group-sender
+    view: form
+    sections:
+    - id: identity
+      label-key: group-sender
+      fields:
+      - sender.name
+      layout: inline
+    - id: contact
+      label-key: group-contact-details
+      fields:
+      - sender.address
+      - sender.email
+      - sender.phone
+      layout: compact
+    - id: organisation
+      label-key: group-professional-details
+      fields:
+      - sender.organisation
+      - sender.department
+      - sender.role
+      layout: compact
+  - id: header
+    label-key: group-editorial-header
+    view: form
+    sections:
+    - id: recipient
+      label-key: group-recipient
+      fields:
+      - recipient.name
+      - recipient.address
+      layout: compact
+    - id: information
+      label-key: group-letter-information
+      fields:
+      - letter.subject
+      - letter.reference
+      - letter.place
+      - letter.date
+      layout: compact

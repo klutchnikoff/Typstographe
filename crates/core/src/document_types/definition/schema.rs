@@ -21,6 +21,16 @@ impl LoadedDefinition {
 
         let mut properties = field_properties(&self.0.fields);
         for collection in &self.0.collections {
+            if collection.kind == super::CollectionKind::ReferenceFiles {
+                properties.insert(
+                    collection.id.clone(),
+                    json!({
+                        "type":"array", "maxItems":collection.max_items,
+                        "items":schemars::schema_for!(crate::bibliography::ReferenceFile)
+                    }),
+                );
+                continue;
+            }
             let mut props = field_properties(&collection.fields);
             props.insert(
                 "id".into(),
@@ -67,6 +77,12 @@ impl LoadedDefinition {
             .iter()
             .find(|c| c.id == collection)
             .map(|c| {
+                if c.kind == super::CollectionKind::ReferenceFiles {
+                    return Map::from_iter([
+                        ("name".into(), json!("")),
+                        ("contents".into(), json!("")),
+                    ]);
+                }
                 c.fields
                     .iter()
                     .map(|f| (f.id().into(), f.default_value()))

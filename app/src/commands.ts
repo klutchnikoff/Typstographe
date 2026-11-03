@@ -30,7 +30,6 @@ export interface Capability {
   group: string
   node: string | null
   mark: string | null
-  letter_only: boolean
   parameters: Parameters
   editor?: { conversion_group?: string; actions?: TableAction[]; availability?: InteractionPolicy }
 }

@@ -106,7 +106,7 @@ fn set_field(
     }
     let (map, key, before, kind) = targets::field(doc, &doc.transact(), state, target)?;
     let valid = match kind.as_str() {
-        "text" | "multiline" | "source" | "language" => value.is_string(),
+        "text" | "multiline" | "source" | "language" | "choice" => value.is_string(),
         "boolean" => value.is_boolean(),
         "tokens" | "references" => value
             .as_array()

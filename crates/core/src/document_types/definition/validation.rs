@@ -1,4 +1,6 @@
-use super::{Binding, Definition, Field, LoadedDefinition, RichProfile, Tab};
+use super::{
+    Binding, CollectionKind, Definition, Field, FieldControl, LoadedDefinition, RichProfile, Tab,
+};
 use serde::Serialize;
 use std::collections::BTreeSet;
 
@@ -16,6 +18,10 @@ pub enum DiagnosticCode {
     MissingBinding,
     MissingView,
     UnsupportedPolicy,
+    InvalidValue,
+    MissingValue,
+    DuplicateValue,
+    UnresolvedReference,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -96,11 +102,38 @@ impl Check {
         for (i, field) in fields.iter().enumerate() {
             let at = format!("{path}/{i}");
             self.name(field.label_key(), format!("{at}/label-key"));
+            if let Some(control) = field.control() {
+                let supported = !record
+                    && match control {
+                        FieldControl::Date => matches!(
+                            field,
+                            Field::Text {
+                                multiline: false,
+                                ..
+                            }
+                        ),
+                        FieldControl::Outline => matches!(field, Field::Boolean { .. }),
+                    };
+                if !supported {
+                    self.issue(
+                        DiagnosticCode::UnsupportedPolicy,
+                        format!("{at}/control"),
+                        "control is incompatible with the field",
+                    );
+                }
+            }
             if record && field.id() == "id" {
                 self.issue(
                     DiagnosticCode::ReservedIdentifier,
                     format!("{at}/id"),
                     "record identity is implicit",
+                );
+            }
+            if record && !typst_identifier(field.id()) {
+                self.issue(
+                    DiagnosticCode::InvalidIdentifier,
+                    format!("{at}/id"),
+                    "record keys must be simple Typst identifiers",
                 );
             }
             match field {
@@ -238,13 +271,54 @@ impl Definition {
             let at = format!("/collections/{i}");
             if collection.max_items == 0
                 || collection.max_items > 100
-                || collection.fields.is_empty()
+                || (collection.kind == CollectionKind::OrderedRecords
+                    && collection.fields.is_empty())
             {
                 check.issue(
                     DiagnosticCode::InvalidLimit,
                     &at,
                     "1–100 records and at least one field required",
                 );
+            }
+            check.name(&collection.label_key, format!("{at}/label-key"));
+            check.name(&collection.item_label_key, format!("{at}/item-label-key"));
+            if collection.kind == CollectionKind::ReferenceFiles {
+                if !collection.fields.is_empty()
+                    || !collection.unique_by.is_empty()
+                    || collection.language_key.is_some()
+                    || collection.summary_field != "name"
+                    || !collection.summary.is_empty()
+                {
+                    check.issue(
+                        DiagnosticCode::UnsupportedPolicy,
+                        &at,
+                        "reference-files owns its registered fields and validation",
+                    );
+                }
+            } else {
+                for key in
+                    std::iter::once(&collection.summary_field).chain(collection.summary.iter())
+                {
+                    if !collection.fields.iter().any(|f| f.id() == key) {
+                        check.issue(DiagnosticCode::UnknownReference, &at, key);
+                    }
+                }
+            }
+            if let Some(key) = &collection.language_key
+                && (!collection
+                    .fields
+                    .iter()
+                    .any(|f| f.id() == key && matches!(f, Field::Language { .. }))
+                    || collection.unique_by.as_slice() != [key.clone()])
+            {
+                check.issue(
+                    DiagnosticCode::UnknownReference,
+                    format!("{at}/language-key"),
+                    "primary language requires a unique language field",
+                );
+            }
+            if let Some(key) = &collection.removal_notice_key {
+                check.name(key, format!("{at}/removal-notice-key"));
             }
             check.fields(&collection.fields, &format!("{at}/fields"), &self, true);
             check.unique(
@@ -291,6 +365,7 @@ impl Definition {
         }
         check_bindings(&self, &mut check);
         check_views(&self, &mut check);
+        check_registered(&self, &mut check);
         if check.0.is_empty() {
             Ok(LoadedDefinition(self))
         } else {
@@ -303,6 +378,7 @@ fn check_bindings(definition: &Definition, check: &mut Check) {
     check.limit(definition.bindings.len(), 192, "/bindings");
     let mut sources = BTreeSet::new();
     let mut parameters = BTreeSet::new();
+    let mut metadata_keys = BTreeSet::new();
     for (i, binding) in definition.bindings.iter().enumerate() {
         let at = format!("/bindings/{i}");
         let (id, exists) = match binding {
@@ -324,11 +400,26 @@ fn check_bindings(definition: &Definition, check: &mut Check) {
                 "source and Typst parameter must each be unique",
             );
         }
+        if !metadata_keys.insert(binding.metadata_key()) {
+            check.issue(
+                DiagnosticCode::DuplicateIdentifier,
+                &at,
+                "metadata storage keys must be unique",
+            );
+        }
+        check.name(binding.metadata_key(), format!("{at}/metadata-key"));
         if !typst_identifier(binding.parameter()) {
             check.issue(
                 DiagnosticCode::InvalidIdentifier,
                 format!("{at}/typst-parameter"),
                 binding.parameter(),
+            );
+        }
+        if binding.parameter() == "options" || binding.metadata_key() == "options" {
+            check.issue(
+                DiagnosticCode::ReservedIdentifier,
+                &at,
+                "options belongs to the common document contract",
             );
         }
     }
@@ -363,6 +454,7 @@ fn check_views(definition: &Definition, check: &mut Check) {
                 collection,
                 summary_field,
                 fields,
+                item_label_key,
                 ..
             } => {
                 let Some(target) = definition.collections.iter().find(|c| c.id == *collection)
@@ -374,6 +466,16 @@ fn check_views(definition: &Definition, check: &mut Check) {
                     );
                     continue;
                 };
+                if target.kind != CollectionKind::OrderedRecords {
+                    check.issue(
+                        DiagnosticCode::UnsupportedPolicy,
+                        &at,
+                        "reference-files requires its registered bibliography view",
+                    );
+                }
+                if let Some(key) = item_label_key {
+                    check.name(key, format!("{at}/item-label-key"));
+                }
                 if !target.fields.iter().any(|f| f.id() == summary_field) {
                     check.issue(
                         DiagnosticCode::UnknownReference,
@@ -403,6 +505,35 @@ fn check_views(definition: &Definition, check: &mut Check) {
                         visible.insert((collection.as_str(), field.as_str()));
                     }
                 }
+            }
+            Tab::Bibliography {
+                collection,
+                style_field,
+                ..
+            } => {
+                if !definition
+                    .collections
+                    .iter()
+                    .any(|c| c.id == *collection && c.kind == CollectionKind::ReferenceFiles)
+                {
+                    check.issue(
+                        DiagnosticCode::UnknownReference,
+                        format!("{at}/collection"),
+                        collection,
+                    );
+                }
+                if !definition
+                    .fields
+                    .iter()
+                    .any(|f| f.id() == style_field && matches!(f, Field::Choice { .. }))
+                {
+                    check.issue(
+                        DiagnosticCode::UnknownReference,
+                        format!("{at}/style-field"),
+                        style_field,
+                    );
+                }
+                visible.insert(("", style_field.as_str()));
             }
             Tab::Form { sections, .. } => {
                 check.limit(sections.len(), 64, format!("{at}/sections"));
@@ -457,13 +588,96 @@ fn check_views(definition: &Definition, check: &mut Check) {
             .map(|c| (c.id.as_str(), &c.fields)),
     ) {
         for field in fields {
-            if !visible.contains(&(scope, field.id())) {
+            if !visible.contains(&(scope, field.id()))
+                && field.control() != Some(FieldControl::Outline)
+            {
                 check.issue(
                     DiagnosticCode::MissingView,
                     "/header/tabs",
                     format!("{scope}/{}", field.id()),
                 );
             }
+        }
+    }
+}
+
+fn check_registered(definition: &Definition, check: &mut Check) {
+    if let Some(key) = &definition.settings_heading_key {
+        check.name(key, "/settings-heading-key");
+    }
+    if let Some(signature) = &definition.signature {
+        if !definition
+            .header
+            .tabs
+            .iter()
+            .any(|t| t.id() == signature.tab && matches!(t, Tab::Form { .. }))
+        {
+            check.issue(
+                DiagnosticCode::UnknownReference,
+                "/signature/tab",
+                &signature.tab,
+            );
+        }
+        if !typst_identifier(&signature.parameter)
+            || signature.parameter == "options"
+            || definition
+                .bindings
+                .iter()
+                .any(|b| b.parameter() == signature.parameter || b.metadata_key() == "signature")
+        {
+            check.issue(
+                DiagnosticCode::InvalidIdentifier,
+                "/signature/parameter",
+                &signature.parameter,
+            );
+        }
+    }
+    for (i, requirement) in definition.export_requirements.iter().enumerate() {
+        let super::ExportRequirement::PrimaryLanguage {
+            collection,
+            language_field,
+            value_field,
+        } = requirement;
+        if !definition.collections.iter().any(|c| {
+            c.id == *collection
+                && c.language_key.as_deref() == Some(language_field.as_str())
+                && c.fields.iter().any(|f| {
+                    f.id() == value_field
+                        && matches!(f, Field::Text { .. } | Field::RichText { .. })
+                })
+        }) {
+            check.issue(
+                DiagnosticCode::UnknownReference,
+                format!("/export-requirements/{i}"),
+                "primary-language requires a localized text field",
+            );
+        }
+    }
+    let outlines = definition
+        .fields
+        .iter()
+        .filter(|f| f.control() == Some(FieldControl::Outline))
+        .count();
+    let bibliographies = definition
+        .header
+        .tabs
+        .iter()
+        .filter(|t| matches!(t, Tab::Bibliography { .. }))
+        .count();
+    check.limit(outlines, 1, "/fields");
+    check.limit(bibliographies, 1, "/header/tabs");
+    for collection in definition
+        .collections
+        .iter()
+        .filter(|c| c.kind == CollectionKind::ReferenceFiles)
+    {
+        if !definition
+            .header
+            .tabs
+            .iter()
+            .any(|t| matches!(t, Tab::Bibliography {collection:id,..} if id == &collection.id))
+        {
+            check.issue(DiagnosticCode::MissingView, "/header/tabs", &collection.id);
         }
     }
 }

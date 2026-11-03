@@ -6,9 +6,10 @@ pub mod definition;
 pub mod discovery;
 mod fields;
 pub mod models;
+mod runtime;
 pub use fields::{FieldValue, MetadataField};
 
-use crate::document::{DocumentOptions, typst_string};
+use crate::document::DocumentOptions;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -21,18 +22,20 @@ pub enum DocumentType {
 impl DocumentType {
     pub const ALL: [Self; 3] = [Self::Courrier, Self::CompteRendu, Self::Article];
     pub fn label_key(self) -> &'static str {
-        match self {
-            Self::Article => "article-type",
-            Self::Courrier => "letter-type",
-            Self::CompteRendu => "minutes-type",
-        }
+        &self.definition().definition().label_key
+    }
+    pub fn definition(self) -> &'static definition::LoadedDefinition {
+        &runtime::get(self).loaded
+    }
+    pub fn settings_heading_key(self) -> &'static str {
+        self.definition()
+            .definition()
+            .settings_heading_key
+            .as_deref()
+            .unwrap_or_else(|| self.label_key())
     }
     pub fn composition_function(self) -> &'static str {
-        match self {
-            Self::Article => "article",
-            Self::Courrier => courrier::CONTRACT.function,
-            Self::CompteRendu => compte_rendu::CONTRACT.function,
-        }
+        &self.definition().definition().composition.function
     }
     pub fn file_stem(self) -> &'static str {
         match self {
@@ -53,10 +56,7 @@ impl DocumentType {
         self.models().next().is_some()
     }
     pub fn structured_metadata(self) -> Option<serde_json::Value> {
-        match self {
-            Self::Article => Some(article::schema()),
-            Self::Courrier | Self::CompteRendu => None,
-        }
+        runtime::get(self).structured.clone()
     }
 }
 
@@ -78,11 +78,7 @@ impl Metadata {
         }
     }
     pub fn blank(kind: DocumentType) -> Self {
-        match kind {
-            DocumentType::Article => Self::Article(article::Metadata::default()),
-            DocumentType::Courrier => Self::Courrier(courrier::Metadata::blank()),
-            DocumentType::CompteRendu => Self::CompteRendu(compte_rendu::Metadata::default()),
-        }
+        serde_json::from_value(serde_json::json!({"type":kind,"fields":runtime::initial_fields(kind.definition(),&DocumentOptions::default())})).expect("declared defaults match domain metadata")
     }
     pub fn document_type(&self) -> DocumentType {
         match self {
@@ -112,42 +108,37 @@ impl Metadata {
         }
     }
     pub fn main_source(&self) -> String {
-        match self {
-            Self::Article(meta) => meta.main_source(),
-            Self::Courrier(meta) => courrier::CONTRACT.main_source(meta),
-            Self::CompteRendu(meta) => compte_rendu::CONTRACT.main_source(meta),
-        }
+        let data = serde_json::to_value(self).expect("typed metadata");
+        runtime::source(self.document_type(), &data["fields"], self.options())
     }
     pub fn editor_groups(&self) -> &'static [FieldGroup] {
-        match self {
-            Self::Article(_) => article::GROUPS,
-            Self::Courrier(_) => courrier::GROUPS,
-            Self::CompteRendu(_) => compte_rendu::GROUPS,
-        }
+        &runtime::get(self.document_type()).groups
     }
     pub fn field_values(&self) -> Vec<FieldValue> {
-        match self {
-            Self::Article(meta) => meta.field_values(),
-            Self::Courrier(meta) => fields::values(meta, courrier::FIELDS),
-            Self::CompteRendu(meta) => fields::values(meta, compte_rendu::FIELDS),
-        }
+        let data = serde_json::to_value(self).expect("typed metadata");
+        runtime::fields(self.document_type(), &data["fields"])
     }
     pub fn ready_for_export(&self) -> bool {
-        match self {
-            Self::Article(meta) => meta.ready_for_export(),
-            Self::Courrier(meta) => courrier::FIELDS
-                .iter()
-                .all(|field| !field.required_for_export || !(field.get)(meta).trim().is_empty()),
-            Self::CompteRendu(meta) => compte_rendu::FIELDS
-                .iter()
-                .all(|field| !field.required_for_export || !(field.get)(meta).trim().is_empty()),
-        }
+        let kind = self.document_type();
+        let data = serde_json::to_value(self).expect("typed metadata");
+        kind.definition()
+            .export_diagnostics(
+                &runtime::values(kind, &data["fields"]),
+                self.options().language,
+            )
+            .is_empty()
     }
     pub fn validate(&self) -> Result<(), String> {
-        if let Self::Article(meta) = self {
-            meta.validate()?;
-        }
-        Ok(())
+        let kind = self.document_type();
+        let data = serde_json::to_value(self).expect("typed metadata");
+        kind.definition()
+            .validate_values(&runtime::values(kind, &data["fields"]))
+            .map_err(|issues| {
+                format!(
+                    "type_values: {}",
+                    serde_json::to_string(&issues).expect("value diagnostics")
+                )
+            })
     }
     #[cfg(test)]
     #[cfg_attr(coverage_nightly, coverage(off))]
@@ -169,24 +160,18 @@ impl Metadata {
 
 /// Presentation of one editor tab. Empty sections use the matching field group.
 pub struct FieldGroup {
-    pub id: &'static str,
-    pub label_key: &'static str,
-    pub sections: &'static [FieldSection],
+    pub id: String,
+    pub label_key: String,
+    pub sections: Vec<FieldSection>,
 }
 /// Layout of a metadata section, independent of its field identities.
-#[derive(Clone, Copy, Debug, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum FieldSectionLayout {
-    Editorial,
-    Compact,
-    Inline,
-}
+pub use definition::SectionLayout as FieldSectionLayout;
 /// Ordered fields of a section; values keep their existing identities.
 pub struct FieldSection {
     pub layout: FieldSectionLayout,
-    pub id: &'static str,
-    pub label_key: &'static str,
-    pub fields: &'static [MetadataField],
+    pub id: String,
+    pub label_key: String,
+    pub fields: Vec<MetadataField>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -195,27 +180,6 @@ pub enum FieldKind {
     Text,
     Date,
 }
-pub struct TextField<T: 'static> {
-    pub field: MetadataField,
-    pub parameter: &'static str,
-    pub editor_id: &'static str,
-    pub label_key: &'static str,
-    pub group: &'static str,
-    pub multiline: bool,
-    pub kind: FieldKind,
-    pub required_for_export: bool,
-    pub get: fn(&T) -> &str,
-}
-
-/// Contrat de la fonction de composition : champs nommés, options communes,
-/// contenu positionnel final. L’implémentation de cette fonction reste en Typst.
-pub struct ModelContract<T: 'static> {
-    pub function: &'static str,
-    pub fields: &'static [TextField<T>],
-    pub options: fn(&T) -> &DocumentOptions,
-    pub signature_image: Option<fn(&T) -> Option<&str>>,
-}
-
 /// Libertés explicitement accordées par le créateur du modèle, en pur Typst.
 /// Par défaut la charte reste entièrement automatique.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -231,35 +195,6 @@ impl ModelPresentation {
             && (self.custom_bullet_marker || self.bullet_markers.iter().any(|s| s == marker))
     }
 }
-impl<T> ModelContract<T> {
-    pub fn main_source(&self, metadata: &T) -> String {
-        let name = self.function;
-        let mut source = format!("#import \"modele.typ\": {name}\n#show: {name}.with(\n");
-        for field in self.fields {
-            source.push_str(&format!(
-                "  {}: {},\n",
-                field.parameter,
-                typst_string((field.get)(metadata))
-            ));
-        }
-        if let Some(signature_image) = self.signature_image {
-            source.push_str(&format!(
-                "  signature: {},\n",
-                signature_image(metadata).map_or_else(|| "none".into(), typst_string)
-            ));
-        }
-        let options = (self.options)(metadata);
-        source.push_str(&format!(
-            "  options: (paper: {}, landscape: {}, language: {}, bullet-marker: {}),\n)\n#include \"contenu.typ\"\n",
-            typst_string(options.paper.typst_name()),
-            options.landscape,
-            typst_string(options.language.code()),
-            options.bullet_marker.as_deref().map_or_else(|| "auto".into(), typst_string),
-        ));
-        source
-    }
-}
-
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {

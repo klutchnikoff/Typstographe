@@ -15,6 +15,10 @@ macro_rules! fields {
                 label_key: String,
                 #[serde(default)]
                 required_for_export: bool,
+                #[serde(default, skip_serializing_if = "Option::is_none")]
+                control: Option<FieldControl>,
+                #[serde(default)]
+                statistics: bool,
                 $($members)*
             }, )*
         }
@@ -27,6 +31,12 @@ macro_rules! fields {
             }
             pub fn required_for_export(&self) -> bool {
                 match self { $(Self::$variant {required_for_export, ..} => *required_for_export,)* }
+            }
+            pub fn control(&self) -> Option<FieldControl> {
+                match self { $(Self::$variant {control, ..} => *control,)* }
+            }
+            pub fn statistics(&self) -> bool {
+                match self { $(Self::$variant {statistics, ..} => *statistics,)* }
             }
             pub fn default_value(&self) -> Value {
                 match self { $(Self::$variant {default, ..} => serde_json::to_value(default).expect("typed field default"),)* }
@@ -83,4 +93,12 @@ pub enum RichProfile {
 #[serde(rename_all = "kebab-case")]
 pub enum ReferenceRemoval {
     Restrict,
+}
+
+/// Registered controls change editing, not the stored value or Typst formatting.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub enum FieldControl {
+    Date,
+    Outline,
 }

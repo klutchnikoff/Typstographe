@@ -163,7 +163,8 @@ export function shellMetadata(ctx: ShellContext, context: HTMLElement) {
           },
         )
     }
-    if (tab === 'sender') content.append(signatureSection(ctx, metadataEditor))
+    if (kind.structured?.signature?.tab === tab)
+      content.append(signatureSection(ctx, metadataEditor))
   }
 
   keyboardScope(context, {

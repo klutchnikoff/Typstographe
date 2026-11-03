@@ -15,6 +15,9 @@ collections:
     kind: ordered-records
     identity: stable-id
     max-items: 100
+    label-key: field-article-affiliations
+    item-label-key: article-affiliation
+    summary-field: text
     fields:
       - id: text
         kind: text
@@ -27,6 +30,9 @@ collections:
     kind: ordered-records
     identity: stable-id
     max-items: 100
+    label-key: field-article-authors
+    item-label-key: article-author
+    summary-field: name
     fields:
       - id: name
         kind: text

@@ -3,8 +3,9 @@ mod fields;
 mod loader;
 mod schema;
 mod validation;
+mod values;
 
-pub use fields::{Field, ReferenceRemoval, RichProfile};
+pub use fields::{Field, FieldControl, ReferenceRemoval, RichProfile};
 pub use loader::{LoadError, MAX_SOURCE_BYTES, load_yaml};
 pub use schema::manifest_schema;
 pub use validation::{Diagnostic, DiagnosticCode};
@@ -22,6 +23,12 @@ pub struct Definition {
     pub label_key: String,
     pub description_key: String,
     pub composition: Composition,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings_heading_key: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signature: Option<Signature>,
+    #[serde(default)]
+    pub export_requirements: Vec<ExportRequirement>,
     #[serde(default)]
     pub fields: Vec<Field>,
     #[serde(default)]
@@ -57,8 +64,18 @@ pub struct Collection {
     pub identity: Identity,
     #[schemars(range(min = 1, max = 100))]
     pub max_items: u32,
+    pub label_key: String,
+    pub item_label_key: String,
+    pub summary_field: String,
+    #[serde(default)]
+    pub summary: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub language_key: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub removal_notice_key: Option<String>,
     #[serde(default)]
     pub unique_by: Vec<String>,
+    #[serde(default)]
     pub fields: Vec<Field>,
 }
 
@@ -66,6 +83,7 @@ pub struct Collection {
 #[serde(rename_all = "kebab-case")]
 pub enum CollectionKind {
     OrderedRecords,
+    ReferenceFiles,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -80,13 +98,30 @@ pub enum Binding {
     Field {
         field: String,
         typst_parameter: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        metadata_key: Option<String>,
     },
     Collection {
         collection: String,
         typst_parameter: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        metadata_key: Option<String>,
     },
 }
 impl Binding {
+    pub fn source(&self) -> &str {
+        match self {
+            Self::Field { field, .. } => field,
+            Self::Collection { collection, .. } => collection,
+        }
+    }
+    pub fn metadata_key(&self) -> &str {
+        match self {
+            Self::Field { metadata_key, .. } | Self::Collection { metadata_key, .. } => {
+                metadata_key.as_deref().unwrap_or_else(|| self.parameter())
+            }
+        }
+    }
     pub fn parameter(&self) -> &str {
         match self {
             Self::Field {
@@ -127,17 +162,29 @@ pub enum Tab {
         #[serde(default)]
         fields: Vec<String>,
         editing: Editing,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        item_label_key: Option<String>,
+    },
+    Bibliography {
+        id: String,
+        label_key: String,
+        collection: String,
+        style_field: String,
     },
 }
 impl Tab {
     pub fn id(&self) -> &str {
         match self {
-            Self::Form { id, .. } | Self::RecordCards { id, .. } => id,
+            Self::Form { id, .. }
+            | Self::RecordCards { id, .. }
+            | Self::Bibliography { id, .. } => id,
         }
     }
     pub fn label_key(&self) -> &str {
         match self {
-            Self::Form { label_key, .. } | Self::RecordCards { label_key, .. } => label_key,
+            Self::Form { label_key, .. }
+            | Self::RecordCards { label_key, .. }
+            | Self::Bibliography { label_key, .. } => label_key,
         }
     }
 }
@@ -154,8 +201,45 @@ pub struct Section {
     pub id: String,
     pub label_key: String,
     pub fields: Vec<String>,
+    #[serde(default)]
+    pub layout: SectionLayout,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SectionLayout {
+    #[default]
+    Compact,
+    Inline,
+    Editorial,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Signature {
+    pub tab: String,
+    pub parameter: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(
+    tag = "kind",
+    rename_all = "kebab-case",
+    rename_all_fields = "kebab-case",
+    deny_unknown_fields
+)]
+pub enum ExportRequirement {
+    PrimaryLanguage {
+        collection: String,
+        language_field: String,
+        value_field: String,
+    },
 }
 
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests;
+
+#[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
+mod value_tests;

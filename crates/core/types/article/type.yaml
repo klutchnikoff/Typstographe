@@ -1,0 +1,186 @@
+# Built-in type contract. Presentation belongs to the Typst model.
+---
+contract-version: 1
+id: article
+label-key: article-type
+description-key: type-card-article-description
+settings-heading-key: article-settings-heading
+composition:
+  function: article
+fields:
+- id: article.citation_style
+  kind: choice
+  label-key: field-citation-style
+  choices:
+  - chicago-author-date
+  - apa
+  - ieee
+  default: chicago-author-date
+- id: article.show_outline
+  kind: boolean
+  label-key: field-show-outline
+  control: outline
+collections:
+- id: references
+  kind: reference-files
+  identity: stable-id
+  max-items: 32
+  label-key: field-bibliography
+  item-label-key: field-reference-file
+  summary-field: name
+  fields: []
+- id: authors
+  kind: ordered-records
+  identity: stable-id
+  max-items: 100
+  label-key: field-article-authors
+  item-label-key: article-author
+  summary-field: name
+  fields:
+  - id: name
+    kind: text
+    label-key: field-full-name
+    required-for-export: true
+  - id: affiliation-ids
+    kind: record-references
+    label-key: field-article-affiliations
+    target-collection: affiliations
+    unique: true
+    on-target-remove: restrict
+  - id: email
+    kind: text
+    label-key: field-email
+  - id: orcid
+    kind: text
+    label-key: field-orcid
+  - id: corresponding
+    kind: boolean
+    label-key: field-corresponding
+  summary:
+  - corresponding
+- id: affiliations
+  kind: ordered-records
+  identity: stable-id
+  max-items: 100
+  label-key: field-article-affiliations
+  item-label-key: article-affiliation
+  summary-field: text
+  fields:
+  - id: text
+    kind: text
+    label-key: field-official-affiliation
+    multiline: true
+    required-for-export: true
+- id: localizations
+  kind: ordered-records
+  identity: stable-id
+  max-items: 7
+  label-key: field-article-localizations
+  item-label-key: article-localization
+  summary-field: language
+  fields:
+  - id: language
+    kind: language
+    label-key: field-language
+  - id: title
+    kind: rich-text
+    label-key: field-article-title
+    profile: inline-text
+  - id: short-title
+    kind: rich-text
+    label-key: field-short-title
+    profile: inline-text
+  - id: subtitle
+    kind: rich-text
+    label-key: field-subtitle
+    profile: inline-text
+  - id: abstract
+    kind: rich-text
+    label-key: field-abstract
+    profile: rich-text
+    statistics: true
+  - id: keywords
+    kind: tokens
+    label-key: field-keywords
+  language-key: language
+  unique-by:
+  - language
+  removal-notice-key: article-localization-removal-notice
+capabilities:
+- block.paragraph
+- block.heading_1
+- block.heading_2
+- block.heading_3
+- text.bold
+- text.italic
+- text.link
+- block.bullet
+- block.numbered
+- block.description
+- block.quote
+- insert.image
+- insert.table
+- insert.citation
+- insert.footnote
+bindings:
+- collection: authors
+  typst-parameter: authors
+- collection: affiliations
+  typst-parameter: affiliations
+- collection: localizations
+  typst-parameter: localizations
+- collection: references
+  typst-parameter: references
+- field: article.citation_style
+  typst-parameter: citation-style
+  metadata-key: citation_style
+- field: article.show_outline
+  typst-parameter: show-outline
+  metadata-key: show_outline
+header:
+  tabs:
+  - id: titles
+    label-key: group-article-titles
+    view: record-cards
+    collection: localizations
+    summary-field: title
+    editing: dialog
+    fields:
+    - language
+    - title
+    - subtitle
+    - short-title
+    item-label-key: field-article-title
+  - id: abstracts
+    label-key: group-article-abstracts
+    view: record-cards
+    collection: localizations
+    summary-field: language
+    editing: dialog
+    fields:
+    - language
+    - abstract
+    - keywords
+    item-label-key: field-abstract
+  - id: affiliations
+    label-key: field-article-affiliations
+    view: record-cards
+    collection: affiliations
+    summary-field: text
+    editing: dialog
+  - id: authors
+    label-key: field-article-authors
+    view: record-cards
+    collection: authors
+    summary-field: name
+    editing: dialog
+  - id: bibliography
+    label-key: field-bibliography
+    view: bibliography
+    collection: references
+    style-field: article.citation_style
+export-requirements:
+- kind: primary-language
+  collection: localizations
+  language-field: language
+  value-field: title

@@ -36,22 +36,16 @@ fn document_type(kind: DocumentType) -> Value {
             })
         })
         .collect();
-    let heading = if kind == DocumentType::Article {
-        "article-settings-heading"
-    } else if kind == DocumentType::Courrier {
-        "document-settings-heading"
-    } else {
-        "minutes-settings-heading"
-    };
+    let heading = kind.settings_heading_key();
     let groups: Vec<_> = metadata
         .editor_groups()
         .iter()
         .map(|group| {
             let sections: Vec<_> = group.sections.iter().map(|section| json!({
-                "id": section.id, "label": text(section.label_key), "fields": section.fields,
+                "id": section.id, "label": text(&section.label_key), "fields": section.fields,
                 "layout": section.layout
             })).collect();
-            json!({"id":group.id,"label":text(group.label_key),"sections":sections})
+            json!({"id":group.id,"label":text(&group.label_key),"sections":sections})
         })
         .collect();
     let mut structured = kind.structured_metadata();

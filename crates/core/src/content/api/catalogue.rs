@@ -4,6 +4,7 @@ use serde_json::{Value, json};
 pub fn type_description(kind: DocumentType) -> Value {
     let metadata = Metadata::blank(kind);
     json!({"id":kind,"can_create":kind.can_create(),"metadata":metadata,
+        "definition":kind.definition().definition(),
         "profile":discovery::catalogue().types.iter().find(|p|p.runtime_type==Some(kind)).map(discovery::describe),
         "fields":metadata.field_values(),"structured_metadata":kind.structured_metadata(),
         "capabilities":capabilities::for_type(kind).map(|c|describe(c.id).unwrap()).collect::<Vec<_>>(),

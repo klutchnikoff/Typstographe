@@ -88,8 +88,14 @@ pub(super) fn set_option(
 pub(super) fn apply(doc: &Doc, state: &State, command: &Command) -> Result<(), Error> {
     match command {
         Command::SetSignature { path } => {
-            if state.settings.metadata.document_type()
-                != crate::document_types::DocumentType::Courrier
+            if state
+                .settings
+                .metadata
+                .document_type()
+                .definition()
+                .definition()
+                .signature
+                .is_none()
             {
                 return Err(parameter("signature"));
             }
