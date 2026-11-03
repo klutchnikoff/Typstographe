@@ -1,0 +1,86 @@
+use crate::{content::editorial::RichText, document::DocumentLanguage};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+// Keep common metadata flat in YAML without serde(flatten), which cannot be
+// combined reliably with deny_unknown_fields. Each variant owns typed defaults.
+macro_rules! fields {
+    ($($variant:ident { $($members:tt)* }),* $(,)?) => {
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+        #[serde(tag = "kind", rename_all = "kebab-case", rename_all_fields = "kebab-case", deny_unknown_fields)]
+        pub enum Field {
+            $( $variant {
+                id: String,
+                label_key: String,
+                #[serde(default)]
+                required_for_export: bool,
+                $($members)*
+            }, )*
+        }
+        impl Field {
+            pub fn id(&self) -> &str {
+                match self { $(Self::$variant {id, ..} => id,)* }
+            }
+            pub fn label_key(&self) -> &str {
+                match self { $(Self::$variant {label_key, ..} => label_key,)* }
+            }
+            pub fn required_for_export(&self) -> bool {
+                match self { $(Self::$variant {required_for_export, ..} => *required_for_export,)* }
+            }
+            pub fn default_value(&self) -> Value {
+                match self { $(Self::$variant {default, ..} => serde_json::to_value(default).expect("typed field default"),)* }
+            }
+        }
+    }
+}
+
+fields! {
+    Text {
+        #[serde(default)]
+        multiline: bool,
+        #[serde(default)]
+        default: String,
+    },
+    Boolean {
+        #[serde(default)]
+        default: bool,
+    },
+    Choice {
+        choices: Vec<String>,
+        default: String,
+    },
+    Language {
+        #[serde(default)]
+        default: DocumentLanguage,
+    },
+    Tokens {
+        #[serde(default)]
+        default: Vec<String>,
+    },
+    RichText {
+        profile: RichProfile,
+        #[serde(default)]
+        default: RichText,
+    },
+    RecordReferences {
+        target_collection: String,
+        unique: bool,
+        on_target_remove: ReferenceRemoval,
+        #[serde(default)]
+        default: Vec<String>,
+    },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub enum RichProfile {
+    InlineText,
+    RichText,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub enum ReferenceRemoval {
+    Restrict,
+}

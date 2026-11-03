@@ -1,0 +1,601 @@
+{
+  "$defs": {
+    "Binding": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "typst-parameter": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "field",
+            "typst-parameter"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "collection": {
+              "type": "string"
+            },
+            "typst-parameter": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "collection",
+            "typst-parameter"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Collection": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/Field"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "identity": {
+          "$ref": "#/$defs/Identity"
+        },
+        "kind": {
+          "$ref": "#/$defs/CollectionKind"
+        },
+        "max-items": {
+          "format": "uint32",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "unique-by": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "identity",
+        "max-items",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "CollectionKind": {
+      "enum": [
+        "ordered-records"
+      ],
+      "type": "string"
+    },
+    "Composition": {
+      "additionalProperties": false,
+      "properties": {
+        "function": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "function"
+      ],
+      "type": "object"
+    },
+    "DocumentLanguage": {
+      "enum": [
+        "fr",
+        "en",
+        "de",
+        "es",
+        "it",
+        "pt",
+        "nl"
+      ],
+      "type": "string"
+    },
+    "Editing": {
+      "enum": [
+        "dialog"
+      ],
+      "type": "string"
+    },
+    "Field": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "default": {
+              "default": "",
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "text",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "multiline": {
+              "default": false,
+              "type": "boolean"
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "default": {
+              "default": false,
+              "type": "boolean"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "boolean",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "choices": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "default": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "choice",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key",
+            "choices",
+            "default"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "default": {
+              "$ref": "#/$defs/DocumentLanguage",
+              "default": "fr"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "language",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "default": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "tokens",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "default": {
+              "$ref": "#/$defs/Node",
+              "default": {
+                "content": [
+                  {
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "doc"
+              }
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "rich-text",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "profile": {
+              "$ref": "#/$defs/RichProfile"
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key",
+            "profile"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "default": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "record-references",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "on-target-remove": {
+              "$ref": "#/$defs/ReferenceRemoval"
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "target-collection": {
+              "type": "string"
+            },
+            "unique": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key",
+            "target-collection",
+            "unique",
+            "on-target-remove"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Header": {
+      "additionalProperties": false,
+      "properties": {
+        "tabs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Tab"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "Identity": {
+      "enum": [
+        "stable-id"
+      ],
+      "type": "string"
+    },
+    "Mark": {
+      "additionalProperties": false,
+      "properties": {
+        "attrs": true,
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "Node": {
+      "additionalProperties": false,
+      "properties": {
+        "attrs": true,
+        "content": {
+          "items": {
+            "$ref": "#/$defs/Node"
+          },
+          "type": "array"
+        },
+        "marks": {
+          "items": {
+            "$ref": "#/$defs/Mark"
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "ReferenceRemoval": {
+      "enum": [
+        "restrict"
+      ],
+      "type": "string"
+    },
+    "RichProfile": {
+      "enum": [
+        "inline-text",
+        "rich-text"
+      ],
+      "type": "string"
+    },
+    "Section": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "label-key": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label-key",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "Tab": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "sections": {
+              "items": {
+                "$ref": "#/$defs/Section"
+              },
+              "type": "array"
+            },
+            "view": {
+              "const": "form",
+              "type": "string"
+            }
+          },
+          "required": [
+            "view",
+            "id",
+            "label-key",
+            "sections"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "collection": {
+              "type": "string"
+            },
+            "editing": {
+              "$ref": "#/$defs/Editing"
+            },
+            "fields": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "id": {
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "summary-field": {
+              "type": "string"
+            },
+            "view": {
+              "const": "record-cards",
+              "type": "string"
+            }
+          },
+          "required": [
+            "view",
+            "id",
+            "label-key",
+            "collection",
+            "summary-field",
+            "editing"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Declarative data, before semantic validation. Use `load_yaml` or `validate`.",
+  "properties": {
+    "bindings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Binding"
+      },
+      "type": "array"
+    },
+    "capabilities": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "collections": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Collection"
+      },
+      "type": "array"
+    },
+    "composition": {
+      "$ref": "#/$defs/Composition"
+    },
+    "contract-version": {
+      "format": "uint32",
+      "maximum": 1,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "description-key": {
+      "type": "string"
+    },
+    "fields": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Field"
+      },
+      "type": "array"
+    },
+    "header": {
+      "$ref": "#/$defs/Header",
+      "default": {
+        "tabs": []
+      }
+    },
+    "id": {
+      "type": "string"
+    },
+    "label-key": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract-version",
+    "id",
+    "label-key",
+    "description-key",
+    "composition"
+  ],
+  "title": "Definition",
+  "type": "object"
+}

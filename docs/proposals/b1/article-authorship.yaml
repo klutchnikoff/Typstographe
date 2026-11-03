@@ -1,7 +1,14 @@
-# DESIGN PROPOSAL ONLY. This excerpt is not loaded by typstOgraphe.
-# Property names are provisional; see ../../b1-type-contracts.md.
+# Loader fixture, not the active Article type. See ../../b1-type-contracts.md.
 contract-version: 1
 id: article
+label-key: type-card-article
+description-key: type-card-article-description
+composition:
+  function: article
+capabilities:
+  - block.paragraph
+  - text.bold
+  - text.italic
 
 collections:
   - id: affiliations

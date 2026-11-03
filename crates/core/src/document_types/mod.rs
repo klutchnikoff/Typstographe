@@ -2,6 +2,7 @@
 pub mod article;
 pub mod compte_rendu;
 pub mod courrier;
+pub mod definition;
 pub mod discovery;
 mod fields;
 pub mod models;
