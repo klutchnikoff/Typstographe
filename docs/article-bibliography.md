@@ -17,8 +17,9 @@ Décisions validées le 27 octobre 2026.
   citées en fin d’article. Le modèle de travail propose Chicago auteur–date,
   APA et IEEE. Les styles en notes viendront après leur coordination avec les notes.
 - Général : « Afficher le sommaire », désactivé par défaut ; le modèle le compose
-  après les résumés et avant le corps. Pas de réglage de profondeur initial.
-- Les modèles déclarent les options libres/restrictives. Une option imposée est
+  après les résumés et avant le corps. Le sélecteur commun distingue « Selon le
+  modèle » d’un choix explicite Oui/Non. Pas de réglage de profondeur initial.
+- Les [manifestes YAML des modèles](model-options.md) déclarent les régimes libre, restreint ou imposé. Une option imposée est
   masquée ; le modèle applique sa valeur sans effacer le choix documentaire.
 - Contrats et validations Rust communs aux adaptateurs ; annotations structurées
   ciblées sans positions de texte plat. Une bibliothèque est partagée par fichier

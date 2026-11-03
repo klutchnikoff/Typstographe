@@ -138,7 +138,7 @@ Il n’introduit pas de nouveau format de date ni de lecture de l’horloge par 
 moteur. Le contrôle `outline` expose le booléen commun dans Général.
 La structure `signature` déclare son onglet et le paramètre Typst ; les opérations
 sur l’image restent celles du moteur de ressources. Les dates structurées,
-ressources génériques et régimes de modèles restent à préciser séparément.
+ressources génériques restent à préciser séparément. Les [régimes de modèles](model-options.md) sont implémentés.
 
 ### Collections, liaisons et vues
 

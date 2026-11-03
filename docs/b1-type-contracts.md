@@ -184,6 +184,6 @@ Références de conception : [invariants](https://github.com/klutchnikoff/citeke
 Le [premier vocabulaire, ses schémas et le chargeur](type-definitions.md) sont
 implémentés avec yaml_serde. La tranche verticale du chargement aux commandes,
 à l’interface et à la compilation Typst est raccordée pour les types intégrés.
-Dates structurées, ressources génériques et régimes de modèles restent à
+Les [régimes de modèles](model-options.md) sont raccordés ; dates structurées et ressources génériques restent à
 formaliser ; les composants enregistrés conservent le contrat courant des dates,
 signatures et fichiers bibliographiques.

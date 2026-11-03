@@ -3,11 +3,14 @@
 **Statut : stockage CAS, adaptateurs, Versions et comparateur commun avec reprise complète implémentés le 31 octobre 2026.**
 Le **CAS est retenu** après [évaluation](a4-snapshot-storage-evaluation.md).
 L’organisation ci-dessous est implémentée par `content::project::Project`.
-Tauri, CLI et MCP lisent et écrivent ce même format 11 ; le lecteur/écrivain
-de format 10 a été retiré.
-La version 11 est retenue pour cette rupture, sans lecteur de compatibilité
+Tauri, CLI et MCP lisent et écrivent ce même format 12 ; le lecteur/écrivain
+de format 11 a été retiré.
+La version 12 est retenue pour cette rupture, sans lecteur de compatibilité
 préventif ni conversion silencieuse des anciens projets de développement.
 L’exemple Article a été régénéré explicitement depuis son contenu versionné.
+La version 12 embarque le manifeste du modèle dans chaque état CAS ; le source
+`main.typ` utilise les options effectives, tandis que les métadonnées conservent
+les choix de l’auteur. Le générateur de sources est en version 3.
 
 ## Conteneur et organisation
 
@@ -49,7 +52,7 @@ incorporée devient au contraire une ressource autonome du document.
 | Champ | Rôle |
 | --- | --- |
 | `format` | Valeur fixe `typstOgraphe`. |
-| `version` | Version du conteneur ; `11` retenue. |
+| `version` | Version du conteneur ; `12` retenue. |
 | `project_id` | UUID stable indépendant du chemin du fichier. |
 | `current` | Référence CAS du descripteur de l’état courant confirmé. |
 
@@ -77,7 +80,7 @@ ce descripteur tout en conservant leurs identifiants, dates et noms distincts.
 | `document` | Référence du corps structuré JSON. |
 | `metadata` | Référence des métadonnées et options documentaires JSON. |
 | `yjs` | Référence d’un checkpoint complet, avec encodage déclaré `yjs-v1`. |
-| `model` | Identifiant de provenance et référence du source Typst du modèle. |
+| `model` | Identifiant de provenance, référence du source Typst et référence du manifeste YAML (`manifest`). |
 | `sources` | Références `main` et `body` des sources dérivées ; chemins logiques actuels `main.typ` et `contenu.typ` à l’export. |
 | `resources` | Référence d’un manifeste de ressources partagé. |
 | `producer` | Numéro du générateur contrôlé lors de la lecture ; versions de l’application et de Typst à titre de diagnostic. |

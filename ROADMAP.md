@@ -177,7 +177,7 @@ onglets, capacités, défauts, validations et liaisons Typst dérivent des décl
 communes ; les listes Rust manuelles correspondantes sont retirées. Les parcours
 Courrier/Article sont vérifiés entre Tauri, CLI et MCP ; les sources et le fichier
 de travail sont conservés. Restent les contrats de dates structurées, ressources
-génériques et régimes d’options de modèles. Les codecs de valeurs restent typés
+génériques. Les régimes d’options sont raccordés dans le lot suivant. Les codecs de valeurs restent typés
 en Rust ; le chargeur n’installe pas de nouveaux types externes.
 
 **Mutualisation validée le 3 novembre 2026 :** un catalogue de structures
@@ -220,15 +220,20 @@ décrit cette composition, sans changement des données ni du contrat Article r�
   Calcul effectif unique pour Tauri, CLI, MCP, aperçu, stockage et exports ;
   recette brouillon → modèle contraint → brouillon, avec annulation et réouverture.
 
+**Régimes implémentés :** [contrat et recette des options de modèles](docs/model-options.md).
+Manifeste YAML embarqué, choix explicites facultatifs, résolution commune,
+contrôles génériques et exposition Tauri/CLI/MCP pour format, orientation,
+puces, style bibliographique et sommaire. La langue documentaire n’est jamais
+substituée ; les modèles incompatibles sont refusés. Les paramètres propres à
+un modèle restent différés, ainsi que les dates structurées et ressources génériques.
+
 **Autres décisions à mettre en œuvre et arbitrages avant refonte :**
 
 - Détailler en B.1 la frontière entre composition déclarative et comportements
   implémentés, puis le plan de migration des types intégrés actuels.
-- Mettre en œuvre le choix validé pour les modèles : options de présentation
-  libres, restreintes ou imposées, y compris pour les capacités du type. Le type
-  définit les capacités disponibles ; tous ses modèles doivent les présenter,
-  sans suppression ni masquage de contenu. Les métadonnées de contenu restent
-  celles de l’auteur.
+- Étendre ultérieurement les régimes implémentés aux paramètres propres aux
+  modèles, avec identités, genres et contrôles communs ; conserver la séparation
+  entre options de présentation et contenu de l’auteur.
 - Dates : conserver une valeur structurée et la langue du document ; décider
   de l’évolution éventuelle du contrat en tenant compte de l’adaptateur Typst
   et de Datify. Ne pas déplacer implicitement la composition vers Fluent.

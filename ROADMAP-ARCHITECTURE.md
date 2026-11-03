@@ -148,7 +148,7 @@ et le drapeau `letter_only` sont retirés. Le [contrat courant](docs/type-defini
 décrit les composants enregistrés pour signature, date et fichiers bibliographiques,
 la conservation des sources et les recettes. Les structures Rust restent les
 codecs des valeurs ; aucun registre concurrent ni chargeur externe n’est ajouté.
-Restent les dates structurées, ressources génériques et régimes de modèles.
+Restent les dates structurées et ressources génériques.
 
 **Structures d’en-tête — choix validé le 3 novembre 2026 :** enregistrer des
 fragments déclaratifs communs et les développer avant la validation finale du
@@ -193,6 +193,13 @@ Typst restent couvertes par la recette existante.
   Calcul effectif unique pour Tauri, CLI, MCP, aperçu, stockage et exports ;
   recette brouillon → modèle contraint → brouillon, avec annulation et réouverture.
 
+**Régimes implémentés :** [contrat et recette des options de modèles](docs/model-options.md).
+Manifeste YAML embarqué, choix explicites facultatifs, résolution commune,
+contrôles génériques et exposition Tauri/CLI/MCP pour format, orientation,
+puces, style bibliographique et sommaire. La langue documentaire n’est jamais
+substituée ; les modèles incompatibles sont refusés. Les paramètres propres à
+un modèle restent différés, ainsi que les dates structurées et ressources génériques.
+
 ### Arbitrages complémentaires avant implémentation
 
 1. Détails du contrat déclaratif de B.1, migration des types Rust actuels et limites
@@ -200,14 +207,13 @@ Typst restent couvertes par la recette existante.
 2. Champs simples et listes d’enregistrements, valeurs absentes et défauts ;
    conserver les genres jusqu’à la sérialisation Typst et empêcher l’injection
    de source par les valeurs saisies.
-3. Représentation des paramètres du type, des paramètres généraux et des options
-   du modèle ; schéma des trois régimes validés et exposition des contrôles.
-4. Contrôle de conformité des modèles et diagnostic d’incompatibilité, sans
-   perte ou réécriture implicite du contenu ; conservation des choix lors des
-   changements de régime.
+3. Étendre les régimes du premier périmètre aux paramètres propres au modèle :
+   identités, stockage des choix, genres et contrôles génériques.
+4. Étendre les recettes de conformité aux prochains types et capacités, sans
+   perte ou réécriture implicite du contenu.
 5. Dates : valeur structurée/ISO, insertion fixe d’aujourd’hui, langue du document,
    format demandé au modèle et rôle de l’adaptateur Typst/Datify.
-6. Format et emplacement du manifeste, validation des signatures, ressources,
+6. Étendre le manifeste aux paquets installables et à leurs ressources,
    dépendances et licence des polices.
 
 **Sortie B :** matrice de types/capacités, schémas et contrats testables, avec
