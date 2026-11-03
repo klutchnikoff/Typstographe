@@ -180,6 +180,16 @@ de travail sont conservés. Restent les contrats de dates structurées, ressourc
 génériques et régimes d’options de modèles. Les codecs de valeurs restent typés
 en Rust ; le chargeur n’installe pas de nouveaux types externes.
 
+**Mutualisation validée le 3 novembre 2026 :** un catalogue de structures
+d’en-tête réutilisables permet leur sélection par raccourci dans un type.
+Commencer par `authorship`, qui possède auteurs, affiliations, relations,
+validations, cartes/modales, onglets et liaisons Typst. Le chargeur développe
+le raccourci vers le contrat commun complet avant sa validation ; Tauri, CLI
+et MCP utilisent ce même résultat. Les structures sont réutilisées à l’identique.
+Le type choisit leur présence et l’ordre des onglets ; quelques paramètres
+ciblés pourront être discutés ultérieurement selon les besoins. Les modèles
+gardent la présentation Typst.
+
 **Autres décisions à mettre en œuvre et arbitrages avant refonte :**
 
 - Détailler en B.1 la frontière entre composition déclarative et comportements

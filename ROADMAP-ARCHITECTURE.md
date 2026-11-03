@@ -150,6 +150,18 @@ la conservation des sources et les recettes. Les structures Rust restent les
 codecs des valeurs ; aucun registre concurrent ni chargeur externe n’est ajouté.
 Restent les dates structurées, ressources génériques et régimes de modèles.
 
+**Structures d’en-tête — choix validé le 3 novembre 2026 :** enregistrer des
+fragments déclaratifs communs et les développer avant la validation finale du
+type. Premier fragment : `authorship`, avec les deux collections auteurs et
+affiliations, leurs dépendances, règles, vues et liaisons Typst. La référence
+`structures: [authorship]` n’introduit ni import de fichier arbitraire ni nouvelle
+voie d’édition. Les adaptateurs et le sérialiseur consomment le contrat résolu.
+Les collisions de noms et les tentatives de redéfinition sont refusées ; la
+première version réutilise les structures à l’identique. Un ordre explicite
+permet au type de placer onglets, collections et liaisons sans modifier leur
+contenu. Vérifier la conservation exacte du contrat Article, du source Typst
+et des parcours de validation/suppression des affiliations référencées.
+
 ### Arbitrages complémentaires avant implémentation
 
 1. Détails du contrat déclaratif de B.1, migration des types Rust actuels et limites
