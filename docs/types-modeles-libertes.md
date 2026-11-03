@@ -8,9 +8,17 @@ refonte de `crates/core/src/document_types/`.
 **Statut : proposition partiellement validée avec la feuille de route.** Les
 régimes de paramètres et l’interchangeabilité des modèles décrits aux sections
 2 et 3 sont validés le 26 octobre 2026 ; leur implémentation reste à faire.
-Le passage à des types déclaratifs et le déplacement du formatage des dates
-restent des propositions à arbitrer avant de remplacer les contrats actuels.
+Le passage aux déclarations YAML est validé le 3 novembre 2026 ; les propositions
+de formatage des dates ci-dessous restent exploratoires et ne remplacent pas
+le contrat Typst/Datify courant.
 L’organisation de l’en-tête décrite ci-dessous est validée le 27 octobre 2026.
+
+**Implémentation au 3 novembre 2026 :** les déclarations YAML des types intégrés
+sont maintenant raccordées aux adaptateurs et au moteur ; voir le
+[contrat courant](type-definitions.md). Les exemples de `TextField`, `ModelContract`
+et `letter_only` plus bas sont des constats antérieurs à ce raccordement, retirés
+du code. Les propositions de formatage manuel des dates ne remplacent pas le
+fonctionnement courant Typst/Datify ; les régimes de modèles restent à compléter.
 
 Il nuance le principe du lot 6.4a (« les types restent intégrés en Rust, les
 modèles en Typst ») : à terme, un type est une donnée déclarative, et seules les

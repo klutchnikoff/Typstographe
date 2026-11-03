@@ -134,18 +134,21 @@ types. Une capacité inédite (par exemple les équations) peut demander du code
 moteur/éditeur ; sa disponibilité et ses paramètres seront ensuite déclarables.
 
 L’[inventaire B.1 et l’exemple déclaratif](docs/b1-type-contracts.md) constituent
-le premier support de validation, pas un nouveau contrat exécutable. Préparer
+le support des choix validés et des fixtures du contrat. Préparer
 aussi les contrats des cibles de références, formules et notices bibliographiques,
 puis réaliser les lots C.1–C.4 dans cet ordre. Une capacité encore absente ne
 doit pas être annoncée comme exécutable par le manifeste ou le MCP.
 
-**Premier lot B.1 implémenté :** `document_types::definition` fournit un contrat
-Serde/Schemars, le chargeur yaml_serde 0.10.7, la validation sémantique des
-déclarations, les défauts et les schémas dérivés. Le [contrat initial](docs/type-definitions.md)
-précise son périmètre et ses diagnostics. Le fragment auteurs/affiliations est
-testé ; aucun catalogue concurrent n’est installé. Restent la migration des types
-actifs et de leurs vues/commandes, les dates, ressources et régimes de modèles,
-la validation documentaire des valeurs et la compilation du modèle associé.
+**Raccordement B.1 implémenté :** `document_types::definition` et
+`document_types::runtime` chargent les contrats embarqués dans `crates/core/types/`.
+Ils fournissent champs, collections, vues, capacités, défauts, validation des
+valeurs, diagnostics d’export et génération de l’appel Typst aux trois adaptateurs.
+Les anciennes listes `FIELDS`/`GROUPS`, `ModelContract`, le schéma Article manuel
+et le drapeau `letter_only` sont retirés. Le [contrat courant](docs/type-definitions.md)
+décrit les composants enregistrés pour signature, date et fichiers bibliographiques,
+la conservation des sources et les recettes. Les structures Rust restent les
+codecs des valeurs ; aucun registre concurrent ni chargeur externe n’est ajouté.
+Restent les dates structurées, ressources génériques et régimes de modèles.
 
 ### Arbitrages complémentaires avant implémentation
 

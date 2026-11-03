@@ -1,9 +1,9 @@
 # B.1 — Structures réutilisables et types déclaratifs
 
 Inventaire du 3 novembre 2026, avec orientations validées. Le premier
-[contrat typé et chargeur YAML](type-definitions.md) est implémenté ; les
-structures Courrier/Article actives ne sont pas encore migrées. Cet inventaire
-distingue les briques existantes et les travaux de raccordement restants.
+[contrat typé, chargeur YAML et raccordement des types actifs](type-definitions.md)
+sont implémentés. L’inventaire ci-dessous conserve les constats préparatoires ;
+les descripteurs manuels sont désormais remplacés par les déclarations intégrées.
 
 ## Décisions déjà retenues
 
@@ -177,7 +177,8 @@ Références de conception : [invariants](https://github.com/klutchnikoff/citeke
    Courrier et Article sans registre YAML concurrent de la logique courante.
 
 Le [premier vocabulaire, ses schémas et le chargeur](type-definitions.md) sont
-implémentés avec yaml_serde. Réaliser ensuite une première tranche verticale du
-chargement aux commandes, à l’interface et à la compilation Typst. Dates,
-ressources et régimes de modèles restent à formaliser avant leur ajout au
-chargeur ; les contrats courants continuent de les porter jusque-là.
+implémentés avec yaml_serde. La tranche verticale du chargement aux commandes,
+à l’interface et à la compilation Typst est raccordée pour les types intégrés.
+Dates structurées, ressources génériques et régimes de modèles restent à
+formaliser ; les composants enregistrés conservent le contrat courant des dates,
+signatures et fichiers bibliographiques.

@@ -171,10 +171,14 @@ préparent cette validation. Inclure dans B.1 les contrats des cibles de renvois
 des formules et de la bibliothèque bibliographique ; leur développement suit
 les lots C.1 à C.4 ci-dessous et ne bloque pas la préparation du format déclaratif.
 
-**Premier lot B.1 implémenté :** [contrat typé, chargeur YAML et schémas](docs/type-definitions.md),
-éprouvés sur auteurs/affiliations. Restent le raccordement des types actifs aux
-commandes et aux vues, les contrats dates/ressources/options de modèles, puis
-la recette complète avant migration. Le chargeur n’installe pas de nouveaux types.
+**Raccordement B.1 implémenté :** [contrats YAML intégrés et adaptateurs](docs/type-definitions.md)
+pour Courrier, Article et le contrat interne Compte-rendu. Champs, collections,
+onglets, capacités, défauts, validations et liaisons Typst dérivent des déclarations
+communes ; les listes Rust manuelles correspondantes sont retirées. Les parcours
+Courrier/Article sont vérifiés entre Tauri, CLI et MCP ; les sources et le fichier
+de travail sont conservés. Restent les contrats de dates structurées, ressources
+génériques et régimes d’options de modèles. Les codecs de valeurs restent typés
+en Rust ; le chargeur n’installe pas de nouveaux types externes.
 
 **Autres décisions à mettre en œuvre et arbitrages avant refonte :**
 

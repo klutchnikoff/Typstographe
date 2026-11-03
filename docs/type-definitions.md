@@ -1,14 +1,18 @@
-# Déclarations de types : contrat initial et chargeur YAML
+# Déclarations de types : contrat, chargeur et adaptateurs
 
 Contrat initial du 3 novembre 2026, dans
 `typstographe_core::document_types::definition`. Cette API lit et valide une
-déclaration ; elle **n’installe pas un type** et ne remplace pas encore les
-structures Courrier/Article ni leur registre dans les adaptateurs.
+déclaration ; les types intégrés l’utilisent pour leurs champs, collections,
+vues, capacités, validations et liaisons Typst. Elle **n’installe pas un type
+externe** : les identités intégrées et codecs de données restent compilés.
 
 Le [fragment auteurs/affiliations](proposals/b1/article-authorship.yaml) est une
 fixture chargée et testée. Il isole ces deux collections ; ce n’est pas la
-définition complète de l’Article actuel. Le raccordement à la création, aux
-commandes et à la composition des documents sera une tranche ultérieure.
+définition complète de l’Article actuel. Les contrats actifs sont
+[Courrier](../crates/core/types/courrier/type.yaml),
+[Article](../crates/core/types/article/type.yaml) et
+[Compte-rendu](../crates/core/types/compte-rendu/type.yaml). Ce dernier reste
+non créable sans modèle fourni ; sa déclaration ne change pas sa disponibilité.
 
 ## Autorité et API
 
@@ -26,6 +30,36 @@ commandes et à la composition des documents sera une tranche ultérieure.
 - `defaults()` crée les valeurs de champs racine et les collections vides ;
   `record_defaults(collection)` fournit les valeurs d’un nouvel enregistrement,
   sans inventer son identifiant. L’opération d’édition fournit l’identité stable.
+- `validate_values()` contrôle les valeurs documentaires, leurs genres,
+  identifiants, relations, unicités et limites. `export_diagnostics()` applique
+  ensuite les obligations d’export, dont le titre dans la langue principale.
+
+## Types intégrés et adaptateurs
+
+Les déclarations sont embarquées avec `include_str!`, validées puis mises en
+cache une fois avec leurs descripteurs. Modifier un YAML intégré demande une
+reconstruction ; aucune lecture disque ou relecture du schéma à chaque frappe.
+
+Le module `document_types::runtime` dérive les mêmes champs, collections,
+défauts, onglets et sections pour le moteur et les adaptateurs. Les anciennes
+listes `FIELDS`/`GROUPS`, `TextField`, `ModelContract`, le descripteur Article
+manuel et le drapeau `letter_only` sont retirés. Le type déclare les capacités
+autorisées ; le catalogue global conserve leurs implémentations.
+
+- **Tauri** localise ces descripteurs, réutilise les composants communs et ouvre
+  la signature dans l’onglet déclaré, sans déduire son emplacement du nom du type.
+- **CLI** publie le contrat dans `document_types.describe`, via le moteur commun.
+- **MCP** réutilise ce même détail, en conservant l’index compact et la découverte
+  progressive des capacités ; aucun catalogue parallèle ni nouvelle permission.
+- **Typst** reçoit les paramètres dans l’ordre des liaisons déclarées ; le
+  sérialiseur commun conserve chaînes littérales, booléens, listes, dictionnaires,
+  zones riches et chemins bibliographiques. Le modèle garde la mise en page.
+
+Les structures Rust Article/Courrier/Compte-rendu restent les codecs des valeurs
+et des archives. À l’initialisation, le registre vérifie que tous leurs champs
+correspondent aux valeurs produites par la déclaration, sans omission silencieuse.
+Ajouter un type installable ou supprimer ces codecs est un travail distinct ;
+ce lot ne crée pas un chargeur de documents à schéma arbitraire.
 
 La liste des capacités référence le catalogue exécutable commun. Une capacité
 inconnue ou simplement prévue est refusée. Les permissions d’un adaptateur et
@@ -43,6 +77,7 @@ la disponibilité au curseur restent des contrôles distincts.
 | `rich-text` | Contenu éditorial structuré, vide par défaut ; profil `inline-text` ou `rich-text` commun. |
 | `record-references` | Liste d’identifiants vers une collection existante ; `unique: true`, `on-target-remove: restrict`, défaut vide. |
 | `ordered-records` | Collection à identités stables et ordre distinct des libellés ; champs décrits par les genres ci-dessus. |
+| `reference-files` | Structure métier enregistrée pour les fichiers bibliographiques actuels ; elle fournit ses champs, son formulaire et sa validation Hayagriva. |
 
 Les identifiants de déclarations sont des noms ASCII commençant par une lettre
 minuscule, suivie de lettres minuscules, chiffres, tirets, soulignés ou points,
@@ -51,23 +86,32 @@ plus être de simples identifiants Typst, sans point ni mot-clé.
 L’identifiant `id` d’un enregistrement est réservé à son identité ; il n’est
 pas redéclaré comme champ éditable.
 
-Les dates structurées, références de ressources/signatures, options de modèles
-et structures métier nouvelles ne sont pas encore des genres du chargeur.
-Leurs contrats restent à préciser ; aucun genre générique « source arbitraire »
-n’est utilisé pour les simuler. Les structures actuelles continuent de les gérer.
+Le contrôle `date` s’applique à un champ texte et conserve le contrat actuel :
+valeur fixe, éventuellement vide ou personnalisée, composée par Typst/Datify.
+Il n’introduit pas de nouveau format de date ni de lecture de l’horloge par le
+moteur. Le contrôle `outline` expose le booléen commun dans Général.
+La structure `signature` déclare son onglet et le paramètre Typst ; les opérations
+sur l’image restent celles du moteur de ressources. Les dates structurées,
+ressources génériques et régimes de modèles restent à préciser séparément.
 
 ### Collections, liaisons et vues
 
 Chaque champ racine ou collection possède une liaison unique vers un paramètre
-Typst, distinct des autres paramètres. Cette déclaration ne vérifie pas encore
-la présence de la fonction ni sa signature dans un fichier de modèle.
+Typst, distinct des autres paramètres. `metadata-key`, facultatif, désigne le
+nom dans le codec des données lorsqu’il diffère du paramètre Typst (par exemple
+`citation_style` vers `citation-style`). Ces trois identités ne sont pas des
+copies de la valeur. Le contrôle de modèle du moteur compile la fonction avec
+les paramètres générés et refuse les signatures incompatibles.
 
-L’en-tête permet deux vues :
+L’en-tête permet trois vues :
 
 - `form` : sections ordonnées référençant les champs racine ;
 - `record-cards` : cartes d’une collection avec champ de résumé et édition
   `dialog`. Une liste `fields` facultative limite les champs édités par cette vue ;
   absente ou vide, elle sélectionne tous les champs.
+- `bibliography` : gestionnaire enregistré des fichiers bibliographiques, relié
+  à une collection `reference-files` et au champ de choix du style. Le futur lot
+  C.3 fera évoluer cette structure vers les notices et un fichier Hayagriva unique.
 
 Plusieurs vues peuvent éditer des sous-ensembles de la même collection, comme
 Titres et Résumés. Les références des vues sont vérifiées et chaque champ doit
@@ -75,8 +119,11 @@ Titres et Résumés. Les références des vues sont vérifiées et chaque champ 
 ni raccourci propre au type dans cette définition.
 
 `unique-by` décrit les champs scalaires d’une clé composée unique par collection.
-Le chargeur vérifie que ces champs existent et sont scalaires ; vérifier
-l’unicité des enregistrements appartient ensuite à la validation documentaire.
+Le chargeur vérifie que ces champs existent et sont scalaires ; la validation
+documentaire vérifie ensuite cette unicité. `language-key` impose l’unicité de
+la langue et permet d’initialiser la langue principale ou d’ajouter une langue
+sans supprimer les textes déjà rédigés. `primary-language` dans
+`export-requirements` exige un champ textuel dans la langue du document seulement.
 Une relation `restrict` signifie de même que l’état final d’un lot ne peut pas
 laisser de référence pendante ; elle ne commande pas une suppression en cascade.
 
@@ -121,7 +168,7 @@ transforme pas en règles métier exécutables.
 ## Vérification et génération
 
 ```sh
-cargo test --locked --offline -p typstographe-core document_types::definition
+cargo test --locked --offline -p typstographe-core document_types
 cargo run --locked --offline -p typstographe-core --example type_manifest_schema > docs/schemas/type-definition.schema.json
 ```
 
@@ -131,14 +178,24 @@ riches et leurs profils, les cas YAML ambigus, le schéma généré et la fermet
 de ses références récursives. Le schéma des valeurs peut être utilisé comme
 contrôle de structure ; il ne suffit pas à autoriser la publication d’une édition.
 
-Le raccordement des déclarations chargées au moteur, aux adaptateurs et à Typst
-reste à faire, avec validation documentaire, diagnostics d’export, régimes de
-modèles et recette complète Courrier/Article. Ce lot fournit le contrat et le
-chargeur partagés nécessaires à cette migration.
+La recette vérifie les codecs des trois types, les diagnostics d’export et la
+conservation à l’octet près des sources de démonstration et de brouillon dans
+`fixtures/document-types/source-contract.json`. L’exemple local de travail est
+également ouvert en lecture seule pendant le contrôle ; il n’est ni régénéré ni
+modifié. Les parcours Chromium/WebKit couvrent les en-têtes, formulaires,
+relations, conflits, citations, sauvegardes et exports, sans captures.
 
-Vérifications locales du lot : 16 tests dédiés et 258 tests de bibliothèques du
-workspace réussis ; Clippy sur tous les targets du workspace, formatage Rust et
-gardes de dépendances/taille du cœur réussis. Les tests des profils riches
-vérifient notamment les références récursives des sous-schémas : elles ne doivent
-pas pointer par erreur vers la racine des métadonnées. Ce bilan est local ; il ne
-remplace pas la qualification CI des trois systèmes ou du target WebAssembly.
+Les changements des YAML intégrés déclenchent les contrôles CI et les recettes
+ciblées des types/en-têtes/bibliographies. Le schéma publié et la fixture YAML
+testée sous docs/ sont des entrées de vérification, pas de simples documents à
+exclure des contrôles. La qualification CI des trois systèmes et de WebAssembly
+reste distincte de ces résultats locaux.
+
+Résultats locaux du raccordement : 429 tests Rust du workspace réussis, complétés
+par le test de parité LF/CRLF (un diagnostic de performance reste ignoré),
+418 tests web et six tests Node réussis, 40 parcours
+Chromium/WebKit réussis, 17 contrôles Python de politique CI/architecture réussis.
+Clippy, formatages, limite de taille et frontière des dépendances du cœur passent.
+Le watcher de fichiers et les tests de sockets MCP nécessitent les notifications
+et sockets natifs macOS ; leurs essais finaux sont exécutés hors du bac à sable,
+avec les répertoires temporaires propres aux recettes.
