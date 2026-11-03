@@ -228,6 +228,28 @@ refusés/récupérables, annulation et commandes Tauri/CLI/MCP. Transmission nat
 Le courrier réserve le préfixe de date aux valeurs calendaires. Format CAS 13,
 générateur 4 ; les ressources génériques restent le prochain contrat à préciser.
 
+**Ressources communes — décisions validées le 3 novembre 2026 :**
+
+- Premier périmètre : références d’images (PNG, JPEG, SVG), en commençant par
+  la signature du courrier. Réutiliser le stockage, le décodeur et les lots
+  atomiques actuels ; bibliographie, polices et paquets gardent leurs contrats.
+- Champ déclarable facultatif : `null` ou référence typée vers un chemin logique
+  interne. Les octets sont incorporés au projet ; aucun chemin du disque de
+  l’utilisateur ne devient une dépendance. Genre, libellé, emplacement et
+  obligation éventuelle à l’export sont décrits par le type.
+- Contrôle commun : aperçu, choix, remplacement, suppression et, si déclaré,
+  retour à la signature des préférences. La création copie explicitement la
+  valeur et ses octets ; les changements du profil ne modifient aucun projet.
+- Import et affectation forment un lot atomique annulable. Remplacement immuable,
+  références absentes/incompatibles refusées ; annulation, brouillons privés et
+  snapshots protègent les octets nécessaires. Sauvegarde et export conservent
+  les ressources utiles à leurs états, y compris celles du modèle.
+- Tauri, CLI et MCP emploient le même champ et les mêmes validations, avec leurs
+  permissions respectives. Typst reçoit un chemin interne échappé ou `none` ;
+  présentation et place manuscrite sans signature restent définies par le modèle.
+- Migrer la signature entière vers cette brique, retirer les accès spécialisés
+  devenus inutiles et vérifier les garanties partagées avec les figures du corps.
+
 ### Arbitrages complémentaires avant implémentation
 
 1. Détails du contrat déclaratif de B.1, migration des types Rust actuels et limites
