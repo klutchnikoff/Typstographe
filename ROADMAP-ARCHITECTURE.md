@@ -170,6 +170,29 @@ non vides sont des permutations complètes, sans filtre ni remplacement. Une
 fixture du contrat Article résolu vérifie sa conservation exacte ; les sources
 Typst restent couvertes par la recette existante.
 
+
+**Options de modèles — décisions validées le 3 novembre 2026 :**
+
+- Un manifeste `model.yaml` accompagne le Typst pur, dans le projet autonome ;
+  il remplace `editor-options`, sans seconde autorité pour les politiques.
+- Le contrat commun définit les genres et valeurs valides. Le modèle déclare
+  chaque option de présentation disponible : libre avec défaut, restreinte avec
+  liste non vide et défaut autorisé, ou imposée avec valeur valide. Les
+  manifestes inconnus, incomplets ou contradictoires sont refusés.
+- Une absence de choix explicite signifie « Selon le modèle ». Un choix
+  autorisé s’applique ; un choix exclu est conservé et utilise le défaut avec
+  avertissement ; une valeur imposée n’écrase jamais le choix conservé.
+- Les contrôles imposés sont masqués. Les interfaces documentaires exposent
+  choix conservé, valeur effective, régime et domaine autorisé ; une nouvelle
+  édition interdite par le modèle actif est refusée dans le moteur commun.
+- La langue documentaire reste celle de l’auteur. Le manifeste déclare les
+  langues prises en charge ; un modèle incompatible est signalé et refusé,
+  sans changement implicite de langue ni conversion du contenu.
+- Premier périmètre : format, orientation, marqueur de puces, style de citation
+  et sommaire. Les options entièrement propres à un modèle sont différées.
+  Calcul effectif unique pour Tauri, CLI, MCP, aperçu, stockage et exports ;
+  recette brouillon → modèle contraint → brouillon, avec annulation et réouverture.
+
 ### Arbitrages complémentaires avant implémentation
 
 1. Détails du contrat déclaratif de B.1, migration des types Rust actuels et limites
