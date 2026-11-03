@@ -42,7 +42,8 @@ reste indépendante. Les noms publics de capacités sont anglais ou latins.
 
 ## Bilans et références historiques
 
-B.1 en cours : [inventaire et orientations validées](b1-type-contracts.md), avec
+B.1 clôturé : [bilan et critères vérifiés](b1-closure-results.md).
+L’[inventaire préparatoire](b1-type-contracts.md) est conservé, avec
 un [fragment YAML auteurs/affiliations](proposals/b1/article-authorship.yaml)
 vérifié par le chargeur ; les déclarations des types actifs alimentent désormais
 les adaptateurs et la composition Typst commune.
