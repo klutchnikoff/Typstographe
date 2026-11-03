@@ -227,6 +227,27 @@ puces, style bibliographique et sommaire. La langue documentaire n’est jamais
 substituée ; les modèles incompatibles sont refusés. Les paramètres propres à
 un modèle restent différés, ainsi que les dates structurées et ressources génériques.
 
+**Dates structurées — décisions validées le 3 novembre 2026 :**
+
+- Genre commun `date` : absence `null`, date grégorienne complète
+  `{kind: calendar, iso: "2026-11-03"}` ou texte personnalisé
+  `{kind: custom, text: "Début novembre 2026"}`. Aucune déduction depuis
+  une chaîne, aucune conversion silencieuse d’une date impossible ; les dates
+  partielles et intervalles restent du texte personnalisé.
+- « Aujourd’hui » insère la date locale fixe fournie par l’adaptateur. La
+  corbeille permet toujours l’absence, même si l’export exige une date.
+  Le cœur et Typst ne consultent jamais l’horloge pour cette valeur.
+- Contrôle commun compact avec modes Date/Texte personnalisé, navigation,
+  préédition IME et conservation des saisies refusées/récupérables communes.
+  Changer de mode ne supprime pas la valeur confirmée avant la nouvelle saisie.
+- Transmission Typst native : `none`, `datetime` ou chaîne échappée.
+  `format-date` reste le wrapper de Datify ; le modèle choisit `long` (défaut),
+  `short` ou `iso`, selon la langue documentaire, sans nouveau réglage utilisateur.
+- Dans le courrier, « le/Le » appartient au modèle et concerne uniquement une
+  date calendaire. Un texte personnalisé reste littéral ; le lieu et la ponctuation
+  relèvent de la composition Typst. Pas de rétrocompatibilité expérimentale ;
+  préserver les fichiers locaux et régénérer seulement les exemples versionnés.
+
 **Autres décisions à mettre en œuvre et arbitrages avant refonte :**
 
 - Détailler en B.1 la frontière entre composition déclarative et comportements
