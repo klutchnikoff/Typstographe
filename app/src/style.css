@@ -843,14 +843,19 @@ summary svg {
 .metadata-field-controls textarea {
   resize: vertical;
 }
-/* A date keeps a readable input; its auxiliary action wraps on narrow columns. */
+/* Keep the editable value aligned with its label; compact actions occupy one row below. */
 .metadata-date-controls {
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.metadata-date-controls select {
+  min-width: 0;
+  width: 100%;
+  padding: 4px 8px;
 }
 .metadata-date-controls input {
-  width: auto;
-  flex: 1 1 140px;
-  max-width: 100%;
+  grid-column: 1 / -1;
+  width: 100%;
 }
 .metadata-date-clear {
   display: inline-flex;

@@ -15,6 +15,7 @@ export function bindMetadataInput(
   read: () => unknown,
   parse: () => unknown = () => input.value,
   format: (value: unknown) => string = (value) => String(value ?? ''),
+  validate?: (value: unknown) => string | undefined,
 ) {
   let composing = false
   const status = document.createElement('div')
@@ -27,7 +28,14 @@ export function bindMetadataInput(
   retry.type = cancel.type = 'button'
   retry.textContent = tr('Valider')
   cancel.textContent = tr('Annuler')
-  retry.onclick = () => commands.confirm(target, parse(), read)
+  const publish = (confirm = false) => {
+    const value = parse(),
+      reason = validate?.(value)
+    if (reason) commands.stage(target, value, read, reason)
+    else if (confirm) commands.confirm(target, value, read)
+    else commands.set(target, value, read)
+  }
+  retry.onclick = () => publish(true)
   cancel.onclick = () => {
     commands.discard(target)
     input.focus()
@@ -44,16 +52,15 @@ export function bindMetadataInput(
     confirm: () => retry.click(),
   })
   const update = () => {
-    if (!composing) commands.set(target, parse(), read)
+    if (!composing) publish()
   }
   const begin = () => {
     composing = true
     commands.composing(input, true)
   }
   const end = () => {
-    const value = parse()
     composing = false
-    commands.set(target, value, read)
+    publish()
     commands.composing(input, false)
   }
   const refresh = () => {

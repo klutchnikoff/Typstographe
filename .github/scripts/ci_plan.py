@@ -36,6 +36,8 @@ RECIPES = Path("app/tests/browser")
 # Graphical recipes a pull request runs beyond @smoke, by edited area. A source
 # missing here only runs @smoke on the PR; the full suite runs after merging.
 BROWSER_AREAS = (
+    (("crates/core/src/dates.rs", "crates/core/templates/capabilities/dates.typ"),
+     ("metadata", "structured-metadata")),
     (("crates/core/src/document_types/model_options*", "crates/core/templates/*.model.yaml",
       "app/src/model-option-control.ts", "app/src/document-options.ts"),
      ("model-options", "metadata", "bibliography", "structured-resources")),

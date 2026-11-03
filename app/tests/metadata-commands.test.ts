@@ -148,3 +148,73 @@ it('Escape discards a refused native field without closing its enclosing metadat
   await s.controller.flush()
   binding.destroy()
 })
+
+it('incomplete date modes share draft recovery, Escape and IME without erasing the confirmed date', async () => {
+  installKeyboardNavigation()
+  const { metadataFields, destroyMetadataFields } = await import('../src/metadata-fields')
+  const s = setup(),
+    root = document.createElement('div')
+  const calendar = { kind: 'calendar', iso: '2026-11-03' }
+  s.map.set('name', calendar)
+  document.body.append(root)
+  metadataFields(
+    root,
+    { id: 'date', label: 'Date', sections: [] },
+    [
+      {
+        field: 'name',
+        parameter: 'date',
+        label: 'Date',
+        group: 'date',
+        multiline: false,
+        kind: 'date',
+        required_for_export: true,
+        value: calendar,
+      },
+    ],
+    { date: calendar },
+    vi.fn(),
+    { commands: s.controller, read: s.read },
+  )
+  const mode = root.querySelector('select')!,
+    input = root.querySelector('input')!
+  mode.value = 'custom'
+  mode.dispatchEvent(new Event('change'))
+  expect(s.read()).toEqual(calendar)
+  expect(native.calls).toHaveLength(0)
+  expect(s.controller.draft()[0].value).toEqual({ kind: 'custom', text: '' })
+  await expect(s.controller.flush()).rejects.toThrow('nouvelle date')
+  input.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+  )
+  expect(input.type).toBe('date')
+  expect(input.value).toBe('2026-11-03')
+  expect(s.controller.dirty()).toBe(false)
+  mode.value = 'custom'
+  mode.dispatchEvent(new Event('change'))
+  input.dispatchEvent(new CompositionEvent('compositionstart'))
+  input.value = 'Début novembre にほん'
+  input.dispatchEvent(new InputEvent('input', { isComposing: true }))
+  expect(native.calls).toHaveLength(0)
+  input.dispatchEvent(new CompositionEvent('compositionend'))
+  await vi.waitFor(() => expect(native.calls).toHaveLength(1))
+  expect(native.calls[0].value).toEqual({ kind: 'custom', text: 'Début novembre にほん' })
+  native.calls[0].finish()
+  await s.controller.flush()
+  const done = vi.fn(async () => {})
+  s.controller.restore(s.target, { kind: 'calendar', iso: '' }, s.read, done)
+  expect(mode.value).toBe('calendar')
+  input.value = '2024-02-29'
+  input.dispatchEvent(new Event('input'))
+  expect(native.calls).toHaveLength(1)
+  const confirm = [...root.querySelectorAll('button')].find(
+    (button) => button.textContent === 'Valider',
+  )!
+  confirm.click()
+  await vi.waitFor(() => expect(native.calls).toHaveLength(2))
+  native.calls[1].finish()
+  await s.controller.flush()
+  await vi.waitFor(() => expect(done).toHaveBeenCalledOnce())
+  expect(s.read()).toEqual({ kind: 'calendar', iso: '2024-02-29' })
+  destroyMetadataFields(root)
+})

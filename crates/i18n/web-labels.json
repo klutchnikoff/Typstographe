@@ -471,5 +471,11 @@
   "Selon le modèle": "web-follow-model",
   "Le modèle utilise son défaut pour certains réglages. Vos choix sont conservés.": "web-model-option-substituted",
   "Marqueur personnalisé": "web-custom-list-marker",
-  "Choix conservé, non disponible": "web-retained-unavailable-choice"
+  "Choix conservé, non disponible": "web-retained-unavailable-choice",
+  "Mode de la date": "web-date-mode",
+  "Texte personnalisé": "web-date-custom",
+  "Saisissez une date complète et valide, ou supprimez la date.": "web-date-invalid",
+  "Saisissez une date personnalisée sur une seule ligne, ou supprimez la date.": "web-date-custom-invalid",
+  "Renseignez la nouvelle date ou annulez.": "web-date-pending",
+  "Date": "field-date"
 }

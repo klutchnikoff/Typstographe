@@ -91,6 +91,11 @@ class CIPlanTests(unittest.TestCase):
         for paths in [None, [], ["README.md"], ["crates/core/src/lib.rs"], ["app/src/main.ts"]]:
             self.assertEqual(planner.browser_recipes(paths, root), [], paths)
 
+    def test_date_contract_and_wrapper_changes_run_metadata_recipes(self):
+        for source in ["crates/core/src/dates.rs", "crates/core/templates/capabilities/dates.typ"]:
+            self.assertEqual(planner.browser_recipes([source]), [
+                "tests/browser/metadata.spec.ts", "tests/browser/structured-metadata.spec.ts"])
+
     def test_every_browser_area_names_existing_sources_and_recipes(self):
         root = SCRIPT.parents[2]
         files = subprocess.check_output(["git", "ls-files"], cwd=root, text=True).splitlines()

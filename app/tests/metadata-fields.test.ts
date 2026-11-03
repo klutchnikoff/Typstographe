@@ -31,7 +31,7 @@ const definitions: Field[] = [
     multiline: false,
     kind: 'date',
     required_for_export: false,
-    value: '',
+    value: null,
   },
 ]
 const group: MetadataGroup = {
@@ -54,7 +54,11 @@ function mount(selected = group) {
     root,
     selected,
     definitions,
-    { destinataire: 'Camille', adresse: 'Adresse initiale', date: '2026-10-01' },
+    {
+      destinataire: 'Camille',
+      adresse: 'Adresse initiale',
+      date: { kind: 'calendar', iso: '2026-10-01' },
+    },
     change,
   )
   return { root, change }
@@ -80,7 +84,10 @@ it('Aujourd’hui enregistre la date locale courante une fois, sans formule dyna
   vi.setSystemTime(new Date(2026, 9, 27, 23, 58))
   const { root, change } = mount()
   root.querySelector('button')!.click()
-  expect(change).toHaveBeenCalledExactlyOnceWith('letter.date', '2026-10-27')
+  expect(change).toHaveBeenCalledExactlyOnceWith('letter.date', {
+    kind: 'calendar',
+    iso: '2026-10-27',
+  })
   vi.setSystemTime(new Date(2026, 9, 29, 12))
   expect(change).toHaveBeenCalledTimes(1)
 })
@@ -92,7 +99,7 @@ it('les valeurs partagées sont actualisées sans remplacer le champ focalisé n
   refreshMetadataFields(root, {
     destinataire: 'Camille',
     adresse: 'Adresse distante',
-    date: '2026-10-28',
+    date: { kind: 'calendar', iso: '2026-10-28' },
   })
   expect(document.activeElement).toBe(input)
   expect([input.selectionStart, input.selectionEnd, input.selectionDirection]).toEqual([
@@ -124,15 +131,46 @@ it('une date facultative peut être vidée et ses actions suivent les changement
   const clear = root.querySelector<HTMLButtonElement>('.metadata-date-clear')!
   expect(clear.disabled).toBe(false)
   clear.click()
-  expect(change).toHaveBeenCalledExactlyOnceWith('letter.date', '')
+  expect(change).toHaveBeenCalledExactlyOnceWith('letter.date', null)
   expect(document.activeElement).toBe(date)
-  refreshMetadataFields(root, { date: '' })
+  refreshMetadataFields(root, { date: null })
   expect(date.value).toBe('')
   expect(clear.disabled).toBe(true)
   date.value = '1875-01-19'
   date.dispatchEvent(new Event('input', { bubbles: true }))
   expect(clear.disabled).toBe(false)
-  expect(change).toHaveBeenLastCalledWith('letter.date', '1875-01-19')
-  refreshMetadataFields(root, { date: '' })
+  expect(change).toHaveBeenLastCalledWith('letter.date', { kind: 'calendar', iso: '1875-01-19' })
+  refreshMetadataFields(root, { date: null })
   expect(clear.disabled).toBe(true)
+})
+
+it('le mode texte personnalisé conserve une chaîne ISO littérale et peut afficher un intervalle', () => {
+  const { root, change } = mount()
+  const mode = root.querySelector<HTMLSelectElement>('select')!
+  mode.value = 'custom'
+  mode.dispatchEvent(new Event('change'))
+  expect(change).not.toHaveBeenCalled()
+  const input = root.querySelector<HTMLInputElement>('#metadata-field-letter\\.date')!
+  expect(input.type).toBe('text')
+  expect(document.activeElement).toBe(input)
+  input.value = '2026-02-30'
+  input.dispatchEvent(new Event('input'))
+  expect(change).toHaveBeenLastCalledWith('letter.date', { kind: 'custom', text: '2026-02-30' })
+  refreshMetadataFields(root, { date: { kind: 'custom', text: 'Du 3 au 5 novembre 2026' } })
+  expect(mode.value).toBe('custom')
+  expect(input.value).toBe('Du 3 au 5 novembre 2026')
+})
+
+it('la corbeille est disponible même pour une date exigée uniquement à l’export', () => {
+  const root = document.createElement('div')
+  const change = vi.fn()
+  metadataFields(
+    root,
+    group,
+    definitions.map((field) => ({ ...field, required_for_export: true })),
+    { date: { kind: 'calendar', iso: '2024-02-29' } },
+    change,
+  )
+  root.querySelector<HTMLButtonElement>('.metadata-date-clear')!.click()
+  expect(change).toHaveBeenCalledExactlyOnceWith('letter.date', null)
 })

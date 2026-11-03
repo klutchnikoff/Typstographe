@@ -1210,3 +1210,9 @@ web-custom-list-marker = Marqueur personnalisé
 model-language-unsupported = Ce modèle ne prend pas en charge la langue du document.
 model-option-not-allowed = Ce réglage n’est pas autorisé par le modèle actif.
 web-retained-unavailable-choice = Choix conservé, non disponible
+
+web-date-mode = Mode de la date
+web-date-custom = Texte personnalisé
+web-date-invalid = Saisissez une date complète et valide, ou supprimez la date.
+web-date-custom-invalid = Saisissez une date personnalisée sur une seule ligne, ou supprimez la date.
+web-date-pending = Renseignez la nouvelle date ou annulez.

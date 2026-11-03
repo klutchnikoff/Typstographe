@@ -149,6 +149,23 @@ export class MetadataCommands {
     this.changed()
     this.pump()
   }
+  /** Keep an incomplete native form in the shared recovery path without publishing it. */
+  stage(target: FieldTarget, value: unknown, read: () => unknown, message: string) {
+    this.checkDocument()
+    const previous = this.drafts.get(key(target))
+    this.drafts.set(key(target), {
+      target,
+      value,
+      read,
+      base: previous?.base ?? stableJSON(read()),
+      version: (previous?.version ?? 0) + 1,
+      ...(previous?.manual
+        ? { manual: true, recoveredDone: previous.recoveredDone, sourceId: previous.sourceId }
+        : {}),
+      error: new Error(message),
+    })
+    this.changed()
+  }
   discard(target: FieldTarget) {
     this.drafts.delete(key(target))
     this.changed()

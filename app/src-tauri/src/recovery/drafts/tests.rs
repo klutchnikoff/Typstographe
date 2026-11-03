@@ -44,6 +44,16 @@ fn unconfirmed_forms_and_fields_survive_a_new_process_without_entering_the_owner
     request
         .fields
         .push(json!({"target":{"kind":"metadata","field":"letter.subject"},"value":"Pending"}));
+    for value in [
+        json!({"kind":"calendar","iso":""}),
+        json!({"kind":"custom","text":""}),
+        json!({"kind":"custom","text":"Début novembre にほん"}),
+    ] {
+        request
+            .fields
+            .push(json!({"target":{"kind":"metadata","field":"letter.date"},"value":value}));
+    }
+    let expected_fields = request.fields.clone();
     request.forms.push(json!({"id":"author","context":{"kind":"record","collection":"authors"},"data":{"name":"Draft author é😀"}}));
     let generation = s.generation.clone();
     s.conserve_private("main", request).unwrap();
@@ -52,6 +62,7 @@ fn unconfirmed_forms_and_fields_survive_a_new_process_without_entering_the_owner
     s.mark_clean().unwrap();
     drop(s);
     let record = read(&file).unwrap();
+    assert_eq!(record.input.fields, expected_fields);
     assert_eq!(record.input.fields[0]["value"], "Pending");
     assert_eq!(record.input.forms[0]["data"]["name"], "Draft author é😀");
     let restored = Session::from_checkpoint(dir.path().join("reopened"), record.confirmed).unwrap();
