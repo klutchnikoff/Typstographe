@@ -68,6 +68,7 @@ test('signature : ajout, suppression, annulation, partage et réouverture utilis
     await peer.evaluate((path) => window.__spike!.provider.resources.has(path as string), path),
   ).toBe(true)
   await page.getByRole('button', { name: 'Sans signature', exact: true }).click()
+  await expect(page.getByLabel('Signature du document', { exact: true })).toBeFocused()
   await flush(page)
   expect(
     await page.evaluate(() =>
@@ -159,6 +160,12 @@ test('le profil reste global, puis sa signature est incorporée explicitement ou
   await page.getByRole('button', { name: 'Signature des préférences', exact: true }).click()
   await flush(page)
   expect(await ownerResources(page)).toContain(preferences.signature.path)
+  const reset = page.getByRole('button', { name: 'Signature des préférences', exact: true })
+  await reset.focus()
+  await reset.press('ArrowLeft')
+  await expect(page.getByRole('button', { name: 'Sans signature', exact: true })).toBeFocused()
+  await page.keyboard.press('ArrowRight')
+  await expect(reset).toBeFocused()
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.new"]').click()
   await page.getByRole('button', { name: 'Fermer sans enregistrer', exact: true }).click()

@@ -1,4 +1,5 @@
 import { tr } from './i18n'
+import { actionRow } from './keyboard-navigation'
 import type { Provider, Resource, Transport } from './provider'
 import type { Field } from './shell'
 import type { MetadataCommands } from './metadata-commands'
@@ -39,8 +40,7 @@ export function metadataResource(
   input.type = 'file'
   input.accept = 'image/png,image/jpeg,image/svg+xml'
   input.disabled = !binding?.resources
-  const actions = document.createElement('div')
-  actions.className = 'panel-actions'
+  const actions = actionRow()
   const clear = document.createElement('button')
   clear.type = 'button'
   clear.textContent = tr(
@@ -53,7 +53,10 @@ export function metadataResource(
     if (binding) binding.commands.set(target, value, read, resources)
     else change(definition.field, value)
   }
-  clear.onclick = () => set(null)
+  clear.onclick = () => {
+    set(null)
+    input.focus()
+  }
   actions.append(clear)
   let profile: HTMLButtonElement | undefined
   if (definition.resource?.profile_default === 'signature') {
@@ -67,6 +70,7 @@ export function metadataResource(
     actions.append(profile)
   }
   root.append(preview, input, actions)
+  let shown: Resource | undefined
   const format = (value: unknown) => {
     current = value
     clear.disabled = value == null
@@ -75,15 +79,18 @@ export function metadataResource(
       binding?.commands.pendingResources(target).find((r) => r.path === value) ||
       (typeof value === 'string' ? binding?.resources?.provider.resources.get(value) : undefined)
     preview.hidden = !resource
-    if (resource) {
-      const mime = resource.path.endsWith('.svg')
-        ? 'image/svg+xml'
-        : resource.path.endsWith('.png')
-          ? 'image/png'
-          : 'image/jpeg'
-      const url = `data:${mime};base64,${resource.data}`
-      if (preview.src !== url) preview.src = url
-    } else preview.removeAttribute('src')
+    if (resource !== shown) {
+      shown = resource
+      if (resource) {
+        const mime = resource.path.endsWith('.svg')
+          ? 'image/svg+xml'
+          : resource.path.endsWith('.png')
+            ? 'image/png'
+            : 'image/jpeg'
+        const url = `data:${mime};base64,${resource.data}`
+        preview.src = url
+      } else preview.removeAttribute('src')
+    }
     return '' // Browsers prohibit assigning a file input's value. The reference has its own typed value.
   }
   input.onchange = () => {

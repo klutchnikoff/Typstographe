@@ -128,7 +128,7 @@ function seed(type: 'courrier' | 'article') {
     metadata: kind.metadata,
     template: kind.models[0].source,
     modelId: kind.models[0].id,
-    modelManifest: 'fixture',
+    modelManifest: kind.models[0].manifest,
   })
   if (type === 'article')
     settings.metadata.fields.references = [
@@ -1253,6 +1253,7 @@ it('model and language commands preserve Article branches and undo the whole lan
         params: {
           model_id: 'article.project',
           source: before.settings.template + '\n// retained project model',
+          manifest: before.settings.modelManifest,
         },
       },
     ],
