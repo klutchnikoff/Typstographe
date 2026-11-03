@@ -139,6 +139,14 @@ aussi les contrats des cibles de références, formules et notices bibliographiq
 puis réaliser les lots C.1–C.4 dans cet ordre. Une capacité encore absente ne
 doit pas être annoncée comme exécutable par le manifeste ou le MCP.
 
+**Premier lot B.1 implémenté :** `document_types::definition` fournit un contrat
+Serde/Schemars, le chargeur yaml_serde 0.10.7, la validation sémantique des
+déclarations, les défauts et les schémas dérivés. Le [contrat initial](docs/type-definitions.md)
+précise son périmètre et ses diagnostics. Le fragment auteurs/affiliations est
+testé ; aucun catalogue concurrent n’est installé. Restent la migration des types
+actifs et de leurs vues/commandes, les dates, ressources et régimes de modèles,
+la validation documentaire des valeurs et la compilation du modèle associé.
+
 ### Arbitrages complémentaires avant implémentation
 
 1. Détails du contrat déclaratif de B.1, migration des types Rust actuels et limites

@@ -1,8 +1,9 @@
 # B.1 — Structures réutilisables et types déclaratifs
 
-Préparation du 3 novembre 2026. **Proposition à valider avant implémentation**,
-fondée sur les contrats Courrier et Article actuels. Ce document ne décrit pas
-un chargeur disponible et ne remplace pas les contrats exécutables.
+Inventaire du 3 novembre 2026, avec orientations validées. Le premier
+[contrat typé et chargeur YAML](type-definitions.md) est implémenté ; les
+structures Courrier/Article actives ne sont pas encore migrées. Cet inventaire
+distingue les briques existantes et les travaux de raccordement restants.
 
 ## Décisions déjà retenues
 
@@ -97,9 +98,9 @@ modèle Typst ne fournit pas l’interface de l’éditeur.
 
 ## 3. Premier exemple auteurs/affiliations
 
-Le [fragment YAML](proposals/b1/article-authorship.yaml) illustre la proposition.
-Ses noms de propriétés sont **provisoires** et ce fragment ne constitue pas un
-type Article complet ni un fichier chargé par l’application. Il omet les autres
+Le [fragment YAML](proposals/b1/article-authorship.yaml) est désormais une fixture
+du contrat typé et de son chargeur. Il ne constitue pas un type Article complet
+ni une définition enregistrée par l’application. Il omet les autres
 onglets, les options et le catalogue de capacités pour isoler la relation étudiée.
 
 L’exemple distingue :
@@ -161,7 +162,7 @@ Références de conception : [invariants](https://github.com/klutchnikoff/citeke
 [identités](https://github.com/klutchnikoff/citekeep/blob/main/docs/explanation/identity.md),
 [recherche et matérialisation](https://github.com/klutchnikoff/citekeep/blob/main/src/citekeep/catalog.py).
 
-## 5. Prochains choix à valider ensemble
+## 5. Orientations validées et suite
 
 1. **Granularité du contrat** : commencer par les briques ci-dessus et la
    composition auteurs/affiliations ; n’ajouter une structure métier dédiée que
@@ -175,7 +176,8 @@ Références de conception : [invariants](https://github.com/klutchnikoff/citeke
    pour tous les adaptateurs. Commencer par les types intégrés, puis migrer
    Courrier et Article sans registre YAML concurrent de la logique courante.
 
-Après validation : figer le premier vocabulaire et ses schémas, évaluer le
-chargeur YAML, puis réaliser une première tranche verticale du chargement aux
-commandes, à l’interface et à la compilation Typst. Le présent lot de préparation
-n’ajoute pas encore de dépendance ni de contrat public exécutable.
+Le [premier vocabulaire, ses schémas et le chargeur](type-definitions.md) sont
+implémentés avec yaml_serde. Réaliser ensuite une première tranche verticale du
+chargement aux commandes, à l’interface et à la compilation Typst. Dates,
+ressources et régimes de modèles restent à formaliser avant leur ajout au
+chargeur ; les contrats courants continuent de les porter jusque-là.

@@ -171,6 +171,11 @@ préparent cette validation. Inclure dans B.1 les contrats des cibles de renvois
 des formules et de la bibliothèque bibliographique ; leur développement suit
 les lots C.1 à C.4 ci-dessous et ne bloque pas la préparation du format déclaratif.
 
+**Premier lot B.1 implémenté :** [contrat typé, chargeur YAML et schémas](docs/type-definitions.md),
+éprouvés sur auteurs/affiliations. Restent le raccordement des types actifs aux
+commandes et aux vues, les contrats dates/ressources/options de modèles, puis
+la recette complète avant migration. Le chargeur n’installe pas de nouveaux types.
+
 **Autres décisions à mettre en œuvre et arbitrages avant refonte :**
 
 - Détailler en B.1 la frontière entre composition déclarative et comportements

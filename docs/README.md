@@ -27,6 +27,7 @@ les décisions, mesures et limites des étapes livrées.
 | Éditeur et interactions | [Zones riches](rich-zones.md), [widgets/bandeaux](editor-widgets.md), [navigation clavier](keyboard-navigation.md), [dialogues](metadata-dialogs.md), [retours/jointures](paragraph-join.md) |
 | Catalogue des usages | [Groupes, types et fiches](document-type-catalogue.md) |
 | Types, modèles et bibliographie | [Article](article-contract.md), [citations et bibliographie](article-bibliography.md), [dépendances Typst et wrappers](typst-dependencies.md) |
+| Déclarations de types | [Contrat initial et chargeur YAML](type-definitions.md), [schéma du manifeste](schemas/type-definition.schema.json) ; migration des types actifs à venir |
 | Performances et synchronisation | [Mode individuel](individual-mode.md), [rendu et méthode de mesure](tauri-preview-performance.md) |
 
 Le cœur Rust possède l’état confirmé et valide les commandes. Tiptap/Yjs fournit
@@ -38,10 +39,9 @@ reste indépendante. Les noms publics de capacités sont anglais ou latins.
 
 ## Bilans et références historiques
 
-Préparation en cours : [B.1 — inventaire et contrats déclaratifs proposés](b1-type-contracts.md),
-avec un [fragment YAML auteurs/affiliations](proposals/b1/article-authorship.yaml).
-Ces propositions attendent validation ; elles ne décrivent pas un chargeur
-disponible ni un remplacement des contrats courants.
+B.1 en cours : [inventaire et orientations validées](b1-type-contracts.md), avec
+un [fragment YAML auteurs/affiliations](proposals/b1/article-authorship.yaml)
+vérifié par le chargeur initial. Le remplacement des types actifs reste à faire.
 
 - [A.1 — application principale](application-layout.md), [retrait d’egui](egui-retirement-results.md).
 - [A.2 — convergence des adaptateurs](a2-closure-results.md), [transformations](a2-transformations-results.md).
