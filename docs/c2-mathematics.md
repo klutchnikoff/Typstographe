@@ -113,6 +113,17 @@ ne transporte pas MiTeX du seul fait de son modèle. Les nouveaux projets, les s
 la récupération et les exports transportent les fichiers nécessaires sans cache
 externe ni installation LaTeX.
 
+L’intégration actuelle utilise le plugin WebAssembly du paquet Typst, exécuté
+par Typst côté Rust, et non par le moteur JavaScript de l’interface. C’est
+[l’interface standard des plugins Typst](https://typst.app/docs/reference/foundations/plugin/),
+qui permet de conserver le même adaptateur dans un export autonome.
+MiTeX expose aussi une [API Rust native `convert_math`](https://docs.rs/mitex/latest/mitex/fn.convert_math.html).
+Le [benchmark publié](https://typst.app/universe/package/mitex/) annonce 2,28 s
+pour WASM et 0,085 s pour x86 sur 32 500 équations ; il mesure la conversion,
+pas notre compilation complète ni la latence d’édition. Une voie native est une
+option à mesurer sur nos documents, en vérifiant l’équivalence des spécifications,
+du rendu et des exports. Aucune bascule native n’est faite à ce stade.
+
 **Différé :** macros LaTeX et fonctions Typst personnalisées, leur portée et leur
 conservation ; éditeur visuel, conversions de syntaxes, théorèmes et preuves.
 Aucune option locale de numérotation n’est ajoutée dans ce lot ; le modèle reste
