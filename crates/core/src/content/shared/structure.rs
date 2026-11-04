@@ -295,11 +295,9 @@ fn replace(
         let mut n = n.clone();
         if crate::content::references::anchor(&n).is_none()
             && crate::content::references::ANCHOR_KINDS.contains(&n.kind.as_str())
+            && let Some(id) = crate::content::references::anchor(&before)
         {
-            if let Some(id) = crate::content::references::anchor(&before) {
-                n.attrs.get_or_insert_with(|| serde_json::json!({}))["anchor"] =
-                    serde_json::json!(id);
-            }
+            n.attrs.get_or_insert_with(|| serde_json::json!({}))["anchor"] = serde_json::json!(id);
         }
         crate::content::references::prepare(std::slice::from_ref(&n), &occupied)
     });

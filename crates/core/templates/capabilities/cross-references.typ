@@ -2,7 +2,7 @@
 #let reference-style-state = state("typstographe-cross-reference-style", (:))
 #let reference-style(label: auto, page: auto, combine: auto) = reference-style-state.update((label: label, page: page, combine: combine))
 #let default-label(element) = {
-  if element.has("numbering") and element.numbering != none {
+  if element.has("numbering") and element.numbering != none and (element.func() != figure or element.caption != none) {
     let counter-value = if element.func() == figure { element.counter } else { counter(element.func()) }
     let pattern = element.numbering
     if type(pattern) == str { pattern = pattern.trim(".") }

@@ -108,29 +108,29 @@ fn title(node: &Node) -> String {
 }
 pub fn targets(document: &Node) -> Vec<Target> {
     fn walk(node: &Node, path: &mut Vec<usize>, out: &mut Vec<Target>) {
-        if matches!(node.kind.as_str(), "heading" | "figure" | "tableFigure") {
-            if let Some(id) = anchor(node) {
-                let content = if node.kind == "tableFigure" {
-                    node.content.last().unwrap_or(node)
-                } else {
-                    node
-                };
-                let mut text = title(content);
-                if text.trim().is_empty() && node.kind == "figure" {
-                    text = node
-                        .attrs
-                        .as_ref()
-                        .and_then(|a| a["alt"].as_str())
-                        .unwrap_or("")
-                        .into();
-                }
-                out.push(Target {
-                    id: id.into(),
-                    kind: node.kind.clone(),
-                    title: text,
-                    path: path.clone(),
-                });
+        if matches!(node.kind.as_str(), "heading" | "figure" | "tableFigure")
+            && let Some(id) = anchor(node)
+        {
+            let content = if node.kind == "tableFigure" {
+                node.content.last().unwrap_or(node)
+            } else {
+                node
+            };
+            let mut text = title(content);
+            if text.trim().is_empty() && node.kind == "figure" {
+                text = node
+                    .attrs
+                    .as_ref()
+                    .and_then(|a| a["alt"].as_str())
+                    .unwrap_or("")
+                    .into();
             }
+            out.push(Target {
+                id: id.into(),
+                kind: node.kind.clone(),
+                title: text,
+                path: path.clone(),
+            });
         }
         for (i, child) in node.content.iter().enumerate() {
             path.push(i);
@@ -146,17 +146,21 @@ pub fn validate(document: &Node) -> Result<(), String> {
     fn walk(
         node: &Node,
         ids: &mut BTreeSet<String>,
+        target_ids: &mut BTreeSet<String>,
         refs: &mut Vec<Reference>,
     ) -> Result<(), String> {
-        if let Some(value) = node.attrs.as_ref().and_then(|a| a.get("anchor")) {
-            if !value.is_null() {
-                let id = value
-                    .as_str()
-                    .filter(|id| valid_id(id))
-                    .ok_or("invalid_document_anchor")?;
-                if !ANCHOR_KINDS.contains(&node.kind.as_str()) || !ids.insert(id.into()) {
-                    return Err("duplicate_or_invalid_document_anchor".into());
-                }
+        if let Some(value) = node.attrs.as_ref().and_then(|a| a.get("anchor"))
+            && !value.is_null()
+        {
+            let id = value
+                .as_str()
+                .filter(|id| valid_id(id))
+                .ok_or("invalid_document_anchor")?;
+            if !ANCHOR_KINDS.contains(&node.kind.as_str()) || !ids.insert(id.into()) {
+                return Err("duplicate_or_invalid_document_anchor".into());
+            }
+            if matches!(node.kind.as_str(), "heading" | "figure" | "tableFigure") {
+                target_ids.insert(id.into());
             }
         }
         if node.kind == "crossReference" {
@@ -170,14 +174,13 @@ pub fn validate(document: &Node) -> Result<(), String> {
             refs.push(reference);
         }
         for child in &node.content {
-            walk(child, ids, refs)?;
+            walk(child, ids, target_ids, refs)?;
         }
         Ok(())
     }
-    walk(document, &mut BTreeSet::new(), &mut vec![])?;
-    let ids: BTreeSet<_> = targets(document).into_iter().map(|t| t.id).collect();
+    let mut ids = BTreeSet::new();
     let mut refs = vec![];
-    walk(document, &mut BTreeSet::new(), &mut refs)?;
+    walk(document, &mut BTreeSet::new(), &mut ids, &mut refs)?;
     if refs.iter().any(|r| !ids.contains(&r.target)) {
         return Err("cross_reference_target_missing".into());
     }
@@ -215,15 +218,14 @@ pub fn prepare(nodes: &[Node], occupied: &BTreeSet<String>) -> Vec<Node> {
             .for_each(|n| renew(n, occupied, replacements));
     }
     fn remap(node: &mut Node, replacements: &BTreeMap<String, String>) {
-        if node.kind == "crossReference" {
-            if let Some(next) = node
+        if node.kind == "crossReference"
+            && let Some(next) = node
                 .attrs
                 .as_ref()
                 .and_then(|a| a["target"].as_str())
                 .and_then(|id| replacements.get(id))
-            {
-                node.attrs.as_mut().unwrap()["target"] = json!(next);
-            }
+        {
+            node.attrs.as_mut().unwrap()["target"] = json!(next);
         }
         node.content.iter_mut().for_each(|n| remap(n, replacements));
     }
@@ -254,14 +256,19 @@ pub fn anchors(document: &Node) -> BTreeSet<String> {
 
 /// A target appearing/disappearing together with its uses is one dependent comparison unit.
 pub(super) fn dependent_changes(before: &Node, after: &Node) -> bool {
-    let a: BTreeSet<_> = targets(before).into_iter().map(|t|t.id).collect();
-    let b: BTreeSet<_> = targets(after).into_iter().map(|t|t.id).collect();
+    let a: BTreeSet<_> = targets(before).into_iter().map(|t| t.id).collect();
+    let b: BTreeSet<_> = targets(after).into_iter().map(|t| t.id).collect();
     let changed: BTreeSet<_> = a.symmetric_difference(&b).collect();
     fn uses(node: &Node, changed: &BTreeSet<&String>) -> bool {
-        (node.kind == "crossReference" && node.attrs.as_ref().and_then(|a|a["target"].as_str()).is_some_and(|id|changed.iter().any(|s|s.as_str()==id)))
-            || node.content.iter().any(|n|uses(n,changed))
+        (node.kind == "crossReference"
+            && node
+                .attrs
+                .as_ref()
+                .and_then(|a| a["target"].as_str())
+                .is_some_and(|id| changed.iter().any(|s| s.as_str() == id)))
+            || node.content.iter().any(|n| uses(n, changed))
     }
-    uses(before,&changed) || uses(after,&changed)
+    uses(before, &changed) || uses(after, &changed)
 }
 
 #[cfg(test)]

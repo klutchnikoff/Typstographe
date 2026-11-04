@@ -42,7 +42,7 @@
     {
       "id": "cross-references",
       "entrypoint": "capabilities/cross-references.typ",
-      "signature": "cross-reference(target: label, include-label: bool, include-page: bool) -> content",
+      "signature": "cross-reference(target: label, include-label: bool, include-page: bool) -> content; reference-style(label: auto, page: auto, combine: auto) -> content",
       "packages": []
     }
   ],

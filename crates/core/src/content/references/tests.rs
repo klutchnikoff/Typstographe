@@ -143,3 +143,27 @@ fn figure_counters_and_model_callbacks_define_both_the_pdf_and_the_badge_content
         .unwrap();
     assert_eq!(resolved(&rendered)[0].display, "Données — p. I");
 }
+
+#[test]
+fn uncaptioned_images_do_not_fabricate_a_figure_zero() {
+    let mut assets = Assets::default();
+    assets.insert("images/example.svg".into(),std::sync::Arc::from(br#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>"#.as_slice()));
+    let document = node(json!({"type":"doc","content":[
+      {"type":"figure","attrs":{"src":"images/example.svg","alt":"Schéma","anchor":"image-first"}},
+      {"type":"paragraph","content":[{"type":"crossReference","attrs":{"target":"image-first","include_label":true,"include_page":true}}]}
+    ]}));
+    let mut world = crate::rendering::TypstWorld::default();
+    world.set_assets(&assets);
+    let kind = crate::document_types::DocumentType::Article;
+    let rendered = world
+        .compile_with_template(
+            &crate::content::source(&document, &assets).unwrap(),
+            &crate::document_types::Metadata::demo(kind),
+            &kind.default_model(),
+        )
+        .unwrap();
+    let labels = resolved(&rendered);
+    assert_eq!(labels.len(), 1);
+    assert!(!labels[0].display.contains('0'), "{:?}", labels);
+    assert!(labels[0].display.contains("page"));
+}

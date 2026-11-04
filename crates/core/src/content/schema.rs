@@ -58,9 +58,9 @@ pub(super) fn generate(document: &Node, assets: &Assets, mapped: bool) -> Result
     if document.kind != "doc" || document.text.is_some() || !document.marks.is_empty() {
         return Err("Un document structuré est attendu.".into());
     }
-    super::references::validate(document)?;
     let mut count = 0;
     limits(document, 0, &mut count, mapped)?;
+    super::references::validate(document)?;
     let mut result = blocks(&document.content, assets, mapped)?;
     fn notes(node: &Node) -> bool {
         matches!(node.kind.as_str(), "postscript" | "attachment") || node.content.iter().any(notes)
