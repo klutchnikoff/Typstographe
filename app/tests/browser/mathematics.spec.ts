@@ -115,6 +115,84 @@ test('toolbar insertion enters inline source and its shared properties can chang
   await expect(source).toHaveText('x^2')
 })
 
+test('a writing line between equation widgets shows ¶ and supports deletion, undo and continued typing', async ({
+  page,
+}) => {
+  await page.evaluate(async () => {
+    const { editor, provider } = window.__spike!
+    editor.commands.setContent({
+      type: 'doc',
+      content: [
+        {
+          type: 'mathBlock',
+          attrs: { anchor: 'first-equation' },
+          content: [{ type: 'text', text: 'x^2' }],
+        },
+        {
+          type: 'mathBlock',
+          attrs: { anchor: 'second-equation' },
+          content: [{ type: 'text', text: 'y^2' }],
+        },
+        { type: 'paragraph' },
+      ],
+    })
+    editor.commands.setTextSelection(editor.state.doc.firstChild!.nodeSize - 1)
+    editor.view.focus()
+    await provider.flush()
+    await provider.clearHistory()
+  })
+  const body = page.getByRole('textbox', { name: 'Corps du document', exact: true })
+  const widgets = body.locator('[data-editor-widget="mathBlock"]')
+  await page.keyboard.press('Tab')
+  const marker = body.locator(':scope > p > .paragraph-marker')
+  await expect(marker).toHaveText('¶')
+  await marker.click()
+  const caret = await page.evaluate(() => {
+    const { editor } = window.__spike!
+    const selection = window.getSelection()!
+    const range = selection.getRangeAt(0).cloneRange()
+    const paragraph = editor.view.dom.querySelector('p')!
+    const marker = paragraph.querySelector('.paragraph-marker')!
+    return {
+      inParagraph: paragraph.contains(selection.anchorNode),
+      beforeMarker: range.comparePoint(marker, 0) >= 0,
+      offset: editor.state.selection.$from.parentOffset,
+    }
+  })
+  expect(caret).toEqual({ inParagraph: true, beforeMarker: true, offset: 0 })
+  const withLine = await page.evaluate(() => window.__spike!.editor.getJSON())
+  await page.keyboard.press('Enter')
+  expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(withLine)
+  await page.keyboard.press('Backspace')
+  await expect(marker).toHaveCount(0)
+  await expect(body.locator(':scope > p')).toHaveCount(1)
+  await expect(widgets.nth(0).locator('.math-source')).toHaveText('x^2')
+  await expect(widgets.nth(1).locator('.math-source')).toHaveText('y^2')
+  await page.evaluate(() => window.__spike!.provider.flush())
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(marker).toHaveText('¶')
+  await page.keyboard.press('Delete')
+  await expect(marker).toHaveCount(0)
+  await expect(body.locator(':scope > p')).toHaveCount(1)
+  await page.evaluate(() => window.__spike!.provider.flush())
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(marker).toHaveText('¶')
+  await page.keyboard.type('Entre les deux équations.')
+  await expect(marker).toHaveCount(0)
+  await expect(body.locator(':scope > p').first()).toHaveText('Entre les deux équations.')
+  await page.evaluate(() => window.__spike!.provider.flush())
+  expect(await page.evaluate(() => window.__spike!.provider.rejected)).toBeFalsy()
+  await expect(widgets.nth(0).locator('.math-source')).toHaveText('x^2')
+  await expect(widgets.nth(1).locator('.math-source')).toHaveText('y^2')
+  // The final writing slot remains available even after Backspace.
+  await page.evaluate(() => {
+    const { editor } = window.__spike!
+    editor.commands.setTextSelection(editor.state.doc.content.size - 1)
+  })
+  await page.keyboard.press('Backspace')
+  await expect(body.locator(':scope > p')).toHaveCount(2)
+})
+
 test('typing after an equation reference never swaps its label or changes its width between previews', async ({
   page,
 }) => {

@@ -30,6 +30,12 @@ avec une indication Typst/LaTeX. Entrée ou Maj + Entrée ajoute un retour dans 
 Tab permet de poursuivre après la formule ou le widget. Ctrl/Cmd + Entrée ouvre
 les propriétés. Une ligne de continuation est conservée après chaque widget.
 
+Les lignes vides avant, après ou entre des widgets suivent la règle commune de
+l’éditeur : ¶ est affiché sur la ligne, sans caractère ajouté au document.
+Retour arrière ou Suppr retire cette ligne sans modifier les widgets voisins ;
+Annuler la rétablit. La ligne de reprise obligatoire en fin de document reste
+disponible. Les retours internes au source d’une équation restent du code.
+
 Les propriétés proposent le langage et une description accessible. Pour un bloc,
 le champ de label affiche le préfixe `eq:` grisé et non éditable. Le suffixe est
 facultatif, unique dans le document, sans espace, deux-points ou dollar. Changer
