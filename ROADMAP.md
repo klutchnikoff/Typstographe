@@ -218,7 +218,17 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    WASM conservé, aucun gain robuste de latence à chaud sur les trois articles.
    Le [profilage de l’aperçu long](experiments/preview-profiling/RESULTS.md) confirme
    les caches Typst et identifie les pixels transférés et les canvas recréés pour
-   les pages inchangées comme priorité ; protocole différentiel à valider avant codage.
+   les pages inchangées comme priorité. L’[évaluation RGBA différentiel / Reflexo](experiments/preview-renderers/RESULTS.md)
+   est terminée : 18 sessions natives, synchronisations conservées, 270 → 102 ms
+   pour une édition de formule sur 24 pages. Reflexo atteint aussi 102 ms et
+   accélère le premier rendu complet (455 ms contre 713 ms), avec un transfert
+   plus petit mais des adaptations et une qualification supplémentaires.
+   Proposition : intégrer d’abord le RGBA différentiel, puis évaluer le rendu
+   initial des pages visibles. Le protocole de production reste à valider :
+   cache par document/génération, options et flux de vue, réinitialisation,
+   refus des résultats périmés, cartes de synchronisation actualisées et tests
+   multi-fenêtres/erreurs/révisions sans changement de pixels. L’application
+   distribuée n’a pas encore changé de chemin de rendu.
    **Saisie validée :** `$` seul sur une ligne suivi d’Entrée crée un widget
    Typst ; `$$` seuls suivis d’Entrée créent un widget LaTeX. Dans le texte,
    `$cos(x)$` désigne une formule Typst et `$$\cos(x)$$` une formule LaTeX.

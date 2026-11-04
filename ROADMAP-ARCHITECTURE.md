@@ -147,8 +147,22 @@ la livraison de tous les types de B n’est pas un prérequis.
   ne montre pas de gain robuste à chaud ; le chemin WASM est conservé.
   Le [profilage détaillé](experiments/preview-profiling/RESULTS.md) confirme la
   réutilisation des sources et des caches. Les mises à jour différentielles des
-  pixels et des canvas sont la priorité proposée, avec gardes de révision et
-  synchronisation conservées ; choix du protocole à valider avant implémentation.
+  pixels et des canvas sont la priorité proposée. L’[évaluation native RGBA / Reflexo](experiments/preview-renderers/RESULTS.md)
+  est terminée sur les trois articles : 18 sessions, pixels RGBA identiques,
+  reconstructions complètes et synchronisations vérifiées. Sur 24 pages,
+  édition de formule : 270 ms en RGBA complet, 102 ms pour les deux candidats
+  différentiels ; premier rendu : 713 ms en RGBA différentiel et 455 ms pour
+  Reflexo. Proposition : RGBA différentiel d’abord, puis pages visibles en
+  priorité au premier rendu. Reflexo reste une référence évaluée ; son format
+  Rust/WASM doit être assorti et ses adaptations à Typst officiel, notamment
+  les PDF importés, demandent une qualification de production.
+  À valider avant intégration : protocole et cache par document/génération,
+  options et flux/epoch de vue, contrôle de la base réellement publiée,
+  réinitialisation, publication atomique, refus des résultats périmés et cartes
+  complètes de synchronisation à chaque révision. Ajouter les garanties
+  multi-vues, remplacement de document, erreurs et révisions sans changement
+  de pixels. Les candidats restent isolés ; aucune dépendance ni politique
+  CSP de l’application n’a changé.
   Un contrat de formule avec source, langage Typst ou
   LaTeX, description accessible et présentation en ligne/en bloc. Les blocs
   peuvent être ciblés par C.1 ; les modèles règlent numérotation et présentation.

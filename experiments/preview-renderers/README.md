@@ -4,6 +4,8 @@ Isolated comparison of the current full RGBA path, a page-differential RGBA
 candidate, and the incremental vector components used by Tinymist/Reflexo.
 The application renderer and its dependency locks are unchanged.
 
+See the [results and recommendation](RESULTS.md).
+
 ## Candidates
 
 - `rgba-full`: rasterize/transfer/draw every page, using `typst-render` 0.15.1.

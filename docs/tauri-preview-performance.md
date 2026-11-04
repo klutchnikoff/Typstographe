@@ -205,3 +205,17 @@ fonctionnels et la recette native restent utilisables sur les autres systèmes.
 | Attente de 180 ms relancée après chaque modification. | Demande immédiate et au plus une compilation active. | Réduire le délai et éviter une file de rendus obsolètes. |
 | Pixels → PNG → base64 → décodage d’image pour tout aperçu. | Pixels → IPC binaire → canvas préparé avant publication. | Éviter compression, sérialisation base64 et décodage PNG. |
 | Seul le compteur Rust permettait de discuter des performances. | Mesures natives par étape et après publication, avec comparaison de quatre transports. | Inclure le coût réellement ajouté par l’interface. |
+
+
+## Évaluation différentielle — 5 novembre 2026
+
+Le [benchmark isolé RGBA différentiel / Tinymist-Reflexo](../experiments/preview-renderers/RESULTS.md)
+compare les trois articles mathématiques sur le même moteur Typst officiel
+0.15.1, le même IPC natif et les mêmes cartes RenderSync. Sur 24 pages,
+une édition de formule passe de 270 ms à 102 ms avec le RGBA différentiel,
+qui ne rasterise, ne transfère et ne redessine que la page modifiée. Reflexo
+atteint également 102 ms ; il réduit davantage les octets et le premier rendu
+complet. Les reconstructions et les synchronisations passent les contrôles
+natifs. La proposition est d’intégrer le RGBA différentiel en premier, après
+validation du protocole de flux et de ses garanties multi-vues. Ce benchmark
+ne modifie pas le chemin de rendu décrit plus haut pour l’application.
