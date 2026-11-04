@@ -75,13 +75,19 @@ export async function executeStructured(
     let failure: unknown = error
     for (let depth = 0; depth < 8 && failure && typeof failure === 'object'; depth++) {
       const value = failure as Record<string, unknown>
-      if (value.code === 'invalid_document' && value.reason === 'cross_reference_target_missing')
-        throw new Error(
-          tr(
-            'La cible est encore utilisée par un renvoi. Supprimez ou modifiez ses renvois avant de la retirer.',
-          ),
-          { cause: error },
-        )
+      const messages: Record<string, string> = {
+        cross_reference_target_missing:
+          'La cible est encore utilisée par un renvoi. Supprimez ou modifiez ses renvois avant de la retirer.',
+        duplicate_equation_alias: 'Ce label est déjà utilisé par une autre équation.',
+        invalid_equation_alias:
+          'Le label de l’équation est invalide. Utilisez un nom sans espace, deux-points ni dollar.',
+      }
+      if (
+        value.code === 'invalid_document' &&
+        typeof value.reason === 'string' &&
+        messages[value.reason]
+      )
+        throw new Error(tr(messages[value.reason]), { cause: error })
       failure = value.cause || (value.params as Record<string, unknown> | undefined)?.content
     }
     throw new Error(

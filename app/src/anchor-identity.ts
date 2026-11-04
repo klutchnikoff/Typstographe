@@ -10,6 +10,7 @@ export const anchorKinds = [
   'descriptionList',
   'postscript',
   'attachment',
+  'mathBlock',
 ]
 export const newAnchor = () => crypto.randomUUID()
 
@@ -21,7 +22,12 @@ export function plannedAnchors(transaction: import('@tiptap/pm/state').Transacti
     let id = node.attrs.anchor as string
     if (seen.has(id)) {
       id = newAnchor()
-      transaction.setNodeMarkup(pos, undefined, { ...node.attrs, anchor: id }, node.marks)
+      transaction.setNodeMarkup(
+        pos,
+        undefined,
+        { ...node.attrs, anchor: id, ...(node.type.name === 'mathBlock' ? { alias: '' } : {}) },
+        node.marks,
+      )
     }
     seen.add(id)
   })

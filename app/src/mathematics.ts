@@ -1,0 +1,220 @@
+import { Extension, Node, mergeAttributes, type Editor, type JSONContent } from '@tiptap/core'
+import { Plugin, TextSelection } from '@tiptap/pm/state'
+import { resumeAfterWidget } from './widgets'
+import type { WidgetPresentations } from './widget-frame'
+import { widgetFrame as frame, type WidgetAction } from './widget-frame'
+import { insertBlock } from './editing'
+import { capabilityAvailability } from './command-availability'
+import { tr } from './i18n'
+
+export const isMath = (kind: string) => kind === 'mathInline' || kind === 'mathBlock'
+const delimiters = (language: string) => (language === 'latex' ? '$$' : '$')
+export function mathContent(block: boolean, language = 'typst', source = ''): JSONContent {
+  return {
+    type: block ? 'mathBlock' : 'mathInline',
+    attrs: { language, alt: '', ...(block ? { alias: '' } : {}) },
+    ...(source ? { content: [{ type: 'text', text: source }] } : {}),
+  }
+}
+function sourceReturn(editor: Editor) {
+  if (editor.view.composing) return false
+  const { $from } = editor.state.selection
+  if (!isMath($from.parent.type.name)) return false
+  if ($from.parent.type.name === 'mathInline') {
+    editor.commands.setTextSelection($from.after())
+    return true
+  }
+  return editor.commands.insertContent({ type: 'text', text: '\n' })
+}
+export function mathExtensions(properties: WidgetAction, presentations: WidgetPresentations) {
+  return [
+    ...[false, true].map((block) =>
+      Node.create({
+        name: block ? 'mathBlock' : 'mathInline',
+        group: block ? 'block' : 'inline',
+        inline: !block,
+        content: 'text*',
+        marks: '',
+        code: true,
+        whitespace: 'pre',
+        isolating: true,
+        defining: true,
+        addAttributes: () => ({
+          language: { default: 'typst' },
+          alt: { default: '' },
+          ...(block ? { alias: { default: '' } } : {}),
+        }),
+        parseHTML: () => [{ tag: `${block ? 'pre' : 'span'}[data-math-source]` }],
+        renderHTML: ({ HTMLAttributes }) => [
+          block ? 'pre' : 'span',
+          mergeAttributes(HTMLAttributes, {
+            'data-math-source': '',
+            class: block ? 'math-source-block' : 'math-source-inline',
+          }),
+          0,
+        ],
+        addNodeView:
+          () =>
+          ({ node, getPos }) => {
+            const contentDOM = document.createElement(block ? 'pre' : 'code')
+            contentDOM.className = 'math-source'
+            contentDOM.setAttribute('aria-label', tr('Code mathématique'))
+            contentDOM.setAttribute('spellcheck', 'false')
+            const widget = block
+              ? frame('mathBlock', getPos, properties, undefined, presentations.mathBlock)
+              : undefined
+            const dom = widget?.dom || document.createElement('span')
+            if (!block) dom.className = 'math-source-inline'
+            const language = document.createElement('span')
+            language.className = 'math-language'
+            if (widget) widget.dom.querySelector('.widget-kind')?.after(language)
+            const update = (next: typeof node) => {
+              if (next.type !== node.type) return false
+              dom.dataset.mathSource = next.attrs.language
+              language.textContent = next.attrs.language === 'latex' ? 'LaTeX' : 'Typst'
+              dom.dataset.delimiter = delimiters(next.attrs.language)
+              if (!block) {
+                delimiter.textContent = closing.textContent = dom.dataset.delimiter
+              }
+              return true
+            }
+            const delimiter = document.createElement('span')
+            delimiter.className = 'math-delimiter'
+            delimiter.contentEditable = 'false'
+            delimiter.setAttribute('aria-hidden', 'true')
+            const closing = delimiter.cloneNode() as HTMLElement
+            if (!block) dom.append(delimiter)
+            update(node)
+            dom.append(contentDOM)
+            if (!block) dom.append(closing)
+            return {
+              dom,
+              ...(widget
+                ? widget.content(contentDOM)
+                : {
+                    contentDOM,
+                    ignoreMutation: (record: import('@tiptap/pm/view').ViewMutationRecord) =>
+                      record.type !== 'selection' && !contentDOM.contains(record.target),
+                  }),
+              update,
+            }
+          },
+      }),
+    ),
+    Extension.create({
+      name: 'mathInput',
+      priority: 1800,
+      addKeyboardShortcuts() {
+        const editor = this.editor
+        return {
+          Enter: () => {
+            if (editor.view.composing) return false
+            const { $from, empty } = editor.state.selection
+            if (isMath($from.parent.type.name)) return sourceReturn(editor)
+            if (!empty || $from.depth !== 1 || $from.parent.type.name !== 'paragraph') return false
+            const before = $from.parent.textBetween(0, $from.parentOffset, '\n', '\n')
+            const marker = /(?:^|\n)(\${1,2})$/.exec(before)
+            if (!marker) return false
+            const after = $from.parent.textBetween(
+              $from.parentOffset,
+              $from.parent.content.size,
+              '\n',
+              '\n',
+            )
+            if (after && !after.startsWith('\n')) return false
+            if (!capabilityAvailability(editor, 'math.block', 'block').enabled) return false
+            return insertBlock(
+              editor,
+              mathContent(true, marker[1] === '$$' ? 'latex' : 'typst'),
+              { from: $from.pos - marker[1].length, to: $from.pos },
+              true,
+            )
+          },
+          'Shift-Enter': () => sourceReturn(editor),
+          Tab: () => {
+            if (editor.view.composing) return false
+            const { $from } = editor.state.selection
+            if (!isMath($from.parent.type.name)) return false
+            if ($from.parent.type.name === 'mathInline')
+              editor.commands.setTextSelection($from.after())
+            else
+              editor.view.dispatch(
+                resumeAfterWidget(editor.state.tr, $from.after()).scrollIntoView(),
+              )
+            return true
+          },
+          Backspace: () => {
+            if (editor.view.composing) return false
+            const { $from, empty } = editor.state.selection
+            return empty && isMath($from.parent.type.name) && $from.parentOffset === 0
+          },
+          Delete: () => {
+            if (editor.view.composing) return false
+            const { $from, empty } = editor.state.selection
+            return (
+              empty &&
+              isMath($from.parent.type.name) &&
+              $from.parentOffset === $from.parent.content.size
+            )
+          },
+        }
+      },
+      addProseMirrorPlugins() {
+        const editor = this.editor
+        return [
+          new Plugin({
+            props: {
+              handleTextInput(view, from, to, text) {
+                if (view.composing || text !== '$' || from !== to) return false
+                const $from = view.state.doc.resolve(from)
+                if (
+                  !$from.parent.inlineContent ||
+                  $from.parent.type.spec.code ||
+                  !capabilityAvailability(editor, 'math.inline', 'inline').enabled
+                )
+                  return false
+                // Only the current visual line. The longest delimiter wins. An
+                // opening $$ remains ordinary text until its closing pair is complete.
+                const prefix = $from.parent.textBetween(0, $from.parentOffset, '\n', '\n') + text
+                const line = prefix.slice(prefix.lastIndexOf('\n') + 1)
+                const match = /(?:^|[^$])(\$\$([^$\n]+)\$\$|\$([^$\n]+)\$)$/.exec(line)
+                if (!match) return false
+                const whole = match[1],
+                  latex = whole.startsWith('$$')
+                if (!latex && prefix.slice(0, -whole.length).endsWith('$')) return false
+                const code = latex ? match[2] : match[3]
+                const node = editor.schema.nodeFromJSON(
+                  mathContent(false, latex ? 'latex' : 'typst', code),
+                )
+                const start = from + text.length - whole.length
+                const transaction = view.state.tr.replaceWith(start, to, node)
+                transaction.setSelection(
+                  TextSelection.create(transaction.doc, start + node.nodeSize),
+                )
+                view.dispatch(transaction.scrollIntoView())
+                return true
+              },
+              handlePaste(view, event) {
+                const { $from } = view.state.selection
+                if (!$from.parent.type.spec.code || !isMath($from.parent.type.name)) return false
+                const text = event.clipboardData?.getData('text/plain')
+                if (text === undefined) return false
+                event.preventDefault()
+                view.dispatch(
+                  view.state.tr
+                    .insertText(
+                      $from.parent.type.name === 'mathInline'
+                        ? text.replace(/[\r\n]+/g, ' ')
+                        : text,
+                    )
+                    .scrollIntoView(),
+                )
+                return true
+              },
+            },
+          }),
+        ]
+      },
+    }),
+  ]
+}

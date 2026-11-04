@@ -283,7 +283,9 @@ export function propertyPanel(
               ? tr('Paramètres de l’image')
               : kind === 'footnote'
                 ? tr('Note de bas de page')
-                : widgetLabel(kind)
+                : kind === 'mathInline'
+                  ? tr('Formule en ligne')
+                  : widgetLabel(kind)
       panel.body.hidden = remove
       form.dataset.intent = remove ? 'remove' : 'settings'
       panel.error.textContent = ''

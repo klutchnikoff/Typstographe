@@ -27,3 +27,6 @@ version officielle Lucide 0.468.0, sans modification.
 
 L’icône `corner-up-right` des renvois provient du SVG officiel Lucide 0.468.0
 (`icons/corner-up-right.svg`), sans modification et sous les mêmes licences.
+
+Les icônes `sigma` et `square-function` des mathématiques sont les SVG officiels
+Lucide 0.468.0, sans modification et sous les mêmes licences.

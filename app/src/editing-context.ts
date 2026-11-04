@@ -48,7 +48,7 @@ export function editingView(editor: Editor): EditingView | undefined {
       },
       offset: $pos.parentOffset,
     })
-    if (!s.$anchor.parent.isTextblock || !s.$head.parent.isTextblock)
+    if (!s.$anchor.parent.inlineContent || !s.$head.parent.inlineContent)
       return { selection: null, typing_styles: [] }
     selection = { kind: 'text', anchor: point(s.$anchor), head: point(s.$head) }
   }

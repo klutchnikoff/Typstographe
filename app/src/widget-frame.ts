@@ -14,6 +14,7 @@ const labels = {
   postscript: 'P.-S.',
   attachment: 'P.J.',
   tableFigure: 'Tableau',
+  mathBlock: 'Équation',
 } as const
 export type WidgetKind = keyof typeof labels
 export type WidgetAction = (pos: number, kind: WidgetKind, remove?: boolean) => void

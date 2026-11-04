@@ -1,3 +1,4 @@
+import { mathExtensions } from './mathematics'
 import { referenceLabel } from './cross-reference-index'
 import {
   Extension,
@@ -25,6 +26,7 @@ export function documentExtensions(
   presentations: WidgetPresentations = {},
 ): Extensions {
   const extensions: Extensions = [
+    ...mathExtensions(properties, presentations),
     Proofing,
     InlineObjectNumbering.configure({ kinds: ['footnote'] }),
     InlineObjectFocus,

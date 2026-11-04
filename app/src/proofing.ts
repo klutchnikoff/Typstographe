@@ -26,6 +26,20 @@ interface State {
   decorations: DecorationSet
 }
 export const proofingKey = new PluginKey<State>('document-proofing')
+/** Preserve PM offsets around editable inline source, while excluding it from prose checks. */
+function proseText(node: PMNode, breaks: string) {
+  return node.content.content
+    .map((n) =>
+      n.type.name === 'mathInline'
+        ? '\ufffc'.repeat(n.nodeSize)
+        : n.isText
+          ? n.text!
+          : ['softBreak', 'hardBreak'].includes(n.type.name)
+            ? breaks
+            : '\ufffc'.repeat(n.nodeSize),
+    )
+    .join('')
+}
 export function findMatches(doc: PMNode, query: string, ignoreCase: boolean): Hit[] {
   if (!query) return []
   const pattern = new RegExp(
@@ -34,8 +48,9 @@ export function findMatches(doc: PMNode, query: string, ignoreCase: boolean): Hi
     ),
     hits: Hit[] = []
   doc.descendants((node, pos) => {
+    if (node.type.spec.code) return false
     if (!node.isTextblock) return
-    const text = node.textBetween(0, node.content.size, '\n', '\ufffc')
+    const text = proseText(node, '\n')
     for (const match of text.matchAll(pattern)) {
       // Object placeholders and returns are boundaries, never replaceable text.
       if (/[\n\ufffc]/.test(match[0])) continue
@@ -127,7 +142,11 @@ export function searchState(editor: Editor, query: string, ignoreCase = true) {
   return proofingKey.getState(editor.state)?.hits || []
 }
 export function correctionAtCursor(editor: Editor) {
-  if (!(editor.state.selection instanceof TextSelection)) return
+  if (
+    !(editor.state.selection instanceof TextSelection) ||
+    editor.state.selection.$from.parent.type.spec.code
+  )
+    return
   const position = editor.state.selection.from
   return proofingKey
     .getState(editor.state)
@@ -174,8 +193,9 @@ export function mountProofing(
     timer = setTimeout(() => {
       const segments: { text: string; pos: number }[] = []
       editor.state.doc.descendants((node, pos) => {
+        if (node.type.spec.code) return false
         if (node.isTextblock) {
-          segments.push({ text: node.textBetween(0, node.content.size, '\n', ' '), pos: pos + 1 })
+          segments.push({ text: proseText(node, '\n'), pos: pos + 1 })
           return false
         }
       })

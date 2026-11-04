@@ -15,6 +15,7 @@ export interface Parameter {
     placement?: 'body' | 'structure' | 'creation' | 'panel'
     storage?: 'structure'
     attribute?: string
+    prefix?: string
     control?: 'image'
     multiline?: boolean
     label_key?: string

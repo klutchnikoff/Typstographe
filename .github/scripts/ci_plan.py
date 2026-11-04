@@ -36,6 +36,8 @@ RECIPES = Path("app/tests/browser")
 # Graphical recipes a pull request runs beyond @smoke, by edited area. A source
 # missing here only runs @smoke on the PR; the full suite runs after merging.
 BROWSER_AREAS = (
+    (("app/src/mathematics.ts", "crates/core/src/content/mathematics*",
+      "crates/core/templates/capabilities/mathematics.typ", "crates/core/templates/packages/mitex-*/**"), ("mathematics",)),
     (("app/src/*reference*.ts", "app/src/*anchor*.ts", "crates/core/src/content/references*",
       "crates/core/templates/capabilities/cross-references.typ"), ("cross-references",)),
     (("crates/core/src/resources.rs", "app/src/metadata-resource.ts", "app/src/metadata-commands.ts"),

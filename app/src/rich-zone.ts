@@ -37,7 +37,7 @@ import { EditorLocation } from './editor-reveal'
 import { SharedInlineMarks } from './shared-inline-marks'
 import { SelectionEdits } from './selection-edits'
 import { documentExtensions } from './document-zone-extensions'
-import { inlineObjectKey } from './inline-objects'
+import { inlineObjectKey, inlineContentTarget } from './inline-objects'
 import { widgetKey } from './widgets'
 import type { WidgetPresentations } from './widget-frame'
 
@@ -404,6 +404,14 @@ export function createRichZone(options: RichZoneOptions): Editor {
         // Reading the post-edit DOM against that old doc would swallow the edit.
         if (event.target) syncNativeTextSelection(editor)
         const owner = editor
+        if (policy.widgets && (event.ctrlKey || event.metaKey) && event.key === 'Backspace') {
+          const target = inlineContentTarget(owner)
+          if (target) {
+            event.preventDefault()
+            properties?.(target.pos, target.node.type.name, true)
+            return true
+          }
+        }
         if (policy.widgets) {
           if (inlineObjectKey(owner, event, properties || (() => {}))) return true
           if (widgetKey(owner, event)) return true

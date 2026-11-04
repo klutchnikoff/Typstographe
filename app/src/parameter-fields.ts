@@ -92,7 +92,17 @@ export class ParameterFields {
       label.htmlFor = input.id
       label.textContent = field.label
       label.hidden = field.schema['x-editor']?.label_visibility === 'accessible'
-      this.root.append(label, input)
+      this.root.append(label)
+      const prefix = field.schema['x-editor']?.prefix
+      if (prefix) {
+        const group = document.createElement('div')
+        group.className = 'prefixed-parameter'
+        const fixed = document.createElement('span')
+        fixed.textContent = prefix
+        fixed.setAttribute('aria-hidden', 'true')
+        group.append(fixed, input)
+        this.root.append(group)
+      } else this.root.append(input)
       this.controls.set(field, input)
     }
   }

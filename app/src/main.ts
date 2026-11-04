@@ -1,3 +1,4 @@
+import { inlineContentTarget } from './inline-objects'
 import { crossReferencePanel } from './cross-reference-panel'
 import { setResolvedReferences } from './cross-reference-index'
 import { registerRecoveryOpener } from './form-recovery'
@@ -109,13 +110,16 @@ function propertyTarget(): { pos: number; kind: string } | undefined {
   const { from } = editor.state.selection
   const inline = activeInlineObject(editor.state)
   const widget = widgetTarget(editor)
+  const content = inlineContentTarget(editor)
   const target = inline
     ? { pos: inline.pos, kind: inline.node.type.name }
-    : editor.isActive('link')
-      ? { pos: from, kind: 'link' }
-      : widget
-        ? { pos: widget.pos, kind: widget.node.type.name }
-        : undefined
+    : content
+      ? { pos: content.pos, kind: content.node.type.name }
+      : editor.isActive('link')
+        ? { pos: from, kind: 'link' }
+        : widget
+          ? { pos: widget.pos, kind: widget.node.type.name }
+          : undefined
   return target && hasSettings(settingsForNode(target.kind, contentCatalogue.entries))
     ? target
     : undefined

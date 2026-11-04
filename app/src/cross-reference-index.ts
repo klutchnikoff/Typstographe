@@ -25,9 +25,15 @@ export function referenceTargets(editor: Editor): CrossReferenceTarget[] {
   if (cached) return cached
   const result: CrossReferenceTarget[] = []
   editor.state.doc.descendants((node, pos) => {
-    if (!['heading', 'figure', 'tableFigure'].includes(node.type.name) || !node.attrs.anchor) return
+    if (
+      !['heading', 'figure', 'tableFigure', 'mathBlock'].includes(node.type.name) ||
+      !node.attrs.anchor
+    )
+      return
     const content = node.type.name === 'tableFigure' ? node.lastChild! : node
-    const title = content.textContent || node.attrs.alt || tr('Sans intitulé')
+    const title =
+      (node.type.name === 'mathBlock' && node.attrs.alias ? `eq:${node.attrs.alias} · ` : '') +
+      (content.textContent || node.attrs.alt || tr('Sans intitulé'))
     result.push({ id: node.attrs.anchor, kind: node.type.name, title, pos })
   })
   targetsCache.set(editor.state.doc, result)

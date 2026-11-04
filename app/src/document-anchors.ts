@@ -18,6 +18,7 @@ export function copiedContent(slice: Slice): Slice {
     if (node.isText) return node
     const attrs = { ...node.attrs }
     if (anchorKinds.includes(node.type.name)) attrs.anchor = ids.get(attrs.anchor) || newAnchor()
+    if (node.type.name === 'mathBlock') attrs.alias = ''
     if (node.type.name === 'crossReference' && ids.has(attrs.target))
       attrs.target = ids.get(attrs.target)
     return node.type.create(attrs, Fragment.fromArray(node.content.content.map(copy)), node.marks)
@@ -97,7 +98,10 @@ export const ReferenceIntegrity = Extension.create({
           const ids = new Set<string>(),
             references: string[] = []
           transaction.doc.descendants((node) => {
-            if (['heading', 'figure', 'tableFigure'].includes(node.type.name) && node.attrs.anchor)
+            if (
+              ['heading', 'figure', 'tableFigure', 'mathBlock'].includes(node.type.name) &&
+              node.attrs.anchor
+            )
               ids.add(node.attrs.anchor)
             if (node.type.name === 'crossReference') references.push(node.attrs.target)
           })

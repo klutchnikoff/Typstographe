@@ -93,9 +93,13 @@ export function crossReferencePanel(editor: Editor, bands: BandHost) {
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLocaleLowerCase()
-    const query = normalize(input.value).trim().split(/\s+/).filter(Boolean)
-    const matches = referenceTargets(editor).filter((t) =>
-      query.every((word) => normalize(t.title).includes(word)),
+    const raw = normalize(input.value).trim()
+    const equations = raw.startsWith('$') || raw.startsWith('eq:')
+    const query = raw.replace(/^\$+/, '').trim().split(/\s+/).filter(Boolean)
+    const matches = referenceTargets(editor).filter(
+      (t) =>
+        (!equations || t.kind === 'mathBlock') &&
+        query.every((word) => word === 'eq:' || normalize(t.title).includes(word)),
     )
     results.replaceChildren()
     if (reset && !matches.some((t) => t.id === opened!.reference.target))
@@ -107,7 +111,13 @@ export function crossReferencePanel(editor: Editor, bands: BandHost) {
       button.dataset.target = t.id
       button.setAttribute('aria-selected', String(t.id === opened.reference.target))
       button.innerHTML = icon(
-        t.kind === 'heading' ? 'heading-1' : t.kind === 'figure' ? 'image' : 'table-2',
+        t.kind === 'mathBlock'
+          ? 'sigma'
+          : t.kind === 'heading'
+            ? 'heading-1'
+            : t.kind === 'figure'
+              ? 'image'
+              : 'table-2',
       )
       const text = document.createElement('span')
       text.textContent = t.title
