@@ -214,6 +214,8 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    description accessible et les références aux blocs. L’éditeur visuel viendra
    ensuite sur le même objet, sans promettre une conversion réversible des
    syntaxes.
+   [Comparaison native/WASM réalisée](experiments/mitex-comparison/RESULTS.md) :
+   WASM conservé, aucun gain robuste de latence à chaud sur les trois articles.
    **Saisie validée :** `$` seul sur une ligne suivi d’Entrée crée un widget
    Typst ; `$$` seuls suivis d’Entrée créent un widget LaTeX. Dans le texte,
    `$cos(x)$` désigne une formule Typst et `$$\cos(x)$$` une formule LaTeX.

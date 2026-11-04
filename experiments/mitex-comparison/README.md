@@ -4,6 +4,8 @@ Banc isolé demandé le 4 novembre 2026. L’application conserve son intégrati
 WASM. Aucun mode de conversion ni dépendance MiTeX native n’est ajouté à ses
 manifestes, à ses commandes ou au format `.typsto`.
 
+**Essai réalisé :** voir les [résultats et la recommandation](RESULTS.md).
+
 ## Deux mesures complémentaires
 
 1. **Conversion seule.** Le convertisseur Rust du tag officiel `0.2.7` est

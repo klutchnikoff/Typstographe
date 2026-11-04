@@ -127,8 +127,12 @@ MiTeX expose aussi une [API Rust native `convert_math`](https://docs.rs/mitex/la
 Le [benchmark publié](https://typst.app/universe/package/mitex/) annonce 2,28 s
 pour WASM et 0,085 s pour x86 sur 32 500 équations ; il mesure la conversion,
 pas notre compilation complète ni la latence d’édition. Une voie native est une
-option à mesurer sur nos documents, en vérifiant l’équivalence des spécifications,
-du rendu et des exports. Aucune bascule native n’est faite à ce stade.
+option mesurée dans un [banc isolé](../experiments/mitex-comparison/RESULTS.md)
+sur des articles de 10, 50 et 200 formules. Le code converti et les pixels des
+aperçus concordent. Le gain se concentre sur le premier rendu ; les mises à
+jour complètes à chaud ne montrent pas de gain robuste. Le chemin WASM reste
+en place. La latence des articles longs mérite un profilage distinct de la
+conversion ; aucune bascule native n’est faite à ce stade.
 
 **Différé :** macros LaTeX et fonctions Typst personnalisées, leur portée et leur
 conservation ; éditeur visuel, conversions de syntaxes, théorèmes et preuves.

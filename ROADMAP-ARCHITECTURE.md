@@ -143,6 +143,8 @@ la livraison de tous les types de B n’est pas un prérequis.
 - **C.2 — Mathématiques — livré localement.** Le [contrat](docs/c2-mathematics.md)
   décrit les nœuds `mathInline`/`mathBlock`, leurs zones de code partagées,
   l’adaptateur Typst/MiTeX et les imports dérivés conservés dans les projets.
+  Le [benchmark MiTeX natif/WASM](experiments/mitex-comparison/RESULTS.md)
+  ne montre pas de gain robuste à chaud ; le chemin WASM est conservé.
   Un contrat de formule avec source, langage Typst ou
   LaTeX, description accessible et présentation en ligne/en bloc. Les blocs
   peuvent être ciblés par C.1 ; les modèles règlent numérotation et présentation.
