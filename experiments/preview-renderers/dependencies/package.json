@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@myriaddreamin/typst-ts-renderer": "0.8.0-rc3",
+    "@myriaddreamin/typst.ts": "0.8.0-rc3"
+  }
+}
