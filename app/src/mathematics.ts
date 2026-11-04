@@ -16,11 +16,43 @@ export function mathContent(block: boolean, language = 'typst', source = ''): JS
     ...(source ? { content: [{ type: 'text', text: source }] } : {}),
   }
 }
+function escaped(text: string, offset: number) {
+  let slashes = 0
+  while (offset > 0 && text[--offset] === '\\') slashes++
+  return slashes % 2 === 1
+}
+function quoted(text: string) {
+  let inside = false
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '\\') i++
+    else if (text[i] === '"') inside = !inside
+  }
+  return inside
+}
 function sourceReturn(editor: Editor) {
   if (editor.view.composing) return false
   const { $from } = editor.state.selection
   if (!isMath($from.parent.type.name)) return false
   if ($from.parent.type.name === 'mathInline') {
+    const pos = $from.before(),
+      outside = editor.state.doc.resolve(pos),
+      node = $from.parent
+    const before = outside.parent.content.cut(0, outside.parentOffset)
+    const after = outside.parent.content.cut(outside.parentOffset + node.nodeSize)
+    const lineBreak = (kind?: string) => kind === 'softBreak' || kind === 'hardBreak'
+    if (
+      !node.content.size &&
+      outside.depth === 1 &&
+      outside.parent.type.name === 'paragraph' &&
+      (!before.size || lineBreak(before.lastChild?.type.name)) &&
+      (!after.size || lineBreak(after.firstChild?.type.name))
+    )
+      return insertBlock(
+        editor,
+        mathContent(true, node.attrs.language),
+        { from: pos, to: pos + node.nodeSize },
+        true,
+      )
     editor.commands.setTextSelection($from.after())
     return true
   }
@@ -146,6 +178,13 @@ export function mathExtensions(properties: WidgetAction, presentations: WidgetPr
           Backspace: () => {
             if (editor.view.composing) return false
             const { $from, empty } = editor.state.selection
+            if (empty && $from.parent.type.name === 'mathInline' && !$from.parent.content.size) {
+              const pos = $from.before(),
+                tr = editor.state.tr.delete(pos, $from.after())
+              tr.setSelection(TextSelection.create(tr.doc, pos))
+              editor.view.dispatch(tr.scrollIntoView())
+              return true
+            }
             return empty && isMath($from.parent.type.name) && $from.parentOffset === 0
           },
           Delete: () => {
@@ -166,32 +205,52 @@ export function mathExtensions(properties: WidgetAction, presentations: WidgetPr
             props: {
               handleTextInput(view, from, to, text) {
                 if (view.composing || text !== '$' || from !== to) return false
-                const $from = view.state.doc.resolve(from)
+                const $from = view.state.doc.resolve(from),
+                  parent = $from.parent
+                if (parent.type.name === 'mathInline') {
+                  if ($from.parentOffset !== parent.content.size) return false
+                  const source = parent.textContent,
+                    pos = $from.before()
+                  if (parent.attrs.language === 'typst' && !source) {
+                    const tr = view.state.tr.setNodeMarkup(pos, undefined, {
+                      ...parent.attrs,
+                      language: 'latex',
+                    })
+                    tr.setSelection(TextSelection.create(tr.doc, pos + 1))
+                    view.dispatch(tr)
+                    return true
+                  }
+                  if (
+                    escaped(source, source.length) ||
+                    (parent.attrs.language === 'typst' && quoted(source))
+                  )
+                    return false
+                  if (parent.attrs.language === 'latex') {
+                    if (!source.endsWith('$') || escaped(source, source.length - 1)) return false
+                    const tr = view.state.tr.delete(from - 1, from)
+                    tr.setSelection(TextSelection.create(tr.doc, tr.mapping.map($from.after())))
+                    view.dispatch(tr.scrollIntoView())
+                    return true
+                  }
+                  view.dispatch(
+                    view.state.tr.setSelection(TextSelection.create(view.state.doc, $from.after())),
+                  )
+                  return true
+                }
                 if (
-                  !$from.parent.inlineContent ||
-                  $from.parent.type.spec.code ||
+                  !parent.inlineContent ||
+                  parent.type.spec.code ||
                   !capabilityAvailability(editor, 'math.inline', 'inline').enabled
                 )
                   return false
-                // Only the current visual line. The longest delimiter wins. An
-                // opening $$ remains ordinary text until its closing pair is complete.
-                const prefix = $from.parent.textBetween(0, $from.parentOffset, '\n', '\n') + text
-                const line = prefix.slice(prefix.lastIndexOf('\n') + 1)
-                const match = /(?:^|[^$])(\$\$([^$\n]+)\$\$|\$([^$\n]+)\$)$/.exec(line)
-                if (!match) return false
-                const whole = match[1],
-                  latex = whole.startsWith('$$')
-                if (!latex && prefix.slice(0, -whole.length).endsWith('$')) return false
-                const code = latex ? match[2] : match[3]
-                const node = editor.schema.nodeFromJSON(
-                  mathContent(false, latex ? 'latex' : 'typst', code),
-                )
-                const start = from + text.length - whole.length
-                const transaction = view.state.tr.replaceWith(start, to, node)
-                transaction.setSelection(
-                  TextSelection.create(transaction.doc, start + node.nodeSize),
-                )
-                view.dispatch(transaction.scrollIntoView())
+                const prefix = parent.textBetween(0, $from.parentOffset, '\n', '\ufffc')
+                if (escaped(prefix, prefix.length)) return false
+                // Enter a semantic code zone immediately: prose rules must never
+                // reinterpret operators, underscores or repeated source spaces.
+                const node = editor.schema.nodeFromJSON(mathContent(false))
+                const tr = view.state.tr.replaceWith(from, to, node)
+                tr.setSelection(TextSelection.create(tr.doc, from + 1))
+                view.dispatch(tr.scrollIntoView())
                 return true
               },
               handlePaste(view, event) {

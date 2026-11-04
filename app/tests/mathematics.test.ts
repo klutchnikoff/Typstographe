@@ -147,3 +147,27 @@ it('typing shortcuts remain literal when the active type does not expose mathema
   enter(block)
   expect(block.state.doc.content.content.some((n) => n.type.name === 'mathBlock')).toBe(false)
 })
+
+it('opening delimiters enter code before prose rules can change operators or source whitespace', () => {
+  for (const [input, expected, language] of [
+    ['$a * b * c$', 'a * b * c', 'typst'],
+    ['$"prix $ : "$', '"prix $ : "', 'typst'],
+    ['$$\\text{prix \\$5}  + x_i$$', '\\text{prix \\$5}  + x_i', 'latex'],
+  ]) {
+    const e = fixture()
+    type(e, input)
+    const formula = e.state.doc.firstChild!.firstChild!
+    expect(formula.type.name).toBe('mathInline')
+    expect(formula.textContent).toBe(expected)
+    expect(formula.attrs.language).toBe(language)
+    expect(formula.firstChild!.marks).toEqual([])
+    expect(e.state.selection.$from.parent.type.name).toBe('paragraph')
+  }
+})
+it('Backspace removes an empty opening code zone without consuming its neighboring prose', () => {
+  const e = fixture()
+  type(e, 'Avant $')
+  enter(e, 'Backspace')
+  expect(e.state.doc.firstChild!.textContent).toBe('Avant ')
+  expect(e.state.doc.firstChild!.lastChild!.isText).toBe(true)
+})
