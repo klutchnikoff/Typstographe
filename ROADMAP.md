@@ -213,6 +213,25 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    description accessible et les références aux blocs. L’éditeur visuel viendra
    ensuite sur le même objet, sans promettre une conversion réversible des
    syntaxes.
+   **Saisie validée :** `$` seul sur une ligne suivi d’Entrée crée un widget
+   Typst ; `$$` seuls suivis d’Entrée créent un widget LaTeX. Dans le texte,
+   `$cos(x)$` désigne une formule Typst et `$$\cos(x)$$` une formule LaTeX.
+   Ces délimiteurs choisissent le langage ; le double dollar n’impose pas
+   une présentation en bloc. On édite directement le source mathématique,
+   comme dans Typst ou LaTeX, sans liste de formules autorisées propre à
+   l’application. Le moteur concerné fournit les diagnostics dans les limites
+   de son support. Aucun aperçu supplémentaire dans l’éditeur : le rendu
+   temps réel de la colonne droite suffit. Le source est celui d’une formule,
+   éventuellement complexe ou multiligne, sans document LaTeX complet.
+   **À traiter ultérieurement :** macros LaTeX et fonctions Typst personnalisées,
+   leur définition, leur portée et leur conservation dans le projet et l’export.
+   **Labels validés :** les équations en bloc conservent une identité automatique
+   stable et peuvent recevoir un alias lisible facultatif. L’interface présente
+   le préfixe `eq:` grisé et non éditable, suivi du nom libre ; un nom vide ne
+   crée aucun alias. Modifier cet alias ne casse pas les renvois. Dans le
+   sélecteur, `eq:` ou son raccourci `$` filtre les équations. Le badge reprend
+   le libellé réellement composé par Typst, par exemple `(12)` ; le modèle
+   conserve la maîtrise de la numérotation et de sa présentation.
 3. **C.3 — Bibliographie du projet.** Consolider les imports BibLaTeX et Hayagriva
    dans un unique fichier Hayagriva interne au `.typsto` et à l’export. Remplacer
    le contrat actuel de plusieurs fichiers originaux après évaluation des pertes
@@ -577,7 +596,8 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 1. Préciser le contrat des formules en ligne/en bloc : source Typst ou LaTeX via
    MiTeX, description accessible et ancre des blocs pour réutiliser les renvois C.1.
 2. Valider le code accepté, les diagnostics, les règles de numérotation laissées
-   au modèle et la maquette de saisie/aperçu avant de coder.
+   au modèle et la maquette de saisie avant de coder. Les conventions de saisie
+   ci-dessus sont validées ; les macros et fonctions personnalisées sont différées.
 3. Poursuivre avec C.3 et C.4 ; compléter les types/modèles selon leurs besoins.
    L’assistance ACP conserve son parcours de validation et de maquette dans F.
 

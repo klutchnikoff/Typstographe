@@ -143,11 +143,29 @@ la livraison de tous les types de B n’est pas un prérequis.
 - **C.2 — Mathématiques.** Un contrat de formule avec source, langage Typst ou
   LaTeX, description accessible et présentation en ligne/en bloc. Les blocs
   peuvent être ciblés par C.1 ; les modèles règlent numérotation et présentation.
-  Saisie de code et aperçu en premier, éditeur visuel ensuite, sans conversion
-  bidirectionnelle implicite. MiTeX passe par un adaptateur Typst public stable ;
+  Saisie directe du source en premier, éditeur visuel ensuite, sans conversion
+  bidirectionnelle implicite. Aucun aperçu mathématique supplémentaire dans
+  l’éditeur : réutiliser le rendu temps réel de la colonne droite.
+  MiTeX passe par un adaptateur Typst public stable ;
   inventorier et embarquer sa version et ses dépendances pour les fichiers et
-  exports hors ligne. Définir le périmètre du code accepté et les diagnostics
-  avant de relier la saisie au compilateur.
+  exports hors ligne. Les diagnostics proviennent du moteur concerné, sans
+  liste de formules autorisées propre à typstOgraphe ; conserver les limites
+  réelles du support Typst/MiTeX explicites. Le source représente une formule,
+  éventuellement complexe ou multiligne, et non un document LaTeX complet.
+  **Déclencheurs validés :** `$` seul sur une ligne puis Entrée crée le widget
+  Typst ; `$$` seuls puis Entrée créent le widget LaTeX. Dans une ligne de texte,
+  `$cos(x)$` est Typst et `$$\cos(x)$$` est LaTeX. Les doubles dollars désignent
+  le langage, pas une mise en bloc implicite. Ces conventions appartiennent
+  à la saisie ; conserver séparément langage, source et présentation.
+  **Différé explicitement :** macros LaTeX et fonctions Typst personnalisées.
+  Préciser ultérieurement leur définition, leur portée, leur disponibilité au
+  rendu et leur conservation autonome dans le projet et les exports.
+  **Labels validés :** séparer l’ancre stable automatique de l’alias humain
+  facultatif des équations en bloc. Le champ affiche un préfixe `eq:` grisé,
+  non éditable ; suffixe vide signifie absence d’alias. Une modification du
+  suffixe préserve les renvois par identité. Le sélecteur reconnaît `eq:` et
+  `$` comme filtres d’équations ; le badge utilise le contenu composé par
+  Typst, par exemple `(12)`, sans reconstruire son numéro dans l’adaptateur.
 - **C.3 — Notices du projet.** Remplacer les multiples fichiers originaux par
   une bibliothèque Hayagriva unique, matérialisée dans le `.typsto` et l’export.
   Réutiliser la crate Hayagriva pour import et sérialisation ; évaluer la
