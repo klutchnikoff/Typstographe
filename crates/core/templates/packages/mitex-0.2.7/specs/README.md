@@ -247,4 +247,3 @@ Define a matrix environment without handler
 ```
 
 **Return:** A matrix-env spec and a scope item (none for no scope item)
-

@@ -29,6 +29,7 @@ les décisions, mesures et limites des étapes livrées.
 | Types, modèles et bibliographie | [Article](article-contract.md), [citations et bibliographie](article-bibliography.md), [dépendances Typst et wrappers](typst-dependencies.md) |
 | Déclarations de types | [Contrat YAML et raccordement des types actifs](type-definitions.md), [schéma du manifeste](schemas/type-definition.schema.json) |
 | Ressources documentaires | [Références typées, signature et conservation](resource-references.md) |
+| Mathématiques et renvois | [Formules et équations](c2-mathematics.md), [ancres et renvois](c1-cross-references.md) |
 | Dates documentaires | [Valeurs typées, saisie et wrapper Datify](structured-dates.md) |
 | Options des modèles | [Régimes, choix conservés et valeurs effectives](model-options.md), [schéma du manifeste](schemas/model-manifest.schema.json) |
 | Performances et synchronisation | [Mode individuel](individual-mode.md), [rendu et méthode de mesure](tauri-preview-performance.md) |

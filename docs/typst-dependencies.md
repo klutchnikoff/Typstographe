@@ -76,3 +76,12 @@ Ce wrapper utilise les primitives Typst, sans paquet supplémentaire. Il est
 embarqué dans les modèles fournis, les projets et les exports ; le modèle définit
 les libellés, la présentation des pages et la combinaison des deux composantes.
 Voir le [contrat C.1](c1-cross-references.md).
+
+## Mathématiques
+
+Le wrapper `capabilities/mathematics.typ` fournit `math-formula`. Il utilise
+Typst natif ou MiTeX 0.2.7 (Apache-2.0), embarqué avec son module WebAssembly
+et ses spécifications. L’archive officielle et son empreinte figurent dans
+`crates/core/templates/dependencies.json` ; aucune installation LaTeX n’est requise.
+Le résolveur inclut les imports du corps dérivé, en plus de ceux du modèle,
+sans retirer les ressources déjà transportées par un projet.

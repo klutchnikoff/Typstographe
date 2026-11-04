@@ -198,7 +198,8 @@ les primitives natives simples n’ont pas besoin d’un wrapper systématique.
 
 B.1 est clôturé. L’ordre de réalisation validé est désormais
 **C.1 → C.2 → C.3 → C.4**, à partir des contrats préparatoires consignés en B.1.
-C.1 est implémenté et vérifié localement ; C.2 est le prochain lot à préciser.
+C.1 et le premier périmètre de C.2 sont implémentés et vérifiés localement ;
+C.3 est le prochain lot à préciser.
 Valider ensemble les choix détaillés et les interfaces avant de coder chaque
 lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C.
 
@@ -208,7 +209,7 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    [contrat et la recette](docs/c1-cross-references.md) précisent les garanties.
    La sélection par clic dans l’aperçu est une amélioration différée, avec un
    mode explicite et une résolution des ambiguïtés ; elle ne bloque pas C.2.
-2. **C.2 — Formules mathématiques.** Saisie de code Typst ou LaTeX via MiTeX,
+2. **C.2 — Formules mathématiques — livré localement.** Saisie de code Typst ou LaTeX via MiTeX,
    dans le texte ou en bloc ; conserver le langage et la source, prévoir la
    description accessible et les références aux blocs. L’éditeur visuel viendra
    ensuite sur le même objet, sans promettre une conversion réversible des
@@ -225,6 +226,8 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    éventuellement complexe ou multiligne, sans document LaTeX complet.
    **À traiter ultérieurement :** macros LaTeX et fonctions Typst personnalisées,
    leur définition, leur portée et leur conservation dans le projet et l’export.
+   Le [contrat C.2](docs/c2-mathematics.md) décrit les zones de code partagées,
+   l’adaptateur MiTeX autonome et les garanties de conservation.
    **Labels validés :** les équations en bloc conservent une identité automatique
    stable et peuvent recevoir un alias lisible facultatif. L’interface présente
    le préfixe `eq:` grisé et non éditable, suivi du nom libre ; un nom vide ne
@@ -591,16 +594,15 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 ## Prochain lot proposé
 
-**C.2 — Formules mathématiques**, après qualification de C.1 et validation commune.
+**C.3 — Notices bibliographiques du projet**, après qualification de C.2 et validation commune.
 
-1. Préciser le contrat des formules en ligne/en bloc : source Typst ou LaTeX via
-   MiTeX, description accessible et ancre des blocs pour réutiliser les renvois C.1.
-2. Valider le code accepté, les diagnostics, les règles de numérotation laissées
-   au modèle et la maquette de saisie avant de coder. Les conventions de saisie
-   ci-dessus sont validées ; les macros et fonctions personnalisées sont différées.
-3. Poursuivre avec C.3 et C.4 ; compléter les types/modèles selon leurs besoins.
-   L’assistance ACP conserve son parcours de validation et de maquette dans F.
+1. Préciser la consolidation Hayagriva, les imports, les collisions de clés et
+   les liens des citations existantes, à partir des orientations C.3 validées.
+2. Valider le contrat commun et la maquette du gestionnaire avant de coder.
+3. Poursuivre avec C.4 ; macros LaTeX et fonctions Typst personnalisées restent
+   explicitement à traiter dans un lot ultérieur. L’assistance ACP conserve son
+   parcours de validation et de maquette dans F.
 
-Les vérifications locales de C.1 ne remplacent pas la qualification CI avant
-fusion ni la recette utilisateur. Aucun choix encore ouvert de C.2 n’est implémenté
+Les vérifications locales de C.2 ne remplacent pas la qualification CI avant
+fusion ni la recette utilisateur. Aucun choix encore ouvert de C.3 n’est implémenté
 d’avance.

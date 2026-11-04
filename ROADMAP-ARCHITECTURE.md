@@ -125,10 +125,10 @@ de l’export déplacé dans un environnement sans cache de paquets.
 ### C.1–C.4 — Ordre et périmètres validés le 3 novembre 2026
 
 **Dépendance satisfaite :** B.1 est clôturé et ses contrats préparatoires sont
-consignés. C.1 (renvois) est implémenté et vérifié localement ; le prochain lot
-est C.2 (mathématiques), avant C.3 (bibliographie du projet) et C.4 (bibliothèque
-personnelle). Préciser ensemble les paramètres, commandes/cibles et maquettes
-avant chaque implémentation ;
+consignés. C.1 (renvois) et le premier périmètre de C.2 (mathématiques) sont
+implémentés et vérifiés localement ; le prochain lot est C.3 (bibliographie du
+projet), avant C.4 (bibliothèque personnelle). Préciser ensemble les paramètres,
+commandes/cibles et maquettes avant chaque implémentation ;
 la livraison de tous les types de B n’est pas un prérequis.
 
 - **C.1 — Cibles et renvois — livré localement.** Le [contrat](docs/c1-cross-references.md)
@@ -136,11 +136,14 @@ la livraison de tous les types de B n’est pas un prérequis.
   composantes libellé/page, les callbacks de présentation Typst et l’extraction
   des libellés pendant la compilation existante. Sélecteur, badges, formulaires
   récupérables et commandes réutilisent les mécanismes communs Tauri/CLI/MCP.
-  Le sélecteur vise les titres, images et tableaux du corps ; équations et
-  théorèmes étendront ce contrat. Reste différé le mode explicite « Choisir dans
+  Le sélecteur vise les titres, images et tableaux du corps ; C.2 l’étend aux
+  équations. Les théorèmes reprendront ce contrat. Reste différé le mode explicite « Choisir dans
   l’aperçu », réutilisant la correspondance backward sans sélection arbitraire
   d’une cible voisine. Qualification CI et recette utilisateur avant fusion.
-- **C.2 — Mathématiques.** Un contrat de formule avec source, langage Typst ou
+- **C.2 — Mathématiques — livré localement.** Le [contrat](docs/c2-mathematics.md)
+  décrit les nœuds `mathInline`/`mathBlock`, leurs zones de code partagées,
+  l’adaptateur Typst/MiTeX et les imports dérivés conservés dans les projets.
+  Un contrat de formule avec source, langage Typst ou
   LaTeX, description accessible et présentation en ligne/en bloc. Les blocs
   peuvent être ciblés par C.1 ; les modèles règlent numérotation et présentation.
   Saisie directe du source en premier, éditeur visuel ensuite, sans conversion
