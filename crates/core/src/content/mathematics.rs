@@ -156,6 +156,10 @@ mod tests {
                 serde_json::from_value(json!({"type":"paragraph","content":[inline]})).unwrap();
             document.content.insert(0, paragraph);
             let source = crate::content::source(&document, &Default::default()).unwrap();
+            world.set_dependencies(&crate::packages::including_source(
+                &crate::packages::for_template(&template),
+                &source,
+            ));
             let rendered = world
                 .compile_with_template(
                     &source,

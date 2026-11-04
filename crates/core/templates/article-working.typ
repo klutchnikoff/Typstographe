@@ -1,4 +1,3 @@
-#import "capabilities/mathematics.typ": math-formula
 #import "capabilities/cross-references.typ": cross-reference
 // A restrained working article. All presentation choices belong to this model.
 #import "capabilities/authorship.typ": prepare-authorship, show-authorship
