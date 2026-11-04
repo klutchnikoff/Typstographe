@@ -39,6 +39,9 @@ with (SOURCE / 'crates/core/src/lib.rs').open('a') as stream:
     stream.write('\npub mod mitex_benchmark;\n')
 replace('crates/core/Cargo.toml', '[dependencies]', '[dependencies]\nmitex = { path = ' + json.dumps(str(UPSTREAM / 'crates/mitex')) + ' }\nmitex-spec-gen = { path = ' + json.dumps(str(UPSTREAM / 'crates/mitex-spec-gen')) + ', features = ["prebuilt"] }')
 replace('app/src-tauri/Cargo.toml', 'name = "typstographe"', 'name = "typstographe-mitex-benchmark"')
+# MiTeX adds rkyv 0.7: its cross-type Option PartialEq implementations make
+# this existing coercion ambiguous. Keep the same comparison, explicitly typed.
+replace('app/src-tauri/src/comparisons/staging.rs', 'Some(&prepared.parent)', 'Some(prepared.parent.as_str())')
 replace('crates/core/src/content/mathematics.rs', '    Ok(format!(\n', '''    let (source, language) = if language == "latex" && crate::mitex_benchmark::native() {
         (crate::mitex_benchmark::convert(&source)?, "converted")
     } else { (source, language) };

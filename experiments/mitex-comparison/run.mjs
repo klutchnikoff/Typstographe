@@ -9,6 +9,20 @@ const binary = resolve(root, "target/release/typstographe-mitex-benchmark");
 const corpora = JSON.parse(
   await readFile(resolve(output, "corpora.json"), "utf8"),
 );
+const conversion = JSON.parse(
+  execFileSync(binary, ["--mitex-probe", resolve(output, "corpora.json")], {
+    encoding: "utf8",
+    maxBuffer: 32 * 1024 * 1024,
+  }),
+);
+await writeFile(
+  resolve(output, "conversion-raw.json"),
+  JSON.stringify(conversion, null, 2) + "\n",
+);
+console.error(
+  `Conversion equivalence verified: ${conversion.samples.length} corpus/round pairs.`,
+);
+if (process.argv.includes("--conversion-only")) process.exit(0);
 const reports = [];
 const batch = await mkdtemp(resolve(output, "run-"));
 // Alternate order across corpora. One fresh process/session per engine/article.
@@ -121,16 +135,6 @@ for (const corpus of corpora) {
       summary.push(row);
     }
 }
-const conversion = JSON.parse(
-  execFileSync(binary, ["--mitex-probe", resolve(output, "corpora.json")], {
-    encoding: "utf8",
-    maxBuffer: 32 * 1024 * 1024,
-  }),
-);
-await writeFile(
-  resolve(output, "conversion-raw.json"),
-  JSON.stringify(conversion, null, 2) + "\n",
-);
 const report = {
   success: true,
   environment: {
