@@ -24,3 +24,6 @@ L’icône `wrench` de la palette de commandes provient du SVG officiel de Lucid
 
 La poignée des cartes de collections utilise `grip-vertical.svg` de cette même
 version officielle Lucide 0.468.0, sans modification.
+
+L’icône `corner-up-right` des renvois provient du SVG officiel Lucide 0.468.0
+(`icons/corner-up-right.svg`), sans modification et sous les mêmes licences.

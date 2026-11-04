@@ -1,3 +1,4 @@
+import { DocumentAnchors, ReferenceIntegrity } from './document-anchors'
 import {
   Editor,
   Extension,
@@ -88,6 +89,12 @@ export function richZoneExtensions(
     ContextBand,
     SoftBreak,
     SharedInlineMarks,
+    ...(policy.widgets
+      ? [
+          DocumentAnchors.configure({ updateDocument: binding?.kind === 'document' }),
+          ...(binding?.kind === 'document' ? [ReferenceIntegrity] : []),
+        ]
+      : []),
     SelectionEdits.configure({ singleLine: !policy.multiline }),
     TypstInlineInput,
     HorizontalSpace,

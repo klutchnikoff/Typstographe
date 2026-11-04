@@ -72,6 +72,18 @@ export async function executeStructured(
   const result = await invoke('prepare_structured_commands').catch((error: unknown) => {
     // Transport failures and plain messages carry no documentary code.
     const code = errorCode(error)
+    let failure: unknown = error
+    for (let depth = 0; depth < 8 && failure && typeof failure === 'object'; depth++) {
+      const value = failure as Record<string, unknown>
+      if (value.code === 'invalid_document' && value.reason === 'cross_reference_target_missing')
+        throw new Error(
+          tr(
+            'La cible est encore utilisée par un renvoi. Supprimez ou modifiez ses renvois avant de la retirer.',
+          ),
+          { cause: error },
+        )
+      failure = value.cause || (value.params as Record<string, unknown> | undefined)?.content
+    }
     throw new Error(
       tr(
         code === 'wrong_document' || code === 'stale_revision'

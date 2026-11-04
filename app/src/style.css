@@ -2336,3 +2336,24 @@ li:has(.interline-band-gap[data-marker])::marker {
 .metadata-resource-controls .panel-actions {
   margin: 8px 0 0;
 }
+
+.reference-components {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  border: 0;
+  padding: 0;
+  margin: 8px 0;
+}
+.reference-components legend {
+  margin-bottom: 6px;
+}
+.reference-components label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.reference-components input[type='checkbox'] {
+  width: auto;
+  margin: 0;
+}

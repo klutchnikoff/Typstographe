@@ -231,7 +231,7 @@ it('les réglages dérivés des cellules ne créent pas un second état sur le t
   })
   try {
     expect(hasSettings(presentations.tableFigure!.settings)).toBe(true)
-    expect(Object.keys(editor.schema.nodes.tableFigure.spec.attrs || {})).toEqual([])
+    expect(Object.keys(editor.schema.nodes.tableFigure.spec.attrs || {})).toEqual(['anchor'])
   } finally {
     editor.destroy()
   }

@@ -2,7 +2,7 @@ import { historyFor, editingProvider } from './editing-history'
 import { removeObject } from './object-commands'
 import { tableCursor } from './table-selection'
 import { tr } from './i18n'
-import { Node, type Editor, type JSONContent } from '@tiptap/core'
+import { Node, mergeAttributes, type Editor, type JSONContent } from '@tiptap/core'
 import { BulletList, OrderedList } from '@tiptap/extension-list'
 import {
   isWidgetKind,
@@ -65,7 +65,7 @@ export const simpleWidgets = (properties: WidgetAction, presentations: WidgetPre
     isolating: true,
     defining: true,
     parseHTML: () => [{ tag: 'blockquote' }],
-    renderHTML: () => ['blockquote', 0],
+    renderHTML: ({ HTMLAttributes }) => ['blockquote', HTMLAttributes, 0],
   }),
   Node.create({
     name: 'quoteAttribution',
@@ -85,7 +85,7 @@ export const simpleWidgets = (properties: WidgetAction, presentations: WidgetPre
     isolating: true,
     defining: true,
     parseHTML: () => [{ tag: 'dl' }],
-    renderHTML: () => ['dl', 0],
+    renderHTML: ({ HTMLAttributes }) => ['dl', HTMLAttributes, 0],
   }),
   Node.create({
     name: 'descriptionItem',
@@ -114,7 +114,11 @@ export const simpleWidgets = (properties: WidgetAction, presentations: WidgetPre
       isolating: true,
       defining: true,
       parseHTML: () => [{ tag: `section[data-letter-note="${name}"]` }],
-      renderHTML: () => ['section', { 'data-letter-note': name }, 0],
+      renderHTML: ({ HTMLAttributes }) => [
+        'section',
+        mergeAttributes(HTMLAttributes, { 'data-letter-note': name }),
+        0,
+      ],
       addNodeView:
         () =>
         ({ getPos }) => {

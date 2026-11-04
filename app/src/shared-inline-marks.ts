@@ -16,6 +16,11 @@ export function documentContent(value: JSONContent): JSONContent {
     else delete result.attrs
     if (!result.marks?.length && Array.isArray(marks) && marks.length) result.marks = marks
   }
+  if (result.attrs?.anchor === null) {
+    const { anchor: _anchor, ...attrs } = result.attrs
+    if (Object.keys(attrs).length) result.attrs = attrs
+    else delete result.attrs
+  }
   if (value.content) result.content = value.content.map(documentContent)
   return result
 }
@@ -24,7 +29,7 @@ export const SharedInlineMarks = Extension.create({
   addGlobalAttributes() {
     return [
       {
-        types: ['footnote', 'citation', 'softBreak', 'hardBreak'],
+        types: ['footnote', 'citation', 'crossReference', 'softBreak', 'hardBreak'],
         attributes: { [attribute]: { default: null, rendered: false } },
       },
     ]

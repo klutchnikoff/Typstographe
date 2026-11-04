@@ -1,3 +1,4 @@
+import { referenceLabel } from './cross-reference-index'
 import {
   Extension,
   Node,
@@ -77,7 +78,11 @@ export function documentExtensions(
       isolating: true,
       defining: true,
       parseHTML: () => [{ tag: 'figure[data-table]' }],
-      renderHTML: () => ['figure', { 'data-table': '' }, 0],
+      renderHTML: ({ HTMLAttributes }) => [
+        'figure',
+        mergeAttributes(HTMLAttributes, { 'data-table': '' }),
+        0,
+      ],
       addNodeView:
         () =>
         ({ getPos }) => {
@@ -103,6 +108,67 @@ export function documentExtensions(
         { 'data-table-caption': '', 'data-placeholder': tr('Légende facultative') },
         0,
       ],
+    }),
+    Node.create({
+      name: 'crossReference',
+      group: 'inline',
+      inline: true,
+      atom: true,
+      selectable: true,
+      addAttributes: () => ({
+        target: { default: '' },
+        include_label: { default: true },
+        include_page: { default: false },
+      }),
+      parseHTML: () => [{ tag: 'span[data-cross-reference]' }],
+      renderHTML: ({ node, HTMLAttributes }) => [
+        'span',
+        mergeAttributes(HTMLAttributes, { 'data-cross-reference': node.attrs.target }),
+        tr('Renvoi'),
+      ],
+      addNodeView:
+        () =>
+        ({ node, getPos, editor }) => {
+          let current = node
+          const badge = inlineObjectView({
+            editor,
+            getPos,
+            kind: 'crossReference',
+            label: tr('Renvoi'),
+            title: tr('Renvoi'),
+            open: properties,
+          })
+          const update = () =>
+            badge.describe(
+              '',
+              undefined,
+              referenceLabel(
+                editor,
+                current.attrs as import('./cross-reference-index').CrossReference,
+              ),
+            )
+          const transaction = ({
+            transaction,
+          }: {
+            transaction: import('@tiptap/pm/state').Transaction
+          }) => {
+            if (transaction.docChanged || transaction.getMeta('cross-reference-index')) update()
+          }
+          editor.on('transaction', transaction)
+          update()
+          return {
+            dom: badge.dom,
+            update(next) {
+              if (next.type.name !== 'crossReference') return false
+              current = next
+              update()
+              return true
+            },
+            destroy() {
+              editor.off('transaction', transaction)
+            },
+          }
+        },
     }),
     Node.create({
       name: 'citation',
@@ -230,7 +296,10 @@ export function documentExtensions(
       ],
       renderHTML: ({ node, HTMLAttributes }) => [
         'figure',
-        { 'data-image': node.attrs.src },
+        {
+          'data-image': node.attrs.src,
+          ...(node.attrs.anchor ? { 'data-anchor': node.attrs.anchor } : {}),
+        },
         ['img', { src: imageURL(node.attrs.src), alt: HTMLAttributes.alt }],
         ['figcaption', 0],
       ],
