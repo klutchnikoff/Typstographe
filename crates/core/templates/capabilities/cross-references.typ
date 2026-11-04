@@ -7,10 +7,12 @@
     let pattern = element.numbering
     if type(pattern) == str { pattern = pattern.trim(".") }
     let number = numbering(pattern, ..counter-value.at(element.location()))
-    if element.supplement == none or element.supplement == [] { number }
+    if element.func() == math.equation { number }
+    else if element.supplement == none or element.supplement == [] { number }
     else { [#element.supplement~#number] }
   } else if element.func() == heading { element.body }
   else if element.func() == figure and element.caption != none { element.caption.body }
+  else if element.func() == math.equation { element.body }
   else { element.supplement }
 }
 #let default-page(element) = {

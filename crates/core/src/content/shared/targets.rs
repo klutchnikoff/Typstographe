@@ -255,6 +255,8 @@ fn rich(value: XmlElementRef) -> Result<Resolved, Error> {
             | "quoteAttribution"
             | "postscript"
             | "attachment"
+            | "mathBlock"
+            | "mathInline"
     ) {
         return Err(invalid(TargetReason::NotTextZone));
     }
@@ -269,7 +271,7 @@ impl Resolved {
                     if n.kind == "text" {
                         n.text.unwrap_or_default()
                     } else {
-                        "\u{fffc}".into()
+                        "\u{fffc}".repeat(n.inline_len())
                     }
                 })
                 .collect(),
@@ -283,7 +285,7 @@ impl Resolved {
         Ok(ZoneInfo {
             length: text.encode_utf16().count() as u32,
             text,
-            supports_styles: matches!(self, Self::Rich(_)),
+            supports_styles: matches!(self, Self::Rich(e) if !crate::content::mathematics::is_math(e.tag().as_ref())),
         })
     }
 }

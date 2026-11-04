@@ -1,0 +1,219 @@
+//! Raw mathematical source, shared by Tauri, CLI and MCP. No UI or formula whitelist.
+use super::Node;
+use crate::document::typst_string;
+pub fn is_math(kind: &str) -> bool {
+    matches!(kind, "mathInline" | "mathBlock")
+}
+pub fn source(node: &Node) -> Result<String, String> {
+    if node
+        .content
+        .iter()
+        .any(|n| n.kind != "text" || !n.marks.is_empty())
+    {
+        return Err("invalid_math_content".into());
+    }
+    for key in ["language", "alt", "alias"] {
+        if let Some(value) = node.attrs.as_ref().and_then(|a| a.get(key))
+            && !value.is_string()
+        {
+            return Err("invalid_math_attributes".into());
+        }
+    }
+    let source = text(node);
+    if node.kind == "mathInline" && source.contains(['\n', '\r']) {
+        return Err("inline_math_multiline".into());
+    }
+    let language = node
+        .attrs
+        .as_ref()
+        .and_then(|a| a["language"].as_str())
+        .unwrap_or("typst");
+    if !matches!(language, "typst" | "latex") {
+        return Err("invalid_math_language".into());
+    }
+    let alt = node
+        .attrs
+        .as_ref()
+        .and_then(|a| a["alt"].as_str())
+        .unwrap_or("");
+    if let Some(alias) = node.attrs.as_ref().and_then(|a| a.get("alias")) {
+        let value = alias.as_str().ok_or("invalid_equation_alias")?;
+        if value.len() > 128
+            || value
+                .chars()
+                .any(|c| c.is_whitespace() || c.is_control() || matches!(c, ':' | '$'))
+        {
+            return Err("invalid_equation_alias".into());
+        }
+    }
+    Ok(format!(
+        "#math-formula({}, language: {}, block: {}, alt: {})",
+        typst_string(&source),
+        typst_string(language),
+        node.kind == "mathBlock",
+        typst_string(alt)
+    ))
+}
+pub fn text(node: &Node) -> String {
+    node.content
+        .iter()
+        .filter_map(|n| n.text.as_deref())
+        .collect()
+}
+pub fn alias(node: &Node) -> Option<&str> {
+    node.attrs
+        .as_ref()?
+        .get("alias")?
+        .as_str()
+        .filter(|s| !s.is_empty())
+}
+pub fn validate(node: &Node) -> Result<(), String> {
+    fn visit(node: &Node, aliases: &mut std::collections::BTreeSet<String>) -> Result<(), String> {
+        if is_math(&node.kind) {
+            source(node)?;
+        }
+        if node.kind == "mathBlock"
+            && let Some(alias) = alias(node)
+            && !aliases.insert(alias.into())
+        {
+            return Err("duplicate_equation_alias".into());
+        }
+        for child in &node.content {
+            visit(child, aliases)?;
+        }
+        Ok(())
+    }
+    visit(node, &mut Default::default())
+}
+
+#[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
+mod tests {
+    use super::*;
+    use crate::content::references;
+    use serde_json::json;
+    fn doc(language: &str, source: &str) -> Node {
+        serde_json::from_value(json!({"type":"doc","content":[
+   {"type":"mathBlock","attrs":{"language":language,"alias":"pythagoras","anchor":"equation-first","alt":"Pythagorean identity"},"content":[{"type":"text","text":source}]},
+   {"type":"paragraph","content":[{"type":"crossReference","attrs":{"target":"equation-first","include_label":true,"include_page":false}}]},
+   {"type":"paragraph"}
+ ]})).unwrap()
+    }
+    #[test]
+    fn native_typst_and_vendored_latex_share_the_real_equation_counter_and_reference() {
+        let kind = crate::document_types::DocumentType::Article;
+        let template = kind.default_model();
+        let mut world = crate::rendering::TypstWorld::default();
+        world.set_dependencies(&crate::packages::for_template(&template));
+        for (lang, code) in [
+            ("typst", "a^2 + b^2 = c^2"),
+            ("latex", r"\frac{a}{b} = \cos(x)"),
+            ("latex", r"\begin{pmatrix}1 & 2 \\ 3 & 4\end{pmatrix}"),
+            ("typst", "cases(x & x > 0, -x & x < 0)"),
+        ] {
+            let document = doc(lang, code);
+            let source = crate::content::source(&document, &Default::default()).unwrap();
+            let rendered = world
+                .compile_with_template(
+                    &source,
+                    &crate::document_types::Metadata::blank(kind),
+                    &template,
+                )
+                .unwrap_or_else(|e| panic!("{lang} {code}: {e}"));
+            let r = references::resolved(&rendered);
+            assert_eq!(r.len(), 1);
+            assert_eq!(r[0].display, "(1)");
+            let (_, map) = crate::content::source_mapped(&document, &Default::default()).unwrap();
+            assert!(map.characters.len() > code.encode_utf16().count());
+        }
+    }
+    #[test]
+    fn aliases_are_optional_unique_and_independent_of_internal_anchors() {
+        let mut d = doc("typst", "x");
+        let target = references::targets(&d).pop().unwrap();
+        assert_eq!(target.id, "equation-first");
+        assert!(target.title.starts_with("eq:pythagoras"));
+        d.content.insert(1, d.content[0].clone());
+        d.content[1].attrs.as_mut().unwrap()["anchor"] = json!("equation-second");
+        assert_eq!(validate(&d).unwrap_err(), "duplicate_equation_alias");
+        d.content[1].attrs.as_mut().unwrap()["alias"] = json!("");
+        validate(&d).unwrap();
+        for invalid in ["eq:bad", "a b", "$"] {
+            d.content[1].attrs.as_mut().unwrap()["alias"] = json!(invalid);
+            assert!(validate(&d).is_err());
+        }
+    }
+    #[test]
+    fn typed_edits_preserve_source_whitespace_and_parent_offsets_and_reject_prose_styles() {
+        use crate::content::{
+            commands::Command,
+            contract::{Guard, Settings, State},
+            shared::{SharedDocument, SharedSession},
+        };
+        let kind = crate::document_types::DocumentType::Article;
+        let inline:Node=serde_json::from_value(json!({"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"A"},{"type":"mathInline","attrs":{"language":"latex","alt":""},"content":[{"type":"text","text":"x  y"}]},{"type":"text","text":"B"}]},{"type":"paragraph"}]})).unwrap();
+        let settings = Settings {
+            metadata: crate::document_types::Metadata::blank(kind),
+            template: kind.default_model(),
+            model_manifest: kind.default_model_manifest().into(),
+            model_id: "article.model.working".into(),
+        };
+        let state = State::new(inline, settings);
+        let guard = Guard {
+            document: "math-test".into(),
+            revision: 0,
+        };
+        let mut session = SharedSession::open(
+            guard.clone(),
+            &SharedDocument::from_state(&state).unwrap().update(),
+            Default::default(),
+        )
+        .unwrap();
+        let commands:Vec<Command>=serde_json::from_value(json!([
+   {"id":"text.insert","params":{"target":{"zone":{"kind":"body","path":[0,1]},"from":4,"to":4},"text":"  z"}},
+   {"id":"text.insert","params":{"target":{"zone":{"kind":"body","path":[0]},"from":10,"to":11},"text":"C"}}
+  ])).unwrap();
+        let prepared = session.prepare_commands(&guard, &commands).unwrap();
+        session.publish(prepared).unwrap();
+        assert_eq!(
+            text(&session.state().document.content[0].content[1]),
+            "x  y  z"
+        );
+        assert_eq!(
+            session.state().document.content[0]
+                .content
+                .last()
+                .unwrap()
+                .text
+                .as_deref(),
+            Some("C")
+        );
+        let next = session.guard().clone();
+        let mark:Command=serde_json::from_value(json!({"id":"text.bold","params":{"target":{"zone":{"kind":"body","path":[0,1]},"from":0,"to":1},"value":"on"}})).unwrap();
+        assert!(session.prepare_commands(&next, &[mark]).is_err());
+    }
+    #[test]
+    fn derived_source_selects_offline_libraries_even_without_a_model_import() {
+        let kind = crate::document_types::DocumentType::Article;
+        let template = kind.default_model().replace(
+            "#import \"capabilities/mathematics.typ\": math-formula\n",
+            "",
+        );
+        let document = doc("latex", r"\frac{1}{2}");
+        let source = crate::content::source(&document, &Default::default()).unwrap();
+        let base = crate::packages::for_template(&template);
+        assert!(!base.contains_key("capabilities/mathematics.typ"));
+        let dependencies = crate::packages::including_source(&base, &source);
+        crate::packages::validate(&template, &dependencies).unwrap();
+        assert!(dependencies.contains_key("packages/mitex-0.2.7/mitex.wasm"));
+        let mut world = crate::rendering::TypstWorld::default();
+        world.set_dependencies(&dependencies);
+        world
+            .compile_with_template(
+                &source,
+                &crate::document_types::Metadata::blank(kind),
+                &template,
+            )
+            .unwrap();
+    }
+}

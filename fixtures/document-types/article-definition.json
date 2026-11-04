@@ -43,6 +43,8 @@
     "insert.table",
     "insert.citation",
     "insert.reference",
+    "math.inline",
+    "math.block",
     "insert.footnote"
   ],
   "collections": [

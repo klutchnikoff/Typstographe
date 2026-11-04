@@ -53,7 +53,9 @@ fn spaces(parent: &XmlFragmentRef, tx: &mut yrs::TransactionMut) {
             }
         } else {
             previous = false;
-            if let XmlOut::Element(element) = child {
+            if let XmlOut::Element(element) = child
+                && !crate::content::mathematics::is_math(element.tag().as_ref())
+            {
                 spaces(&fragment(&element), tx);
             }
         }

@@ -64,7 +64,7 @@ pub(super) fn validate(node: &Node, internal_mapping: bool) -> Result<(), String
             && key == "_mapping"
             && matches!(
                 node.kind.as_str(),
-                "text" | "footnote" | "citation" | "crossReference"
+                "text" | "footnote" | "citation" | "crossReference" | "mathInline" | "mathBlock"
             )
         {
             continue;

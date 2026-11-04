@@ -35,6 +35,9 @@ fn lost() -> Error {
 fn size<T: ReadTxn>(node: &XmlOut, tx: &T) -> u32 {
     match node {
         XmlOut::Text(t) => t.len(tx),
+        XmlOut::Element(e) if e.tag().as_ref() == "mathInline" => {
+            2 + e.children(tx).map(|c| size(&c, tx)).sum::<u32>()
+        }
         _ => 1,
     }
 }

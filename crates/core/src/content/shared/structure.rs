@@ -35,6 +35,7 @@ fn block(kind: &str) -> bool {
             | "tableFigure"
             | "postscript"
             | "attachment"
+            | "mathBlock"
     )
 }
 /// Grammar checks complement source generation: it alone permits some empty containers
@@ -58,9 +59,16 @@ fn shape(node: &Node, depth: usize, count: &mut usize) -> Result<(), Error> {
         | "attachment" => kinds.iter().all(|k| {
             matches!(
                 *k,
-                "text" | "softBreak" | "hardBreak" | "footnote" | "citation" | "crossReference"
+                "text"
+                    | "softBreak"
+                    | "hardBreak"
+                    | "footnote"
+                    | "citation"
+                    | "crossReference"
+                    | "mathInline"
             )
         }),
+        "mathBlock" | "mathInline" => kinds.iter().all(|k| *k == "text"),
         "text" => kinds.is_empty() && node.text.as_ref().is_some_and(|t| !t.is_empty()),
         "softBreak" | "hardBreak" | "footnote" | "citation" | "crossReference" => kinds.is_empty(),
         "bulletList" | "orderedList" => !kinds.is_empty() && kinds.iter().all(|k| *k == "listItem"),
@@ -88,7 +96,13 @@ fn shape(node: &Node, depth: usize, count: &mut usize) -> Result<(), Error> {
         || (node.kind != "text" && node.text.is_some())
         || (!matches!(
             node.kind.as_str(),
-            "text" | "softBreak" | "hardBreak" | "footnote" | "citation" | "crossReference"
+            "text"
+                | "softBreak"
+                | "hardBreak"
+                | "footnote"
+                | "citation"
+                | "crossReference"
+                | "mathInline"
         ) && !node.marks.is_empty())
     {
         return Err(invalid("invalid_block_structure"));

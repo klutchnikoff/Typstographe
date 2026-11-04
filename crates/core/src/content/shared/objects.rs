@@ -76,7 +76,9 @@ fn attributes(
 }
 fn inline(doc: &Doc, state: &State, target: &TextTarget, node: &Node) -> Result<(), Error> {
     let line_break = matches!(node.kind.as_str(), "softBreak" | "hardBreak");
-    if !line_break && !["footnote", "citation", "crossReference"].contains(&node.kind.as_str()) {
+    if !line_break
+        && !["footnote", "citation", "crossReference", "mathInline"].contains(&node.kind.as_str())
+    {
         return Err(parameter("node"));
     }
     if line_break
@@ -101,6 +103,12 @@ fn inline(doc: &Doc, state: &State, target: &TextTarget, node: &Node) -> Result<
             reason: UnavailableReason::PlainTextOnly,
         });
     };
+    if !targets::Resolved::Rich(parent.clone())
+        .info(&doc.transact())?
+        .supports_styles
+    {
+        return Err(parameter("target"));
+    }
     let mut tx = doc.transact_mut();
     commands::replace_rich(&parent, &mut tx, target, "", Default::default())?;
     let children: Vec<_> = parent.children(&tx).collect();
@@ -108,10 +116,7 @@ fn inline(doc: &Doc, state: &State, target: &TextTarget, node: &Node) -> Result<
     let mut slot = children.len() as u32;
     let mut inserted = vec![node.clone()];
     for (index, child) in children.iter().enumerate() {
-        let len = match child {
-            XmlOut::Text(text) => text.len(&tx),
-            _ => 1,
-        };
+        let len = commands::length(child, &tx);
         if target.from == offset {
             slot = index as u32;
             break;

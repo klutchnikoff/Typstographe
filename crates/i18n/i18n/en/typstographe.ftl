@@ -1233,3 +1233,15 @@ web-reference-no-results = No matching target.
 web-reference-missing = Target not found
 web-reference-untitled = Untitled
 content-reference-target-missing = This target is still used by a cross-reference. Remove or retarget its references before deleting it.
+
+web-math-code = Mathematical source
+web-mathematics = Mathematics
+web-equation = Equation
+web-math-language = Mathematical language
+web-math-alt = Accessible description
+web-math-alias = Optional label
+cmd-math-inline = Insert an inline formula
+cmd-math-block = Insert a block equation
+web-math-inline = Inline formula
+content-equation-alias-invalid = The equation label is invalid. Use a name without whitespace, colons or dollar signs.
+content-equation-alias-duplicate = Another equation already uses this label.

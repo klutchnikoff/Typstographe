@@ -16,7 +16,8 @@ fn inconsistent(field: &str) -> Error {
     .into()
 }
 pub(super) fn prepare(mut archive: Archive, initialize: bool) -> Result<Archive, Error> {
-    archive.validate()?;
+    let source = archive.validate()?;
+    archive.dependencies = crate::packages::including_source(&archive.dependencies, &source);
     if archive.yjs.is_empty() {
         if !initialize {
             return Err(inconsistent("yjs"));

@@ -103,7 +103,10 @@ impl Renderer {
         let mut world = self.0.lock()?;
         let settings = context.settings;
         world.set_assets(assets);
-        world.set_dependencies(&context.dependencies);
+        world.set_dependencies(&typstographe_core::packages::including_source(
+            &context.dependencies,
+            source,
+        ));
         world
             .validate_with_model(
                 source,
@@ -176,7 +179,10 @@ impl Renderer {
         let request = RenderRequest {
             source: source.clone(),
             assets,
-            dependencies: context.dependencies,
+            dependencies: typstographe_core::packages::including_source(
+                &context.dependencies,
+                &source,
+            ),
 
             metadata: settings.metadata.clone(),
             template,

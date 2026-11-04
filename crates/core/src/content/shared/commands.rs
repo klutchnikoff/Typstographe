@@ -165,9 +165,12 @@ fn set_field(
     }
     Ok(())
 }
-fn length<T: ReadTxn>(value: &XmlOut, tx: &T) -> u32 {
+pub(super) fn length<T: ReadTxn>(value: &XmlOut, tx: &T) -> u32 {
     match value {
         XmlOut::Text(value) => value.len(tx),
+        XmlOut::Element(e) if e.tag().as_ref() == "mathInline" => {
+            2 + e.children(tx).map(|c| length(&c, tx)).sum::<u32>()
+        }
         _ => 1,
     }
 }
@@ -197,6 +200,7 @@ pub(super) fn replace_rich(
         }
         match child {
             XmlOut::Text(value) => value.remove_range(tx, from - start, to - from),
+            _ if from != start || to != end => return Err(parameter("target")),
             _ => parent.remove(tx, index),
         }
     }
@@ -314,6 +318,9 @@ fn format(
     change: Option<(&str, Any)>,
 ) -> Result<(), Error> {
     let zone = range(doc, state, target)?;
+    if !zone.info(&doc.transact())?.supports_styles {
+        return Err(unavailable(command, UnavailableReason::PlainTextOnly));
+    }
     let Resolved::Rich(parent) = zone else {
         return Err(unavailable(command, UnavailableReason::PlainTextOnly));
     };

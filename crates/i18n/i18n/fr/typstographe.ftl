@@ -1235,3 +1235,15 @@ web-reference-no-results = Aucune cible ne correspond.
 web-reference-missing = Cible introuvable
 web-reference-untitled = Sans intitulé
 content-reference-target-missing = La cible est encore utilisée par un renvoi. Supprimez ou modifiez ses renvois avant de la retirer.
+
+web-math-code = Code mathématique
+web-mathematics = Mathématiques
+web-equation = Équation
+web-math-language = Langage mathématique
+web-math-alt = Description accessible
+web-math-alias = Label facultatif
+cmd-math-inline = Insérer une formule en ligne
+cmd-math-block = Insérer une équation
+web-math-inline = Formule en ligne
+content-equation-alias-invalid = Le label de l’équation est invalide. Utilisez un nom sans espace, deux-points ni dollar.
+content-equation-alias-duplicate = Ce label est déjà utilisé par une autre équation.

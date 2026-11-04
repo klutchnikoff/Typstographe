@@ -13,6 +13,7 @@ pub mod contract;
 pub mod editing;
 pub mod editorial;
 mod mapping;
+pub mod mathematics;
 pub mod project;
 pub mod references;
 pub use mapping::source_mapped;

@@ -492,5 +492,14 @@
   "Aucune cible ne correspond.": "web-reference-no-results",
   "Cible introuvable": "web-reference-missing",
   "Sans intitulé": "web-reference-untitled",
-  "La cible est encore utilisée par un renvoi. Supprimez ou modifiez ses renvois avant de la retirer.": "content-reference-target-missing"
+  "La cible est encore utilisée par un renvoi. Supprimez ou modifiez ses renvois avant de la retirer.": "content-reference-target-missing",
+  "Code mathématique": "web-math-code",
+  "Mathématiques": "web-mathematics",
+  "Équation": "web-equation",
+  "Langage mathématique": "web-math-language",
+  "Description accessible": "web-math-alt",
+  "Label facultatif": "web-math-alias",
+  "Formule en ligne": "web-math-inline",
+  "Ce label est déjà utilisé par une autre équation.": "content-equation-alias-duplicate",
+  "Le label de l’équation est invalide. Utilisez un nom sans espace, deux-points ni dollar.": "content-equation-alias-invalid"
 }

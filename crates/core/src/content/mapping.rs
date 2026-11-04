@@ -6,6 +6,7 @@ struct Entry {
     position: usize,
     value: String,
     atom: bool,
+    width: usize,
 }
 pub(super) fn literal(value: &str) -> String {
     crate::document::escape_markup(value)
@@ -18,6 +19,19 @@ pub fn source_mapped(document: &Node, assets: &Assets) -> Result<(String, Source
     let mut entries = vec![];
     fn visit(node: &mut Node, position: usize, entries: &mut Vec<Entry>) -> Result<usize, String> {
         super::attributes::validate(node, false)?;
+        if super::mathematics::is_math(&node.kind) {
+            let size = 2 + super::mathematics::text(node).encode_utf16().count();
+            let id = entries.len();
+            entries.push(Entry {
+                position,
+                value: String::new(),
+                atom: true,
+                width: size,
+            });
+            node.attrs.get_or_insert_with(|| serde_json::json!({}))["_mapping"] =
+                serde_json::json!(id);
+            return Ok(size);
+        }
         if matches!(
             node.kind.as_str(),
             "text" | "footnote" | "citation" | "crossReference"
@@ -43,6 +57,7 @@ pub fn source_mapped(document: &Node, assets: &Assets) -> Result<(String, Source
                 position,
                 value,
                 atom,
+                width: 1,
             });
             let attrs = node.attrs.get_or_insert_with(|| serde_json::json!({}));
             attrs["_mapping"] = serde_json::json!(id);
@@ -81,7 +96,9 @@ pub fn source_mapped(document: &Node, assets: &Assets) -> Result<(String, Source
             let width: usize = width.parse().map_err(|_| "Étendue interne invalide.")?;
             let tail = &after[end + 2..];
             let body = tail.get(..width).ok_or("Étendue interne invalide.")?;
-            characters[entry.position] = start..start + width;
+            for value in characters.iter_mut().skip(entry.position).take(entry.width) {
+                *value = start..start + width;
+            }
             output.push_str(body);
             remaining = &tail[width..];
             continue;
