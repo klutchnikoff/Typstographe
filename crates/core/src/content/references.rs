@@ -282,7 +282,9 @@ pub(super) fn dependent_changes(before: &Node, after: &Node) -> bool {
                 .is_some_and(|id| changed.iter().any(|s| s.as_str() == id)))
             || node.content.iter().any(|n| uses(n, changed))
     }
-    uses(before, &changed) || uses(after, &changed)
+    uses(before, &changed)
+        || uses(after, &changed)
+        || super::mathematics::dependent_aliases(before, after)
 }
 
 #[cfg(test)]

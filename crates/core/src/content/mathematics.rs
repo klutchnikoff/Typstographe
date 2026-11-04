@@ -38,7 +38,7 @@ pub fn source(node: &Node) -> Result<String, String> {
         .unwrap_or("");
     if let Some(alias) = node.attrs.as_ref().and_then(|a| a.get("alias")) {
         let value = alias.as_str().ok_or("invalid_equation_alias")?;
-        if value.len() > 128
+        if value.chars().count() > 128
             || value
                 .chars()
                 .any(|c| c.is_whitespace() || c.is_control() || matches!(c, ':' | '$'))
@@ -86,6 +86,29 @@ pub fn validate(node: &Node) -> Result<(), String> {
     visit(node, &mut Default::default())
 }
 
+/// Alias transfers are dependent decisions: applying only half can duplicate a name.
+pub(super) fn dependent_aliases(before: &Node, after: &Node) -> bool {
+    fn owners(node: &Node, path: &str, out: &mut std::collections::BTreeMap<String, String>) {
+        if node.kind == "mathBlock"
+            && let Some(name) = alias(node)
+        {
+            out.insert(
+                name.into(),
+                super::references::anchor(node).unwrap_or(path).into(),
+            );
+        }
+        for (i, child) in node.content.iter().enumerate() {
+            owners(child, &format!("{path}/{i}"), out);
+        }
+    }
+    let mut a = Default::default();
+    let mut b = Default::default();
+    owners(before, "", &mut a);
+    owners(after, "", &mut b);
+    a.iter()
+        .any(|(name, owner)| b.get(name).is_some_and(|next| next != owner))
+}
+
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
@@ -111,7 +134,27 @@ mod tests {
             ("latex", r"\begin{pmatrix}1 & 2 \\ 3 & 4\end{pmatrix}"),
             ("typst", "cases(x & x > 0, -x & x < 0)"),
         ] {
-            let document = doc(lang, code);
+            let mut document = doc(lang, code);
+            // Inline expressions must not consume the model's block-equation counter.
+            let mut inline = document.content[0].clone();
+            inline.kind = "mathInline".into();
+            inline
+                .attrs
+                .as_mut()
+                .unwrap()
+                .as_object_mut()
+                .unwrap()
+                .remove("anchor");
+            inline
+                .attrs
+                .as_mut()
+                .unwrap()
+                .as_object_mut()
+                .unwrap()
+                .remove("alias");
+            let paragraph =
+                serde_json::from_value(json!({"type":"paragraph","content":[inline]})).unwrap();
+            document.content.insert(0, paragraph);
             let source = crate::content::source(&document, &Default::default()).unwrap();
             let rendered = world
                 .compile_with_template(
@@ -215,5 +258,57 @@ mod tests {
                 &template,
             )
             .unwrap();
+    }
+    #[test]
+    fn incomplete_formula_is_preserved_in_an_autonomous_saved_project() {
+        use crate::content::{archive::Archive, project::Project};
+        let kind = crate::document_types::DocumentType::Article;
+        let template = kind.default_model();
+        let document = doc("typst", "frac(");
+        let archive = Archive {
+            document: document.clone(),
+            metadata: crate::document_types::Metadata::blank(kind),
+            dependencies: crate::packages::for_template(&template),
+            template: template.clone(),
+            model_manifest: kind.default_model_manifest().into(),
+            model_id: "article.model.working".into(),
+            assets: Default::default(),
+            yjs: vec![],
+        };
+        let project = Project::new(archive).unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("unfinished.typsto");
+        project
+            .save(&mut crate::DocumentLease::acquire(&path).unwrap())
+            .unwrap();
+        let saved = Project::read(&path).unwrap();
+        assert_eq!(saved.current().document, document);
+        let mut world = crate::rendering::TypstWorld::default();
+        world.set_dependencies(&saved.current().dependencies);
+        let source = crate::content::source(&document, &Default::default()).unwrap();
+        assert!(
+            world
+                .compile_with_template(&source, &saved.current().metadata, &template)
+                .is_err()
+        );
+    }
+    #[test]
+    fn alias_swaps_remain_one_comparison_decision_but_source_edits_do_not() {
+        let before = doc("typst", "x");
+        let mut after = before.clone();
+        after.content[0].content[0].text = Some("y".into());
+        assert!(!dependent_aliases(&before, &after));
+        let mut pair = before.clone();
+        let mut second = pair.content[0].clone();
+        second.attrs.as_mut().unwrap()["anchor"] = json!("equation-second");
+        second.attrs.as_mut().unwrap()["alias"] = json!("another");
+        pair.content.insert(1, second);
+        let mut swapped = pair.clone();
+        swapped.content[0].attrs.as_mut().unwrap()["alias"] = json!("another");
+        swapped.content[1].attrs.as_mut().unwrap()["alias"] = json!("pythagoras");
+        validate(&swapped).unwrap();
+        assert!(crate::content::references::dependent_changes(
+            &pair, &swapped
+        ));
     }
 }
