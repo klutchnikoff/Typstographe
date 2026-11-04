@@ -1,3 +1,4 @@
+import { editingProvider } from './editing-history'
 import type { Editor } from '@tiptap/core'
 import { tr } from './i18n'
 
@@ -18,7 +19,7 @@ export interface ResolvedReference extends CrossReference {
 const targetsCache = new WeakMap<Editor['state']['doc'], CrossReferenceTarget[]>()
 const indexes = new WeakMap<
   Editor,
-  { document: Editor['state']['doc']; entries: ResolvedReference[] }
+  { generation: string | undefined; entries: ResolvedReference[] }
 >()
 export function referenceTargets(editor: Editor): CrossReferenceTarget[] {
   const cached = targetsCache.get(editor.state.doc)
@@ -40,20 +41,23 @@ export function referenceTargets(editor: Editor): CrossReferenceTarget[] {
   return result
 }
 export function referenceLabel(editor: Editor, reference: CrossReference): string {
-  const index = indexes.get(editor)
-  const resolved = index?.document.eq(editor.state.doc)
-    ? index.entries.find(
-        (value) =>
-          value.target === reference.target &&
-          value.include_label === reference.include_label &&
-          value.include_page === reference.include_page,
-      )
-    : undefined
-  if (resolved) return resolved.display
   const target = referenceTargets(editor).find((t) => t.id === reference.target)
+  const index = indexes.get(editor)
+  // Keep the last confirmed layout while its replacement compiles, just like
+  // the preview itself. Never invent a number or reuse another target's label.
+  const resolved =
+    target && index?.generation === editingProvider(editor)?.generation
+      ? index?.entries.find(
+          (value) =>
+            value.target === reference.target &&
+            value.include_label === reference.include_label &&
+            value.include_page === reference.include_page,
+        )
+      : undefined
+  if (resolved) return resolved.display
   return target ? `${tr('Renvoi')} · ${target.title}` : tr('Renvoi')
 }
 export function setResolvedReferences(editor: Editor, entries: ResolvedReference[]) {
-  indexes.set(editor, { document: editor.state.doc, entries })
+  indexes.set(editor, { generation: editingProvider(editor)?.generation, entries })
   editor.view.dispatch(editor.state.tr.setMeta('cross-reference-index', true))
 }

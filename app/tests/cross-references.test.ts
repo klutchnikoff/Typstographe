@@ -1,5 +1,7 @@
 import { bindEditorTarget } from '../src/editor-targets'
-import { afterEach, expect, it } from 'vitest'
+import * as history from '../src/editing-history'
+import type { Provider } from '../src/provider'
+import { afterEach, expect, it, vi } from 'vitest'
 import { Editor } from '@tiptap/core'
 import { Fragment, Slice } from '@tiptap/pm/model'
 import { richZoneExtensions } from '../src/rich-zone'
@@ -55,7 +57,7 @@ it('copies renew anchors and remap only references to targets included in the co
   expect(referenceOnly.content.child(0).lastChild!.attrs.target).toBe('heading-method')
   expect(editor.state.doc).toBe(doc)
 })
-it('badges use the actual rendered content only while its document is current', () => {
+it('badges retain the last confirmed label until the next successful preview', () => {
   const editor = fixture(),
     reference = { target: 'heading-method', include_label: true, include_page: false }
   expect(referenceLabel(editor, reference)).toBe('Renvoi · Méthode')
@@ -66,6 +68,13 @@ it('badges use the actual rendered content only while its document is current', 
     id: 'heading-method',
     title: 'MAutre éthode',
   })
+  expect(referenceLabel(editor, reference)).toBe('section 2')
+  setResolvedReferences(editor, [{ ...reference, display: 'section 3' }])
+  expect(referenceLabel(editor, reference)).toBe('section 3')
+  // A changed content choice has no confirmed rendering yet.
+  expect(referenceLabel(editor, { ...reference, include_page: true })).toContain('Renvoi · ')
+  // A successful response replaces the index, including an explicitly empty one.
+  setResolvedReferences(editor, [])
   expect(referenceLabel(editor, reference)).toContain('Renvoi · ')
 })
 it('referenced targets are protected before typing is published; removing the entire forest is valid', () => {
@@ -118,4 +127,34 @@ it('planned widget insertion splits an anchored paragraph without duplicating it
   expect(new Set(ids).size).toBe(ids.length)
   expect(ids).toContain('prose')
   expect(plan.doc.firstChild!.attrs.anchor).toBe('heading-method')
+})
+
+it('confirmed labels are scoped to the editor and never substitute a different target', () => {
+  const editor = fixture(),
+    other = fixture()
+  const reference = { target: 'heading-method', include_label: true, include_page: false }
+  setResolvedReferences(editor, [{ ...reference, display: 'section 2' }])
+  expect(referenceLabel(other, reference)).toBe('Renvoi · Méthode')
+  expect(referenceLabel(editor, { ...reference, target: 'missing-target' })).toBe('Renvoi')
+  const first = editor.state.doc.child(0),
+    second = editor.state.doc.child(1)
+  editor.view.dispatch(editor.state.tr.delete(0, first.nodeSize + second.nodeSize))
+  expect(referenceLabel(editor, reference)).toBe('Renvoi')
+})
+
+it('a reused editor cannot carry confirmed numbers into another document generation', () => {
+  const editor = fixture(),
+    provider = { generation: 'first' } as Provider
+  const lookup = vi.spyOn(history, 'editingProvider').mockReturnValue(provider)
+  const reference = { target: 'heading-method', include_label: true, include_page: false }
+  try {
+    setResolvedReferences(editor, [{ ...reference, display: 'section 2' }])
+    expect(referenceLabel(editor, reference)).toBe('section 2')
+    provider.generation = 'second'
+    expect(referenceLabel(editor, reference)).toBe('Renvoi · Méthode')
+    setResolvedReferences(editor, [{ ...reference, display: 'section 1' }])
+    expect(referenceLabel(editor, reference)).toBe('section 1')
+  } finally {
+    lookup.mockRestore()
+  }
 })

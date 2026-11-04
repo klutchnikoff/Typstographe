@@ -114,3 +114,87 @@ test('toolbar insertion enters inline source and its shared properties can chang
   expect(await page.evaluate(() => window.__spike!.provider.rejected)).toBeFalsy()
   await expect(source).toHaveText('x^2')
 })
+
+test('typing after an equation reference never swaps its label or changes its width between previews', async ({
+  page,
+}) => {
+  await page.evaluate(async () => {
+    const { editor, provider } = window.__spike!
+    editor.commands.setContent({
+      type: 'doc',
+      content: [
+        {
+          type: 'mathBlock',
+          attrs: { language: 'typst', anchor: 'equation-stability', alias: 'stability', alt: '' },
+          content: [{ type: 'text', text: 'x^2' }],
+        },
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'crossReference',
+              attrs: { target: 'equation-stability', include_label: true, include_page: false },
+            },
+            { type: 'text', text: ' Texte.' },
+          ],
+        },
+      ],
+    })
+    await provider.flush()
+  })
+  const badge = page.locator('.inline-object[data-kind="crossReference"] .inline-object-label')
+  await expect(badge).toHaveText('(1)')
+  await page.evaluate(() => {
+    const e = window.__spike!.editor
+    e.state.doc.descendants((node, pos) => {
+      if (node.type.name === 'crossReference') e.commands.setTextSelection(pos + node.nodeSize)
+    })
+    e.view.focus()
+    const samples: { text: string; width: number }[] = []
+    const record = () => {
+      const label = e.view.dom.querySelector<HTMLElement>(
+        '.inline-object[data-kind="crossReference"] .inline-object-label',
+      )
+      if (label)
+        samples.push({ text: label.textContent || '', width: label.getBoundingClientRect().width })
+    }
+    const observer = new MutationObserver(record)
+    observer.observe(e.view.dom, { subtree: true, childList: true, characterData: true })
+    record()
+    ;(window as any).__referenceBadgeSamples = samples
+    ;(window as any).__stopReferenceBadgeObserver = () => observer.disconnect()
+  })
+  await page.keyboard.type(' Une rédaction continue', { delay: 25 })
+  await page.evaluate(() => window.__spike!.provider.flush())
+  await expect(page.locator('#render-status')).toBeHidden()
+  const samples = await page.evaluate(() => {
+    ;(window as any).__stopReferenceBadgeObserver()
+    return (window as any).__referenceBadgeSamples as { text: string; width: number }[]
+  })
+  expect(samples.length).toBeGreaterThan(2)
+  expect([...new Set(samples.map((s) => s.text))]).toEqual(['(1)'])
+  expect(
+    Math.max(...samples.map((s) => s.width)) - Math.min(...samples.map((s) => s.width)),
+  ).toBeLessThan(0.1)
+  expect(await page.evaluate(() => window.__spike!.provider.rejected)).toBeFalsy()
+  // Keeping the last confirmed value must not freeze a legitimately new number.
+  await page.evaluate(async () => {
+    const { editor, provider } = window.__spike!
+    editor.commands.insertContentAt(0, {
+      type: 'mathBlock',
+      attrs: { language: 'typst', alias: 'earlier', alt: '' },
+      content: [{ type: 'text', text: 'y^2' }],
+    })
+    await provider.flush()
+  })
+  await expect(badge).toHaveText('(2)')
+  // Match the preview policy when a later equation contains incomplete source.
+  await page.evaluate(async () => {
+    const { editor, provider } = window.__spike!,
+      node = editor.state.doc.firstChild!
+    editor.view.dispatch(editor.state.tr.insertText('frac(', 1, 1 + node.content.size))
+    await provider.flush()
+  })
+  await expect(page.locator('#render-status')).toContainText('Contenu à corriger')
+  await expect(badge).toHaveText('(2)')
+})

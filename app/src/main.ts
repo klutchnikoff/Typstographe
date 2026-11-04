@@ -188,7 +188,6 @@ function refreshSynchronization() {
 function schedule() {
   if (stopping) return
   version++
-  if (editor && !editor.isDestroyed) setResolvedReferences(editor, [])
   preview?.invalidate()
   element('render-status').hidden = false
   if (!provider.online) {

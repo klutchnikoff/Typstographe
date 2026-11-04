@@ -70,8 +70,18 @@ de page dans un modèle qui ne déclare aucune numérotation produit un diagnost
 Le wrapper expose par métadonnées le contenu qu’il vient de composer. Le rendu
 natif lit ces valeurs lors de la compilation déjà nécessaire à l’aperçu et les
 transmet avec ses pages. Les badges n’effectuent ni seconde compilation ni comptage
-concurrent. Un document ou modèle modifié invalide les libellés précédents ; en
-attendant le rendu confirmé, le badge décrit sa cible sans inventer de numéro.
+concurrent. Pendant la frappe ou un changement de modèle, le badge conserve le
+libellé du dernier rendu confirmé, comme l’aperçu conserve ses pages, jusqu’au
+remplacement par le résultat de la nouvelle compilation. Il ne revient pas à un
+intitulé provisoire à chaque frappe : cela modifierait sa largeur et déplacerait
+la prose. Une erreur de compilation conserve aussi ce dernier libellé.
+Le réemploi exige la même cible, les mêmes composantes et la même génération
+éditeur ; une cible absente ne récupère pas un ancien numéro. Un renvoi encore
+jamais résolu affiche un intitulé descriptif, sans numéro inventé.
+
+Le test de non-régression observe le texte et la largeur du badge pendant la
+frappe, puis vérifie sa mise à jour après une vraie renumérotation et son maintien
+si une compilation échoue. Il passe sous Chromium et WebKit sans capture.
 
 Le wrapper et son inventaire sont copiés dans le projet et l’export. Aucun paquet
 Universe ni accès réseau supplémentaire n’est requis.
