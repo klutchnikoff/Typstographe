@@ -125,37 +125,21 @@ de l’export déplacé dans un environnement sans cache de paquets.
 ### C.1–C.4 — Ordre et périmètres validés le 3 novembre 2026
 
 **Dépendance satisfaite :** B.1 est clôturé et ses contrats préparatoires sont
-consignés. Le prochain lot est C.1 (renvois), suivi de C.2 (mathématiques),
-C.3 (bibliographie du projet) et C.4 (bibliothèque personnelle). Préciser ensemble
-les paramètres, commandes/cibles et maquettes avant chaque implémentation ;
+consignés. C.1 (renvois) est implémenté et vérifié localement ; le prochain lot
+est C.2 (mathématiques), avant C.3 (bibliographie du projet) et C.4 (bibliothèque
+personnelle). Préciser ensemble les paramètres, commandes/cibles et maquettes
+avant chaque implémentation ;
 la livraison de tous les types de B n’est pas un prérequis.
 
-- **C.1 — Cibles et renvois.** Séparer identité documentaire stable, label Typst
-  dérivé et numéro composé par Typst. **Décision du 4 novembre :** les labels
-  sont automatiques, opaques et cachés ; réutiliser l’identité du bloc comme
-  ancrage plutôt qu’un slug dépendant du titre ou de la légende. Une modification
-  conserve l’identité ; une copie reçoit une nouvelle identité. Les renvois
-  copiés avec leur cible pointent vers sa copie ; ceux copiés seuls conservent
-  leur cible. Protéger la suppression des cibles référencées par une décision
-  explicite commune à tous les adaptateurs. Référencer titres, images et tableaux,
-  puis étendre le même contrat aux équations et théorèmes. Prévoir des ancres
-  pour les autres blocs sans leur attribuer artificiellement une numérotation.
-  Sélection de cible, badge et édition passent par le cadre commun. Garder des
-  espaces de noms sûrs pour les labels documentaires et les clés bibliographiques
-  dans le Typst dérivé ; la recherche présente des intitulés documentaires.
-  **Formes validées :** libellé complet, page, libellé + page ; aucun choix de
-  style ou « Selon le modèle » dans ce sélecteur. Le modèle compose toujours
-  numéros, suppléments, ponctuation et combinaison des deux composantes. Ne pas
-  confondre le libellé complet destiné au lecteur et l’identifiant interne.
-  Représentation proposée : deux cases « Libellé complet » / « Page », avec
-  au moins une active, à confirmer dans la maquette. Préciser les comportements
-  sans numérotation et les diagnostics avant de figer le contrat.
-  **Différé :** mode temporaire « Choisir dans l’aperçu », activé depuis le
-  sélecteur. Réutiliser la chaîne de correspondance backward rendu → source →
-  cible structurée ; un clic sélectionne, la validation insère le renvoi. Annuler
-  quitte le mode sans édition. En cas d’ambiguïté, demander un choix explicite,
-  sans recherche géométrique arbitraire du label le plus proche. La navigation
-  backward ordinaire reste inchangée ; ce mode ne conditionne pas la sortie C.1.
+- **C.1 — Cibles et renvois — livré localement.** Le [contrat](docs/c1-cross-references.md)
+  décrit les ancres automatiques, la copie et la protection des cibles, les
+  composantes libellé/page, les callbacks de présentation Typst et l’extraction
+  des libellés pendant la compilation existante. Sélecteur, badges, formulaires
+  récupérables et commandes réutilisent les mécanismes communs Tauri/CLI/MCP.
+  Le sélecteur vise les titres, images et tableaux du corps ; équations et
+  théorèmes étendront ce contrat. Reste différé le mode explicite « Choisir dans
+  l’aperçu », réutilisant la correspondance backward sans sélection arbitraire
+  d’une cible voisine. Qualification CI et recette utilisateur avant fusion.
 - **C.2 — Mathématiques.** Un contrat de formule avec source, langage Typst ou
   LaTeX, description accessible et présentation en ligne/en bloc. Les blocs
   peuvent être ciblés par C.1 ; les modèles règlent numérotation et présentation.

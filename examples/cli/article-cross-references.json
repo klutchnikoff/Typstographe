@@ -1,0 +1,328 @@
+{
+  "version": 1,
+  "document": {
+    "kind": "new",
+    "type": "article",
+    "params": {
+      "metadata": {
+        "fields": {
+          "affiliations": [],
+          "authors": [
+            {
+              "id": "camille",
+              "name": "Camille Martin",
+              "email": "",
+              "orcid": "",
+              "corresponding": false,
+              "affiliation-ids": []
+            }
+          ],
+          "citation_style": null,
+          "localizations": [
+            {
+              "abstract": {
+                "content": [
+                  {
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "doc"
+              },
+              "id": "localization-fr",
+              "keywords": [],
+              "language": "fr",
+              "short-title": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Renvois structurés"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "subtitle": {
+                "content": [
+                  {
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "doc"
+              },
+              "title": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Renvois et rédaction structurée"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "options": {
+            "bullet_marker": null,
+            "landscape": null,
+            "language": "fr",
+            "paper": null,
+            "spelling_ignored": {}
+          },
+          "references": [],
+          "show_outline": null
+        },
+        "type": "article"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "block.splice",
+      "params": {
+        "parent": {
+          "root": {
+            "kind": "body"
+          }
+        },
+        "index": 0,
+        "delete_count": 1,
+        "nodes": [
+          {
+            "type": "heading",
+            "attrs": {
+              "level": 1,
+              "anchor": "heading-introduction"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Introduction"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Ce document illustre les renvois vers des titres et des tableaux. Le modèle compose leurs libellés et leur pagination."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "La démarche est décrite dans "
+              },
+              {
+                "type": "crossReference",
+                "attrs": {
+                  "target": "heading-method",
+                  "include_label": true,
+                  "include_page": false
+                }
+              },
+              {
+                "type": "text",
+                "text": ". Les effectifs figurent dans le "
+              },
+              {
+                "type": "crossReference",
+                "attrs": {
+                  "target": "table-participants",
+                  "include_label": true,
+                  "include_page": true
+                }
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "level": 1,
+              "anchor": "heading-method"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Méthode"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Les entretiens ont été menés auprès de deux groupes. Les identités des objets restent stables lorsque leurs intitulés sont modifiés."
+              }
+            ]
+          },
+          {
+            "type": "tableFigure",
+            "attrs": {
+              "anchor": "table-participants"
+            },
+            "content": [
+              {
+                "type": "table",
+                "content": [
+                  {
+                    "type": "tableRow",
+                    "content": [
+                      {
+                        "type": "tableCell",
+                        "content": [
+                          {
+                            "type": "paragraph",
+                            "content": [
+                              {
+                                "type": "text",
+                                "text": "Groupe"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "tableCell",
+                        "content": [
+                          {
+                            "type": "paragraph",
+                            "content": [
+                              {
+                                "type": "text",
+                                "text": "Participants"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableRow",
+                    "content": [
+                      {
+                        "type": "tableCell",
+                        "content": [
+                          {
+                            "type": "paragraph",
+                            "content": [
+                              {
+                                "type": "text",
+                                "text": "Enseignants"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "tableCell",
+                        "content": [
+                          {
+                            "type": "paragraph",
+                            "content": [
+                              {
+                                "type": "text",
+                                "text": "18"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableRow",
+                    "content": [
+                      {
+                        "type": "tableCell",
+                        "content": [
+                          {
+                            "type": "paragraph",
+                            "content": [
+                              {
+                                "type": "text",
+                                "text": "Étudiants"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "tableCell",
+                        "content": [
+                          {
+                            "type": "paragraph",
+                            "content": [
+                              {
+                                "type": "text",
+                                "text": "24"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableCaption",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Participants à l’enquête"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Pour retrouver les effectifs, voir "
+              },
+              {
+                "type": "crossReference",
+                "attrs": {
+                  "target": "table-participants",
+                  "include_label": false,
+                  "include_page": true
+                }
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          },
+          {
+            "type": "paragraph"
+          }
+        ]
+      }
+    }
+  ],
+  "save": {
+    "kind": "as",
+    "path": "../article-cross-references.typsto"
+  }
+}

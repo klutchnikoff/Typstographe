@@ -145,7 +145,7 @@ et le [contrat Article](docs/article-contract.md) servent de référence.
 ### Extensions des contrats — différées
 
 B.1 est clôturé. Les extensions suivantes restent à examiner selon les besoins,
-sans retarder le prochain lot C.1 :
+sans bloquer les capacités suivantes :
 
 - Types installables, codecs de données arbitraires et personnalisation des
   fragments partagés : les identités et comportements restent intégrés ;
@@ -198,26 +198,16 @@ les primitives natives simples n’ont pas besoin d’un wrapper systématique.
 
 B.1 est clôturé. L’ordre de réalisation validé est désormais
 **C.1 → C.2 → C.3 → C.4**, à partir des contrats préparatoires consignés en B.1.
+C.1 est implémenté et vérifié localement ; C.2 est le prochain lot à préciser.
 Valider ensemble les choix détaillés et les interfaces avant de coder chaque
 lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C.
 
-1. **C.1 — Labels et références croisées.** Cibles à identité stable pour titres,
-   images et tableaux, extensibles aux équations et théorèmes ; insertion depuis
-   un sélecteur, badge éditable et protection des cibles référencées. Les labels
-   sont automatiques, opaques et invisibles : modifier un titre ou une légende
-   ne change pas l’identité de la cible. L’utilisateur choisit un élément par
-   son titre, sa légende ou son contenu, sans devoir nommer un label.
-   **Formes validées le 4 novembre :** libellé complet, page, libellé + page,
-   avec des cases à cocher. Le modèle définit toujours leur présentation,
-   numérotation, vocabulaire et ponctuation ; « Selon le modèle » n’est pas une
-   forme concurrente et « Numéro seul » ne fait pas partie de ce premier choix.
-   Pour représenter ces trois formes, la présentation proposée est deux cases
-   « Libellé complet » et « Page », avec au moins une composante sélectionnée ;
-   cette disposition reste à confirmer dans la maquette actualisée.
-   **Amélioration différée :** depuis le sélecteur, activer explicitement
-   « Choisir dans l’aperçu », puis cliquer sur une cible du rendu pour la
-   sélectionner avant confirmation. Réutiliser la correspondance backward,
-   sans changer la navigation ordinaire ni choisir arbitrairement un label voisin.
+1. **C.1 — Labels et références croisées — livré localement.** Ancres stables
+   automatiques, sélecteur et badges communs, composantes libellé/page, rendu
+   Typst défini par le modèle et commandes partagées Tauri/CLI/MCP. Le
+   [contrat et la recette](docs/c1-cross-references.md) précisent les garanties.
+   La sélection par clic dans l’aperçu est une amélioration différée, avec un
+   mode explicite et une résolution des ambiguïtés ; elle ne bloque pas C.2.
 2. **C.2 — Formules mathématiques.** Saisie de code Typst ou LaTeX via MiTeX,
    dans le texte ou en bloc ; conserver le langage et la source, prévoir la
    description accessible et les références aux blocs. L’éditeur visuel viendra
@@ -582,18 +572,15 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 ## Prochain lot proposé
 
-**C.1 — Labels et références croisées**, après la clôture de B.1.
+**C.2 — Formules mathématiques**, après qualification de C.1 et validation commune.
 
-1. Partir des labels automatiques et des trois formes validées le 4 novembre.
-   Préciser les cas sans numérotation et les contrats de copie/suppression pour
-   titres, images et tableaux, en conservant la présentation dans les modèles.
-2. Actualiser et valider la maquette du sélecteur et des badges avec les cases
-   à cocher ; préciser clavier et cibles CLI/MCP, puis implémenter le lot.
-   La sélection par clic dans le rendu est différée et ne bloque pas C.1.
-3. Poursuivre dans l’ordre C.2, C.3, C.4 et compléter les types/modèles selon
-   leurs besoins. L’assistance ACP conserve son propre parcours de validation
-   et de maquette dans F ; elle n’attend pas tous les types SHS/enseignement.
+1. Préciser le contrat des formules en ligne/en bloc : source Typst ou LaTeX via
+   MiTeX, description accessible et ancre des blocs pour réutiliser les renvois C.1.
+2. Valider le code accepté, les diagnostics, les règles de numérotation laissées
+   au modèle et la maquette de saisie/aperçu avant de coder.
+3. Poursuivre avec C.3 et C.4 ; compléter les types/modèles selon leurs besoins.
+   L’assistance ACP conserve son parcours de validation et de maquette dans F.
 
-La qualification CI du candidat reste à consulter avant fusion. La clôture
-locale de B.1 ne vaut pas qualification multisystème ni autorisation d’implémenter
-les choix encore ouverts de C.1.
+Les vérifications locales de C.1 ne remplacent pas la qualification CI avant
+fusion ni la recette utilisateur. Aucun choix encore ouvert de C.2 n’est implémenté
+d’avance.

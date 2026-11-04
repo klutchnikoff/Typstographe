@@ -23,3 +23,12 @@ cargo run --locked --offline -p typstographe-cli -- script examples/cli/courrier
 
 Le résultat est `output/courrier-script.typsto`. Pour rejouer l’exemple, choisir
 une destination libre dans son action `save` ; le script ne remplace pas un fichier existant.
+
+## Renvois
+
+[article-cross-references.typsto](article-cross-references.typsto) utilise le modèle
+courant et montre les renvois vers un titre et un tableau : libellé complet, page
+ou les deux. Les cibles ont des identités stables ; modifier leur intitulé ne
+casse pas les renvois. L’exemple et ses dépendances sont autonomes hors ligne.
+La [recette CLI](cli/article-cross-references.json) le reconstruit vers une
+destination libre ; modifier son chemin de sortie pour conserver l’exemple fourni.
