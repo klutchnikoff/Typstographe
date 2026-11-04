@@ -216,6 +216,9 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    syntaxes.
    [Comparaison native/WASM réalisée](experiments/mitex-comparison/RESULTS.md) :
    WASM conservé, aucun gain robuste de latence à chaud sur les trois articles.
+   Le [profilage de l’aperçu long](experiments/preview-profiling/RESULTS.md) confirme
+   les caches Typst et identifie les pixels transférés et les canvas recréés pour
+   les pages inchangées comme priorité ; protocole différentiel à valider avant codage.
    **Saisie validée :** `$` seul sur une ligne suivi d’Entrée crée un widget
    Typst ; `$$` seuls suivis d’Entrée créent un widget LaTeX. Dans le texte,
    `$cos(x)$` désigne une formule Typst et `$$\cos(x)$$` une formule LaTeX.

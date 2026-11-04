@@ -3,6 +3,8 @@
 Étude isolée après la comparaison MiTeX native/WASM. Aucun changement du
 compilateur, du transport ou de l’affichage de l’application distribuée.
 
+Voir les [résultats et priorités proposées](RESULTS.md).
+
 ## Questions
 
 - Quantifier les étapes de l’édition jusqu’à la publication des canvas.
@@ -54,12 +56,18 @@ un chronométrage exclusif de la copie IPC. `publishedMs` va de la transaction
 Tiptap à la publication ; `frameMs` attend ensuite deux `requestAnimationFrame`,
 sans prétendre dater la présentation GPU. Les hachages de pixels sont calculés
 hors du chemin chronométré. Une fenêtre masquée invalide l’essai.
+La fenêtre de recette reste au premier plan pour éviter l’occlusion par les
+autres applications. Cela ne désactive pas la limitation des fenêtres masquées
+de WebKit. Une interruption de visibilité provoque le rejet du parcours entier,
+avec au plus deux relances dans une session neuve ; les interruptions sont
+consignées séparément. Aucun échantillon lent n’est écarté pour sa durée.
 
 ## Reproduire sur macOS
 
 Rust, Node, les dépendances habituelles Tauri et la CLI Typst 0.15.1 sont requis.
 La CLI sert uniquement à préparer les sources équivalentes. Les mesures utilisent
-le moteur embarqué de l’application, sans Vite, HTTP ou réseau.
+le moteur embarqué de l’application, sans Vite, relais HTTP de navigateur ou
+accès réseau.
 
 ```sh
 python3 experiments/preview-profiling/prepare.py

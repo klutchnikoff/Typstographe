@@ -1,5 +1,11 @@
 # Latence de l’aperçu Typst — 26 octobre 2026
 
+**Complément du 4 novembre :** le [profilage des articles longs](../experiments/preview-profiling/RESULTS.md)
+compare MiTeX WASM aux sources natives Typst, vérifie la réutilisation des caches
+et ventile toute la chaîne jusqu’aux canvas. Il identifie la publication de
+toutes les pages comme priorité d’optimisation. Les corpus et le logiciel ont
+évolué : les deux études ne constituent pas une mesure directe de régression.
+
 La réactivité est un critère d’architecture de typstOgraphe. L’interface web doit
 être évaluée avec le vrai moteur Typst, le vrai transport Tauri et un affichage
 préparé avant publication. Un délai artificiel de développement ne doit pas

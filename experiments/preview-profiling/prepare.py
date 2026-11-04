@@ -44,7 +44,7 @@ replace('app/src-tauri/src/main.rs', '    let bridge = Bridge {', '''    if diag
     }
     let bridge = Bridge {''')
 replace('app/src-tauri/src/main.rs', '            menus::install(app.handle())?;', '''            menus::install(app.handle())?;
-            if !global_session { if let Some(window) = app.get_webview_window("main") { window.show()?; window.set_focus()?; } }''')
+            if !global_session { if let Some(window) = app.get_webview_window("main") { window.show()?; window.set_always_on_top(true)?; window.set_focus()?; } }''')
 replace('app/src-tauri/src/diagnostics.rs', '"guard":session.guard(),"state":value', '"guard":session.guard(),"state":value,"benchmark":{"language":std::env::var("TOG_PROFILE_LANGUAGE").unwrap(),"cache":std::env::var("TOG_PROFILE_CACHE").unwrap(),"corpus":std::env::var("TOG_PROFILE_CORPUS").unwrap()}')
 replace('app/src-tauri/src/diagnostics.rs', '    report: serde_json::Value,', '    mut report: serde_json::Value,')
 replace('app/src-tauri/src/diagnostics.rs', '    let session = state.session()?;', '    report["nativeProfiling"] = serde_json::json!(typstographe_core::preview_profile::take());\n    let session = state.session()?;')

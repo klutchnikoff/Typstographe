@@ -145,6 +145,10 @@ la livraison de tous les types de B n’est pas un prérequis.
   l’adaptateur Typst/MiTeX et les imports dérivés conservés dans les projets.
   Le [benchmark MiTeX natif/WASM](experiments/mitex-comparison/RESULTS.md)
   ne montre pas de gain robuste à chaud ; le chemin WASM est conservé.
+  Le [profilage détaillé](experiments/preview-profiling/RESULTS.md) confirme la
+  réutilisation des sources et des caches. Les mises à jour différentielles des
+  pixels et des canvas sont la priorité proposée, avec gardes de révision et
+  synchronisation conservées ; choix du protocole à valider avant implémentation.
   Un contrat de formule avec source, langage Typst ou
   LaTeX, description accessible et présentation en ligne/en bloc. Les blocs
   peuvent être ciblés par C.1 ; les modèles règlent numérotation et présentation.
