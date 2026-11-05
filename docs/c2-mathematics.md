@@ -36,10 +36,31 @@ Retour arrière ou Suppr retire cette ligne sans modifier les widgets voisins ;
 Annuler la rétablit. La ligne de reprise obligatoire en fin de document reste
 disponible. Les retours internes au source d’une équation restent du code.
 
-Les propriétés proposent le langage et une description accessible. Pour un bloc,
-le champ de label affiche le préfixe `eq:` grisé et non éditable. Le suffixe est
-facultatif, unique dans le document, sans espace, deux-points ou dollar. Changer
-le langage réinterprète le source conservé ; aucune conversion automatique n’a lieu.
+Le langage est choisi à la création et reste fixe : aucun sélecteur Typst/LaTeX
+n’est proposé dans les propriétés, en ligne comme en bloc. Les deux variantes
+conservent leur indication de langage et partagent le moteur de saisie. Le
+second dollar d’un délimiteur initial `$$` choisit toujours LaTeX pendant la
+création de la zone encore vide ; ce n’est pas une conversion d’une formule écrite.
+Dans le contrat, `language` est lié à la création et stocké comme attribut
+(`x-editor.placement = "creation"`, `x-editor.storage = "attribute"`). Sa présence
+est valide dans le document, mais `node.set_attrs` ne peut pas le modifier.
+
+Les propriétés proposent la description accessible et, pour un bloc, le label.
+L’en-tête du widget affiche, juste après son icône, `eq:` grisé et non éditable,
+puis une boîte pour le suffixe facultatif. Le suffixe est unique dans le document,
+sans espace, deux-points ou dollar. Ce contrôle réutilise le schéma et le même
+attribut `alias` que les propriétés, via la commande commune `node.set_attrs`.
+Entrée ou sortie du champ valide ; Échap annule et revient au code. Ctrl/Cmd +
+Entrée valide puis ouvre les propriétés par la même action que la roue dentée.
+Une composition dans le champ n’est pas publiée avant sa validation.
+
+Les deux contrôles restent synchronisés, même avec le panneau ouvert. Confirmer
+le champ d’en-tête réactualise un champ de propriétés resté intact, sans écraser
+un autre brouillon local ; une modification concurrente étrangère conserve les
+règles de refus habituelles. Un doublon ou une erreur garde le texte dans le champ
+et la dernière valeur confirmée dans le document. Échap pendant une préparation
+annule l’édition avant publication ; une opération déjà publiée reste annulable
+par l’historique documentaire.
 
 Le code est une zone de texte partagée : espaces multiples et retours sont
 conservés, sans styles de prose ni correction orthographique. La recherche de
@@ -142,6 +163,34 @@ responsable de la numérotation.
 Exemple autonome : [article-mathematics.typsto](../examples/article-mathematics.typsto).
 Sa [recette CLI](../examples/cli/article-mathematics.json) le reconstruit vers une
 destination libre. Les documents locaux préexistants ne sont pas remplacés.
+
+## Accessibilité des formules
+
+La description accessible est le texte alternatif natif de
+[`math.equation(alt: ...)`](https://typst.app/docs/reference/math/equation/#parameters-alt),
+transmis par notre adaptateur pour Typst comme pour LaTeX/MiTeX. C’est une lecture
+en langue naturelle (« a au carré », « a divisé par b »), pas une légende imprimée
+ni un label de référence. La saisie reste facultative dans un brouillon et n’est
+pas générée automatiquement à partir du code.
+
+Le [guide Typst](https://typst.app/docs/guides/accessibility/#textual-representations)
+indique qu’un texte alternatif est actuellement nécessaire pour les mathématiques
+accessibles ; son absence fait échouer un export PDF/UA-1. Le recours automatique
+à MathML pour HTML et PDF 2.0 est annoncé comme évolution future. Le test local
+compile réellement les deux langages, vérifie le refus PDF/UA-1 sans `alt` et le
+succès avec `alt`. Ce contrôle ne change pas les réglages d’export de l’application
+et ne promet pas la conformité du document entier sur cette seule base.
+
+## Ajustements et vérification — 5 novembre 2026
+
+- Langage choisi à la création, champ `eq:` dans l’en-tête et contrôle générique
+  réutilisable, synchronisation avec les propriétés sans duplication de valeur.
+- Clavier, validation, doublons, mise à jour du panneau ouvert, annulation avant
+  publication, conservation du code et absence de refus global du document.
+- 481 tests frontend, 277 tests du cœur et 16 parcours mathématiques
+  Chromium/WebKit passent. Les exports PDF/UA-1 sont exercés par le cœur.
+- Compilation web, TypeScript et Clippy vérifiés. Aucune capture ; les documents
+  locaux et les fichiers d’exemple déjà modifiés restent intacts.
 
 ## Vérification locale — 4 novembre 2026
 

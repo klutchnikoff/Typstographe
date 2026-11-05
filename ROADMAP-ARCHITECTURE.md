@@ -223,6 +223,13 @@ la livraison de tous les types de B n’est pas un prérequis.
   **Différé explicitement :** macros LaTeX et fonctions Typst personnalisées.
   Préciser ultérieurement leur définition, leur portée, leur disponibilité au
   rendu et leur conservation autonome dans le projet et les exports.
+  **Ajustement du 5 novembre 2026 :** `language` est un paramètre de création
+  stocké comme attribut, exclu des propriétés et des écritures `node.set_attrs`.
+  Le champ de label dans l’en-tête réutilise schéma, attribut et commande du
+  panneau ; le contrôle générique conserve validation et concurrence, sans
+  écraser les autres brouillons. Le texte alternatif rejoint le `alt` natif de
+  `math.equation` ; le cœur vérifie les exports PDF/UA-1 des deux langages avec
+  et sans description, sans modifier la politique d’export de l’application.
   **Labels validés :** séparer l’ancre stable automatique de l’alias humain
   facultatif des équations en bloc. Le champ affiche un préfixe `eq:` grisé,
   non éditable ; suffixe vide signifie absence d’alias. Une modification du

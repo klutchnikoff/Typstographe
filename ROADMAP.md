@@ -296,6 +296,12 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    leur définition, leur portée et leur conservation dans le projet et l’export.
    Le [contrat C.2](docs/c2-mathematics.md) décrit les zones de code partagées,
    l’adaptateur MiTeX autonome et les garanties de conservation.
+   **Widgets ajustés (5 novembre 2026) :** langage fixé à la création, sans
+   changement Typst/LaTeX dans les propriétés ; champ `eq:` dans l’en-tête,
+   synchronisé avec les propriétés via le même attribut et la même commande.
+   Description accessible transmise à `math.equation(alt: ...)` ; test réel
+   PDF/UA-1 avec et sans description dans les deux langages. Les brouillons
+   restent éditables sans description et les réglages d’export ne changent pas.
    **Labels validés :** les équations en bloc conservent une identité automatique
    stable et peuvent recevoir un alias lisible facultatif. L’interface présente
    le préfixe `eq:` grisé et non éditable, suivi du nom libre ; un nom vide ne
