@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
@@ -6,6 +6,12 @@ const root = fileURLToPath(new URL("../../", import.meta.url)),
   variant = process.argv[2];
 if (!["before", "after"].includes(variant))
   throw Error("Expected before or after");
+if (process.platform === "darwin")
+  execFileSync(
+    "swift",
+    [resolve(root, "experiments/typing-latency/check-display.swift")],
+    { stdio: "inherit" },
+  );
 const output = resolve(root, `output/typing-latency-${variant}`);
 const manifest = JSON.parse(
   await readFile(resolve(output, "manifest.json"), "utf8"),

@@ -298,7 +298,8 @@ export async function nativePreviewPerformance(
     report.navigation = { point, back, boxes };
     report.success = true;
   } catch (e) {
-    report.error = e instanceof Error ? e.stack : String(e);
+    report.error =
+      e instanceof Error ? `${e.message}\n${e.stack || ""}` : String(e);
   }
   await transport.invoke("diagnostic_finish", { report });
 }

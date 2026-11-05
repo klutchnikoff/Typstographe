@@ -1,5 +1,7 @@
 # Continuous native editing responsiveness
 
+[Measured baseline and current validation status](BASELINE.md).
+
 This measures the production full-RGBA Tauri/WebKit pipeline, with preview
 updates enabled/paused. Both cases retain the same visible last preview, window
 layout, editor, Unicode counters, document confirmation and preservation rules.
@@ -30,6 +32,10 @@ Prepare uses a disposable Git archive and a recipe-only CSP permission for the
 worker clock (`worker-src blob:`). It never opens a personal project, captures
 images/video or records a browser profiler trace. Scalar raw JSON is gzipped.
 Visible native windows are required; hidden/suspended sessions are rejected.
+On macOS a Swift/AppKit preflight also rejects the lock screen: DOM visibility
+alone can still read `visible` there while all animation frames are suspended.
+It reads application metadata without capturing the screen or changing focus.
+Swift from the usual Apple Command Line Tools is required for this preflight.
 
 ```sh
 python3 experiments/typing-latency/prepare.py before dae6c9c

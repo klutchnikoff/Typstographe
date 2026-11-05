@@ -177,7 +177,13 @@ la livraison de tous les types de B n’est pas un prérequis.
   et 396 comparaisons de cartes UTF-16/ancres complètes passent, ainsi que les
   pixels, reconstructions et synchronisations. Un pilote au cache Cargo invalide
   est exclu ; reconstruction ciblée et empreinte du cœur font partie du protocole.
-  Prochaine étape : réévaluer le rendu différentiel et SVG partiel dans WebKit.
+  [Latence de saisie continue](experiments/typing-latency/BASELINE.md) : référence
+  native avec/sans actualisation acquise. Les uploads de pages consécutifs
+  bloquent le fil de l’interface ; préparation fractionnée, annulation et
+  libération des canvas sont implémentées, avec publication atomique conservée.
+  459 tests et 14 parcours navigateur passent. La mesure après correction est
+  en attente d’un bureau déverrouillé ; ne pas déduire un gain des seuls tests.
+  Qualifier d’abord la saisie puis réévaluer les renderers dans WebKit.
   Préserver UTF-16, échappements, zones et gardes ; mesurer chaque gain avant
   l’arbitrage final RGBA / SVG partiel, idéalement dans le même hôte WebKit.
   Le contrôle automatisé source→aperçu dans VS Code reste non concluant ;
