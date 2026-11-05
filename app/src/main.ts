@@ -27,6 +27,8 @@ import { documentType, initializeSettings, settingsFor } from './state'
 import { previewController } from './preview'
 import { requestPreview } from './preview-frame'
 import { renderQueue } from './render-queue'
+import { uiRefresh } from './ui-refresh'
+import { documentStatistics } from './document-statistics'
 import { withCurrentSnapshot } from './snapshot-operation'
 import { resizableSeparator } from './resizable-separator'
 import { installMenus } from './menus'
@@ -99,10 +101,11 @@ let citations: ReturnType<typeof citationPanel> | undefined
 let tables: ReturnType<typeof tablePanel> | undefined
 let crossReferences: ReturnType<typeof crossReferencePanel> | undefined
 const rendering = renderQueue(render)
+const interfaceRefresh = uiRefresh(updateInterface)
 let onPreview: ((revision: number) => void) | undefined
 let restoringError = false
 let stopping = false
-let statisticsTicket = 0
+const statistics = documentStatistics(host.transport, element('statistics'))
 let version = 0
 let preview: ReturnType<typeof previewController> | undefined
 
@@ -135,32 +138,13 @@ let commands: Registry = new Map()
 let contentCatalogue: Catalogue
 
 function refresh() {
-  if (!editor || stopping) return
+  interfaceRefresh.request()
+}
+function updateInterface() {
+  if (!editor || editor.isDestroyed || stopping) return
   refreshCommands(commands)
   tables?.refresh()
-  const leaf = (node: import('@tiptap/pm/model').Node) =>
-    node.type.name === 'footnote'
-      ? `\n${node.attrs.text || ''}\n`
-      : node.type.name === 'softBreak'
-        ? '\u2028'
-        : '\n'
-  const text = editor.state.doc.textBetween(0, editor.state.doc.content.size, '\n', leaf)
-  const { from, to, empty } = editor.state.selection
-  const selection = empty ? null : editor.state.doc.textBetween(from, to, '\n', leaf)
-  const ticket = ++statisticsTicket
-  void host.transport
-    .invoke<{
-      label: string
-      hint: string
-      document: { words: number; signs: number; signs_without_spaces: number }
-      selection: { words: number; signs: number; signs_without_spaces: number } | null
-    }>('count_text', { text, selection })
-    .then((counts) => {
-      if (ticket !== statisticsTicket) return
-      element('statistics').textContent = counts.label
-      element('statistics').title = counts.hint
-    })
-    .catch(() => {})
+  statistics.refresh(editor)
   refreshSynchronization()
   const connection = element<HTMLButtonElement>('connection')
   connection.textContent = provider.online ? tr('Connecté') : tr('Hors connexion')
@@ -183,7 +167,6 @@ function refreshSynchronization() {
   if (command) refreshCommandButton(button, command)
   if (enabled && provider.synchronization!.windows.length > 1)
     button.title = tr('Fermez les autres fenêtres avant d’arrêter la synchronisation.')
-  refreshCommands(commands)
 }
 function schedule() {
   if (stopping) return
@@ -549,12 +532,7 @@ async function start() {
       'L’état Yjs ne correspond pas à l’instantané sauvegardé. La session existante est conservée.',
     )
   }
-  provider.onStatus = () => {
-    if (!stopping) {
-      refreshCommands(commands)
-      tables?.refresh()
-    }
-  }
+  provider.onStatus = refresh
   provider.onChange = () => {
     refresh()
     schedule()
@@ -580,8 +558,8 @@ async function start() {
     )
     refresh()
   }
-  provider.onSynchronization = refreshSynchronization
-  provider.presence.observe(refreshSynchronization)
+  provider.onSynchronization = refresh
+  provider.presence.observe(refresh)
   if (recipeBuild) window.__spike = { editor, provider, save, ready: true }
   refresh()
   schedule()
@@ -663,6 +641,8 @@ async function start() {
 void start().catch((error) => message(errorText(error), true))
 window.addEventListener('beforeunload', () => {
   stopping = true
+  interfaceRefresh.stop()
+  statistics.stop()
   preview?.destroy()
   provider.destroy()
 })
