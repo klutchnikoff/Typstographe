@@ -23,10 +23,14 @@ pub fn typst_string(text: &str) -> String {
 pub fn escape_markup(text: &str) -> String {
     let mut result = String::new();
     for c in text.chars() {
-        if "\\#*_[]$`<>@=+-/~{}:".contains(c) {
+        if needs_markup_escape(c) {
             result.push('\\');
         }
         result.push(c);
     }
     result
+}
+
+pub(crate) fn needs_markup_escape(c: char) -> bool {
+    "\\#*_[]$`<>@=+-/~{}:".contains(c)
 }
