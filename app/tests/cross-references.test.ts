@@ -158,3 +158,73 @@ it('a reused editor cannot carry confirmed numbers into another document generat
     lookup.mockRestore()
   }
 })
+
+it('unchanged reference values preserve editor state and the active selection without transactions', () => {
+  const editor = fixture()
+  const reference = { target: 'heading-method', include_label: true, include_page: false }
+  const transaction = vi.fn()
+  editor.on('transaction', transaction)
+  const initial = editor.state
+  expect(setResolvedReferences(editor, [])).toBe(false)
+  expect(setResolvedReferences(editor, [])).toBe(false)
+  expect(editor.state).toBe(initial)
+  expect(transaction).not.toHaveBeenCalled()
+
+  const entries = [{ ...reference, display: 'section 2' }]
+  expect(setResolvedReferences(editor, entries)).toBe(true)
+  editor.commands.setTextSelection({ from: 1, to: 4 })
+  const selected = editor.state
+  transaction.mockClear()
+  expect(
+    setResolvedReferences(
+      editor,
+      entries.map((entry) => ({ ...entry })),
+    ),
+  ).toBe(false)
+  expect(editor.state).toBe(selected)
+  expect(transaction).not.toHaveBeenCalled()
+  // A caller changing its own buffer does not change a confirmed badge.
+  entries[0].display = 'section 3'
+  expect(referenceLabel(editor, reference)).toBe('section 2')
+  expect(setResolvedReferences(editor, entries)).toBe(true)
+  expect(referenceLabel(editor, reference)).toBe('section 3')
+  expect(editor.state.selection.eq(selected.selection)).toBe(true)
+  expect(setResolvedReferences(editor, [])).toBe(true)
+  expect(referenceLabel(editor, reference)).toContain('Renvoi · ')
+  transaction.mockClear()
+  expect(setResolvedReferences(editor, [])).toBe(false)
+  expect(transaction).not.toHaveBeenCalled()
+})
+
+it('a new generation and each reference identity or content choice refresh the index', () => {
+  const editor = fixture()
+  const provider = { generation: 'first' } as Provider
+  const lookup = vi.spyOn(history, 'editingProvider').mockReturnValue(provider)
+  const entry = {
+    target: 'heading-method',
+    include_label: true,
+    include_page: false,
+    display: 'section 2',
+  }
+  const transaction = vi.fn()
+  editor.on('transaction', transaction)
+  try {
+    setResolvedReferences(editor, [entry])
+    transaction.mockClear()
+    provider.generation = 'second'
+    expect(setResolvedReferences(editor, [{ ...entry }])).toBe(true)
+    expect(transaction).toHaveBeenCalledTimes(1)
+    for (const changed of [
+      { ...entry, include_label: false },
+      { ...entry, include_page: true },
+      { ...entry, target: 'another-target' },
+    ]) {
+      setResolvedReferences(editor, [entry])
+      transaction.mockClear()
+      expect(setResolvedReferences(editor, [changed])).toBe(true)
+      expect(transaction).toHaveBeenCalledTimes(1)
+    }
+  } finally {
+    lookup.mockRestore()
+  }
+})
