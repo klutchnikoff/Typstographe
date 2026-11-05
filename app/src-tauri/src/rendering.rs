@@ -883,6 +883,65 @@ mod delta_tests {
         assert_eq!(third.metadata.keys[0], first.metadata.keys[0]);
     }
     #[test]
+    fn pixel_reuse_retains_fresh_utf16_source_maps_after_invisible_link_changes() {
+        let renderer = Renderer::default();
+        let mut views = delta::Views::default();
+        let epoch = views.bind("first", "document");
+        let mut base = None;
+        for (version, href) in [
+            (1, "https://example.org/a"),
+            (2, "https://example.org/a-much-longer-address"),
+        ] {
+            let node = serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Été 🦉","marks":[{"type":"link","attrs":{"href":href}}]},{"type":"text","text":" et la suite."}]}]})).unwrap();
+            let (source, map) =
+                typstographe_core::content::source_mapped(&node, &Assets::default()).unwrap();
+            let ticket = views
+                .begin("first", scope(&epoch, version), base.as_deref())
+                .unwrap();
+            let (packet, record) = renderer
+                .delta_frame(
+                    source.clone(),
+                    Assets::default(),
+                    version,
+                    (&settings()).into(),
+                    map.clone(),
+                    &ticket,
+                    &|_| true,
+                )
+                .unwrap();
+            if version == 2 {
+                assert!(payload(&packet).1.is_empty());
+            }
+            renderer
+                .frame(
+                    source,
+                    Assets::default(),
+                    version,
+                    (&settings()).into(),
+                    map,
+                    Encoding::Rgba,
+                )
+                .unwrap();
+            let full = renderer.1.lock().unwrap().clone().unwrap();
+            for position in 1..20 {
+                let point = record.sync.forward(position);
+                assert_eq!(point, full.forward(position));
+                if let Some(point) = point {
+                    assert_eq!(record.sync.backward(point), full.backward(point));
+                }
+                assert_eq!(
+                    record
+                        .sync
+                        .selection_highlights_exact(position..position + 1),
+                    full.selection_highlights_exact(position..position + 1)
+                );
+            }
+            base = Some(record.metadata.id.clone());
+            views.commit("first", &ticket, record).unwrap();
+        }
+    }
+
+    #[test]
     fn abandoned_candidates_do_not_evict_displayed_base_and_epochs_isolate_windows() {
         let renderer = Renderer::default();
         let mut views = delta::Views::default();
@@ -957,6 +1016,24 @@ mod delta_tests {
             assert!(matches!(result, Err(error) if error == CommandError::from("stale")));
             assert!(renderer.1.lock().unwrap().is_none());
         }
+        let ticket = views.begin("first", scope(&epoch, 1), None).unwrap();
+        let pages = std::cell::Cell::new(0);
+        let result = renderer.delta_frame(
+            "Un\n#pagebreak()\nDeux".into(),
+            Assets::default(),
+            1,
+            (&settings()).into(),
+            SourceMap::default(),
+            &ticket,
+            &|stage| {
+                if stage == Stage::Page {
+                    pages.set(pages.get() + 1);
+                }
+                pages.get() < 2
+            },
+        );
+        assert_eq!(pages.get(), 2);
+        assert!(result.is_err()); // Stop between page one and page two, not after packet construction.
         let ticket = views.begin("first", scope(&epoch, 1), None).unwrap();
         let (_, record) = produce(&renderer, &ticket, "Un", 1);
         let newer = views.begin("first", scope(&epoch, 1), None).unwrap();

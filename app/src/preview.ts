@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core'
 import type { Transport, Provider } from './provider'
-import type { BinaryPage, Delta, Preview } from './preview-frame'
+import type { BinaryPage, Delta } from './preview-frame'
 import { previewStream } from './preview-stream'
 import { revealEditorPosition } from './editor-reveal'
 import { browserTurn } from './browser-turn'
@@ -300,7 +300,7 @@ export function previewController(
       while (container.children.length > pages.length) container.lastElementChild!.remove()
       release(visible.filter((entry) => !pages.includes(entry)))
       visible = pages
-      stream.published(value as Preview)
+      stream.published(value)
       container.scrollTop = scrollTop
       selection()
       return true

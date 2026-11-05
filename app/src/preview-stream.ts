@@ -18,7 +18,7 @@ export function previewStream(
   }
   return {
     reset,
-    published(value: Preview) {
+    published(value: Pick<Preview, 'delta'>) {
       displayed = value.delta
     },
     invalidate() {
