@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
 variant, ref = sys.argv[1:]
-assert variant in ['before', 'after']
+assert variant in ['before', 'dom', 'after']
 series = os.environ.get('TOG_TYPING_SERIES', 'typing-latency')
 assert re.fullmatch(r'[a-z0-9-]+', series), 'Invalid series name'
 out = ROOT / f'output/{series}-{variant}'
@@ -22,6 +22,7 @@ def digest(paths):
     return h.hexdigest()
 core = digest((source/'crates/core/src').rglob('*.rs'))
 frontend = digest((source/'app/src').rglob('*.ts'))
+recipe = hashlib.sha256((HERE/'recipe.ts').read_bytes() + (HERE/'probe.ts').read_bytes()).hexdigest()
 with (source/'crates/core/src/lib.rs').open('a') as f:
     f.write(f'\npub const TYPING_BUILD_FINGERPRINT: &str = "{core}";\n')
 def replace(path,old,new):
@@ -58,10 +59,11 @@ for corpus in corpora:
 shutil.copyfile(HERE/'recipe.ts',source/'app/src/preview-performance.ts')
 shutil.copyfile(HERE/'probe.ts',source/'app/src/typing-probe.ts')
 replace('app/src/preview-performance.ts','const FRONTEND = "prepared";',f'const FRONTEND = "{frontend}";')
+replace('app/src/preview-performance.ts','const RECIPE = "prepared";',f'const RECIPE = "{recipe}";')
 replace('app/src/main.ts','let onPreview: ((revision: number) => void) | undefined',"let onPreview: ((revision: number, result: import('./preview-frame').Preview) => void) | undefined")
 replace('app/src/main.ts','    onPreview?.(result.revision)','    onPreview?.(result.revision, result)')
 replace('app/src/main.ts','function updateInterface() {','function updateInterface() { return typingSpan("ui.refresh", updateInterfaceImpl) }\nfunction updateInterfaceImpl() {')
 replace('app/src/main.ts','function snapshot() {','function snapshot() { return typingSpan("preview.snapshot", snapshotImpl) }\nfunction snapshotImpl() {')
 p=source/'app/src/main.ts';p.write_text('import { typingSpan } from "./typing-probe"\n'+p.read_text())
-(out/'manifest.json').write_text(json.dumps(dict(application_commit=commit,core_fingerprint=core,frontend_fingerprint=frontend,scope='Production preview (full RGBA or differential RGBA, according to commit); continuous WebKit native editing; worker-clock stimulus'),indent=2)+'\n')
+(out/'manifest.json').write_text(json.dumps(dict(application_commit=commit,core_fingerprint=core,frontend_fingerprint=frontend,recipe_fingerprint=recipe,scope='Production preview (full RGBA or differential RGBA, according to commit); continuous WebKit native editing; worker-clock stimulus'),indent=2)+'\n')
 print(source)

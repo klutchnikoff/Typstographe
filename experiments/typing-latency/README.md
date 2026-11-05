@@ -73,3 +73,19 @@ latency is not interpreted as time blocking the JavaScript thread. The DOM probe
 also records `preview.insert` when a differential publication retains nodes,
 rather than replacing the whole container. These per-node timings are not a
 replacement for a total publication-span metric.
+
+The `editor-priority` series adds an intermediate `dom` variant to separate page
+reconciliation from deferred UI work. Set
+`TOG_TYPING_VARIANTS=before,dom,after` when summarizing this series. Its protocol 2
+records publication events directly: revision, confirmed inserted-character count,
+DOM publication time and the following animation-frame opportunity. Each input
+matches the first publication containing at least that many inserted characters.
+The preview-enabled phase drains through the last pending publication before
+closing these observations, so its last inputs are not silently omitted. The
+paused control has no preview-delay metric during typing. `inputToFrameMs`
+starts at worker delivery (`sent`), excluding timer-generation jitter;
+`inputToPreviewDomMs` and `inputToPreviewFrameMs` include confirmation, compilation,
+transfer and publication. Neither frame metric proves physical GPU presentation.
+Protocol 2 also stamps the recipe/probe sources and verifies this identity in
+addition to the compiled application frontend/core. Use the same probe in every
+variant; do not combine protocol 1 and 2 timing sessions as a single comparison.

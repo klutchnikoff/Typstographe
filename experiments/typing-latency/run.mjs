@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 const root = fileURLToPath(new URL("../../", import.meta.url)),
   variant = process.argv[2];
-if (!["before", "after"].includes(variant))
-  throw Error("Expected before or after");
+if (!["before", "dom", "after"].includes(variant))
+  throw Error("Expected before, dom or after");
 if (process.platform === "darwin")
   execFileSync(
     "swift",
@@ -70,7 +70,8 @@ for (let run = 0; run < (smoke ? 1 : 2); run++)
       }
       if (
         report.coreFingerprint !== manifest.core_fingerprint ||
-        report.frontendFingerprint !== manifest.frontend_fingerprint
+        report.frontendFingerprint !== manifest.frontend_fingerprint ||
+        report.recipeFingerprint !== manifest.recipe_fingerprint
       )
         throw Error("Compiled fingerprint mismatch");
       report.run = run;

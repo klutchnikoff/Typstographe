@@ -9,7 +9,9 @@ const series = process.env.TOG_TYPING_SERIES || "typing-latency";
 if (!/^[a-z0-9-]+$/.test(series)) throw Error("Invalid series name");
 const variants = process.argv.includes("--baseline")
   ? ["before"]
-  : ["before", "after"];
+  : (process.env.TOG_TYPING_VARIANTS || "before,after").split(",");
+if (!variants.every((v) => ["before", "dom", "after"].includes(v)))
+  throw Error("Invalid variant");
 const datasets = await Promise.all(
   variants.map(async (variant) => ({
     variant,
@@ -42,7 +44,9 @@ for (const data of datasets)
     if (
       !report.success ||
       report.coreFingerprint !== data.manifest.core_fingerprint ||
-      report.frontendFingerprint !== data.manifest.frontend_fingerprint
+      report.frontendFingerprint !== data.manifest.frontend_fingerprint ||
+      (data.manifest.recipe_fingerprint &&
+        report.recipeFingerprint !== data.manifest.recipe_fingerprint)
     )
       throw Error("Unverified input run");
     const a = datasets[0].reports.find(
@@ -74,15 +78,36 @@ for (const { variant, reports } of datasets)
           queuedMs: (s) => s.received - s.sent,
           deadlineMs: (s) => s.received - s.due,
           nativeEditMs: (s) => s.returned - s.received,
+          inputToFrameMs: (s) => s.firstFrame - s.sent,
           nextFrameMs: (s) => s.firstFrame - s.due,
           twoFramesMs: (s) => s.secondFrame - s.due,
         };
+        const previewDelays = phases.flatMap((phase) =>
+          phase.samples.slice(2).flatMap((sample) => {
+            if (preview !== "on" || !phase.publications) return [];
+            const publication = phase.publications.find(
+              (p) =>
+                p.chars >= sample.chars &&
+                p.published >= sample.returned &&
+                p.firstFrame > 0,
+            );
+            if (!publication) throw Error("Missing input-to-preview match");
+            return [
+              {
+                dom: publication.published - sample.sent,
+                frame: publication.firstFrame - sample.sent,
+              },
+            ];
+          }),
+        );
         summary.push({
           variant,
           corpus,
           preview,
           cadence,
           pages: runs[0].pages,
+          inputToPreviewDomMs: stats(previewDelays.map((p) => p.dom)),
+          inputToPreviewFrameMs: stats(previewDelays.map((p) => p.frame)),
           metrics: Object.fromEntries(
             Object.entries(getters).map(([k, get]) => [
               k,

@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-case "${1-}" in before|after) ;; *) echo 'Expected before or after' >&2; exit 1 ;; esac
+case "${1-}" in before|dom|after) ;; *) echo 'Expected before, dom or after' >&2; exit 1 ;; esac
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
 series=${TOG_TYPING_SERIES:-typing-latency}
 case "$series" in *[!a-z0-9-]*|'') echo 'Invalid series name' >&2; exit 1 ;; esac

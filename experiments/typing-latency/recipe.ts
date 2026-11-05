@@ -4,6 +4,7 @@ import type { Preview } from "./preview-frame";
 import { now, typingSpan, startProbe, stopProbe } from "./typing-probe";
 import corpora from "./typing-corpora.json";
 const FRONTEND = "prepared";
+const RECIPE = "prepared";
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const frame = () =>
   new Promise<number>((resolve, reject) => {
@@ -29,6 +30,8 @@ export async function nativePreviewPerformance(
   const report: any = {
     success: false,
     frontendFingerprint: FRONTEND,
+    recipeFingerprint: RECIPE,
+    protocol: 2,
     userAgent: navigator.userAgent,
     phases: [],
   };
@@ -37,8 +40,29 @@ export async function nativePreviewPerformance(
   };
   let latest: Preview | undefined,
     waiters: (() => void)[] = [];
+  let activePublications:
+    | {
+        revision: number;
+        chars: number;
+        published: number;
+        firstFrame: number;
+      }[]
+    | undefined;
+  let originalLength = 0;
   harness.observe((_revision, result) => {
     latest = result;
+    if (activePublications) {
+      const publication = {
+        revision: result.revision,
+        chars: editor.state.doc.firstChild!.textContent.length - originalLength,
+        published: now(),
+        firstFrame: 0,
+      };
+      activePublications.push(publication);
+      requestAnimationFrame(() => {
+        publication.firstFrame = now();
+      });
+    }
     waiters.splice(0).forEach((f) => f());
   });
   const settled = async () => {
@@ -131,6 +155,7 @@ export async function nativePreviewPerformance(
     const text = "Un texte pour mesurer la saisie. ";
     let inserted = "";
     const original = editor.state.doc.firstChild!.textContent;
+    originalLength = original.length;
     for (const cadence of [100, 250]) {
       const samples: any[] = [],
         inputs: any[] = [],
@@ -169,6 +194,8 @@ export async function nativePreviewPerformance(
       };
       requestAnimationFrame(heartbeat);
       ipc = [];
+      const publications: NonNullable<typeof activePublications> = [];
+      activePublications = config.preview === "on" ? publications : undefined;
       startProbe();
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(
@@ -189,6 +216,7 @@ export async function nativePreviewPerformance(
             const returned = now(),
               sample = {
                 ...data,
+                chars: inserted.length,
                 received,
                 returned,
                 firstFrame: 0,
@@ -250,6 +278,7 @@ export async function nativePreviewPerformance(
         spans,
         ipc: calls,
         confirmed: true,
+        publications,
       });
       await transport.invoke("diagnostic_event", {
         target: "main",
@@ -259,6 +288,21 @@ export async function nativePreviewPerformance(
       // Drain outside timing; both modes start the next phase from a coherent page.
       if (config.preview === "off") harness.resume();
       await settled();
+      await frame();
+      if (config.preview === "on") {
+        assert(
+          samples.every((s) =>
+            publications.some(
+              (p) =>
+                p.chars >= s.chars &&
+                p.published >= s.returned &&
+                p.firstFrame > 0,
+            ),
+          ),
+          "Missing matching preview publication",
+        );
+      }
+      activePublications = undefined;
       await sleep(150);
       if (config.preview === "off") await harness.pause();
     }
