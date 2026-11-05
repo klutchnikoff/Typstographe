@@ -228,8 +228,14 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    formule, p50 de 47 ms dans Tinymist avec rendu partiel, contre 123 ms dans
    notre candidat RGBA (p95 respectifs 168 et 126 ms). La première étude ne
    comparait que les renderers dans notre parcours commun.
-   Priorité proposée : réduire les rafraîchissements d’interface et transactions
-   de références inutiles, puis étudier les cartes de source/synchronisation.
+   [Optimisation de l’interface mesurée](experiments/ui-refresh/RESULTS.md) :
+   rafraîchissements regroupés sans délai de frappe, disponibilité actualisée
+   une fois, comptages inchangés et transactions de références dédupliqués.
+   Sur 24 pages, une édition de formule rend la main en 7 ms contre 22 ms ;
+   publication 271 → 254 ms en RGBA complet et 102 → 87 ms dans le candidat
+   différentiel. Le p95 du RGBA complet reste variable (296 → 307 ms).
+   Les 24 sessions préservent 396 états de source, pixels et navigation identiques.
+   Prochaine priorité : étudier les cartes de source/synchronisation.
    Réévaluer ensuite RGBA et SVG partiel avant de figer le renderer ; conserver
    le RGBA différentiel comme candidat qualifié. Le protocole reste à valider :
    cache par document/génération, options et flux de vue, réinitialisation,

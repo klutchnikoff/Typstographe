@@ -1,5 +1,7 @@
 # Interface refresh and unchanged reference transactions
 
+[Measured results](RESULTS.md).
+
 Production changes: batch UI invalidations in a microtask (no typing timer or
 extra animation frame), refresh command availability once, skip unchanged
 Unicode count requests, and publish reference metadata only when values or the

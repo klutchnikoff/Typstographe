@@ -159,9 +159,16 @@ la livraison de tous les types de B n’est pas un prérequis.
   le post-traitement : ne pas les comparer à notre callback de publication.
   Les 24 sessions vérifient 792 états de source identiques ; six comparaisons
   natives de synchronisation et les reconstructions/erreurs passent.
-  Priorités proposées : dédupliquer les rafraîchissements d’interface et éviter
-  les transactions de références inchangées, puis réduire les allocations de
-  projection et étudier la mise en cache/indexation à la demande de RenderSync.
+  [Déduplication de l’interface implémentée et mesurée](experiments/ui-refresh/RESULTS.md) :
+  microtâche commune sans attente de frame, disponibilité rafraîchie une fois,
+  comptages selon texte/sélection/langue et index de références selon
+  génération/valeurs. Sur 24 pages, édition de formule : commande 22 → 7 ms,
+  publication RGBA complet 271 → 254 ms, candidat différentiel 102 → 87 ms ;
+  p95 complet encore variable, 296 → 307 ms. Les 24 sessions vérifient
+  396 états avant/après identiques en source, pixels et navigation ; badges,
+  commandes, sélection et synchronisation sont vérifiés aussi dans les tests.
+  Prochaines priorités : réduire les allocations de projection et étudier la
+  mise en cache/indexation à la demande de RenderSync.
   Préserver UTF-16, échappements, zones et gardes ; mesurer chaque gain avant
   l’arbitrage final RGBA / SVG partiel, idéalement dans le même hôte WebKit.
   Le contrôle automatisé source→aperçu dans VS Code reste non concluant ;
