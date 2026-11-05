@@ -235,8 +235,15 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    publication 271 → 254 ms en RGBA complet et 102 → 87 ms dans le candidat
    différentiel. Le p95 du RGBA complet reste variable (296 → 307 ms).
    Les 24 sessions préservent 396 états de source, pixels et navigation identiques.
-   Prochaine priorité : étudier les cartes de source/synchronisation.
-   Réévaluer ensuite RGBA et SVG partiel avant de figer le renderer ; conserver
+   [Cartes optimisées et mesures vérifiées](experiments/source-sync/RESULTS.md) :
+   largeurs échappées sans allocation par caractère et index syntaxique construit
+   une fois par compilation, sans réutiliser de plages entre révisions.
+   Sur 24 pages, carte de source 11,93 → 2,01 ms ; construction RenderSync
+   hors vérification 12,81 → 4,82 ms (mesure dérivée). Publication de formule
+   258 → 244 ms en RGBA complet, 93 → 76 ms dans le candidat différentiel.
+   Les 24 sessions vérifient le cœur réellement compilé et 396 états identiques
+   en source, pixels, cartes UTF-16 complètes et ancres transformées.
+   Réévaluer maintenant RGBA et SVG partiel avant de figer le renderer ; conserver
    le RGBA différentiel comme candidat qualifié. Le protocole reste à valider :
    cache par document/génération, options et flux de vue, réinitialisation,
    refus des résultats périmés, cartes de synchronisation actualisées et tests

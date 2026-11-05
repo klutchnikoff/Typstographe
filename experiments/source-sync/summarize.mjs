@@ -7,6 +7,23 @@ const read = async (name) =>
   JSON.parse(await readFile(resolve(root, name), "utf8"));
 const before = await read("output/source-sync-before/renderer-raw.json");
 const after = await read("output/source-sync-after/renderer-raw.json");
+let coreBuildChecks = 0;
+for (const [variant, reports] of [
+  ["before", before],
+  ["after", after],
+]) {
+  const expected = (await read(`output/source-sync-${variant}/manifest.json`))
+    .core_fingerprint;
+  if (!expected) throw Error("Missing expected compiled core identity");
+  for (const report of reports) {
+    if (
+      report.nativeProfiling.find((r) => r.stage === "core-build")
+        ?.fingerprint !== expected
+    )
+      throw Error(`Unverified core in ${variant} reports`);
+    coreBuildChecks++;
+  }
+}
 const equal = (a, b, label) => {
   if (JSON.stringify(a) !== JSON.stringify(b)) throw Error(`Changed ${label}`);
 };
@@ -99,6 +116,7 @@ const result = {
   success: true,
   sessions: before.length + after.length,
   pairedStates,
+  coreBuildChecks,
   environment: environment[0].environment,
   manifests: environment.map((e) => e.manifest),
   discarded: environment.map((e) => e.discarded),

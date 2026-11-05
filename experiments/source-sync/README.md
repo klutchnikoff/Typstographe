@@ -1,5 +1,7 @@
 # Source mapping and synchronization indexing
 
+[Verified results](RESULTS.md).
+
 Production changes under test:
 
 - Literal projection and UTF-8 byte widths use shared escaping rules without

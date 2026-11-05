@@ -1,0 +1,3143 @@
+{
+  "success": true,
+  "sessions": 24,
+  "pairedStates": 396,
+  "coreBuildChecks": 24,
+  "environment": {
+    "cpu": "Apple M1 Max",
+    "ram": 34359738368,
+    "os": "25.6.0",
+    "arch": "arm64",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01) (Homebrew)"
+  },
+  "manifests": [
+    {
+      "application_commit": "c33dbdf726b73f22d8a5b5e48a9a08189ba1d4e9",
+      "scope": "Native source-map and synchronization indexing comparison",
+      "reflexo_commit": "e1974e566ba63dcf8ecdd6730cff25de26c7dbd2",
+      "renderer_version": "0.8.0-rc3",
+      "typst": "0.15.1",
+      "variants": [
+        "rgba-full",
+        "rgba-delta"
+      ],
+      "variant": "before",
+      "core_fingerprint": "8a856621d8fbebba7aac9042103f56529886da2dedd8b6f5058d94c61a6e78c6"
+    },
+    {
+      "application_commit": "46c355347ced1df304a7b875121cc73d9ff0c0e5",
+      "scope": "Native source-map and synchronization indexing comparison",
+      "reflexo_commit": "e1974e566ba63dcf8ecdd6730cff25de26c7dbd2",
+      "renderer_version": "0.8.0-rc3",
+      "typst": "0.15.1",
+      "variants": [
+        "rgba-full",
+        "rgba-delta"
+      ],
+      "variant": "after",
+      "core_fingerprint": "7535f8bb3cb3b098e6336dc35d389510f4ee135d1132cbade5affc1688a5ef61"
+    }
+  ],
+  "discarded": [
+    [],
+    []
+  ],
+  "summary": [
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 86.00000000000006,
+          "p95": 86.99999999999994
+        },
+        "frameMs": {
+          "p50": 103,
+          "p95": 111.99999999999994
+        },
+        "commandMs": {
+          "p50": 15.999999999999943,
+          "p95": 16
+        },
+        "renderEnterMs": {
+          "p50": 19,
+          "p95": 19.999999999999943
+        },
+        "uiMs": {
+          "p50": 3,
+          "p95": 5
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 14.999999999999943,
+          "p95": 15
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 23.2285,
+          "p95": 25.6665
+        },
+        "mapMs": {
+          "p50": 0.701125,
+          "p95": 0.7069580000000001
+        },
+        "syncMs": {
+          "p50": 0.520208,
+          "p95": 0.571291
+        },
+        "syncBuildMs": {
+          "p50": 0.280042,
+          "p95": 0.329625
+        },
+        "mapCheckMs": {
+          "p50": 0.037416000000000005,
+          "p95": 0.037584
+        },
+        "syncCheckMs": {
+          "p50": 0.240166,
+          "p95": 0.241666
+        },
+        "bytes": {
+          "p50": 16052358,
+          "p95": 16052377
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 31,
+          "p95": 34.000000000000114
+        },
+        "frameMs": {
+          "p50": 54,
+          "p95": 56
+        },
+        "commandMs": {
+          "p50": 3,
+          "p95": 3.0000000000002274
+        },
+        "renderEnterMs": {
+          "p50": 5,
+          "p95": 5.999999999999886
+        },
+        "uiMs": {
+          "p50": 3,
+          "p95": 3.0000000000004547
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 3.263417,
+          "p95": 3.461375
+        },
+        "mapMs": {
+          "p50": 0.709958,
+          "p95": 0.753833
+        },
+        "syncMs": {
+          "p50": 0.5738749999999999,
+          "p95": 0.673667
+        },
+        "syncBuildMs": {
+          "p50": 0.31904200000000005,
+          "p95": 0.406042
+        },
+        "mapCheckMs": {
+          "p50": 0.037708,
+          "p95": 0.040874999999999995
+        },
+        "syncCheckMs": {
+          "p50": 0.24704099999999998,
+          "p95": 0.29604199999999997
+        },
+        "bytes": {
+          "p50": 16052384,
+          "p95": 16052411
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 31,
+          "p95": 35
+        },
+        "frameMs": {
+          "p50": 55,
+          "p95": 57
+        },
+        "commandMs": {
+          "p50": 3,
+          "p95": 3.0000000000002274
+        },
+        "renderEnterMs": {
+          "p50": 5,
+          "p95": 5.000000000000227
+        },
+        "uiMs": {
+          "p50": 2.9999999999997726,
+          "p95": 3
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3,
+          "p95": 3.0000000000002274
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 3.6427500000000004,
+          "p95": 5.324458
+        },
+        "mapMs": {
+          "p50": 0.7152499999999999,
+          "p95": 0.782958
+        },
+        "syncMs": {
+          "p50": 0.6055,
+          "p95": 0.739791
+        },
+        "syncBuildMs": {
+          "p50": 0.33258299999999996,
+          "p95": 0.48129099999999997
+        },
+        "mapCheckMs": {
+          "p50": 0.038209,
+          "p95": 0.041041
+        },
+        "syncCheckMs": {
+          "p50": 0.254125,
+          "p95": 0.300709
+        },
+        "bytes": {
+          "p50": 16052433,
+          "p95": 16052466
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 83.00000000000006,
+          "p95": 84.00000000000006
+        },
+        "frameMs": {
+          "p50": 93,
+          "p95": 105
+        },
+        "commandMs": {
+          "p50": 15,
+          "p95": 16.000000000000057
+        },
+        "renderEnterMs": {
+          "p50": 19.000000000000057,
+          "p95": 19.000000000000057
+        },
+        "uiMs": {
+          "p50": 3,
+          "p95": 4
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 15,
+          "p95": 15.000000000000057
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 23.214208,
+          "p95": 23.798167
+        },
+        "mapMs": {
+          "p50": 0.745917,
+          "p95": 0.7567090000000001
+        },
+        "syncMs": {
+          "p50": 0.562958,
+          "p95": 0.5975
+        },
+        "syncBuildMs": {
+          "p50": 0.300875,
+          "p95": 0.317625
+        },
+        "mapCheckMs": {
+          "p50": 0.039042,
+          "p95": 0.040125
+        },
+        "syncCheckMs": {
+          "p50": 0.26208299999999995,
+          "p95": 0.27987500000000004
+        },
+        "bytes": {
+          "p50": 16052373,
+          "p95": 16052381
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 24.000000000000227,
+          "p95": 26.999999999999886
+        },
+        "frameMs": {
+          "p50": 39,
+          "p95": 55
+        },
+        "commandMs": {
+          "p50": 3,
+          "p95": 3.0000000000002274
+        },
+        "renderEnterMs": {
+          "p50": 5,
+          "p95": 5.000000000000227
+        },
+        "uiMs": {
+          "p50": 3,
+          "p95": 3
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 2,
+          "p95": 3
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 3.177042,
+          "p95": 3.394125
+        },
+        "mapMs": {
+          "p50": 0.7032079999999999,
+          "p95": 0.758958
+        },
+        "syncMs": {
+          "p50": 0.530666,
+          "p95": 0.5812499999999999
+        },
+        "syncBuildMs": {
+          "p50": 0.287875,
+          "p95": 0.33945899999999996
+        },
+        "mapCheckMs": {
+          "p50": 0.037791,
+          "p95": 0.047291
+        },
+        "syncCheckMs": {
+          "p50": 0.24058400000000002,
+          "p95": 0.246209
+        },
+        "bytes": {
+          "p50": 8029730,
+          "p95": 8029758
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 25,
+          "p95": 29
+        },
+        "frameMs": {
+          "p50": 39.00000000000023,
+          "p95": 55.00000000000023
+        },
+        "commandMs": {
+          "p50": 3,
+          "p95": 3.0000000000002274
+        },
+        "renderEnterMs": {
+          "p50": 5,
+          "p95": 5.000000000000227
+        },
+        "uiMs": {
+          "p50": 3,
+          "p95": 3.0000000000004547
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 3.62575,
+          "p95": 3.854542
+        },
+        "mapMs": {
+          "p50": 0.712541,
+          "p95": 0.75075
+        },
+        "syncMs": {
+          "p50": 0.543042,
+          "p95": 0.589791
+        },
+        "syncBuildMs": {
+          "p50": 0.30125,
+          "p95": 0.34541599999999995
+        },
+        "mapCheckMs": {
+          "p50": 0.038541000000000006,
+          "p95": 0.041124999999999995
+        },
+        "syncCheckMs": {
+          "p50": 0.241,
+          "p95": 0.253792
+        },
+        "bytes": {
+          "p50": 8029764,
+          "p95": 8029809
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 210.00000000000006,
+          "p95": 212
+        },
+        "frameMs": {
+          "p50": 220,
+          "p95": 235.0000000000001
+        },
+        "commandMs": {
+          "p50": 29,
+          "p95": 30
+        },
+        "renderEnterMs": {
+          "p50": 36,
+          "p95": 38
+        },
+        "uiMs": {
+          "p50": 5,
+          "p95": 7
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 28,
+          "p95": 29
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 48.817208,
+          "p95": 48.842417
+        },
+        "mapMs": {
+          "p50": 3.055,
+          "p95": 3.07475
+        },
+        "syncMs": {
+          "p50": 2.786125,
+          "p95": 2.853958
+        },
+        "syncBuildMs": {
+          "p50": 1.753041,
+          "p95": 1.786208
+        },
+        "mapCheckMs": {
+          "p50": 0.164208,
+          "p95": 0.167542
+        },
+        "syncCheckMs": {
+          "p50": 1.0330840000000001,
+          "p95": 1.06775
+        },
+        "bytes": {
+          "p50": 56188126,
+          "p95": 56188133
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 79,
+          "p95": 85.00000000000023
+        },
+        "frameMs": {
+          "p50": 95,
+          "p95": 96
+        },
+        "commandMs": {
+          "p50": 4,
+          "p95": 4
+        },
+        "renderEnterMs": {
+          "p50": 7,
+          "p95": 7
+        },
+        "uiMs": {
+          "p50": 4,
+          "p95": 6
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3,
+          "p95": 4
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 4.61125,
+          "p95": 4.842458
+        },
+        "mapMs": {
+          "p50": 3.013333,
+          "p95": 3.3609579999999997
+        },
+        "syncMs": {
+          "p50": 2.682083,
+          "p95": 2.832583
+        },
+        "syncBuildMs": {
+          "p50": 1.6255420000000003,
+          "p95": 1.7991249999999996
+        },
+        "mapCheckMs": {
+          "p50": 0.164833,
+          "p95": 0.17124999999999999
+        },
+        "syncCheckMs": {
+          "p50": 1.0358329999999998,
+          "p95": 1.101083
+        },
+        "bytes": {
+          "p50": 56188153,
+          "p95": 56188171
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 77.99999999999955,
+          "p95": 85
+        },
+        "frameMs": {
+          "p50": 96,
+          "p95": 96.00000000000045
+        },
+        "commandMs": {
+          "p50": 4,
+          "p95": 4
+        },
+        "renderEnterMs": {
+          "p50": 6.999999999999545,
+          "p95": 7
+        },
+        "uiMs": {
+          "p50": 4,
+          "p95": 6.000000000000455
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3,
+          "p95": 4
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 5.580791,
+          "p95": 6.3361670000000005
+        },
+        "mapMs": {
+          "p50": 3.013792,
+          "p95": 3.183542
+        },
+        "syncMs": {
+          "p50": 2.737292,
+          "p95": 2.928625
+        },
+        "syncBuildMs": {
+          "p50": 1.693084,
+          "p95": 1.8668339999999997
+        },
+        "mapCheckMs": {
+          "p50": 0.164375,
+          "p95": 0.178209
+        },
+        "syncCheckMs": {
+          "p50": 1.0439589999999999,
+          "p95": 1.138541
+        },
+        "bytes": {
+          "p50": 56188187,
+          "p95": 56188233
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 215,
+          "p95": 221
+        },
+        "frameMs": {
+          "p50": 231,
+          "p95": 232
+        },
+        "commandMs": {
+          "p50": 31,
+          "p95": 31
+        },
+        "renderEnterMs": {
+          "p50": 38,
+          "p95": 38.00000000000006
+        },
+        "uiMs": {
+          "p50": 5,
+          "p95": 5
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 30,
+          "p95": 30
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 1
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 48.641958,
+          "p95": 49.132707999999994
+        },
+        "mapMs": {
+          "p50": 3.007667,
+          "p95": 3.172583
+        },
+        "syncMs": {
+          "p50": 2.890625,
+          "p95": 2.932791
+        },
+        "syncBuildMs": {
+          "p50": 1.8645,
+          "p95": 1.8731659999999999
+        },
+        "mapCheckMs": {
+          "p50": 0.163458,
+          "p95": 0.169333
+        },
+        "syncCheckMs": {
+          "p50": 1.026125,
+          "p95": 1.059625
+        },
+        "bytes": {
+          "p50": 56188143,
+          "p95": 56188149
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 36.00000000000023,
+          "p95": 39.00000000000023
+        },
+        "frameMs": {
+          "p50": 58.99999999999977,
+          "p95": 62
+        },
+        "commandMs": {
+          "p50": 4,
+          "p95": 4
+        },
+        "renderEnterMs": {
+          "p50": 6.999999999999886,
+          "p95": 7.000000000000227
+        },
+        "uiMs": {
+          "p50": 4,
+          "p95": 6
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3,
+          "p95": 4
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 4.625625,
+          "p95": 4.904458
+        },
+        "mapMs": {
+          "p50": 3.054709,
+          "p95": 3.14275
+        },
+        "syncMs": {
+          "p50": 2.712917,
+          "p95": 2.832666
+        },
+        "syncBuildMs": {
+          "p50": 1.686083,
+          "p95": 1.780125
+        },
+        "mapCheckMs": {
+          "p50": 0.167792,
+          "p95": 0.17858300000000002
+        },
+        "syncCheckMs": {
+          "p50": 1.036333,
+          "p95": 1.073708
+        },
+        "bytes": {
+          "p50": 8052187,
+          "p95": 8052208
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 38,
+          "p95": 41
+        },
+        "frameMs": {
+          "p50": 61,
+          "p95": 63
+        },
+        "commandMs": {
+          "p50": 4,
+          "p95": 4
+        },
+        "renderEnterMs": {
+          "p50": 6,
+          "p95": 7
+        },
+        "uiMs": {
+          "p50": 3,
+          "p95": 5
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3,
+          "p95": 4
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 5.643333,
+          "p95": 6.244375
+        },
+        "mapMs": {
+          "p50": 3.037166,
+          "p95": 3.127917
+        },
+        "syncMs": {
+          "p50": 2.685916,
+          "p95": 2.782542
+        },
+        "syncBuildMs": {
+          "p50": 1.639167,
+          "p95": 1.721959
+        },
+        "mapCheckMs": {
+          "p50": 0.168709,
+          "p95": 0.185666
+        },
+        "syncCheckMs": {
+          "p50": 1.039042,
+          "p95": 1.0997080000000001
+        },
+        "bytes": {
+          "p50": 8052232,
+          "p95": 8052256
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 637.0000000000001,
+          "p95": 658
+        },
+        "frameMs": {
+          "p50": 657,
+          "p95": 679
+        },
+        "commandMs": {
+          "p50": 75,
+          "p95": 78.00000000000006
+        },
+        "renderEnterMs": {
+          "p50": 92.00000000000006,
+          "p95": 98
+        },
+        "uiMs": {
+          "p50": 12,
+          "p95": 14
+        },
+        "uiCalls": {
+          "p50": 4,
+          "p95": 4
+        },
+        "dispatchMs": {
+          "p50": 77,
+          "p95": 80.00000000000006
+        },
+        "dispatchCalls": {
+          "p50": 2,
+          "p95": 2
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 140.82287499999998,
+          "p95": 141.14433400000001
+        },
+        "mapMs": {
+          "p50": 11.735125,
+          "p95": 11.892709
+        },
+        "syncMs": {
+          "p50": 16.905125,
+          "p95": 17.554625
+        },
+        "syncBuildMs": {
+          "p50": 12.854459000000002,
+          "p95": 12.857583000000002
+        },
+        "mapCheckMs": {
+          "p50": 0.638333,
+          "p95": 0.6555000000000001
+        },
+        "syncCheckMs": {
+          "p50": 4.050666,
+          "p95": 4.697042000000001
+        },
+        "bytes": {
+          "p50": 192657751,
+          "p95": 192657757
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 259.00000000000045,
+          "p95": 292
+        },
+        "frameMs": {
+          "p50": 280.9999999999991,
+          "p95": 304
+        },
+        "commandMs": {
+          "p50": 7,
+          "p95": 8
+        },
+        "renderEnterMs": {
+          "p50": 13,
+          "p95": 14
+        },
+        "uiMs": {
+          "p50": 8,
+          "p95": 9.000000000001819
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 6.0000000000009095,
+          "p95": 7
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 9.681208,
+          "p95": 10.163083
+        },
+        "mapMs": {
+          "p50": 11.946750000000002,
+          "p95": 12.18825
+        },
+        "syncMs": {
+          "p50": 16.698749999999997,
+          "p95": 17.521417
+        },
+        "syncBuildMs": {
+          "p50": 12.665834,
+          "p95": 13.284958
+        },
+        "mapCheckMs": {
+          "p50": 0.658625,
+          "p95": 0.683625
+        },
+        "syncCheckMs": {
+          "p50": 4.079875,
+          "p95": 4.241583
+        },
+        "bytes": {
+          "p50": 192657754,
+          "p95": 192657775
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 257.9999999999982,
+          "p95": 333.0000000000018
+        },
+        "frameMs": {
+          "p50": 271,
+          "p95": 352
+        },
+        "commandMs": {
+          "p50": 6,
+          "p95": 7.000000000001819
+        },
+        "renderEnterMs": {
+          "p50": 12,
+          "p95": 13.000000000001819
+        },
+        "uiMs": {
+          "p50": 8,
+          "p95": 9
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 6,
+          "p95": 7
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 13.405875,
+          "p95": 13.990874999999999
+        },
+        "mapMs": {
+          "p50": 11.972208,
+          "p95": 12.300875
+        },
+        "syncMs": {
+          "p50": 16.660542,
+          "p95": 17.229084
+        },
+        "syncBuildMs": {
+          "p50": 12.558250000000001,
+          "p95": 13.115749999999998
+        },
+        "mapCheckMs": {
+          "p50": 0.655291,
+          "p95": 0.692125
+        },
+        "syncCheckMs": {
+          "p50": 4.096125,
+          "p95": 4.236083
+        },
+        "bytes": {
+          "p50": 192657811,
+          "p95": 192657832
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 647,
+          "p95": 649.0000000000001
+        },
+        "frameMs": {
+          "p50": 667,
+          "p95": 669
+        },
+        "commandMs": {
+          "p50": 74,
+          "p95": 76
+        },
+        "renderEnterMs": {
+          "p50": 94,
+          "p95": 95
+        },
+        "uiMs": {
+          "p50": 12,
+          "p95": 12
+        },
+        "uiCalls": {
+          "p50": 4,
+          "p95": 4
+        },
+        "dispatchMs": {
+          "p50": 78,
+          "p95": 80
+        },
+        "dispatchCalls": {
+          "p50": 2,
+          "p95": 2
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 142.33925,
+          "p95": 143.4225
+        },
+        "mapMs": {
+          "p50": 11.901917,
+          "p95": 12.134374999999999
+        },
+        "syncMs": {
+          "p50": 16.842209,
+          "p95": 17.461042
+        },
+        "syncBuildMs": {
+          "p50": 12.810751,
+          "p95": 12.880292
+        },
+        "mapCheckMs": {
+          "p50": 0.647458,
+          "p95": 0.658833
+        },
+        "syncCheckMs": {
+          "p50": 3.9619169999999997,
+          "p95": 4.650291
+        },
+        "bytes": {
+          "p50": 192657748,
+          "p95": 192657759
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 88.00000000000045,
+          "p95": 93
+        },
+        "frameMs": {
+          "p50": 104,
+          "p95": 110
+        },
+        "commandMs": {
+          "p50": 7,
+          "p95": 7.000000000000455
+        },
+        "renderEnterMs": {
+          "p50": 12,
+          "p95": 13
+        },
+        "uiMs": {
+          "p50": 8.999999999999545,
+          "p95": 9.00000000000091
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 6,
+          "p95": 7
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 9.647334,
+          "p95": 10.476875
+        },
+        "mapMs": {
+          "p50": 11.851375,
+          "p95": 12.238792
+        },
+        "syncMs": {
+          "p50": 16.923209,
+          "p95": 18.253666000000003
+        },
+        "syncBuildMs": {
+          "p50": 12.81175,
+          "p95": 14.260125000000002
+        },
+        "mapCheckMs": {
+          "p50": 0.6535,
+          "p95": 0.6972919999999999
+        },
+        "syncCheckMs": {
+          "p50": 4.0531250000000005,
+          "p95": 4.36
+        },
+        "bytes": {
+          "p50": 8136549,
+          "p95": 8136567
+        }
+      }
+    },
+    {
+      "variant": "before",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 93,
+          "p95": 96
+        },
+        "frameMs": {
+          "p50": 104,
+          "p95": 117
+        },
+        "commandMs": {
+          "p50": 7,
+          "p95": 7.0000000000009095
+        },
+        "renderEnterMs": {
+          "p50": 12,
+          "p95": 13
+        },
+        "uiMs": {
+          "p50": 8.00000000000091,
+          "p95": 9
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 6,
+          "p95": 7
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 13.421709,
+          "p95": 14.176499999999999
+        },
+        "mapMs": {
+          "p50": 11.930209000000001,
+          "p95": 12.268709
+        },
+        "syncMs": {
+          "p50": 16.99175,
+          "p95": 17.557625
+        },
+        "syncBuildMs": {
+          "p50": 12.808708,
+          "p95": 13.491041
+        },
+        "mapCheckMs": {
+          "p50": 0.657666,
+          "p95": 0.680708
+        },
+        "syncCheckMs": {
+          "p50": 4.084833000000001,
+          "p95": 4.232708
+        },
+        "bytes": {
+          "p50": 8136587,
+          "p95": 8136611
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 88,
+          "p95": 88.99999999999994
+        },
+        "frameMs": {
+          "p50": 104,
+          "p95": 111.99999999999994
+        },
+        "commandMs": {
+          "p50": 15.999999999999943,
+          "p95": 18
+        },
+        "renderEnterMs": {
+          "p50": 19.999999999999943,
+          "p95": 21
+        },
+        "uiMs": {
+          "p50": 3,
+          "p95": 5
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 14.999999999999943,
+          "p95": 17
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 23.303375000000003,
+          "p95": 24.759125
+        },
+        "mapMs": {
+          "p50": 0.131833,
+          "p95": 0.143375
+        },
+        "syncMs": {
+          "p50": 0.575792,
+          "p95": 0.6329159999999999
+        },
+        "syncBuildMs": {
+          "p50": 0.33424999999999994,
+          "p95": 0.3553749999999999
+        },
+        "mapCheckMs": {
+          "p50": 0.038792,
+          "p95": 0.039959
+        },
+        "syncCheckMs": {
+          "p50": 0.241542,
+          "p95": 0.27754100000000004
+        },
+        "bytes": {
+          "p50": 16052371,
+          "p95": 16052385
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 32,
+          "p95": 37.000000000000114
+        },
+        "frameMs": {
+          "p50": 55,
+          "p95": 56
+        },
+        "commandMs": {
+          "p50": 3,
+          "p95": 4
+        },
+        "renderEnterMs": {
+          "p50": 5,
+          "p95": 6
+        },
+        "uiMs": {
+          "p50": 3,
+          "p95": 3.0000000000001137
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 2.9999999999998863,
+          "p95": 3
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 3.296958,
+          "p95": 3.441375
+        },
+        "mapMs": {
+          "p50": 0.133,
+          "p95": 0.143333
+        },
+        "syncMs": {
+          "p50": 0.5549160000000001,
+          "p95": 0.6189169999999999
+        },
+        "syncBuildMs": {
+          "p50": 0.31016600000000005,
+          "p95": 0.360709
+        },
+        "mapCheckMs": {
+          "p50": 0.038042,
+          "p95": 0.041041
+        },
+        "syncCheckMs": {
+          "p50": 0.24475000000000002,
+          "p95": 0.275625
+        },
+        "bytes": {
+          "p50": 16052386,
+          "p95": 16052412
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 30.999999999999773,
+          "p95": 36
+        },
+        "frameMs": {
+          "p50": 55,
+          "p95": 56
+        },
+        "commandMs": {
+          "p50": 3,
+          "p95": 3
+        },
+        "renderEnterMs": {
+          "p50": 5,
+          "p95": 6
+        },
+        "uiMs": {
+          "p50": 3,
+          "p95": 3.0000000000002274
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 2.9999999999997726,
+          "p95": 3
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 3.593959,
+          "p95": 3.824708
+        },
+        "mapMs": {
+          "p50": 0.13325,
+          "p95": 0.142125
+        },
+        "syncMs": {
+          "p50": 0.559708,
+          "p95": 0.665875
+        },
+        "syncBuildMs": {
+          "p50": 0.313584,
+          "p95": 0.409458
+        },
+        "mapCheckMs": {
+          "p50": 0.038333,
+          "p95": 0.041208999999999996
+        },
+        "syncCheckMs": {
+          "p50": 0.244708,
+          "p95": 0.27725
+        },
+        "bytes": {
+          "p50": 16052430,
+          "p95": 16052458
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 83.00000000000006,
+          "p95": 86
+        },
+        "frameMs": {
+          "p50": 95.00000000000006,
+          "p95": 106
+        },
+        "commandMs": {
+          "p50": 16,
+          "p95": 17
+        },
+        "renderEnterMs": {
+          "p50": 19.000000000000057,
+          "p95": 20
+        },
+        "uiMs": {
+          "p50": 2.999999999999943,
+          "p95": 2.999999999999943
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 15,
+          "p95": 16
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 23.363459,
+          "p95": 23.481416000000003
+        },
+        "mapMs": {
+          "p50": 0.128583,
+          "p95": 0.130209
+        },
+        "syncMs": {
+          "p50": 0.5323749999999999,
+          "p95": 0.612416
+        },
+        "syncBuildMs": {
+          "p50": 0.2924159999999999,
+          "p95": 0.36074899999999993
+        },
+        "mapCheckMs": {
+          "p50": 0.037709,
+          "p95": 0.038416
+        },
+        "syncCheckMs": {
+          "p50": 0.239959,
+          "p95": 0.25166700000000003
+        },
+        "bytes": {
+          "p50": 16052380,
+          "p95": 16052395
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 25,
+          "p95": 27
+        },
+        "frameMs": {
+          "p50": 39,
+          "p95": 55
+        },
+        "commandMs": {
+          "p50": 3,
+          "p95": 3.0000000000002274
+        },
+        "renderEnterMs": {
+          "p50": 5,
+          "p95": 5.000000000000227
+        },
+        "uiMs": {
+          "p50": 3,
+          "p95": 3
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 3.336083,
+          "p95": 3.432875
+        },
+        "mapMs": {
+          "p50": 0.132916,
+          "p95": 0.147125
+        },
+        "syncMs": {
+          "p50": 0.521541,
+          "p95": 0.579834
+        },
+        "syncBuildMs": {
+          "p50": 0.28020800000000007,
+          "p95": 0.32454199999999994
+        },
+        "mapCheckMs": {
+          "p50": 0.037792,
+          "p95": 0.039916
+        },
+        "syncCheckMs": {
+          "p50": 0.24195799999999998,
+          "p95": 0.2535
+        },
+        "bytes": {
+          "p50": 8029726,
+          "p95": 8029751
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-10",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 2,
+      "metrics": {
+        "publishedMs": {
+          "p50": 24,
+          "p95": 26
+        },
+        "frameMs": {
+          "p50": 39,
+          "p95": 55
+        },
+        "commandMs": {
+          "p50": 3,
+          "p95": 3.0000000000002274
+        },
+        "renderEnterMs": {
+          "p50": 5,
+          "p95": 5
+        },
+        "uiMs": {
+          "p50": 2.0000000000002274,
+          "p95": 3
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 2,
+          "p95": 3
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 3.664375,
+          "p95": 3.895042
+        },
+        "mapMs": {
+          "p50": 0.133167,
+          "p95": 0.149
+        },
+        "syncMs": {
+          "p50": 0.525667,
+          "p95": 0.575666
+        },
+        "syncBuildMs": {
+          "p50": 0.284334,
+          "p95": 0.319957
+        },
+        "mapCheckMs": {
+          "p50": 0.03875,
+          "p95": 0.041208
+        },
+        "syncCheckMs": {
+          "p50": 0.240833,
+          "p95": 0.25595799999999996
+        },
+        "bytes": {
+          "p50": 8029771,
+          "p95": 8029809
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 212,
+          "p95": 218
+        },
+        "frameMs": {
+          "p50": 229.0000000000001,
+          "p95": 233
+        },
+        "commandMs": {
+          "p50": 30,
+          "p95": 31
+        },
+        "renderEnterMs": {
+          "p50": 37,
+          "p95": 38
+        },
+        "uiMs": {
+          "p50": 5,
+          "p95": 6
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 29,
+          "p95": 30
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 48.500875,
+          "p95": 49.428041
+        },
+        "mapMs": {
+          "p50": 0.563125,
+          "p95": 0.5812080000000001
+        },
+        "syncMs": {
+          "p50": 2.383416,
+          "p95": 2.442125
+        },
+        "syncBuildMs": {
+          "p50": 1.3380409999999998,
+          "p95": 1.4055829999999998
+        },
+        "mapCheckMs": {
+          "p50": 0.168209,
+          "p95": 0.173541
+        },
+        "syncCheckMs": {
+          "p50": 1.036542,
+          "p95": 1.0453750000000002
+        },
+        "bytes": {
+          "p50": 56188136,
+          "p95": 56188137
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 74.99999999999989,
+          "p95": 81
+        },
+        "frameMs": {
+          "p50": 94,
+          "p95": 96
+        },
+        "commandMs": {
+          "p50": 4,
+          "p95": 4
+        },
+        "renderEnterMs": {
+          "p50": 7,
+          "p95": 7.000000000000227
+        },
+        "uiMs": {
+          "p50": 4,
+          "p95": 6
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3.0000000000004547,
+          "p95": 4
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 4.490832999999999,
+          "p95": 4.718624999999999
+        },
+        "mapMs": {
+          "p50": 0.527166,
+          "p95": 0.552875
+        },
+        "syncMs": {
+          "p50": 2.218917,
+          "p95": 2.395084
+        },
+        "syncBuildMs": {
+          "p50": 1.167958,
+          "p95": 1.3278750000000001
+        },
+        "mapCheckMs": {
+          "p50": 0.16458299999999998,
+          "p95": 0.170875
+        },
+        "syncCheckMs": {
+          "p50": 1.039584,
+          "p95": 1.157291
+        },
+        "bytes": {
+          "p50": 56188149,
+          "p95": 56188167
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 76,
+          "p95": 82
+        },
+        "frameMs": {
+          "p50": 95,
+          "p95": 97
+        },
+        "commandMs": {
+          "p50": 4,
+          "p95": 4.0000000000009095
+        },
+        "renderEnterMs": {
+          "p50": 6.000000000000455,
+          "p95": 7
+        },
+        "uiMs": {
+          "p50": 3.9999999999995453,
+          "p95": 5
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3,
+          "p95": 4
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 5.624666,
+          "p95": 6.179792
+        },
+        "mapMs": {
+          "p50": 0.5314169999999999,
+          "p95": 0.571125
+        },
+        "syncMs": {
+          "p50": 2.2122919999999997,
+          "p95": 2.412375
+        },
+        "syncBuildMs": {
+          "p50": 1.1629159999999998,
+          "p95": 1.3880000000000001
+        },
+        "mapCheckMs": {
+          "p50": 0.16449999999999998,
+          "p95": 0.17666700000000002
+        },
+        "syncCheckMs": {
+          "p50": 1.0351659999999998,
+          "p95": 1.1455
+        },
+        "bytes": {
+          "p50": 56188197,
+          "p95": 56188226
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 209,
+          "p95": 215
+        },
+        "frameMs": {
+          "p50": 231,
+          "p95": 239
+        },
+        "commandMs": {
+          "p50": 30,
+          "p95": 30.000000000000057
+        },
+        "renderEnterMs": {
+          "p50": 37,
+          "p95": 38
+        },
+        "uiMs": {
+          "p50": 5,
+          "p95": 7
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 29,
+          "p95": 29.000000000000057
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 48.069292,
+          "p95": 49.481292
+        },
+        "mapMs": {
+          "p50": 0.530167,
+          "p95": 0.5410830000000001
+        },
+        "syncMs": {
+          "p50": 2.290375,
+          "p95": 2.431584
+        },
+        "syncBuildMs": {
+          "p50": 1.23425,
+          "p95": 1.348001
+        },
+        "mapCheckMs": {
+          "p50": 0.16837500000000002,
+          "p95": 0.184792
+        },
+        "syncCheckMs": {
+          "p50": 1.056125,
+          "p95": 1.083583
+        },
+        "bytes": {
+          "p50": 56188128,
+          "p95": 56188130
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 32,
+          "p95": 37
+        },
+        "frameMs": {
+          "p50": 46,
+          "p95": 62
+        },
+        "commandMs": {
+          "p50": 4,
+          "p95": 4.999999999999886
+        },
+        "renderEnterMs": {
+          "p50": 7,
+          "p95": 7.999999999999886
+        },
+        "uiMs": {
+          "p50": 4,
+          "p95": 5
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3,
+          "p95": 4
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 4.429875,
+          "p95": 4.813292000000001
+        },
+        "mapMs": {
+          "p50": 0.5171250000000001,
+          "p95": 0.576833
+        },
+        "syncMs": {
+          "p50": 2.2607500000000003,
+          "p95": 2.341
+        },
+        "syncBuildMs": {
+          "p50": 1.2112920000000003,
+          "p95": 1.2967909999999998
+        },
+        "mapCheckMs": {
+          "p50": 0.164625,
+          "p95": 0.173375
+        },
+        "syncCheckMs": {
+          "p50": 1.038709,
+          "p95": 1.119917
+        },
+        "bytes": {
+          "p50": 8052188,
+          "p95": 8052210
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-50",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 7,
+      "metrics": {
+        "publishedMs": {
+          "p50": 35,
+          "p95": 39
+        },
+        "frameMs": {
+          "p50": 60.999999999999545,
+          "p95": 63
+        },
+        "commandMs": {
+          "p50": 4,
+          "p95": 4
+        },
+        "renderEnterMs": {
+          "p50": 6,
+          "p95": 7.000000000000455
+        },
+        "uiMs": {
+          "p50": 4,
+          "p95": 5
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 3,
+          "p95": 4
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 5.587792,
+          "p95": 6.013583000000001
+        },
+        "mapMs": {
+          "p50": 0.525,
+          "p95": 0.5443330000000001
+        },
+        "syncMs": {
+          "p50": 2.242833,
+          "p95": 2.414292
+        },
+        "syncBuildMs": {
+          "p50": 1.1933340000000001,
+          "p95": 1.3657489999999999
+        },
+        "mapCheckMs": {
+          "p50": 0.163958,
+          "p95": 0.172792
+        },
+        "syncCheckMs": {
+          "p50": 1.0471670000000002,
+          "p95": 1.151667
+        },
+        "bytes": {
+          "p50": 8052227,
+          "p95": 8052272
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 642,
+          "p95": 644
+        },
+        "frameMs": {
+          "p50": 664,
+          "p95": 668
+        },
+        "commandMs": {
+          "p50": 75,
+          "p95": 75
+        },
+        "renderEnterMs": {
+          "p50": 94,
+          "p95": 95
+        },
+        "uiMs": {
+          "p50": 11.000000000000057,
+          "p95": 13
+        },
+        "uiCalls": {
+          "p50": 4,
+          "p95": 4
+        },
+        "dispatchMs": {
+          "p50": 76.99999999999989,
+          "p95": 78.99999999999989
+        },
+        "dispatchCalls": {
+          "p50": 2,
+          "p95": 2
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 142.513042,
+          "p95": 148.817542
+        },
+        "mapMs": {
+          "p50": 2.0743340000000003,
+          "p95": 2.079375
+        },
+        "syncMs": {
+          "p50": 9.105208,
+          "p95": 9.378124999999999
+        },
+        "syncBuildMs": {
+          "p50": 4.640749999999999,
+          "p95": 5.019040999999999
+        },
+        "mapCheckMs": {
+          "p50": 0.63925,
+          "p95": 0.654458
+        },
+        "syncCheckMs": {
+          "p50": 4.359084,
+          "p95": 4.4644580000000005
+        },
+        "bytes": {
+          "p50": 192657726,
+          "p95": 192657757
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 239,
+          "p95": 260
+        },
+        "frameMs": {
+          "p50": 254,
+          "p95": 282
+        },
+        "commandMs": {
+          "p50": 7,
+          "p95": 8
+        },
+        "renderEnterMs": {
+          "p50": 12.999999999999545,
+          "p95": 14
+        },
+        "uiMs": {
+          "p50": 8.99999999999909,
+          "p95": 10
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 6,
+          "p95": 7.0000000000009095
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 9.815333,
+          "p95": 10.236167
+        },
+        "mapMs": {
+          "p50": 2.005416,
+          "p95": 2.134042
+        },
+        "syncMs": {
+          "p50": 9.004792,
+          "p95": 9.56675
+        },
+        "syncBuildMs": {
+          "p50": 4.901250000000001,
+          "p95": 5.24325
+        },
+        "mapCheckMs": {
+          "p50": 0.641667,
+          "p95": 0.685625
+        },
+        "syncCheckMs": {
+          "p50": 4.142708,
+          "p95": 4.378125
+        },
+        "bytes": {
+          "p50": 192657753,
+          "p95": 192657781
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-full"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 244.0000000000009,
+          "p95": 261.9999999999982
+        },
+        "frameMs": {
+          "p50": 255,
+          "p95": 283.9999999999982
+        },
+        "commandMs": {
+          "p50": 7,
+          "p95": 7.000000000001819
+        },
+        "renderEnterMs": {
+          "p50": 13,
+          "p95": 13
+        },
+        "uiMs": {
+          "p50": 8.999999999998181,
+          "p95": 9
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 6,
+          "p95": 7
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 13.688042,
+          "p95": 14.471792
+        },
+        "mapMs": {
+          "p50": 1.977875,
+          "p95": 2.0825829999999996
+        },
+        "syncMs": {
+          "p50": 8.78525,
+          "p95": 9.132042
+        },
+        "syncBuildMs": {
+          "p50": 4.642291000000001,
+          "p95": 4.959542000000001
+        },
+        "mapCheckMs": {
+          "p50": 0.638792,
+          "p95": 0.663625
+        },
+        "syncCheckMs": {
+          "p50": 4.030375,
+          "p95": 4.175208
+        },
+        "bytes": {
+          "p50": 192657796,
+          "p95": 192657828
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "first-math-render",
+      "n": 2,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 635,
+          "p95": 651
+        },
+        "frameMs": {
+          "p50": 668,
+          "p95": 689
+        },
+        "commandMs": {
+          "p50": 74,
+          "p95": 77
+        },
+        "renderEnterMs": {
+          "p50": 94,
+          "p95": 96
+        },
+        "uiMs": {
+          "p50": 12,
+          "p95": 12.000000000000057
+        },
+        "uiCalls": {
+          "p50": 4,
+          "p95": 4
+        },
+        "dispatchMs": {
+          "p50": 78,
+          "p95": 80
+        },
+        "dispatchCalls": {
+          "p50": 2,
+          "p95": 2
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 142.43275,
+          "p95": 143.471958
+        },
+        "mapMs": {
+          "p50": 1.9919999999999998,
+          "p95": 1.99225
+        },
+        "syncMs": {
+          "p50": 8.526292,
+          "p95": 8.740958000000001
+        },
+        "syncBuildMs": {
+          "p50": 4.405958999999999,
+          "p95": 4.660500000000001
+        },
+        "mapCheckMs": {
+          "p50": 0.640708,
+          "p95": 0.647875
+        },
+        "syncCheckMs": {
+          "p50": 4.080458,
+          "p95": 4.1203330000000005
+        },
+        "bytes": {
+          "p50": 192657742,
+          "p95": 192657751
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "prose-edit",
+      "n": 30,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 68.00000000000045,
+          "p95": 73
+        },
+        "frameMs": {
+          "p50": 87,
+          "p95": 90.00000000000045
+        },
+        "commandMs": {
+          "p50": 6,
+          "p95": 7
+        },
+        "renderEnterMs": {
+          "p50": 12,
+          "p95": 13
+        },
+        "uiMs": {
+          "p50": 9,
+          "p95": 10
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 6,
+          "p95": 7
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 9.8045,
+          "p95": 10.265375
+        },
+        "mapMs": {
+          "p50": 1.9997909999999999,
+          "p95": 2.125667
+        },
+        "syncMs": {
+          "p50": 9.1135,
+          "p95": 10.254916
+        },
+        "syncBuildMs": {
+          "p50": 4.942167,
+          "p95": 5.855624
+        },
+        "mapCheckMs": {
+          "p50": 0.644,
+          "p95": 0.685375
+        },
+        "syncCheckMs": {
+          "p50": 4.093542,
+          "p95": 4.680667000000001
+        },
+        "bytes": {
+          "p50": 8136544,
+          "p95": 8136562
+        }
+      }
+    },
+    {
+      "variant": "after",
+      "config": {
+        "cache": "warm",
+        "corpus": "article-200",
+        "language": "latex",
+        "renderer": "rgba-delta"
+      },
+      "phase": "formula-edit",
+      "n": 30,
+      "pages": 24,
+      "metrics": {
+        "publishedMs": {
+          "p50": 76,
+          "p95": 78
+        },
+        "frameMs": {
+          "p50": 88.99999999999909,
+          "p95": 94
+        },
+        "commandMs": {
+          "p50": 7,
+          "p95": 7.0000000000009095
+        },
+        "renderEnterMs": {
+          "p50": 12,
+          "p95": 13
+        },
+        "uiMs": {
+          "p50": 8.99999999999909,
+          "p95": 9.000000000001819
+        },
+        "uiCalls": {
+          "p50": 3,
+          "p95": 3
+        },
+        "dispatchMs": {
+          "p50": 6,
+          "p95": 7
+        },
+        "dispatchCalls": {
+          "p50": 1,
+          "p95": 1
+        },
+        "referenceMs": {
+          "p50": 0,
+          "p95": 0
+        },
+        "referenceTransactions": {
+          "p50": 0,
+          "p95": 0
+        },
+        "countRequests": {
+          "p50": 1,
+          "p95": 1
+        },
+        "compileMs": {
+          "p50": 13.70725,
+          "p95": 14.408542
+        },
+        "mapMs": {
+          "p50": 2.006334,
+          "p95": 2.362041
+        },
+        "syncMs": {
+          "p50": 8.958416999999999,
+          "p95": 9.885833
+        },
+        "syncBuildMs": {
+          "p50": 4.819,
+          "p95": 5.741042
+        },
+        "mapCheckMs": {
+          "p50": 0.641833,
+          "p95": 0.70025
+        },
+        "syncCheckMs": {
+          "p50": 4.144791,
+          "p95": 4.384583
+        },
+        "bytes": {
+          "p50": 8136590,
+          "p95": 8136624
+        }
+      }
+    }
+  ]
+}

@@ -167,8 +167,17 @@ la livraison de tous les types de B n’est pas un prérequis.
   p95 complet encore variable, 296 → 307 ms. Les 24 sessions vérifient
   396 états avant/après identiques en source, pixels et navigation ; badges,
   commandes, sélection et synchronisation sont vérifiés aussi dans les tests.
-  Prochaines priorités : réduire les allocations de projection et étudier la
-  mise en cache/indexation à la demande de RenderSync.
+  [Cartes de source et synchronisation optimisées](experiments/source-sync/RESULTS.md) :
+  règles d’échappement communes sans chaîne temporaire par caractère, index des
+  balises numérotées par parcours syntaxique linéaire dans chaque compilation.
+  Aucun cache de plages entre révisions ni coût différé au clic.
+  Sur 24 pages : carte 11,93 → 2,01 ms, construction RenderSync hors empreinte
+  12,81 → 4,82 ms (mesure dérivée), publication 258 → 244 ms RGBA complet et
+  93 → 76 ms candidat différentiel. Les 24 contrôles d’identité du cœur compilé
+  et 396 comparaisons de cartes UTF-16/ancres complètes passent, ainsi que les
+  pixels, reconstructions et synchronisations. Un pilote au cache Cargo invalide
+  est exclu ; reconstruction ciblée et empreinte du cœur font partie du protocole.
+  Prochaine étape : réévaluer le rendu différentiel et SVG partiel dans WebKit.
   Préserver UTF-16, échappements, zones et gardes ; mesurer chaque gain avant
   l’arbitrage final RGBA / SVG partiel, idéalement dans le même hôte WebKit.
   Le contrôle automatisé source→aperçu dans VS Code reste non concluant ;
