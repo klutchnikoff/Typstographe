@@ -2,6 +2,8 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { gzipSync } from "node:zlib";
+import os from "node:os";
+import { execFileSync } from "node:child_process";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const variants = process.argv.includes("--baseline")
   ? ["before"]
@@ -113,6 +115,14 @@ await mkdir(output, { recursive: true });
 const result = {
   success: true,
   sessions: checked,
+  environment: {
+    cpu: os.cpus()[0].model,
+    ram: os.totalmem(),
+    os: os.release(),
+    arch: os.arch(),
+    node: process.version,
+    rustc: execFileSync("rustc", ["--version"], { encoding: "utf8" }).trim(),
+  },
   manifests: datasets.map((d) => d.manifest),
   discarded: datasets.map((d) => d.discarded),
   summary,

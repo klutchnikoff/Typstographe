@@ -177,13 +177,17 @@ la livraison de tous les types de B n’est pas un prérequis.
   et 396 comparaisons de cartes UTF-16/ancres complètes passent, ainsi que les
   pixels, reconstructions et synchronisations. Un pilote au cache Cargo invalide
   est exclu ; reconstruction ciblée et empreinte du cœur font partie du protocole.
-  [Latence de saisie continue](experiments/typing-latency/BASELINE.md) : référence
+  [Latence de saisie continue](experiments/typing-latency/RESULTS.md) : comparaison
   native avec/sans actualisation acquise. Les uploads de pages consécutifs
   bloquent le fil de l’interface ; préparation fractionnée, annulation et
   libération des canvas sont implémentées, avec publication atomique conservée.
-  459 tests et 14 parcours navigateur passent. La mesure après correction est
-  en attente d’un bureau déverrouillé ; ne pas déduire un gain des seuls tests.
-  Qualifier d’abord la saisie puis réévaluer les renderers dans WebKit.
+  459 tests, 14 parcours navigateur et 24 sessions natives passent ; 1 152
+  entrées conservées, états finaux texte/source/pixels/navigation identiques.
+  Sur 24 pages à 250 ms/caractère : attente d’entrée p95 25 → 3 ms, prochain
+  créneau d’affichage p95 40 → 21 ms, intervalle maximal entre frames 123 → 67 ms.
+  Les publications restent actives (44 contre 46). Les pointes à cadence 100 ms
+  sans upload restent à isoler : la correction ne garantit pas toutes les frames.
+  Garder la fluidité de saisie comme critère pour réévaluer les renderers WebKit.
   Préserver UTF-16, échappements, zones et gardes ; mesurer chaque gain avant
   l’arbitrage final RGBA / SVG partiel, idéalement dans le même hôte WebKit.
   Le contrôle automatisé source→aperçu dans VS Code reste non concluant ;

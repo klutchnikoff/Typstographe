@@ -243,13 +243,16 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    258 → 244 ms en RGBA complet, 93 → 76 ms dans le candidat différentiel.
    Les 24 sessions vérifient le cœur réellement compilé et 396 états identiques
    en source, pixels, cartes UTF-16 complètes et ancres transformées.
-   [Référence de saisie continue mesurée](experiments/typing-latency/BASELINE.md) :
+   [Saisie continue mesurée avant/après](experiments/typing-latency/RESULTS.md) :
    les uploads successifs de toutes les pages peuvent bloquer l’éditeur.
    Préparation désormais fractionnée en tâches courtes, annulation des états
    périmés et libération des canvas ; publication toujours atomique.
-   459 tests et 14 parcours navigateur passent. La mesure native après correction
-   reste à réaliser sur un bureau macOS déverrouillé ; aucun gain n’est encore
-   annoncé pour cette correction. Priorité : qualifier la fluidité de saisie.
+   459 tests, 14 parcours navigateur et 24 sessions natives passent, avec
+   1 152 entrées conservées et des états finaux identiques. Sur 24 pages à
+   250 ms/caractère : file d’entrée p95 25 → 3 ms, prochain créneau d’affichage
+   p95 40 → 21 ms, intervalle maximal entre frames 123 → 67 ms. L’aperçu reste
+   actif (44 publications contre 46). Des pointes subsistent à 100 ms/caractère,
+   sans uploads pendant la frappe ; ne pas annoncer leur élimination générale.
    Réévaluer ensuite RGBA et SVG partiel avant de figer le renderer ; conserver
    le RGBA différentiel comme candidat qualifié. Le protocole reste à valider :
    cache par document/génération, options et flux de vue, réinitialisation,

@@ -2,6 +2,8 @@
 
 [Measured baseline and current validation status](BASELINE.md).
 
+[Completed before/after results and remaining limitations](RESULTS.md).
+
 This measures the production full-RGBA Tauri/WebKit pipeline, with preview
 updates enabled/paused. Both cases retain the same visible last preview, window
 layout, editor, Unicode counters, document confirmation and preservation rules.
@@ -48,7 +50,7 @@ caffeinate -di node experiments/typing-latency/run.mjs before --smoke
 caffeinate -di node experiments/typing-latency/run.mjs before
 node experiments/typing-latency/summarize.mjs --baseline
 # After committing the production correction:
-python3 experiments/typing-latency/prepare.py after AFTER_REF
+python3 experiments/typing-latency/prepare.py after 4d4af70
 sh experiments/typing-latency/build.sh after
 caffeinate -di node experiments/typing-latency/run.mjs after
 node experiments/typing-latency/summarize.mjs

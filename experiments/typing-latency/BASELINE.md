@@ -1,5 +1,7 @@
 # Continuous-input baseline — 5 November 2026
 
+[The after series is complete; verified comparison and limitations](RESULTS.md).
+
 Before production commit `4d4af70`: actual release Tauri/WebKit, full RGBA,
 fixed 2/7/24-page Articles. Twelve accepted sessions, two fresh processes per
 size/preview mode. Every character survives editing and confirmation; final
@@ -37,11 +39,10 @@ preparation, stale cancellation, upload failure, closure, pixel publication,
 reference badges and backward navigation. Production build and formatting pass.
 The Vite watcher test times out inside the sandbox and passes outside it.
 
-**After measurements are pending:** macOS switched to `loginwindow`; the native
-window could not activate and its animation frames stopped. Those runs failed
-before input and are excluded. Do not report an after gain from unit tests or
-background/hidden windows. The after executable and runner are ready to resume
-on an unlocked desktop:
+Initial after measurements were blocked when macOS switched to `loginwindow`.
+Those attempts are excluded. The desktop was unlocked, the final pixel check
+was made race-free, and a complete after series now passes. Reproduce it on an
+unlocked desktop:
 
 ```sh
 caffeinate -di node experiments/typing-latency/run.mjs after
