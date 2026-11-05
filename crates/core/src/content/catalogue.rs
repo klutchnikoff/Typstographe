@@ -271,7 +271,7 @@ pub fn parameters(id: &str) -> Value {
             schema
         }
         "math.inline" | "math.block" => {
-            let mut properties = json!({"language":{"type":"string","enum":["typst","latex"],"default":"typst","x-editor":{"placement":"panel","label_key":"web-math-language"}},"alt":{"type":"string","default":"","x-editor":{"placement":"panel","label_key":"web-math-alt"}}});
+            let mut properties = json!({"language":{"type":"string","enum":["typst","latex"],"default":"typst","x-editor":{"placement":"creation","storage":"attribute","label_key":"web-math-language"}},"alt":{"type":"string","default":"","x-editor":{"placement":"panel","label_key":"web-math-alt"}}});
             if id == "math.block" {
                 properties["alias"] = json!({"type":"string","default":"","maxLength":128,"pattern":"^[^\\s:$]*$","x-editor":{"placement":"panel","prefix":"eq:","label_key":"web-math-alias"}});
             }

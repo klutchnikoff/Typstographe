@@ -175,6 +175,46 @@ mod tests {
         }
     }
     #[test]
+    fn accessible_descriptions_reach_real_pdf_ua_equations_in_both_languages() {
+        use typst_pdf::{PdfOptions, PdfStandard, PdfStandards};
+        let kind = crate::document_types::DocumentType::Courrier;
+        let template = "#let courrier(body, ..options) = { set document(title: \"Equation\"); set text(lang: \"fr\"); body }";
+        for language in ["typst", "latex"] {
+            for alt in ["", "a au carré"] {
+                let node: Node = serde_json::from_value(json!({"type":"doc","content":[{"type":"mathBlock","attrs":{"language":language,"alt":alt},"content":[{"type":"text","text":"a^2"}]}]})).unwrap();
+                let source = crate::content::source(&node, &Default::default()).unwrap();
+                let mut world = crate::rendering::TypstWorld::default();
+                world.set_dependencies(&crate::packages::including_source(
+                    &crate::packages::for_template(template),
+                    &source,
+                ));
+                let document = world
+                    .compile_with_template(
+                        &source,
+                        &crate::document_types::Metadata::demo(kind),
+                        template,
+                    )
+                    .unwrap();
+                let options = PdfOptions {
+                    standards: PdfStandards::new(&[PdfStandard::Ua_1]).unwrap(),
+                    ..Default::default()
+                };
+                let result = typst_pdf::pdf(&document, &options);
+                if alt.is_empty() {
+                    let errors = result.unwrap_err();
+                    assert!(
+                        errors
+                            .iter()
+                            .any(|e| e.message.to_lowercase().contains("missing alt text")),
+                        "{errors:?}"
+                    );
+                } else {
+                    assert!(result.is_ok(), "{language}: {result:?}");
+                }
+            }
+        }
+    }
+    #[test]
     fn aliases_are_optional_unique_and_independent_of_internal_anchors() {
         let mut d = doc("typst", "x");
         let target = references::targets(&d).pop().unwrap();
@@ -238,6 +278,21 @@ mod tests {
         let next = session.guard().clone();
         let mark:Command=serde_json::from_value(json!({"id":"text.bold","params":{"target":{"zone":{"kind":"body","path":[0,1]},"from":0,"to":1},"value":"on"}})).unwrap();
         assert!(session.prepare_commands(&next, &[mark]).is_err());
+        // Language is bound at creation, not a mutable public setting.
+        let before = session.state().clone();
+        let switch: Command = serde_json::from_value(json!({"id":"node.set_attrs","params":{"target":{"root":{"kind":"body"},"path":[0,1]},"attrs":{"language":"typst"}}})).unwrap();
+        assert!(session.prepare_commands(&next, &[switch]).is_err());
+        assert_eq!(session.state(), &before);
+        let alt: Command = serde_json::from_value(json!({"id":"node.set_attrs","params":{"target":{"root":{"kind":"body"},"path":[0,1]},"attrs":{"alt":"Une formule accessible"}}})).unwrap();
+        let prepared = session.prepare_commands(&next, &[alt]).unwrap();
+        session.publish(prepared).unwrap();
+        assert_eq!(
+            session.state().document.content[0].content[1]
+                .attrs
+                .as_ref()
+                .unwrap()["alt"],
+            "Une formule accessible"
+        );
     }
     #[test]
     fn derived_source_selects_offline_libraries_even_without_a_model_import() {
