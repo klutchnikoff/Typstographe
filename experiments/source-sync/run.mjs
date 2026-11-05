@@ -20,6 +20,13 @@ for (const [old, value] of [
     '["preview-worker", "renderer", "typst"]',
     '["preview-worker", "renderer", "typst", "sync-index"]',
   ],
+  [
+    "      report.run = run;",
+    `      const expectedCore = JSON.parse(await readFile(resolve(output, "manifest.json"), "utf8")).core_fingerprint;
+      if (!expectedCore || report.nativeProfiling.find(r => r.stage === "core-build")?.fingerprint !== expectedCore)
+        throw new Error("Native core fingerprint mismatch; rebuild the isolated core before measuring");
+      report.run = run;`,
+  ],
 ]) {
   if (code.split(old).length !== 2)
     throw Error(`Unexpected insertion point: ${old}`);

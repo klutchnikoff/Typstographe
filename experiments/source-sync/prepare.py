@@ -1,5 +1,6 @@
 """Reuse the validated native comparison, checking complete maps and anchors too."""
 import json
+import hashlib
 import sys
 from pathlib import Path
 
@@ -48,4 +49,17 @@ replace('crates/core/src/navigation.rs', '        Self {\n            revision,\
             world,''')
 m = json.loads((out / 'manifest.json').read_text())
 m.update(scope='Native source-map and synchronization indexing comparison')
+# Shared Cargo targets can reuse a local crate from an older archive. Embed a
+# literal in the core itself so the runner checks executed code, not its manifest.
+h = hashlib.sha256()
+for name in ['content/mapping.rs', 'document.rs', 'document/markup.rs', 'navigation.rs']:
+    h.update(name.encode())
+    h.update((source / 'crates/core/src' / name).read_bytes())
+fingerprint = h.hexdigest()
+replace('crates/core/src/preview_profile.rs',
+        '    std::mem::take(&mut *RECORDS.get_or_init(Default::default).lock().unwrap())',
+        '    let mut records = std::mem::take(&mut *RECORDS.get_or_init(Default::default).lock().unwrap());\n'
+        f'    records.push(json!({{"stage":"core-build", "fingerprint":"{fingerprint}"}}));\n'
+        '    records')
+m['core_fingerprint'] = fingerprint
 (out / 'manifest.json').write_text(json.dumps(m, indent=2) + '\n')

@@ -55,6 +55,7 @@ const getters = {
   compileMs: (s) => s.timings.compileMs,
   mapMs: (s) => s.native["preview-worker"].mapMs,
   syncMs: (s) => s.timings.syncMs,
+  syncBuildMs: (s) => s.timings.syncMs - s.native["sync-index"].verificationMs,
   mapCheckMs: (s) => s.native["preview-worker"].mapCheckMs,
   syncCheckMs: (s) => s.native["sync-index"].verificationMs,
   bytes: (s) => s.profiling.frameBytes,

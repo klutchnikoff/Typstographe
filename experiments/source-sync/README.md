@@ -46,12 +46,8 @@ existing disposable copies; all transient files stay in ignored `output/`.
 python3 experiments/source-sync/prepare.py before c33dbdf
 python3 experiments/source-sync/prepare.py after 46c3553
 # Build each copy: replace VARIANT with before, then after.
-cd output/source-sync-VARIANT/source
-npm --workspace app run build -- --mode recipe
-TAURI_CONFIG='{"build":{"frontendDist":"../dist-recipe"}}' \
-  CARGO_TARGET_DIR="$PWD/../../../target" cargo build --release --locked --offline \
-  -p typstographe-source-sync-VARIANT --features recipe-driver -j 2
-cd ../../..
+sh experiments/source-sync/build.sh before
+sh experiments/source-sync/build.sh after
 # Wait until both builds and functional checks have finished before measuring.
 caffeinate -di node experiments/source-sync/run.mjs before
 caffeinate -di node experiments/source-sync/run.mjs after
@@ -63,3 +59,15 @@ restart hidden/suspended sessions. Publication and two-animation-frame waits
 are distinct measurements; neither is physical GPU presentation. No screenshot,
 video, browser performance trace or personal `.typsto` input is used. Raw reports
 are losslessly gzipped JSON under `results/`; the summary remains plain JSON.
+
+The build script invalidates the local core's release artifacts while retaining
+third-party dependencies. Git archives preserve commit timestamps: two copies
+sharing a Cargo target can otherwise reuse the wrong local core. A compile-time
+core fingerprint is recorded by the core and checked against each manifest
+before accepting a session. The build script also removes the instrumented core
+artifacts on exit, preserving the statically linked measurement binaries while
+ensuring a later production release build recompiles its own core.
+A first pilot exposed this problem and was excluded;
+raw pilot data remains only under `output/`. `syncBuildMs` subtracts measured
+verification time from the inclusive synchronization timer, per sample; it is a
+derived construction metric, not an end-to-end latency estimate.
