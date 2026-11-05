@@ -423,7 +423,10 @@ fn dispatch(
             )?;
             Ok(serde_json::Value::Null)
         }
-        "join" => serde_json::to_value(bridge.session()?.join(peer)).map_err(CommandError::from),
+        "join" => {
+            bridge.renderer.2.lock()?.detach(peer);
+            serde_json::to_value(bridge.session()?.join(peer)).map_err(CommandError::from)
+        }
         "commit_structured_commands" => {
             let request = serde_json::from_value(args["request"].clone())?;
             let mut session = bridge.session()?;
@@ -499,6 +502,38 @@ fn dispatch(
             args["data"].as_str().ok_or("Missing image data")?.into(),
         )?)
         .map_err(CommandError::from),
+        "preview_bind" => Ok(serde_json::json!(crate::preview_pipeline::bind(
+            bridge,
+            peer,
+            args["generation"].as_str().ok_or("Missing generation")?
+        )?)),
+        "preview_invalidate" => {
+            crate::preview_pipeline::invalidate(
+                bridge,
+                peer,
+                &serde_json::from_value(args["scope"].clone())?,
+            )?;
+            Ok(serde_json::Value::Null)
+        }
+        "preview_sync" => crate::preview_pipeline::query(
+            bridge,
+            peer,
+            &serde_json::from_value(args["frame"].clone())?,
+            args["revision"].as_u64().ok_or("Missing revision")?,
+            serde_json::from_value(args["query"].clone())?,
+        ),
+        "preview_delta" => {
+            use base64::Engine as _;
+            let bytes = crate::preview_pipeline::render(
+                bridge,
+                peer,
+                serde_json::from_value(args["snapshot"].clone())?,
+                serde_json::from_value(args["request"].clone())?,
+            )?;
+            Ok(
+                serde_json::json!({"binary":base64::engine::general_purpose::STANDARD.encode(bytes)}),
+            )
+        }
         "preview_frame" => {
             use base64::Engine as _;
             let snapshot: Snapshot = serde_json::from_value(args["snapshot"].clone())?;

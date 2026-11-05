@@ -1,4 +1,5 @@
 //! Moteur Typst embarqué : fichiers virtuels et polices embarquées, sans réseau.
+mod visual;
 use crate::document_types::{Metadata, model_options};
 use crate::errors::{CoreError, TemplateError};
 use comemo::Track;
@@ -13,6 +14,7 @@ use typst::{
     utils::LazyHash,
 };
 use typst_layout::PagedDocument;
+pub use visual::page_key;
 
 #[derive(Clone)]
 pub struct TypstWorld {

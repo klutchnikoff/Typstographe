@@ -1,7 +1,12 @@
+pub mod delta;
 use crate::error::CommandError;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, sync::Mutex, time::Instant};
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+    time::Instant,
+};
 use typstographe_core::{
     assets::Assets,
     document::SourceMap,
@@ -18,6 +23,8 @@ pub struct Preview {
     pub elapsed_ms: f64,
     pub timings: PreviewTimings,
     pub page_sizes: Vec<[f32; 2]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delta: Option<delta::Metadata>,
 }
 
 /// Rust-side stages only: scheduling, source projection, IPC and browser decoding
@@ -33,6 +40,25 @@ pub struct PreviewTimings {
     pub base64_ms: f64,
     pub sync_ms: f64,
     pub svg_ms: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Stage {
+    Start,
+    Compiled,
+    Page,
+    Synchronization,
+    Packet,
+}
+struct Control<'a> {
+    ticket: &'a delta::Ticket,
+    current: &'a dyn Fn(Stage) -> bool,
+}
+fn check(control: Option<&Control<'_>>, stage: Stage) -> Result<(), CommandError> {
+    if control.is_some_and(|c| !c.ticket.current() || !(c.current)(stage)) {
+        return Err("stale".into());
+    }
+    Ok(())
 }
 
 fn milliseconds(start: Instant) -> f64 {
@@ -53,12 +79,17 @@ struct Output {
     preview: Preview,
     buffers: Vec<Vec<u8>>,
     dimensions: Vec<[u32; 2]>,
+    indices: Vec<usize>,
+    keys: Vec<String>,
+    sync: Option<Arc<typstographe_core::navigation::RenderSync>>,
 }
 impl Output {
     fn packet(self, encoding: Encoding) -> Result<Vec<u8>, CommandError> {
         let mut offset = 0;
-        let pages: Vec<_> = self.buffers.iter().zip(&self.dimensions).map(|(bytes, size)| {
+        let pages: Vec<_> = self.buffers.iter().zip(&self.dimensions).enumerate().map(|(i, (bytes, size))| {
             let page = serde_json::json!({"encoding": encoding, "width": size[0], "height": size[1], "offset": offset, "length": bytes.len()});
+            let mut page = page;
+            if self.preview.delta.is_some() { page["index"] = serde_json::json!(self.indices[i]); }
             offset += bytes.len();
             page
         }).collect();
@@ -79,7 +110,8 @@ impl Output {
 #[derive(Default)]
 pub struct Renderer(
     pub Mutex<TypstWorld>,
-    pub Mutex<Option<typstographe_core::navigation::RenderSync>>,
+    pub Mutex<Option<Arc<typstographe_core::navigation::RenderSync>>>,
+    pub Mutex<delta::Views>,
 );
 pub struct RenderContext<'a> {
     pub settings: &'a crate::settings::Settings,
@@ -134,8 +166,14 @@ impl Renderer {
             settings,
             map,
             Encoding::Dataurl,
+            None,
         )
-        .map(|output| output.preview)
+        .and_then(|output| {
+            if let Some(sync) = &output.sync {
+                *self.1.lock()? = Some(sync.clone());
+            }
+            Ok(output.preview)
+        })
     }
     pub fn frame(
         &self,
@@ -146,7 +184,7 @@ impl Renderer {
         map: SourceMap,
         encoding: Encoding,
     ) -> Result<Vec<u8>, CommandError> {
-        self.render_output(
+        let output = self.render_output(
             source,
             assets,
             revision,
@@ -154,8 +192,52 @@ impl Renderer {
             Some(settings),
             Some(map),
             encoding,
-        )?
-        .packet(encoding)
+            None,
+        )?;
+        if let Some(sync) = &output.sync {
+            *self.1.lock()? = Some(sync.clone());
+        }
+        output.packet(encoding)
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub fn delta_frame(
+        &self,
+        source: String,
+        assets: Assets,
+        revision: u64,
+        settings: RenderContext<'_>,
+        map: SourceMap,
+        ticket: &delta::Ticket,
+        current: &dyn Fn(Stage) -> bool,
+    ) -> Result<(Vec<u8>, Arc<delta::Record>), CommandError> {
+        let control = Control { ticket, current };
+        let mut output = self.render_output(
+            source,
+            assets,
+            revision,
+            None,
+            Some(settings),
+            Some(map),
+            Encoding::Rgba,
+            Some(&control),
+        )?;
+        let metadata = delta::Metadata {
+            generation: ticket.scope.generation.clone(),
+            epoch: ticket.scope.epoch.clone(),
+            version: ticket.scope.version,
+            id: uuid::Uuid::new_v4().to_string(),
+            base: ticket.base.as_ref().map(|base| base.metadata.id.clone()),
+            keys: std::mem::take(&mut output.keys),
+        };
+        output.preview.delta = Some(metadata.clone());
+        let record = Arc::new(delta::Record {
+            metadata,
+            sync: output.sync.take().expect("Mapped delta frame"),
+        });
+        check(Some(&control), Stage::Packet)?;
+        let bytes = output.packet(Encoding::Rgba)?;
+        check(Some(&control), Stage::Packet)?;
+        Ok((bytes, record))
     }
     // One compilation/validation/synchronisation path for all preview transports.
     #[allow(clippy::too_many_arguments)]
@@ -168,7 +250,9 @@ impl Renderer {
         context: Option<RenderContext<'_>>,
         map: Option<SourceMap>,
         encoding: Encoding,
+        control: Option<&Control<'_>>,
     ) -> Result<Output, CommandError> {
+        check(control, Stage::Start)?;
         let fallback = crate::settings::Settings::default();
         let context = context.unwrap_or_else(|| (&fallback).into());
         let settings = context.settings;
@@ -191,6 +275,7 @@ impl Renderer {
         let start = Instant::now();
         let mut timings = PreviewTimings::default();
         let mut world = self.0.lock()?;
+        check(control, Stage::Start)?;
         typstographe_core::packages::validate_embedded(&request.template, &request.dependencies)
             .map_err(CommandError::message)?;
         world.set_assets(&request.assets);
@@ -206,6 +291,7 @@ impl Renderer {
             )
             .map_err(CommandError::message)?;
         timings.compile_ms = milliseconds(compile_start);
+        check(control, Stage::Compiled)?;
         let export_start = Instant::now();
         if let Some(path) = export {
             typstographe_core::exporting::write_document(
@@ -221,7 +307,24 @@ impl Renderer {
         let mut pages = Vec::new();
         let mut buffers = Vec::new();
         let mut dimensions = Vec::new();
-        for page in document.pages() {
+        let mut indices = Vec::new();
+        let mut keys = Vec::new();
+        let options = typst_render::RenderOptions::default();
+        for (index, page) in document.pages().iter().enumerate() {
+            check(control, Stage::Page)?;
+            if let Some(control) = control {
+                let key = typstographe_core::rendering::page_key(page, &options);
+                let reuse = control
+                    .ticket
+                    .base
+                    .as_ref()
+                    .is_some_and(|base| base.metadata.keys.get(index) == Some(&key));
+                keys.push(key);
+                if reuse {
+                    continue;
+                }
+            }
+            indices.push(index);
             if matches!(encoding, Encoding::Svg) {
                 let svg_start = Instant::now();
                 buffers.push(typst_svg::svg(page, &typst_svg::SvgOptions::default()).into_bytes());
@@ -262,14 +365,15 @@ impl Renderer {
             .collect();
         let references = typstographe_core::content::references::resolved(&document);
         let sync_start = Instant::now();
-        if let Some(map) = map {
-            *self.1.lock()? = Some(typstographe_core::navigation::RenderSync::new(
+        check(control, Stage::Synchronization)?;
+        let sync = map.map(|map| {
+            Arc::new(typstographe_core::navigation::RenderSync::new(
                 revision,
                 world.clone(),
                 document,
                 map,
-            ));
-        }
+            ))
+        });
         timings.sync_ms = milliseconds(sync_start);
         Ok(Output {
             preview: Preview {
@@ -280,9 +384,13 @@ impl Renderer {
                 elapsed_ms: milliseconds(start),
                 timings,
                 page_sizes,
+                delta: None,
             },
             buffers,
             dimensions,
+            indices,
+            keys,
+            sync,
         })
     }
 }
@@ -316,7 +424,7 @@ fn current_sync<T>(
     Ok(cache
         .as_ref()
         .filter(|sync| sync.revision == revision)
-        .and_then(query))
+        .and_then(|sync| query(sync)))
 }
 #[tauri::command]
 pub fn sync_forward(
@@ -683,5 +791,177 @@ mod tests {
                 );
             }
         }
+    }
+}
+
+#[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
+mod delta_tests {
+    use super::*;
+    fn scope(epoch: &str, version: u64) -> delta::Scope {
+        delta::Scope {
+            generation: "document".into(),
+            epoch: epoch.into(),
+            version,
+        }
+    }
+    fn settings() -> crate::settings::Settings {
+        crate::settings::Settings {
+            template: "#let courrier(body, ..options) = { set page(width: 80pt, height: 80pt, margin: 0pt); body }".into(),
+            ..Default::default()
+        }
+    }
+    fn produce(
+        renderer: &Renderer,
+        ticket: &delta::Ticket,
+        source: &str,
+        revision: u64,
+    ) -> (Vec<u8>, Arc<delta::Record>) {
+        renderer
+            .delta_frame(
+                source.into(),
+                Assets::default(),
+                revision,
+                (&settings()).into(),
+                SourceMap::default(),
+                ticket,
+                &|_| true,
+            )
+            .unwrap()
+    }
+    fn payload(packet: &[u8]) -> (serde_json::Value, &[u8]) {
+        let size = u32::from_le_bytes(packet[4..8].try_into().unwrap()) as usize;
+        (
+            serde_json::from_slice(&packet[8..8 + size]).unwrap(),
+            &packet[8 + size..],
+        )
+    }
+    #[test]
+    fn differential_matches_full_pixels_and_refreshes_sync_without_pixels() {
+        let renderer = Renderer::default();
+        let mut views = delta::Views::default();
+        let epoch = views.bind("first", "document");
+        let ticket = views.begin("first", scope(&epoch, 1), None).unwrap();
+        let (full, first) = produce(&renderer, &ticket, "Un\n#pagebreak()\nDeux", 1);
+        assert_eq!(payload(&full).0["pages"].as_array().unwrap().len(), 2);
+        views.commit("first", &ticket, first.clone()).unwrap();
+        let ticket = views
+            .begin("first", scope(&epoch, 2), Some(&first.metadata.id))
+            .unwrap();
+        // A comment moves all source offsets without painting a pixel.
+        let (same, second) = produce(
+            &renderer,
+            &ticket,
+            "// source offsets\nUn\n#pagebreak()\nDeux",
+            2,
+        );
+        assert!(payload(&same).1.is_empty());
+        assert_eq!(payload(&same).0["pages"], serde_json::json!([]));
+        assert_eq!(second.sync.revision, 2);
+        assert!(!Arc::ptr_eq(&first.sync, &second.sync));
+        views.commit("first", &ticket, second.clone()).unwrap();
+        let ticket = views
+            .begin("first", scope(&epoch, 3), Some(&second.metadata.id))
+            .unwrap();
+        let (changed, third) = produce(&renderer, &ticket, "Un\n#pagebreak()\nTrois", 3);
+        let (header, pixels) = payload(&changed);
+        assert_eq!(header["pages"].as_array().unwrap().len(), 1);
+        assert_eq!(header["pages"][0]["index"], 1);
+        let full = renderer
+            .frame(
+                "Un\n#pagebreak()\nTrois".into(),
+                Assets::default(),
+                3,
+                (&settings()).into(),
+                SourceMap::default(),
+                Encoding::Rgba,
+            )
+            .unwrap();
+        let (header, full_pixels) = payload(&full);
+        let second_page = header["pages"][1]["offset"].as_u64().unwrap() as usize;
+        assert_eq!(pixels, &full_pixels[second_page..]);
+        assert_eq!(third.metadata.keys[0], first.metadata.keys[0]);
+    }
+    #[test]
+    fn abandoned_candidates_do_not_evict_displayed_base_and_epochs_isolate_windows() {
+        let renderer = Renderer::default();
+        let mut views = delta::Views::default();
+        let epoch = views.bind("first", "document");
+        let ticket = views.begin("first", scope(&epoch, 1), None).unwrap();
+        let (_, first) = produce(&renderer, &ticket, "Un", 1);
+        views.commit("first", &ticket, first.clone()).unwrap();
+        let ticket = views
+            .begin("first", scope(&epoch, 2), Some(&first.metadata.id))
+            .unwrap();
+        let (_, discarded) = produce(&renderer, &ticket, "Deux", 2);
+        views.commit("first", &ticket, discarded).unwrap();
+        let ticket = views
+            .begin("first", scope(&epoch, 3), Some(&first.metadata.id))
+            .unwrap();
+        assert_eq!(ticket.base.as_ref().unwrap().metadata.id, first.metadata.id);
+        let (same, _) = produce(&renderer, &ticket, "Un", 3);
+        assert!(payload(&same).1.is_empty());
+        let other = views.bind("second", "document");
+        assert_ne!(other, epoch);
+        assert!(
+            views
+                .begin("second", scope(&epoch, 4), Some(&first.metadata.id))
+                .is_err()
+        );
+        let unknown = views
+            .begin("second", scope(&other, 4), Some(&first.metadata.id))
+            .unwrap();
+        assert!(unknown.base.is_none());
+        views.invalidate("first", &scope(&epoch, 5)).unwrap();
+        views.invalidate("first", &scope(&epoch, 4)).unwrap(); // Late cancellation cannot regress.
+        assert!(!ticket.current());
+        assert!(views.begin("first", scope(&epoch, 4), None).is_err());
+        let latest = views.begin("first", scope(&epoch, 5), None).unwrap();
+        assert!(latest.current());
+        views.detach("first");
+        assert!(!latest.current());
+        assert_ne!(views.bind("first", "document"), epoch);
+        assert!(views.begin("first", scope(&epoch, 6), None).is_err());
+    }
+    #[test]
+    fn obsolete_jobs_abort_at_each_expensive_boundary_and_never_publish_sync() {
+        let renderer = Renderer::default();
+        let mut views = delta::Views::default();
+        let epoch = views.bind("first", "document");
+        for stop in [
+            Stage::Start,
+            Stage::Compiled,
+            Stage::Page,
+            Stage::Synchronization,
+            Stage::Packet,
+        ] {
+            let ticket = views.begin("first", scope(&epoch, 1), None).unwrap();
+            let reached = std::cell::Cell::new(false);
+            let result = renderer.delta_frame(
+                "Un\n#pagebreak()\nDeux".into(),
+                Assets::default(),
+                1,
+                (&settings()).into(),
+                SourceMap::default(),
+                &ticket,
+                &|stage| {
+                    if stage == stop {
+                        reached.set(true);
+                        false
+                    } else {
+                        true
+                    }
+                },
+            );
+            assert!(reached.get(), "{stop:?}");
+            assert!(matches!(result, Err(error) if error == CommandError::from("stale")));
+            assert!(renderer.1.lock().unwrap().is_none());
+        }
+        let ticket = views.begin("first", scope(&epoch, 1), None).unwrap();
+        let (_, record) = produce(&renderer, &ticket, "Un", 1);
+        let newer = views.begin("first", scope(&epoch, 1), None).unwrap();
+        assert!(!ticket.current());
+        assert!(newer.current());
+        assert!(views.commit("first", &ticket, record).is_err());
     }
 }

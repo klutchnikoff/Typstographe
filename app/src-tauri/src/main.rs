@@ -17,6 +17,7 @@ mod native_locales;
 mod native_open;
 mod owner;
 mod preferences;
+mod preview_pipeline;
 mod project;
 mod proofing;
 mod recovery;
@@ -41,6 +42,7 @@ use std::{
 };
 use tauri::{Emitter, Manager, State, WebviewWindow};
 
+#[derive(Clone)]
 struct Bridge {
     session: Arc<Mutex<Session>>,
     renderer: Arc<Renderer>,
@@ -123,6 +125,7 @@ fn join(
 ) -> Result<Bootstrap, CommandError> {
     let (bootstrap, status) = {
         let mut session = state.session()?;
+        state.renderer.2.lock()?.detach(window.label());
         (session.join(window.label()), session.synchronization())
     };
     publish_synchronization(&app, status)?;
@@ -549,6 +552,9 @@ fn main() {
         .on_window_event(|window, event| {
             if matches!(event, tauri::WindowEvent::Destroyed) {
                 let state = window.state::<Bridge>();
+                if let Ok(mut views) = state.renderer.2.lock() {
+                    views.detach(window.label());
+                }
                 if let Ok(mut session) = state.session.lock() {
                     session.leave(window.label());
                     let _ = window
@@ -643,6 +649,10 @@ fn main() {
             awareness,
             preview,
             preview_frame,
+            preview_pipeline::preview_bind,
+            preview_pipeline::preview_invalidate,
+            preview_pipeline::preview_delta,
+            preview_pipeline::preview_sync,
             save,
             export_document,
             prepare_image,
