@@ -336,6 +336,17 @@ Préserver la dernière page valide pendant un rendu, refuser les résultats pé
 et éviter une file de compilations obsolètes. Définir ensemble les budgets sur
 documents courts, longs, illustrés et avec plusieurs participants.
 
+**Flux desktop (5 novembre 2026) :** le [contrat de rendu différentiel](docs/preview-stream.md)
+annule les travaux périmés aux frontières coûteuses et ne transporte que les
+pages dont les pixels changent. Base explicite par fenêtre/génération/époque,
+acquittée uniquement après publication ; un rendu retourné mais abandonné ne
+remplace pas la base affichée. Les cartes immuables sont renouvelées à chaque
+révision et adressées par identifiant du rendu affiché. Repli complet après perte
+de base, publication atomique et réemploi des canvas inchangés. Les exports et
+le format documentaire restent indépendants de ce protocole interne. Mesurer la
+saisie sur les trois articles avec/sans aperçu, sans confondre réduction du
+transfert et disparition de toutes les pointes de latence.
+
 **Budget relatif :** exprimer la cible comme un facteur (1,5 à 2, en p95) de la
 compilation incrémentale de Typst seul sur le même document, avec une référence
 distincte pour le natif et pour le WebAssembly, un plancher absolu pour les petits

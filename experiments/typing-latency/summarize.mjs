@@ -5,6 +5,8 @@ import { gzipSync } from "node:zlib";
 import os from "node:os";
 import { execFileSync } from "node:child_process";
 const root = fileURLToPath(new URL("../../", import.meta.url));
+const series = process.env.TOG_TYPING_SERIES || "typing-latency";
+if (!/^[a-z0-9-]+$/.test(series)) throw Error("Invalid series name");
 const variants = process.argv.includes("--baseline")
   ? ["before"]
   : ["before", "after"];
@@ -13,7 +15,7 @@ const datasets = await Promise.all(
     variant,
     ...JSON.parse(
       await readFile(
-        resolve(root, `output/typing-latency-${variant}/raw.json`),
+        resolve(root, `output/${series}-${variant}/raw.json`),
         "utf8",
       ),
     ),
@@ -97,20 +99,39 @@ for (const { variant, reports } of datasets)
               stats(spans.filter((s) => s.name === name).map((s) => s.ms)),
             ]),
           ),
+          previewBytes: phases.map((p) =>
+            p.ipc
+              .filter(
+                (c) =>
+                  ["preview_frame", "preview_delta"].includes(c.command) &&
+                  !c.error,
+              )
+              .map((c) => c.bytes),
+          ),
           previewRequests: phases.map(
-            (p) => p.ipc.filter((c) => c.command === "preview_frame").length,
+            (p) =>
+              p.ipc.filter((c) =>
+                ["preview_frame", "preview_delta"].includes(c.command),
+              ).length,
           ),
           previewStale: phases.map(
             (p) =>
-              p.ipc.filter((c) => c.command === "preview_frame" && c.error)
-                .length,
+              p.ipc.filter(
+                (c) =>
+                  ["preview_frame", "preview_delta"].includes(c.command) &&
+                  c.error,
+              ).length,
           ),
           trustedInputEvents: phases.map(
             (p) => p.inputs.filter((i) => i.trusted).length,
           ),
         });
       }
-const output = resolve(root, "experiments/typing-latency/results");
+const output = resolve(
+  root,
+  "experiments/typing-latency/results",
+  ...(series === "typing-latency" ? [] : [series]),
+);
 await mkdir(output, { recursive: true });
 const result = {
   success: true,

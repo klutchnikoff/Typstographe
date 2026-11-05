@@ -4,10 +4,11 @@
 
 [Completed before/after results and remaining limitations](RESULTS.md).
 
-This measures the production full-RGBA Tauri/WebKit pipeline, with preview
+This measures the production Tauri/WebKit pipeline (full or differential RGBA,
+according to the archived application commit), with preview
 updates enabled/paused. Both cases retain the same visible last preview, window
 layout, editor, Unicode counters, document confirmation and preservation rules.
-No experimental differential renderer is substituted.
+No experimental renderer is substituted.
 
 An independent Web Worker schedules 24 characters at 100 ms intervals and then
 24 at 250 ms intervals. Main-thread delivery uses WebKit's native
@@ -60,3 +61,15 @@ Do not run builds/tests alongside the timed sessions. The build helper cleans
 only the local release core (not third-party dependencies), avoiding shared
 Cargo-target reuse of archived local sources. It cleans instrumented core
 artifacts on exit; statically linked measurement executables remain usable.
+
+Independent measurement series preserve previous reports and use distinct
+executables/output directories. For the production cancellation/differential
+change, set `TOG_TYPING_SERIES=preview-delta` for **all** prepare/build/run/summary
+commands. Results then go to `results/preview-delta/`. The baseline is `64b6e41`
+(the same pre-delta rendering path as `3a70d17`, with the concurrent branding and
+file-association work), and the differential implementation is `43c96bc`.
+Binary response sizes include full and differential commands; native response
+latency is not interpreted as time blocking the JavaScript thread. The DOM probe
+also records `preview.insert` when a differential publication retains nodes,
+rather than replacing the whole container. These per-node timings are not a
+replacement for a total publication-span metric.

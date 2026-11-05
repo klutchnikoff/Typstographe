@@ -71,7 +71,7 @@ export async function nativePreviewPerformance(
       document.visibilityState === "visible",
       "Benchmark window is hidden",
     );
-    report.pages = latest!.pages.length;
+    report.pages = latest!.pageSizes?.length ?? latest!.pages.length;
     if (config.preview === "off") await harness.pause();
     editor.commands.setTextSelection(1);
     editor.view.focus();
@@ -93,6 +93,18 @@ export async function nativePreviewPerformance(
       return this.id === "pages"
         ? typingSpan("preview.publish", () => replace.apply(this, args))
         : replace.apply(this, args);
+    };
+    const insert = Node.prototype.insertBefore;
+    Node.prototype.insertBefore = function <T extends Node>(
+      node: T,
+      child: Node | null,
+    ): T {
+      return this instanceof HTMLElement && this.id === "pages"
+        ? typingSpan(
+            "preview.insert",
+            () => insert.call(this, node, child) as T,
+          )
+        : (insert.call(this, node, child) as T);
     };
     const invoke = transport.invoke.bind(transport);
     let ipc: any[] | undefined;

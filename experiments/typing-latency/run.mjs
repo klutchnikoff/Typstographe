@@ -12,7 +12,9 @@ if (process.platform === "darwin")
     [resolve(root, "experiments/typing-latency/check-display.swift")],
     { stdio: "inherit" },
   );
-const output = resolve(root, `output/typing-latency-${variant}`);
+const series = process.env.TOG_TYPING_SERIES || "typing-latency";
+if (!/^[a-z0-9-]+$/.test(series)) throw Error("Invalid series name");
+const output = resolve(root, `output/${series}-${variant}`);
 const manifest = JSON.parse(
   await readFile(resolve(output, "manifest.json"), "utf8"),
 );
@@ -30,10 +32,7 @@ for (let run = 0; run < (smoke ? 1 : 2); run++)
         const folder = resolve(batch, `${count}-${preview}-${run}-${attempt}`);
         await mkdir(folder);
         const child = spawn(
-          resolve(
-            root,
-            `target/release/typstographe-typing-latency-${variant}`,
-          ),
+          resolve(root, `target/release/typstographe-${series}-${variant}`),
           ["--diagnostic-performance", "--session-dir", folder],
           {
             env: {

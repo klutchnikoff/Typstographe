@@ -1,0 +1,51 @@
+{
+  "success": true,
+  "implementation": {
+    "application_commit": "43c96bcec183765549d8dc48a2f15f0cda3ab109",
+    "core_fingerprint": "b15bb02ceb41590e4b9a591840faa2f72ca55c55e99f62bde87ed6e7c8991d99",
+    "frontend_fingerprint": "911ff7995e8c853ed293a7c1b5bfeefd89f9953b3dd987d460cee43b76ec58d6",
+    "scope": "Production preview (full RGBA or differential RGBA, according to commit); continuous WebKit native editing; worker-clock stimulus"
+  },
+  "scope": "Native release renderer, diagnostic STDIO; same-revision rendering snapshots isolate transfer and pixel correctness. Not a Tauri IPC/input-latency benchmark.",
+  "rows": [
+    {
+      "corpus": "article-10",
+      "pages": 2,
+      "changedPages": 1,
+      "fullBytes": 16051455,
+      "deltaBytes": 8029072,
+      "unchangedBytes": 6422,
+      "unchangedPages": 0,
+      "mappingChecks": 15,
+      "pixelsEqual": true,
+      "sourceAndReferencesEqual": true,
+      "otherWindowFullFallback": true
+    },
+    {
+      "corpus": "article-50",
+      "pages": 6,
+      "changedPages": 1,
+      "fullBytes": 48162239,
+      "deltaBytes": 8049405,
+      "unchangedBytes": 26747,
+      "unchangedPages": 0,
+      "mappingChecks": 15,
+      "pixelsEqual": true,
+      "sourceAndReferencesEqual": true,
+      "otherWindowFullFallback": true
+    },
+    {
+      "corpus": "article-200",
+      "pages": 24,
+      "changedPages": 1,
+      "fullBytes": 192646093,
+      "deltaBytes": 8126023,
+      "unchangedBytes": 103351,
+      "unchangedPages": 0,
+      "mappingChecks": 15,
+      "pixelsEqual": true,
+      "sourceAndReferencesEqual": true,
+      "otherWindowFullFallback": true
+    }
+  ]
+}

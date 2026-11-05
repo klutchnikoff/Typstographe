@@ -253,12 +253,18 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    p95 40 → 21 ms, intervalle maximal entre frames 123 → 67 ms. L’aperçu reste
    actif (44 publications contre 46). Des pointes subsistent à 100 ms/caractère,
    sans uploads pendant la frappe ; ne pas annoncer leur élimination générale.
-   Réévaluer ensuite RGBA et SVG partiel avant de figer le renderer ; conserver
-   le RGBA différentiel comme candidat qualifié. Le protocole reste à valider :
-   cache par document/génération, options et flux de vue, réinitialisation,
-   refus des résultats périmés, cartes de synchronisation actualisées et tests
-   multi-fenêtres/erreurs/révisions sans changement de pixels. L’application
-   distribuée n’a pas encore changé de chemin de rendu.
+   **Suite (5 novembre 2026) :** [flux RGBA différentiel de production](docs/preview-stream.md)
+   désormais raccordé : annulation après compilation, entre pages et avant le
+   paquet ; cache par fenêtre/document/génération/époque ; base acquittée seulement
+   après affichage ; transfert et canvas réservés aux pages visuellement modifiées.
+   Chaque révision reconstruit ses cartes de synchronisation, y compris sans
+   changement de pixels. Repli complet en cas de base absente, publication
+   atomique et parcours erreurs/rechargement/multi-fenêtres testés. Réévaluation
+   native de la saisie dans une série isolée `preview-delta`, sans remplacer les
+   mesures précédentes. [Vérification des trois articles](experiments/preview-delta/README.md) :
+   pixels/cartes identiques ; sur 24 pages, une page modifiée transporte
+   8,13 Mo contre 192,65 Mo. Le bureau macOS verrouillé a empêché la nouvelle
+   mesure de saisie ; ne pas déduire son gain du seul volume évité.
    **Saisie validée :** `$` seul sur une ligne suivi d’Entrée crée un widget
    Typst ; `$$` seuls suivis d’Entrée créent un widget LaTeX. Dans le texte,
    `$cos(x)$` désigne une formule Typst et `$$\cos(x)$$` une formule LaTeX.

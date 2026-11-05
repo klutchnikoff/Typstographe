@@ -1,11 +1,13 @@
 """Unmodified production render path, isolated release input-latency recipe."""
-import hashlib, io, json, shutil, subprocess, sys, tarfile, uuid
+import hashlib, io, json, os, re, shutil, subprocess, sys, tarfile, uuid
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
 variant, ref = sys.argv[1:]
 assert variant in ['before', 'after']
-out = ROOT / f'output/typing-latency-{variant}'
+series = os.environ.get('TOG_TYPING_SERIES', 'typing-latency')
+assert re.fullmatch(r'[a-z0-9-]+', series), 'Invalid series name'
+out = ROOT / f'output/{series}-{variant}'
 source = out / 'source'
 assert not source.exists(), f'Refusing to replace {source}'
 out.mkdir(exist_ok=True)
@@ -24,7 +26,7 @@ with (source/'crates/core/src/lib.rs').open('a') as f:
     f.write(f'\npub const TYPING_BUILD_FINGERPRINT: &str = "{core}";\n')
 def replace(path,old,new):
     p=source/path;s=p.read_text();assert s.count(old)==1,(path,old);p.write_text(s.replace(old,new))
-name=f'typstographe-typing-latency-{variant}'
+name=f'typstographe-{series}-{variant}'
 replace('app/src-tauri/Cargo.toml','name = "typstographe"',f'name = "{name}"')
 replace('Cargo.lock','name = "typstographe"\n',f'name = "{name}"\n')
 replace('app/src-tauri/src/main.rs','    let bridge = Bridge {','''    if diagnostic.as_deref() == Some("performance") {
@@ -61,5 +63,5 @@ replace('app/src/main.ts','    onPreview?.(result.revision)','    onPreview?.(re
 replace('app/src/main.ts','function updateInterface() {','function updateInterface() { return typingSpan("ui.refresh", updateInterfaceImpl) }\nfunction updateInterfaceImpl() {')
 replace('app/src/main.ts','function snapshot() {','function snapshot() { return typingSpan("preview.snapshot", snapshotImpl) }\nfunction snapshotImpl() {')
 p=source/'app/src/main.ts';p.write_text('import { typingSpan } from "./typing-probe"\n'+p.read_text())
-(out/'manifest.json').write_text(json.dumps(dict(application_commit=commit,core_fingerprint=core,frontend_fingerprint=frontend,scope='Production full RGBA; continuous WebKit native editing; worker-clock stimulus'),indent=2)+'\n')
+(out/'manifest.json').write_text(json.dumps(dict(application_commit=commit,core_fingerprint=core,frontend_fingerprint=frontend,scope='Production preview (full RGBA or differential RGBA, according to commit); continuous WebKit native editing; worker-clock stimulus'),indent=2)+'\n')
 print(source)
