@@ -114,6 +114,26 @@ reconstruit le projet vers une destination libre. Le fichier de travail local
 
 ## Vérification locale — 4 novembre 2026
 
+### Correction CI — 5 novembre 2026
+
+La recette de réouverture a révélé que l’exemple `article-working.typsto` ne
+possédait pas encore les ancres C.1. Il est régénéré depuis son contenu versionné,
+avec des ancres et un état Yjs concordants, sans remplacer les copies de travail
+locales. Le contrôle d’intégrité de restauration reste inchangé.
+
+La construction Rust des sous-arbres regroupe désormais les portions de texte
+adjacentes, même de styles différents, dans un seul `XmlText` par suite de texte,
+comme le producteur officiel y-tiptap. Cette représentation conserve les styles
+et les frontières des objets en ligne et permet leur suivi de positions lors
+des éditions. La recette de l’archive contrôle également les erreurs JavaScript
+et rend explicite toute erreur d’initialisation, au lieu d’attendre son délai.
+
+Vérification sur une installation npm propre du worktree C.1 : 267 tests du cœur,
+16 parcours Chromium/WebKit (renvois, paragraphes, réouverture de l’archive),
+compilation native de recettes, TypeScript, formatage et Clippy réussis.
+
+### Contrôles initiaux
+
 - Workspace Rust : 456 tests réussis, un test ignoré ; les six tests ciblés des
   renvois couvrent aussi les compteurs Typst, les callbacks du modèle et l’image
   sans légende. Clippy passe avec les avertissements interdits, y compris pour
