@@ -3,6 +3,8 @@ import { Editor } from '@tiptap/core'
 import { richZoneExtensions } from '../src/rich-zone'
 import { previewController } from '../src/preview'
 import type { Provider, Transport } from '../src/provider'
+import { browserTurn } from '../src/browser-turn'
+vi.mock('../src/browser-turn', () => ({ browserTurn: vi.fn(async () => {}) }))
 
 function deferred() {
   let resolve!: () => void, reject!: (error: Error) => void
@@ -25,6 +27,7 @@ const result = (revision: number, pages = ['new']) => ({
   pageSizes: pages.map(() => [100, 200] as [number, number]),
 })
 beforeEach(() => {
+  vi.mocked(browserTurn).mockReset().mockResolvedValue(undefined)
   vi.useFakeTimers()
   document.body.innerHTML = '<div id="pages"><img src="old" alt="Ancien aperçu"></div>'
   editor = new Editor({
@@ -41,6 +44,125 @@ beforeEach(() => {
     invoke: vi.fn(async (command) => (command === 'sync_selection' ? [] : null)),
   } as unknown as Transport
   controller = previewController(editor, provider, transport, () => version)
+})
+
+const rgba = (revision: number, count = 3) => ({
+  revision,
+  pages: Array.from({ length: count }, () => ({
+    encoding: 'rgba' as const,
+    width: 2,
+    height: 2,
+    data: new Uint8Array(16),
+  })),
+  pageSizes: Array.from({ length: count }, () => [100, 200] as [number, number]),
+})
+function canvasProbe(failAt = -1) {
+  let clock = 0
+  const canvases: HTMLCanvasElement[] = []
+  const time = vi.spyOn(performance, 'now').mockImplementation(() => clock)
+  const put = vi.fn(() => {
+    clock += 5
+    if (put.mock.calls.length === failAt) throw Error('Upload failed')
+  })
+  const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (
+    this: HTMLCanvasElement,
+  ) {
+    canvases.push(this)
+    return { putImageData: put } as unknown as CanvasRenderingContext2D
+  })
+  vi.stubGlobal(
+    'ImageData',
+    class {
+      constructor(..._args: unknown[]) {}
+    },
+  )
+  return {
+    canvases,
+    put,
+    close: () => {
+      time.mockRestore()
+      context.mockRestore()
+      vi.unstubAllGlobals()
+    },
+  }
+}
+it('prepares pages in slices, publishes atomically and releases replaced canvases only afterwards', async () => {
+  const probe = canvasProbe()
+  try {
+    await controller.show(rgba(1, 1), 1)
+    const old = document.querySelector('canvas')!
+    const first = deferred(),
+      second = deferred()
+    vi.mocked(browserTurn).mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
+    const pending = controller.show(rgba(1), 1)
+    expect(probe.put).toHaveBeenCalledTimes(2)
+    expect(document.querySelector('canvas')).toBe(old)
+    expect(old.width).toBe(2)
+    first.resolve()
+    await Promise.resolve()
+    expect(probe.put).toHaveBeenCalledTimes(3)
+    expect(document.querySelector('canvas')).toBe(old)
+    second.resolve()
+    expect(await pending).toBe(true)
+    expect(document.querySelectorAll('canvas')).toHaveLength(3)
+    expect(old.width).toBe(0)
+    expect([...document.querySelectorAll('canvas')].every((c) => c.width === 2)).toBe(true)
+  } finally {
+    probe.close()
+  }
+})
+it('a document edit during preparation cancels remaining uploads and preserves visible pages and selection', async () => {
+  const probe = canvasProbe(),
+    held = deferred(),
+    old = document.querySelector('#pages img')
+  try {
+    vi.mocked(browserTurn).mockReturnValueOnce(held.promise)
+    const pending = controller.show(rgba(1), 1)
+    expect(probe.put).toHaveBeenCalledTimes(1)
+    editor.commands.setTextSelection(3)
+    version = provider.revision = 2
+    controller.invalidate()
+    held.resolve()
+    expect(await pending).toBe(false)
+    expect(probe.put).toHaveBeenCalledTimes(1)
+    expect(probe.canvases.every((c) => c.width === 0)).toBe(true)
+    expect(document.querySelector('#pages img')).toBe(old)
+    expect(editor.state.selection.from).toBe(3)
+  } finally {
+    probe.close()
+  }
+})
+it('a failed partial upload releases every prepared canvas and keeps the last preview', async () => {
+  const probe = canvasProbe(2),
+    old = document.querySelector('#pages img')
+  try {
+    await expect(controller.show(rgba(1), 1)).rejects.toThrow('Upload failed')
+    expect(probe.canvases).toHaveLength(2)
+    expect(probe.canvases.every((c) => c.width === 0)).toBe(true)
+    expect(document.querySelector('#pages img')).toBe(old)
+  } finally {
+    probe.close()
+  }
+})
+
+it('closing during a yielded preparation releases its buffers and disables old-page navigation', async () => {
+  const probe = canvasProbe(),
+    held = deferred()
+  try {
+    await controller.show(rgba(1, 1), 1)
+    const visible = document.querySelector('canvas')!
+    vi.mocked(browserTurn).mockReturnValueOnce(held.promise)
+    const pending = controller.show(rgba(1), 1)
+    controller.destroy()
+    expect(visible.width).toBe(0)
+    document.querySelector('.preview-page')!.dispatchEvent(new MouseEvent('dblclick'))
+    held.resolve()
+    expect(await pending).toBe(false)
+    expect(probe.canvases.every((canvas) => canvas.width === 0)).toBe(true)
+    expect(transport.invoke).not.toHaveBeenCalled()
+  } finally {
+    probe.close()
+  }
 })
 afterEach(() => {
   editor.destroy()

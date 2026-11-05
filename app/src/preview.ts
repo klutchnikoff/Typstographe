@@ -2,6 +2,7 @@ import type { Editor } from '@tiptap/core'
 import type { Transport, Provider } from './provider'
 import type { BinaryPage } from './preview-frame'
 import { revealEditorPosition } from './editor-reveal'
+import { browserTurn } from './browser-turn'
 interface Result {
   revision: number
   pages: (string | BinaryPage)[]
@@ -18,13 +19,17 @@ export function previewController(
   version: () => number,
 ) {
   const container = document.getElementById('pages')!
-  let result: Result | undefined,
+  let result: Pick<Result, 'revision' | 'pageSizes'> | undefined,
     shown = -1,
     ticket = 0,
     displayTicket = 0,
     backwardTicket = 0,
     timer: ReturnType<typeof setTimeout>
   let visibleUrls: string[] = []
+  let visibleCanvases: HTMLCanvasElement[] = []
+  const releaseCanvases = (canvases: HTMLCanvasElement[]) => {
+    for (const canvas of canvases) canvas.width = canvas.height = 0
+  }
   const clear = () => {
     for (const svg of container.querySelectorAll('svg')) svg.replaceChildren()
   }
@@ -74,15 +79,53 @@ export function previewController(
         .catch(() => {})
     }, 35)
   }
+  const bindBackward = (
+    page: HTMLElement,
+    image: HTMLElement,
+    index: number,
+    size: [number, number] | undefined,
+    publication: Pick<Result, 'revision' | 'pageSizes'>,
+    generation: string,
+  ) => {
+    const displayed = () =>
+      !editor.isDestroyed &&
+      generation === provider.generation &&
+      result === publication &&
+      shown === version() &&
+      provider.revision === publication.revision
+    page.ondblclick = (event) => {
+      if (!displayed() || !size) return
+      const request = ++backwardTicket
+      const rect = image.getBoundingClientRect()
+      const location = {
+        page: index,
+        point: [
+          ((event.clientX - rect.left) * size[0]) / rect.width,
+          ((event.clientY - rect.top) * size[1]) / rect.height,
+        ],
+      }
+      void transport
+        .invoke<number | null>('sync_backward', { revision: publication.revision, location })
+        .then((pos) => {
+          if (pos !== null && displayed() && request === backwardTicket)
+            revealEditorPosition(editor, pos)
+        })
+        .catch(() => {})
+    }
+  }
   return {
     selection,
     destroy: () => {
+      result = undefined
+      shown = -1
       ticket++
       displayTicket++
       backwardTicket++
       clearTimeout(timer)
       visibleUrls.forEach((url) => URL.revokeObjectURL(url))
       visibleUrls = []
+      releaseCanvases(visibleCanvases)
+      visibleCanvases = []
     },
     invalidate: () => {
       ticket++
@@ -92,7 +135,8 @@ export function previewController(
     },
     show: async (value: Result, currentVersion: number) => {
       const id = ++displayTicket,
-        generation = provider.generation
+        generation = provider.generation,
+        publication = { revision: value.revision, pageSizes: value.pageSizes }
       const current = () =>
         id === displayTicket &&
         currentVersion === version() &&
@@ -101,16 +145,27 @@ export function previewController(
         !editor.isDestroyed
       const images: HTMLImageElement[] = []
       const urls: string[] = []
-      const release = () => urls.forEach((url) => URL.revokeObjectURL(url))
+      const canvases: HTMLCanvasElement[] = []
+      const release = () => {
+        urls.forEach((url) => URL.revokeObjectURL(url))
+        releaseCanvases(canvases)
+      }
       let pages: HTMLElement[]
       try {
-        pages = value.pages.map((src, index) => {
+        pages = []
+        let sliceStarted = performance.now()
+        for (const [index, src] of value.pages.entries()) {
+          if (!current()) {
+            release()
+            return false
+          }
           const page = document.createElement('div')
           page.className = 'preview-page'
           page.dataset.page = String(index)
           let image: HTMLImageElement | HTMLCanvasElement
           if (typeof src !== 'string' && src.encoding === 'rgba') {
             image = document.createElement('canvas')
+            canvases.push(image)
             image.width = src.width
             image.height = src.height
             const context = image.getContext('2d')
@@ -144,33 +199,15 @@ export function previewController(
           const size = value.pageSizes?.[index]
           if (size) svg.setAttribute('viewBox', `0 0 ${size[0]} ${size[1]}`)
           page.append(image, svg)
-          const displayed = () =>
-            !editor.isDestroyed &&
-            generation === provider.generation &&
-            result === value &&
-            shown === version() &&
-            provider.revision === value.revision
-          page.ondblclick = (event) => {
-            if (!displayed() || !size) return
-            const request = ++backwardTicket
-            const rect = image.getBoundingClientRect()
-            const location = {
-              page: index,
-              point: [
-                ((event.clientX - rect.left) * size[0]) / rect.width,
-                ((event.clientY - rect.top) * size[1]) / rect.height,
-              ],
-            }
-            void transport
-              .invoke<number | null>('sync_backward', { revision: value.revision, location })
-              .then((pos) => {
-                if (pos !== null && displayed() && request === backwardTicket)
-                  revealEditorPosition(editor, pos)
-              })
-              .catch(() => {})
+          bindBackward(page, image, index, size, publication, generation)
+          pages.push(page)
+          // Preparing all page canvases in one task stalls typing. Slice only
+          // detached preparation; visible pages and their maps publish together.
+          if (index + 1 < value.pages.length && performance.now() - sliceStarted >= 4) {
+            await browserTurn()
+            sliceStarted = performance.now()
           }
-          return page
-        })
+        }
         // Decode detached images before replacing any visible page. Publishing
         // all pages together also keeps layout and sync on the same revision.
         await Promise.all(images.map((image) => image.decode()))
@@ -184,12 +221,14 @@ export function previewController(
         return false
       }
       ticket++
-      result = value
+      result = publication
       shown = currentVersion
       const scrollTop = container.scrollTop
       container.replaceChildren(...pages)
       visibleUrls.forEach((url) => URL.revokeObjectURL(url))
       visibleUrls = urls
+      releaseCanvases(visibleCanvases)
+      visibleCanvases = canvases
       container.scrollTop = scrollTop
       selection()
       return true
