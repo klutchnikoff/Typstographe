@@ -37,16 +37,18 @@ STDIO uses base64 only to drive the real native renderer from Node. These are
 **binary packet sizes**, not STDIO traffic sizes, production IPC timings, memory
 measurements or input-latency results. No captures are recorded.
 
-## Continuous input: ready, not yet measured
+## Continuous input: measured
 
-The independent `preview-delta` measurement series is prepared against `64b6e41`
-(before) and `43c96bc` (after). Both release executables compile. At the attempted
-run on 5 November, the macOS display preflight rejected a locked/inactive desktop.
-No invalid timing sample was retained; no new p95 or worst-case typing gain is
-claimed. Previous [continuous-input results](../typing-latency/RESULTS.md) remain
-separate.
+The [completed native input study](INPUT-RESULTS.md) compares `64b6e41` (before)
+with `43c96bc` (after). All 24 sessions validate identical final text, selection,
+source, pixels and navigation. On 24 pages at 100 ms/key, second-RAF p95 falls
+80 → 34 ms and maximum frame gap 69 → 44 ms; the preview now updates during
+fast typing. Some first-RAF metrics worsen, so the report keeps the controls and
+surviving outliers explicit. This completes the run postponed while macOS was
+locked; the rejected attempt contributed no sample.
 
-With an unlocked active desktop, resume without rebuilding:
+Both release executables and isolated sources are retained locally. Reproduce
+on an unlocked active desktop without rebuilding:
 
 ```sh
 TOG_TYPING_SERIES=preview-delta caffeinate -di node experiments/typing-latency/run.mjs before
@@ -54,7 +56,6 @@ TOG_TYPING_SERIES=preview-delta caffeinate -di node experiments/typing-latency/r
 TOG_TYPING_SERIES=preview-delta node experiments/typing-latency/summarize.mjs
 ```
 
-The series validates compiled frontend/core fingerprints and equality of final
-text, source, selection, pixels and navigation. It does not reuse previous raw
-measurements or overwrite the earlier before/after comparison. The full source
-for the measured implementation is archived in the two output directories.
+The series validates compiled frontend/core fingerprints. It does not reuse
+previous raw measurements or overwrite the
+[earlier before/after comparison](../typing-latency/RESULTS.md).

@@ -263,8 +263,14 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    native de la saisie dans une série isolée `preview-delta`, sans remplacer les
    mesures précédentes. [Vérification des trois articles](experiments/preview-delta/README.md) :
    pixels/cartes identiques ; sur 24 pages, une page modifiée transporte
-   8,13 Mo contre 192,65 Mo. Le bureau macOS verrouillé a empêché la nouvelle
-   mesure de saisie ; ne pas déduire son gain du seul volume évité.
+   8,13 Mo contre 192,65 Mo. [Mesure native de saisie complétée](experiments/preview-delta/INPUT-RESULTS.md) :
+   24 sessions et 1 152 entrées conservées, états finaux identiques. Sur 24 pages
+   à 100 ms/caractère, deuxième créneau d’affichage p95 80 → 34 ms et intervalle
+   maximal entre frames 69 → 44 ms ; l’aperçu suit désormais la frappe rapide.
+   Les premiers créneaux p95 à 250 ms se dégradent légèrement (24 pages :
+   20 → 30 ms) ; conserver les contrôles sans aperçu et les pointes restantes,
+   sans promettre une amélioration uniforme ni attribuer le gain à l’annulation
+   seule, qui n’a pas été sollicitée dans les phases chronométrées après.
    **Saisie validée :** `$` seul sur une ligne suivi d’Entrée crée un widget
    Typst ; `$$` seuls suivis d’Entrée créent un widget LaTeX. Dans le texte,
    `$cos(x)$` désigne une formule Typst et `$$\cos(x)$$` une formule LaTeX.

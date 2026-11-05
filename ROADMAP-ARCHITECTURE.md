@@ -345,7 +345,12 @@ révision et adressées par identifiant du rendu affiché. Repli complet après 
 de base, publication atomique et réemploi des canvas inchangés. Les exports et
 le format documentaire restent indépendants de ce protocole interne. Mesurer la
 saisie sur les trois articles avec/sans aperçu, sans confondre réduction du
-transfert et disparition de toutes les pointes de latence.
+transfert et disparition de toutes les pointes de latence. La
+[recette native complétée](experiments/preview-delta/INPUT-RESULTS.md) conserve
+24 sessions, 1 152 entrées et les états finaux identiques. Sur 24 pages à
+100 ms/caractère : deuxième RAF p95 80 → 34 ms, intervalle maximal 69 → 44 ms.
+Le rapport distingue les gains, les métriques dégradées et le témoin sans aperçu ;
+il n’isole pas le bénéfice de l’annulation, non sollicitée dans ces phases après.
 
 **Budget relatif :** exprimer la cible comme un facteur (1,5 à 2, en p95) de la
 compilation incrémentale de Typst seul sur le même document, avec une référence

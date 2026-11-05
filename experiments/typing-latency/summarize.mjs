@@ -23,12 +23,15 @@ const datasets = await Promise.all(
 );
 const percentile = (values, p) =>
   [...values].sort((a, b) => a - b)[Math.ceil(values.length * p) - 1];
-const stats = (values) => ({
-  n: values.length,
-  p50: percentile(values, 0.5),
-  p95: percentile(values, 0.95),
-  max: Math.max(...values),
-});
+const stats = (values) =>
+  values.length
+    ? {
+        n: values.length,
+        p50: percentile(values, 0.5),
+        p95: percentile(values, 0.95),
+        max: Math.max(...values),
+      }
+    : { n: 0, p50: null, p95: null, max: null };
 const summary = [];
 let checked = 0;
 const equal = (a, b, label) => {
@@ -98,6 +101,15 @@ for (const { variant, reports } of datasets)
               name,
               stats(spans.filter((s) => s.name === name).map((s) => s.ms)),
             ]),
+          ),
+          previewRequestMs: stats(
+            phases.flatMap((p) =>
+              p.ipc
+                .filter((c) =>
+                  ["preview_frame", "preview_delta"].includes(c.command),
+                )
+                .map((c) => c.ms),
+            ),
           ),
           previewBytes: phases.map((p) =>
             p.ipc
