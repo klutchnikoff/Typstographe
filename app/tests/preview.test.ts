@@ -317,3 +317,98 @@ it('seule la dernière navigation demandée peut déplacer et repérer le curseu
   await Promise.resolve()
   expect(editor.state.selection.from).toBe(10)
 })
+
+function differential(
+  revision: number,
+  id: string,
+  base: string | null,
+  keys: string[],
+  changed: number[],
+) {
+  const value = rgba(revision, keys.length)
+  return {
+    ...value,
+    delta: { generation: 'document-a', epoch: 'epoch', version: revision, id, base, keys },
+    pages: changed.map((index) => ({ ...value.pages[index], index })),
+  }
+}
+it('reuses unchanged canvas identities but replaces navigation maps for every revision', async () => {
+  const probe = canvasProbe()
+  try {
+    await controller.show(differential(1, 'first', null, ['a', 'b'], [0, 1]), 1)
+    const [first, second] = [...document.querySelectorAll('canvas')]
+    version = provider.revision = 2
+    await controller.show(differential(2, 'next', 'first', ['a', 'c'], [1]), 2)
+    expect(document.querySelectorAll('canvas')[0]).toBe(first)
+    expect(document.querySelectorAll('canvas')[1]).not.toBe(second)
+    expect(first.width).toBe(2)
+    expect(second.width).toBe(0)
+    expect(probe.put).toHaveBeenCalledTimes(3)
+    document.querySelector('.preview-page')!.dispatchEvent(new MouseEvent('dblclick'))
+    expect(transport.invoke).toHaveBeenCalledWith(
+      'preview_sync',
+      expect.objectContaining({
+        revision: 2,
+        frame: { generation: 'document-a', epoch: 'epoch', id: 'next' },
+        query: expect.objectContaining({ kind: 'backward' }),
+      }),
+    )
+    version = provider.revision = 3
+    await controller.show(differential(3, 'same', 'next', ['a', 'c'], []), 3)
+    expect(probe.put).toHaveBeenCalledTimes(3)
+    expect(document.querySelectorAll('canvas')[0]).toBe(first)
+    expect(document.querySelectorAll('.preview-page')).toHaveLength(2)
+  } finally {
+    probe.close()
+  }
+})
+it('a missing base requests a full fallback without touching visible pixels', async () => {
+  const probe = canvasProbe()
+  try {
+    await controller.show(differential(1, 'first', null, ['a'], [0]), 1)
+    const first = document.querySelector('canvas')
+    await expect(controller.show(differential(1, 'next', 'missing', ['a'], []), 1)).rejects.toBe(
+      'preview-reset',
+    )
+    expect(document.querySelector('canvas')).toBe(first)
+    expect(first!.width).toBe(2)
+  } finally {
+    probe.close()
+  }
+})
+it('cancellation during a mixed reuse/upload leaves old canvases and handlers intact', async () => {
+  const probe = canvasProbe(),
+    held = deferred()
+  try {
+    await controller.show(differential(1, 'first', null, ['a', 'b', 'c'], [0, 1, 2]), 1)
+    const old = [...document.querySelectorAll('canvas')]
+    vi.mocked(browserTurn).mockReturnValueOnce(held.promise)
+    const pending = controller.show(differential(1, 'next', 'first', ['a', 'new', 'c'], [1]), 1)
+    controller.invalidate()
+    held.resolve()
+    expect(await pending).toBe(false)
+    expect([...document.querySelectorAll('canvas')]).toEqual(old)
+    expect(old.every((c) => c.width === 2)).toBe(true)
+    expect(probe.canvases.at(-1)!.width).toBe(0)
+  } finally {
+    probe.close()
+  }
+})
+it('page deletion and addition keep the correct order and retire only removed canvases', async () => {
+  const probe = canvasProbe()
+  try {
+    await controller.show(differential(1, 'first', null, ['a', 'b'], [0, 1]), 1)
+    const [first, removed] = [...document.querySelectorAll('canvas')]
+    await controller.show(differential(1, 'short', 'first', ['a'], []), 1)
+    expect(document.querySelectorAll('canvas')).toHaveLength(1)
+    expect(removed.width).toBe(0)
+    await controller.show(differential(1, 'long', 'short', ['a', 'c'], [1]), 1)
+    expect(document.querySelectorAll('canvas')).toHaveLength(2)
+    expect(document.querySelector('canvas')).toBe(first)
+    expect(
+      [...document.querySelectorAll('.preview-page')].map((p) => (p as HTMLElement).dataset.page),
+    ).toEqual(['0', '1'])
+  } finally {
+    probe.close()
+  }
+})

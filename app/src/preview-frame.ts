@@ -2,12 +2,22 @@ import type { Transport } from './provider'
 
 export type Encoding = 'png' | 'rgba' | 'svg' | 'dataurl'
 export interface BinaryPage {
+  index?: number
   encoding: Exclude<Encoding, 'dataurl'>
   width: number
   height: number
   data: Uint8Array<ArrayBuffer>
 }
+export interface Delta {
+  generation: string
+  epoch: string
+  version: number
+  id: string
+  base: string | null
+  keys: string[]
+}
 export interface Preview {
+  delta?: Delta
   revision: number
   references?: import('./cross-reference-index').ResolvedReference[]
   source: string
@@ -34,16 +44,44 @@ export function decodeFrame(buffer: ArrayBuffer): Preview {
     !Number.isFinite(value.elapsedMs) ||
     !Array.isArray(header.pages) ||
     !Array.isArray(value.pageSizes) ||
-    value.pageSizes.length !== header.pages.length ||
+    (!value.delta && value.pageSizes.length !== header.pages.length) ||
     !value.pageSizes.every(
       (s) => Array.isArray(s) && s.length === 2 && s.every((n) => Number.isFinite(n) && n > 0),
     )
   )
     throw invalid()
+  const delta = value.delta
+  if (
+    delta &&
+    (!['generation', 'epoch', 'id'].every(
+      (key) => typeof delta[key as 'id'] === 'string' && delta[key as 'id'].length > 0,
+    ) ||
+      !Number.isSafeInteger(delta.version) ||
+      delta.version < 0 ||
+      !(delta.base === null || typeof delta.base === 'string') ||
+      !Array.isArray(delta.keys) ||
+      delta.keys.length !== value.pageSizes!.length ||
+      !delta.keys.every((key) => typeof key === 'string' && /^[a-f0-9]{32}$/.test(key)) ||
+      (delta.base === null && header.pages.length !== delta.keys.length))
+  )
+    throw invalid()
+  let previous = -1
   let offset = 0
   value.pages = header.pages.map(
-    (page: { encoding: string; width: number; height: number; offset: number; length: number }) => {
+    (page: {
+      index?: number
+      encoding: string
+      width: number
+      height: number
+      offset: number
+      length: number
+    }) => {
       if (
+        (delta &&
+          (!Number.isSafeInteger(page.index) ||
+            page.index! <= previous ||
+            page.index! >= delta.keys.length ||
+            page.encoding !== 'rgba')) ||
         !['png', 'rgba', 'svg'].includes(page.encoding) ||
         !Number.isSafeInteger(page.offset) ||
         page.offset !== offset ||
@@ -58,9 +96,11 @@ export function decodeFrame(buffer: ArrayBuffer): Preview {
           (page.width === 0 || page.height === 0 || page.length !== page.width * page.height * 4))
       )
         throw invalid()
+      previous = page.index ?? previous
       const data = new Uint8Array(buffer, start + offset, page.length)
       offset += page.length
       return {
+        ...(delta ? { index: page.index } : {}),
         encoding: page.encoding as BinaryPage['encoding'],
         width: page.width,
         height: page.height,
@@ -75,6 +115,7 @@ export async function requestPreview(
   transport: Transport,
   snapshot: unknown,
   encoding: Encoding = 'rgba',
+  request?: { scope: { generation: string; epoch: string; version: number }; base: string | null },
 ) {
   const started = performance.now()
   if (encoding === 'dataurl') {
@@ -85,7 +126,10 @@ export async function requestPreview(
       requestMs: performance.now() - started,
     }
   }
-  const buffer = await transport.invoke<ArrayBuffer>('preview_frame', { snapshot, encoding })
+  const buffer = await transport.invoke<ArrayBuffer>(
+    request ? 'preview_delta' : 'preview_frame',
+    request ? { snapshot, request } : { snapshot, encoding },
+  )
   const received = performance.now()
   const result = decodeFrame(buffer)
   return { result, bytes: buffer.byteLength, requestMs: received - started }

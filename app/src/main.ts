@@ -25,7 +25,6 @@ import { hasSettings, settingsForNode } from './capability-settings'
 import { mountShell, type Catalogue } from './shell'
 import { documentType, initializeSettings, settingsFor } from './state'
 import { previewController } from './preview'
-import { requestPreview } from './preview-frame'
 import { renderQueue } from './render-queue'
 import { uiRefresh } from './ui-refresh'
 import { documentStatistics } from './document-statistics'
@@ -186,11 +185,11 @@ async function render() {
   try {
     await provider.flush()
     if (localVersion !== version) return
-    const { result } = await requestPreview(host.transport, snapshot())
+    const { result } = await preview!.request(snapshot(), localVersion)
     if (localVersion !== version) return
     if (!(await preview?.show(result, localVersion)) || localVersion !== version) return
     setResolvedReferences(editor, result.references || [])
-    const count = result.pages.length
+    const count = result.pageSizes?.length ?? result.pages.length
     element('preview-heading').textContent = tr(
       count === 1 ? 'Aperçu ({count} page)' : 'Aperçu ({count} pages)',
       { count },
@@ -200,6 +199,11 @@ async function render() {
     element('render-status').classList.remove('error')
     onPreview?.(result.revision)
   } catch (error) {
+    if (String(error) === 'preview-reset') {
+      preview?.reset()
+      rendering.request()
+      return
+    }
     if (String(error) === 'stale') {
       rendering.request()
       return

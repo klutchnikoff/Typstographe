@@ -70,3 +70,56 @@ it('accepte un SVG binaire sans décoder son XML dans le DOM', () => {
   )
   expect(value.pages[0]).toMatchObject({ encoding: 'svg' })
 })
+
+it('accepts changed-page indices and zero-pixel updates, rejects broken differential manifests', () => {
+  const delta = {
+    generation: 'doc',
+    epoch: 'window',
+    version: 2,
+    id: 'new',
+    base: 'old',
+    keys: ['a'.repeat(32), 'b'.repeat(32)],
+  }
+  const changed = (h: any) => {
+    h.preview.delta = delta
+    h.preview.pageSizes.push([100, 200])
+    h.pages[0].index = 1
+  }
+  expect(decodeFrame(packet(changed)).pages[0]).toMatchObject({ index: 1 })
+  const empty = packet((h) => {
+    changed(h)
+    h.pages = []
+  }, new Uint8Array())
+  expect(decodeFrame(empty).pages).toEqual([])
+  for (const change of [
+    (h: any) => {
+      h.preview.delta = { ...delta, base: null }
+    },
+    (h: any) => {
+      h.pages[0].index = 2
+    },
+    (h: any) => {
+      h.pages[0].index = -1
+    },
+    (h: any) => {
+      delete h.pages[0].index
+    },
+    (h: any) => {
+      h.preview.delta = { ...delta, keys: ['broken'] }
+    },
+    (h: any) => {
+      h.preview.delta = { ...delta, epoch: '' }
+    },
+    (h: any) => {
+      h.pages[0].encoding = 'png'
+    },
+  ])
+    expect(() =>
+      decodeFrame(
+        packet((h) => {
+          changed(h)
+          change(h)
+        }),
+      ),
+    ).toThrow()
+})
