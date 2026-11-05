@@ -1,5 +1,6 @@
 """Instrument a disposable production checkout, preserving all normal application files."""
 import io
+import os
 import json
 import subprocess
 import tarfile
@@ -12,7 +13,7 @@ SOURCE = OUT / 'source'
 if SOURCE.exists():
     raise SystemExit(f'Refusing to replace {SOURCE}')
 subprocess.run(['python3', str(HERE / 'corpus.py')], check=True)
-base = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+base = subprocess.check_output(['git', 'rev-parse', os.environ.get('TOG_PROFILE_REF', 'HEAD')], cwd=ROOT, text=True).strip()
 SOURCE.mkdir()
 with tarfile.open(fileobj=io.BytesIO(subprocess.check_output(['git', 'archive', base], cwd=ROOT))) as tar:
     tar.extractall(SOURCE, filter='data')

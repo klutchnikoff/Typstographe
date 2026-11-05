@@ -27,7 +27,9 @@ shutil.copyfile(HERE/'pipeline-profile.ts',SOURCE/'app/src/pipeline-profile.ts')
 def replace(path,old,new):
  p=SOURCE/path;s=p.read_text();assert s.count(old)==1,(path,old);p.write_text(s.replace(old,new))
 p=SOURCE/'app/src/main.ts';p.write_text('import { span, mark } from "./pipeline-profile"\n'+p.read_text())
-replace('app/src/main.ts','function refresh() {','function refresh() { return span("ui.refresh", refreshImpl) }\nfunction refreshImpl() {')
+# Time executed UI work, including checkouts that batch requests in a microtask.
+refresh='updateInterface' if 'function updateInterface() {' in p.read_text() else 'refresh'
+replace('app/src/main.ts',f'function {refresh}() {{',f'function {refresh}() {{ return span("ui.refresh", refreshImpl) }}\nfunction refreshImpl() {{')
 replace('app/src/main.ts','async function render() {','async function render() {\n  mark("render.enter")')
 replace('app/src/main.ts','    const flushMs = performance.now() - flushStarted','    const flushMs = performance.now() - flushStarted\n    mark("render.flushed")')
 replace('app/src/main.ts','    const showStarted = performance.now()','    mark("render.response")\n    const showStarted = performance.now()')
