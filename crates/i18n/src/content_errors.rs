@@ -48,7 +48,8 @@ pub fn content_error_with(loader: &FluentLanguageLoader, error: &Error) -> Strin
         Error::InvalidDocument { .. } => "content-document-invalid",
         Error::InvalidSettings { reason } => match reason.as_str() {
             "template_too_large" => "model-too-large",
-            "fixed_page" => "model-fixed-page",
+            "model_language_unsupported" => "model-language-unsupported",
+            value if value.starts_with("model_option_not_allowed:") => "model-option-not-allowed",
             _ => "content-settings-invalid",
         },
         Error::InconsistentState { field } => match field.as_str() {

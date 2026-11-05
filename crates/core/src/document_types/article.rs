@@ -1,29 +1,11 @@
 //! Scientific article: canonical authors, official free-text affiliations and localized rich frontmatter.
-use super::{FieldGroup, FieldKind, FieldValue, MetadataField};
+use super::authorship::{Affiliation, Author};
 use crate::{
     content::editorial::RichText,
-    document::{DocumentLanguage, DocumentOptions, typst_string},
+    document::{DocumentLanguage, DocumentOptions},
 };
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct Author {
-    pub id: String,
-    pub name: String,
-    #[serde(rename = "affiliation-ids")]
-    pub affiliation_ids: Vec<String>,
-    pub email: String,
-    pub orcid: String,
-    pub corresponding: bool,
-}
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct Affiliation {
-    pub id: String,
-    pub text: String,
-}
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Localization {
@@ -39,15 +21,14 @@ pub struct Localization {
 }
 impl Localization {
     pub fn blank(language: DocumentLanguage, id: String) -> Self {
-        Self {
-            id,
-            language,
-            title: Default::default(),
-            short_title: Default::default(),
-            subtitle: Default::default(),
-            summary: Default::default(),
-            keywords: vec![],
-        }
+        let mut values = super::DocumentType::Article
+            .definition()
+            .record_defaults("localizations")
+            .expect("localized structure");
+        values.insert("id".into(), serde_json::json!(id));
+        values.insert("language".into(), serde_json::json!(language));
+        serde_json::from_value(serde_json::Value::Object(values))
+            .expect("declared localization defaults")
     }
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -57,30 +38,23 @@ pub struct Metadata {
     #[serde(default)]
     pub references: Vec<crate::bibliography::ReferenceFile>,
     #[serde(default = "default_citation_style")]
-    pub citation_style: String,
+    pub citation_style: Option<String>,
     #[serde(default)]
-    pub show_outline: bool,
+    pub show_outline: Option<bool>,
     pub authors: Vec<Author>,
     pub affiliations: Vec<Affiliation>,
     pub localizations: Vec<Localization>,
 }
-fn default_citation_style() -> String {
-    "chicago-author-date".into()
+fn default_citation_style() -> Option<String> {
+    None
 }
 impl Default for Metadata {
     fn default() -> Self {
-        Self {
-            options: Default::default(),
-            references: vec![],
-            citation_style: default_citation_style(),
-            show_outline: false,
-            authors: vec![],
-            affiliations: vec![],
-            localizations: vec![Localization::blank(
-                DocumentLanguage::French,
-                "localization-fr".into(),
-            )],
-        }
+        serde_json::from_value(super::runtime::initial_fields(
+            super::DocumentType::Article.definition(),
+            &DocumentOptions::default(),
+        ))
+        .expect("declared article defaults")
     }
 }
 impl Metadata {
@@ -101,242 +75,14 @@ impl Metadata {
         result
     }
     pub fn validate(&self) -> Result<(), String> {
-        crate::bibliography::index(&self.references)?;
-        if !["chicago-author-date", "apa", "ieee"].contains(&self.citation_style.as_str()) {
-            return Err("Style bibliographique invalide.".into());
-        }
-        fn ids<'a>(values: impl Iterator<Item = &'a str>) -> Result<BTreeSet<&'a str>, String> {
-            let mut ids = BTreeSet::new();
-            for id in values {
-                if id.is_empty()
-                    || id.len() > 128
-                    || id.chars().any(char::is_control)
-                    || !ids.insert(id)
-                {
-                    return Err("Identifiants d’en-tête invalides ou dupliqués.".into());
-                }
-            }
-            Ok(ids)
-        }
-        if self.authors.len() > 100
-            || self.affiliations.len() > 100
-            || self.localizations.len() > DocumentLanguage::ALL.len()
-        {
-            return Err("En-tête trop volumineux.".into());
-        }
-        ids(self.authors.iter().map(|a| a.id.as_str()))?;
-        let affiliations = ids(self.affiliations.iter().map(|a| a.id.as_str()))?;
-        ids(self.localizations.iter().map(|a| a.id.as_str()))?;
-        for a in &self.authors {
-            let mut used = BTreeSet::new();
-            if a.affiliation_ids
-                .iter()
-                .any(|id| !affiliations.contains(id.as_str()) || !used.insert(id))
-            {
-                return Err("Une association à une affiliation est absente ou dupliquée.".into());
-            }
-        }
-        let mut languages = BTreeSet::new();
-        for entry in &self.localizations {
-            if !languages.insert(entry.language.code()) {
-                return Err("Un seul ensemble est autorisé par langue.".into());
-            }
-            if ![&entry.title, &entry.short_title, &entry.subtitle]
-                .iter()
-                .all(|t| t.is_inline())
-            {
-                return Err("Un titre accepte seulement du contenu en ligne.".into());
-            }
-            if entry.keywords.len() > 100
-                || entry
-                    .keywords
-                    .iter()
-                    .any(|s| s.len() > 1000 || s.chars().any(char::is_control))
-            {
-                return Err("Mots-clés invalides ou trop nombreux.".into());
-            }
-        }
-        for value in self
-            .authors
-            .iter()
-            .flat_map(|a| [&a.name, &a.email, &a.orcid])
-            .chain(self.affiliations.iter().map(|a| &a.text))
-        {
-            if value.len() > 16000 || value.chars().any(|c| c.is_control() && c != '\n') {
-                return Err("Texte d’en-tête invalide ou trop volumineux.".into());
-            }
-        }
-        Ok(())
+        super::Metadata::Article(self.clone()).validate()
     }
     pub fn ready_for_export(&self) -> bool {
-        self.validate().is_ok()
-            && self
-                .localizations
-                .iter()
-                .any(|l| l.language == self.options.language && !l.title.is_empty())
-            && self.authors.iter().all(|a| !a.name.trim().is_empty())
-            && self.affiliations.iter().all(|a| !a.text.trim().is_empty())
-    }
-    pub fn field_values(&self) -> Vec<FieldValue> {
-        [
-            (
-                MetadataField::ArticleReferences,
-                "references",
-                "field-bibliography",
-                serde_json::to_value(&self.references).unwrap(),
-            ),
-            (
-                MetadataField::ArticleCitationStyle,
-                "citation_style",
-                "field-citation-style",
-                serde_json::json!(self.citation_style),
-            ),
-            (
-                MetadataField::ArticleOutline,
-                "show_outline",
-                "field-show-outline",
-                serde_json::json!(self.show_outline),
-            ),
-            (
-                MetadataField::ArticleAuthors,
-                "authors",
-                "field-article-authors",
-                serde_json::to_value(&self.authors).unwrap(),
-            ),
-            (
-                MetadataField::ArticleAffiliations,
-                "affiliations",
-                "field-article-affiliations",
-                serde_json::to_value(&self.affiliations).unwrap(),
-            ),
-            (
-                MetadataField::ArticleLocalizations,
-                "localizations",
-                "field-article-localizations",
-                serde_json::to_value(&self.localizations).unwrap(),
-            ),
-        ]
-        .into_iter()
-        .map(|(field, parameter, label_key, value)| FieldValue {
-            field,
-            parameter,
-            label_key,
-            value,
-            group: "header",
-            multiline: false,
-            kind: FieldKind::Records,
-            required_for_export: false,
-            editor_id: parameter,
-        })
-        .collect()
+        super::Metadata::Article(self.clone()).ready_for_export()
     }
     pub fn main_source(&self) -> String {
-        fn strings(items: &[String]) -> String {
-            format!(
-                "({})",
-                items
-                    .iter()
-                    .map(|s| format!("{},", typst_string(s)))
-                    .collect::<String>()
-            )
-        }
-        let authors = self.authors.iter().map(|a| format!("(id: {}, name: {}, affiliation-ids: {}, email: {}, orcid: {}, corresponding: {}),", typst_string(&a.id), typst_string(&a.name), strings(&a.affiliation_ids), typst_string(&a.email), typst_string(&a.orcid), a.corresponding)).collect::<String>();
-        let affiliations = self
-            .affiliations
-            .iter()
-            .map(|a| {
-                format!(
-                    "(id: {}, text: {}),",
-                    typst_string(&a.id),
-                    typst_string(&a.text)
-                )
-            })
-            .collect::<String>();
-        let localizations = self.localizations.iter().map(|l| format!("(id: {}, language: {}, title: [{}], short-title: [{}], subtitle: [{}], abstract: [{}], keywords: {}),", typst_string(&l.id), typst_string(l.language.code()), l.title.source(true), l.short_title.source(true), l.subtitle.source(true), l.summary.source(false), strings(&l.keywords))).collect::<String>();
-        let o = &self.options;
-        let references = self
-            .references
-            .iter()
-            .map(|file| format!("path({}),", typst_string(&file.path())))
-            .collect::<String>();
-        format!(
-            "#import \"modele.typ\": article\n#show: article.with(\n  authors: ({authors}),\n  affiliations: ({affiliations}),\n  localizations: ({localizations}),\n  references: ({references}),\n  citation-style: {},\n  show-outline: {},\n  options: (paper: {}, landscape: {}, language: {}, bullet-marker: {}),\n)\n#include \"contenu.typ\"\n",
-            typst_string(&self.citation_style),
-            self.show_outline,
-            typst_string(o.paper.typst_name()),
-            o.landscape,
-            typst_string(o.language.code()),
-            o.bullet_marker
-                .as_deref()
-                .map_or_else(|| "auto".into(), typst_string)
-        )
+        super::Metadata::Article(self.clone()).main_source()
     }
-}
-pub const SIGNATURE: &str = "article(localizations, authors, affiliations, references, citation-style, show-outline, options, body)";
-pub const GROUPS: &[FieldGroup] = &[
-    FieldGroup {
-        id: "titles",
-        label_key: "group-article-titles",
-        sections: &[],
-    },
-    FieldGroup {
-        id: "abstracts",
-        label_key: "group-article-abstracts",
-        sections: &[],
-    },
-    FieldGroup {
-        id: "affiliations",
-        label_key: "field-article-affiliations",
-        sections: &[],
-    },
-    FieldGroup {
-        id: "authors",
-        label_key: "field-article-authors",
-        sections: &[],
-    },
-    FieldGroup {
-        id: "bibliography",
-        label_key: "field-bibliography",
-        sections: &[],
-    },
-];
-
-/// Shared collection descriptors consumed by GUI and documented to CLI/MCP.
-pub(super) fn schema() -> serde_json::Value {
-    use serde_json::json;
-    let rich = |key, label, inline| json!({"key":key,"label_key":label,"kind":if inline {"rich_inline"} else {"rich"},"default":RichText::default()});
-    let mut abstract_field = rich("abstract", "field-abstract", false);
-    abstract_field["statistics"] = json!(true);
-    json!({"outline":{"parameter":"show_outline","field":"article.show_outline"},"bibliography":{"tab":"bibliography","files":"references","field":"article.references","style":"citation_style","style_field":"article.citation_style"},"panels":[
-        {"id":"titles","collection":"localizations","editing":"dialog","item_label_key":"field-article-title","summary":["title"],"fields":["language","title","subtitle","short-title"]},
-        {"id":"abstracts","collection":"localizations","editing":"dialog","item_label_key":"field-abstract","fields":["language","abstract","keywords"]},
-        {"id":"affiliations","collection":"affiliations","editing":"dialog"},
-        {"id":"authors","collection":"authors","editing":"dialog"}
-    ],"collections":[
-        {"field":"article.references","parameter":"references","label_key":"field-bibliography","item_label_key":"field-reference-file","title_key":"name","schema":schemars::schema_for!(Vec<crate::bibliography::ReferenceFile>),"fields":[
-            {"key":"name","label_key":"field-reference-file","kind":"text","default":""},
-            {"key":"contents","label_key":"field-reference-source","kind":"source","default":""}
-        ]},
-        {"field":"article.authors","parameter":"authors","label_key":"field-article-authors","item_label_key":"article-author","title_key":"name","summary":["corresponding"],
-         "schema":schemars::schema_for!(Vec<Author>), "fields":[
-            {"key":"name","label_key":"field-full-name","kind":"text","default":""},
-            {"key":"email","label_key":"field-email","kind":"text","default":""},
-            {"key":"orcid","label_key":"field-orcid","kind":"text","default":""},
-            {"key":"affiliation-ids","label_key":"field-article-affiliations","kind":"references","references":"affiliations","default":[]},
-            {"key":"corresponding","label_key":"field-corresponding","kind":"boolean","default":false}
-         ]},
-        {"field":"article.affiliations","parameter":"affiliations","label_key":"field-article-affiliations","item_label_key":"article-affiliation","title_key":"text",
-         "schema":schemars::schema_for!(Vec<Affiliation>), "fields":[
-            {"key":"text","label_key":"field-official-affiliation","kind":"multiline","default":""}
-         ]},
-        {"field":"article.localizations","parameter":"localizations","label_key":"field-article-localizations","item_label_key":"article-localization","removal_notice_key":"article-localization-removal-notice","title_key":"language","language_key":"language",
-         "schema":schemars::schema_for!(Vec<Localization>), "fields":[
-            {"key":"language","label_key":"field-language","kind":"language","default":"fr"},
-            rich("title","field-article-title",true), rich("short-title","field-short-title",true),
-            rich("subtitle","field-subtitle",true), abstract_field,
-            {"key":"keywords","label_key":"field-keywords","kind":"tokens","default":[]}
-         ]}
-    ]})
 }
 
 #[cfg(test)]
@@ -387,10 +133,19 @@ mod tests {
     }
     #[test]
     fn editorial_tabs_share_localized_records_and_cover_every_field() {
-        let descriptor = schema();
+        let descriptor = DocumentType::Article.structured_metadata().unwrap();
         let panels = descriptor["panels"].as_array().unwrap();
-        assert_eq!(panels.len() + 1, GROUPS.len());
-        for group in GROUPS.iter().filter(|group| group.id != "bibliography") {
+        assert_eq!(
+            panels.len() + 1,
+            DocumentMetadata::blank(DocumentType::Article)
+                .editor_groups()
+                .len()
+        );
+        for group in DocumentMetadata::blank(DocumentType::Article)
+            .editor_groups()
+            .iter()
+            .filter(|group| group.id != "bibliography")
+        {
             assert!(panels.iter().any(|panel| panel["id"] == group.id));
         }
         for collection in descriptor["collections"].as_array().unwrap() {
@@ -472,6 +227,7 @@ mod tests {
             document: serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Le corps de l’article et sa note."},{"type":"footnote","attrs":{"text":"Note scientifique."}}]}]})).unwrap(),
             metadata: DocumentMetadata::Article(fixture()),
             dependencies: crate::packages::for_template(&template),
+            model_manifest: crate::document_types::DocumentType::Article.default_model_manifest().into(),
             template,
             model_id: Model::ArticleWorking.id().into(),
             assets: Default::default(),
@@ -499,6 +255,7 @@ mod tests {
         let request = crate::rendering::RenderRequest {
             source: body,
             metadata: restored.metadata,
+            model_manifest: restored.model_manifest,
             template: restored.template,
             assets: restored.assets,
             dependencies: restored.dependencies,

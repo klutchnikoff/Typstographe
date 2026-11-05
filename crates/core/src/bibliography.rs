@@ -348,14 +348,14 @@ mod tests {
         let template = Model::ArticleWorking.source();
         let mut meta = article::Metadata::demo();
         meta.references = files();
-        meta.show_outline = true;
+        meta.show_outline = Some(true);
         let node = doc();
         let mut world = TypstWorld::default();
         let dependencies = crate::packages::for_template(&template);
         world.set_dependencies(&dependencies);
         let mut pages = 0;
         for style in ["chicago-author-date", "apa", "ieee"] {
-            meta.citation_style = style.into();
+            meta.citation_style = Some(style.into());
             let metadata = Metadata::Article(meta.clone());
             validate_document(&node, &metadata).unwrap();
             let (body, map) = source_mapped(&node, &Default::default()).unwrap();
@@ -376,6 +376,9 @@ mod tests {
                     source: body,
                     metadata,
                     template: template.clone(),
+                    model_manifest: crate::document_types::DocumentType::Article
+                        .default_model_manifest()
+                        .into(),
                     assets: Default::default(),
                     dependencies: dependencies.clone(),
                 },
@@ -393,6 +396,9 @@ mod tests {
         let archive = Archive {
             document: node.clone(),
             metadata: Metadata::Article(meta),
+            model_manifest: crate::document_types::DocumentType::Article
+                .default_model_manifest()
+                .into(),
             template,
             dependencies,
             assets: Default::default(),

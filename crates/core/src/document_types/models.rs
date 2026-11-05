@@ -1,6 +1,5 @@
 //! Catalogue des modèles fournis. Toutes les listes et commandes en dérivent.
 use super::DocumentType;
-use crate::document::PaperFormat;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Model {
@@ -11,7 +10,7 @@ pub struct Definition {
     pub model: Model,
     pub kind: DocumentType,
     pub source: &'static str,
-    pub page: Option<(PaperFormat, bool)>,
+    pub manifest: &'static str,
     pub name: &'static str,
     pub description: &'static str,
     pub keywords: &'static [&'static str],
@@ -21,7 +20,7 @@ pub const ALL: &[Definition] = &[
         model: Model::Personal,
         kind: DocumentType::Courrier,
         source: include_str!("../../templates/courrier-personnel.typ"),
-        page: None,
+        manifest: include_str!("../../templates/courrier-personnel.model.yaml"),
         name: "Personal letter",
         description: "A restrained personal letter with selectable paper size and orientation; A4 portrait retains the DL window-envelope layout.",
         keywords: &[
@@ -41,7 +40,7 @@ pub const ALL: &[Definition] = &[
         model: Model::ArticleWorking,
         kind: DocumentType::Article,
         source: include_str!("../../templates/article-working.typ"),
-        page: None,
+        manifest: include_str!("../../templates/article-working.model.yaml"),
         name: "Working article",
         description: "A readable single-column scientific working article with multilingual frontmatter and shared official affiliations.",
         keywords: &[

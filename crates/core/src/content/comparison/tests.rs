@@ -12,6 +12,7 @@ pub(super) fn archive(lines: &[&str]) -> Archive {
         document: state.document,
         metadata: state.settings.metadata,
         template: state.settings.template.clone(),
+        model_manifest: state.settings.model_manifest.clone(),
         model_id: state.settings.model_id,
         assets: Default::default(),
         dependencies: crate::packages::for_template(&state.settings.template),
@@ -149,6 +150,7 @@ fn word_highlights_are_attached_to_source_leaves_even_beside_inline_badges() {
                 .into(),
         });
     before.template = DocumentType::Article.default_model();
+    before.model_manifest = DocumentType::Article.default_model_manifest().into();
     before.model_id = "article.model.working".into();
     before.dependencies = crate::packages::for_template(&before.template);
     let mut after = before.clone();
@@ -211,7 +213,7 @@ fn word_highlights_are_attached_to_source_leaves_even_beside_inline_badges() {
 fn metadata_and_content_are_one_safe_atomic_unit() {
     let before = archive(&["before", ""]);
     let mut after = archive(&["after", ""]);
-    after.metadata.options_mut().landscape = true;
+    after.metadata.options_mut().landscape = Some(true);
     let (mut e, c) = engine(&before);
     let mut p = Comparison::new(
         before.clone(),
@@ -462,6 +464,7 @@ fn article_frontmatter_citations_and_bibliography_are_published_and_undone_as_on
     let mut before = archive(&["Article", ""]);
     before.metadata = Metadata::demo(DocumentType::Article);
     before.template = DocumentType::Article.default_model();
+    before.model_manifest = DocumentType::Article.default_model_manifest().into();
     before.model_id = "article.model.working".into();
     before.dependencies = crate::packages::for_template(&before.template);
     let mut after = before.clone();
@@ -470,7 +473,7 @@ fn article_frontmatter_citations_and_bibliography_are_published_and_undone_as_on
     };
     metadata
         .affiliations
-        .push(crate::document_types::article::Affiliation {
+        .push(crate::document_types::authorship::Affiliation {
             id: "official".into(),
             text: "Official free-text affiliation".into(),
         });

@@ -144,10 +144,12 @@ pub const MAX_BATCH_STEPS: usize = 256;
 pub enum Command {
     #[serde(rename = "resource.add")]
     AddResource { resource: ImageResource },
-    #[serde(rename = "document.set_signature")]
-    SetSignature { path: Option<String> },
     #[serde(rename = "document.set_model")]
-    SetModel { model_id: String, source: String },
+    SetModel {
+        model_id: String,
+        source: String,
+        manifest: String,
+    },
     #[serde(rename = "text.insert")]
     Insert {
         target: TextTarget,
@@ -273,7 +275,6 @@ impl Command {
     pub fn id(&self) -> &'static str {
         match self {
             Self::AddResource { .. } => "resource.add",
-            Self::SetSignature { .. } => "document.set_signature",
             Self::SetModel { .. } => "document.set_model",
             Self::Insert { .. } => "text.insert",
             Self::Delete { .. } => "text.delete",
@@ -313,7 +314,6 @@ impl Command {
 }
 pub const IDS: &[&str] = &[
     "resource.add",
-    "document.set_signature",
     "document.set_model",
     "insert.table",
     "table.row.insert",

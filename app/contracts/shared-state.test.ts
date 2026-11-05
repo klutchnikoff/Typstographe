@@ -128,6 +128,7 @@ function seed(type: 'courrier' | 'article') {
     metadata: kind.metadata,
     template: kind.models[0].source,
     modelId: kind.models[0].id,
+    modelManifest: kind.models[0].manifest,
   })
   if (type === 'article')
     settings.metadata.fields.references = [
@@ -1252,6 +1253,7 @@ it('model and language commands preserve Article branches and undo the whole lan
         params: {
           model_id: 'article.project',
           source: before.settings.template + '\n// retained project model',
+          manifest: before.settings.modelManifest,
         },
       },
     ],
@@ -1311,7 +1313,13 @@ it('immutable images and signatures share one guarded batch and remain available
         actor: 0,
         commands: [
           { id: 'resource.add', params: { resource } },
-          { id: 'document.set_signature', params: { path: resource.path } },
+          {
+            id: 'metadata.set',
+            params: {
+              target: { kind: 'metadata', field: 'sender.signature' },
+              value: resource.path,
+            },
+          },
         ],
       },
       { op: 'history', actor: 0, direction: 'undo' },

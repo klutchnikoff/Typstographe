@@ -378,6 +378,22 @@ impl SharedSession {
     /// Validate only the final batch, permitting intermediate private states.
     /// The original shared document is never mutated by a failed or stale preparation.
     pub fn prepare(&self, guard: &Guard, updates: &[Vec<u8>]) -> Result<PreparedUpdate, Error> {
+        self.prepare_deltas(guard, updates, true)
+    }
+    /// Only the owner's validated undo/redo path may restore inactive retained choices.
+    pub(in crate::content) fn prepare_history(
+        &self,
+        guard: &Guard,
+        updates: &[Vec<u8>],
+    ) -> Result<PreparedUpdate, Error> {
+        self.prepare_deltas(guard, updates, false)
+    }
+    fn prepare_deltas(
+        &self,
+        guard: &Guard,
+        updates: &[Vec<u8>],
+        check_choices: bool,
+    ) -> Result<PreparedUpdate, Error> {
         guard.check(&self.guard)?;
         let total = updates
             .iter()
@@ -390,6 +406,14 @@ impl SharedSession {
         let candidate = SharedDocument::from_update(&original)?;
         for bytes in updates {
             apply(&candidate.doc, bytes)?;
+        }
+        let projected = candidate.state()?;
+        if check_choices && projected.settings != self.state.settings {
+            crate::document_types::model_options::load(&projected.settings.model_manifest)
+                .and_then(|m| {
+                    m.check_edits(&self.state.settings.metadata, &projected.settings.metadata)
+                })
+                .map_err(|reason| Error::InvalidSettings { reason })?;
         }
         self.finish_preparation(guard, candidate)
     }
@@ -427,7 +451,8 @@ impl SharedSession {
         }
         if validate_model
             && (state.settings.template != self.state.settings.template
-                || state.settings.model_id != self.state.settings.model_id)
+                || state.settings.model_id != self.state.settings.model_id
+                || state.settings.model_manifest != self.state.settings.model_manifest)
         {
             settings::validate_model(&state, validation_assets)?;
         }

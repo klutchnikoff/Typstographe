@@ -4,7 +4,7 @@
     {
       "id": "dates",
       "entrypoint": "capabilities/dates.typ",
-      "signature": "format-date(value, lang: \"fr\") -> content",
+      "signature": "format-date(value: none | datetime | str, lang: \"fr\", format: \"long\" | \"short\" | \"iso\") -> content",
       "packages": [
         "datify"
       ]

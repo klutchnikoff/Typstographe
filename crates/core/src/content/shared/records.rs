@@ -104,7 +104,9 @@ pub(super) fn apply(doc: &Doc, state: &State, command: &Command) -> Result<(), E
                 let key = field["key"].as_str().unwrap();
                 let value = values.get(key).unwrap_or(&field["default"]);
                 let valid = match field["kind"].as_str() {
-                    Some("text" | "multiline" | "source" | "language") => value.is_string(),
+                    Some("text" | "multiline" | "source" | "language" | "choice") => {
+                        value.is_string()
+                    }
                     Some("boolean") => value.is_boolean(),
                     Some("tokens" | "references") => value
                         .as_array()

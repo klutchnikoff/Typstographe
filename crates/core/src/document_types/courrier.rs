@@ -1,8 +1,4 @@
 //! Le type Courrier : données, contrat du modèle et commandes propres au type.
-use super::{
-    FieldGroup, FieldKind, FieldSection, FieldSectionLayout, MetadataField, ModelContract,
-    TextField,
-};
 use crate::document::DocumentOptions;
 use serde::{Deserialize, Serialize};
 
@@ -16,13 +12,13 @@ pub struct Metadata {
     pub organisme: String,
     pub adresse_expediteur: String,
     pub telephone: String,
-    pub signature: Option<String>,
+    pub signature: Option<crate::resources::ResourceReference>,
     pub destinataire: String,
     pub adresse: String,
     pub objet: String,
     pub reference: String,
     pub lieu: String,
-    pub date: String,
+    pub date: Option<crate::dates::DateValue>,
 }
 impl Default for Metadata {
     fn default() -> Self {
@@ -41,242 +37,25 @@ impl Default for Metadata {
             objet: "Demande de réservation d’une salle".into(),
             reference: "VA / 2026 / 042".into(),
             lieu: "Valmont".into(),
-            date: "2026-10-19".into(),
+            date: crate::dates::DateValue::calendar("2026-10-19"),
         }
     }
 }
 
 impl Metadata {
     pub fn blank() -> Self {
-        Self {
-            options: DocumentOptions::default(),
-            expediteur: String::new(),
-            fonction: String::new(),
-            service: String::new(),
-            email: String::new(),
-            organisme: String::new(),
-            adresse_expediteur: String::new(),
-            telephone: String::new(),
-            signature: None,
-            destinataire: String::new(),
-            adresse: String::new(),
-            objet: String::new(),
-            reference: String::new(),
-            date: String::new(),
-            lieu: String::new(),
-        }
+        serde_json::from_value(super::runtime::initial_fields(
+            super::DocumentType::Courrier.definition(),
+            &DocumentOptions::default(),
+        ))
+        .expect("declared letter defaults")
     }
 }
-
-macro_rules! field {
-    ($name:ident, $field:ident, $editor:literal, $label:literal, $group:literal, $multiline:literal, $required:literal) => {
-        TextField {
-            field: MetadataField::$field,
-            parameter: stringify!($name),
-            editor_id: $editor,
-            label_key: $label,
-            group: $group,
-            multiline: $multiline,
-            kind: FieldKind::Text,
-            required_for_export: $required,
-            get: |m: &Metadata| &m.$name,
-        }
-    };
-}
-pub const FIELDS: &[TextField<Metadata>] = &[
-    field!(
-        expediteur,
-        SenderName,
-        "sender",
-        "field-full-name",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        fonction,
-        SenderRole,
-        "role",
-        "field-role",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        service,
-        SenderDepartment,
-        "service",
-        "field-service",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        email,
-        SenderEmail,
-        "email",
-        "field-email",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        organisme,
-        SenderOrganisation,
-        "organisation",
-        "field-organisation",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        adresse_expediteur,
-        SenderAddress,
-        "sender-address",
-        "field-sender-address",
-        "sender",
-        true,
-        false
-    ),
-    field!(
-        telephone,
-        SenderPhone,
-        "sender-phone",
-        "field-phone",
-        "sender",
-        false,
-        false
-    ),
-    field!(
-        destinataire,
-        RecipientName,
-        "recipient",
-        "field-recipient",
-        "recipient",
-        false,
-        true
-    ),
-    field!(
-        adresse,
-        RecipientAddress,
-        "address",
-        "field-address",
-        "recipient",
-        true,
-        false
-    ),
-    field!(
-        objet,
-        LetterSubject,
-        "subject",
-        "field-subject",
-        "information",
-        false,
-        true
-    ),
-    field!(
-        reference,
-        LetterReference,
-        "reference",
-        "field-reference",
-        "information",
-        false,
-        false
-    ),
-    field!(
-        lieu,
-        LetterPlace,
-        "place",
-        "field-place",
-        "information",
-        false,
-        false
-    ),
-    TextField {
-        kind: FieldKind::Date,
-        ..field!(
-            date,
-            LetterDate,
-            "date",
-            "field-date",
-            "information",
-            false,
-            false
-        )
-    },
-];
-pub const GROUPS: &[FieldGroup] = &[
-    FieldGroup {
-        id: "sender",
-        label_key: "group-sender",
-        sections: &[
-            FieldSection {
-                layout: FieldSectionLayout::Inline,
-                id: "identity",
-                label_key: "group-sender",
-                fields: &[MetadataField::SenderName],
-            },
-            FieldSection {
-                layout: FieldSectionLayout::Compact,
-                id: "contact",
-                label_key: "group-contact-details",
-                fields: &[
-                    MetadataField::SenderAddress,
-                    MetadataField::SenderEmail,
-                    MetadataField::SenderPhone,
-                ],
-            },
-            FieldSection {
-                layout: FieldSectionLayout::Compact,
-                id: "organisation",
-                label_key: "group-professional-details",
-                fields: &[
-                    MetadataField::SenderOrganisation,
-                    MetadataField::SenderDepartment,
-                    MetadataField::SenderRole,
-                ],
-            },
-        ],
-    },
-    FieldGroup {
-        id: "header",
-        label_key: "group-editorial-header",
-        sections: &[
-            FieldSection {
-                layout: FieldSectionLayout::Compact,
-                id: "recipient",
-                label_key: "group-recipient",
-                fields: &[
-                    MetadataField::RecipientName,
-                    MetadataField::RecipientAddress,
-                ],
-            },
-            FieldSection {
-                layout: FieldSectionLayout::Compact,
-                id: "information",
-                label_key: "group-letter-information",
-                fields: &[
-                    MetadataField::LetterSubject,
-                    MetadataField::LetterReference,
-                    MetadataField::LetterPlace,
-                    MetadataField::LetterDate,
-                ],
-            },
-        ],
-    },
-];
-pub const CONTRACT: ModelContract<Metadata> = ModelContract {
-    function: "courrier",
-    fields: FIELDS,
-    options: |m| &m.options,
-    signature_image: Some(|m| m.signature.as_deref()),
-};
 
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::super::models::Model;
-    use super::*;
     use crate::document_types::{DocumentType, Metadata as DocumentMetadata};
     use crate::rendering::TypstWorld;
 
@@ -299,7 +78,7 @@ mod tests {
         let template = Model::Personal.source();
         let mut world = TypstWorld::default();
         let mut metadata = DocumentMetadata::blank(DocumentType::Courrier);
-        metadata.courrier_mut().date = "2026-10-01".into();
+        metadata.courrier_mut().date = crate::dates::DateValue::calendar("2026-10-01");
         metadata.courrier_mut().lieu = "Rennes".into();
         for (language, month) in [
             (DocumentLanguage::French, "octobre"),
@@ -322,7 +101,10 @@ mod tests {
                 assert!(rendered.contains("1er"));
             }
         }
-        let custom = template.replace("#format-date(date, lang: options.language)", "#date");
+        let custom = template.replace(
+            "#format-date(date, lang: options.language)",
+            "#format-date(date, lang: options.language, format: \"iso\")",
+        );
         let document = world
             .compile_with_template("Bonjour.", &metadata, &custom)
             .unwrap();
@@ -342,7 +124,7 @@ mod tests {
             ("", "", ""),
         ] {
             metadata.courrier_mut().lieu = place.into();
-            metadata.courrier_mut().date = date.into();
+            metadata.courrier_mut().date = crate::dates::DateValue::calendar(date);
             let document = world
                 .compile_with_template("CORPS", &metadata, &template)
                 .unwrap();
@@ -359,11 +141,60 @@ mod tests {
         }
         // A language without a date prefix must also compile without a place.
         metadata.options_mut().language = DocumentLanguage::English;
-        metadata.courrier_mut().date = "1875-01-19".into();
+        metadata.courrier_mut().date = crate::dates::DateValue::calendar("1875-01-19");
         let document = world
             .compile_with_template("CORPS", &metadata, &template)
             .unwrap();
         assert!(text(&document.pages()[0].frame).contains("January"));
+    }
+
+    #[test]
+    fn custom_dates_are_literal_and_models_choose_the_calendar_format() {
+        use crate::dates::DateValue;
+        let template = Model::Personal.source();
+        let mut world = TypstWorld::default();
+        let mut metadata = DocumentMetadata::blank(DocumentType::Courrier);
+        for (place, custom, expected) in [
+            (
+                "Rennes",
+                "début novembre 2026",
+                "Rennes, début novembre 2026",
+            ),
+            ("", "début novembre 2026", "début novembre 2026"),
+            ("", "2026-02-30", "2026-02-30"),
+            ("", "#panic(échec)", "#panic(échec)"),
+        ] {
+            metadata.courrier_mut().lieu = place.into();
+            metadata.courrier_mut().date = Some(DateValue::Custom {
+                text: custom.into(),
+            });
+            let document = world
+                .compile_with_template("CORPS", &metadata, &template)
+                .unwrap();
+            let rendered = text(&document.pages()[0].frame);
+            assert!(rendered.contains(expected), "{rendered}");
+            assert!(!rendered.contains("Le "), "{rendered}");
+            assert!(!rendered.contains(", le "), "{rendered}");
+        }
+        metadata.courrier_mut().date = DateValue::calendar("2026-10-01");
+        for (format, expected) in [
+            ("long", "1er octobre 2026"),
+            ("short", "01/10/2026"),
+            ("iso", "2026-10-01"),
+        ] {
+            let model = template.replace(
+                "#format-date(date, lang: options.language)",
+                &format!("#format-date(date, lang: options.language, format: \"{format}\")"),
+            );
+            let document = world
+                .compile_with_template("CORPS", &metadata, &model)
+                .unwrap();
+            assert!(
+                text(&document.pages()[0].frame).contains(expected),
+                "{}",
+                text(&document.pages()[0].frame)
+            );
+        }
     }
 
     #[test]
@@ -401,7 +232,7 @@ mod tests {
                 .is_err()
         );
         metadata.courrier_mut().adresse.clear();
-        metadata.options_mut().landscape = true;
+        metadata.options_mut().landscape = Some(true);
         assert!(
             world
                 .compile_with_template("Bonjour.", &metadata, template)
@@ -425,8 +256,8 @@ mod tests {
             (PaperFormat::A3, 297.0, 420.0),
         ] {
             for landscape in [false, true] {
-                metadata.options_mut().paper = paper;
-                metadata.options_mut().landscape = landscape;
+                metadata.options_mut().paper = Some(paper);
+                metadata.options_mut().landscape = Some(landscape);
                 let doc = world
                     .compile_with_template("CONTENUTEST", &metadata, &template)
                     .unwrap();
@@ -465,15 +296,18 @@ mod tests {
         }
         // Une implémentation différente peut employer des fonctions privées
         // élaborées sans aucune déclaration supplémentaire dans l’application.
-        let arguments = FIELDS
+        let arguments = DocumentType::Courrier
+            .definition()
+            .definition()
+            .bindings
             .iter()
-            .map(|f| format!("{}: \"\"", f.parameter))
+            .map(|f| format!("{}: \"\"", f.parameter()))
             .collect::<Vec<_>>()
             .join(", ");
         let custom = format!(
             r#"
 #let decoration-interne(body) = block(width: 100%, inset: 8pt, stroke: 0.5pt)[#body]
-#let courrier({arguments}, signature: none, options: (paper: "a4", landscape: false, language: "fr"), body) = {{
+#let courrier({arguments}, options: (paper: "a4", landscape: false, language: "fr"), body) = {{
   set page(paper: options.paper, flipped: options.landscape)
   set text(lang: options.language)
   decoration-interne[#text(weight: "bold")[#objet] #body]
@@ -507,12 +341,13 @@ mod tests {
         metadata.courrier_mut().objet = "Objet".into();
         assert!(metadata.ready_for_export());
         let mut parameters = std::collections::HashSet::new();
-        let mut editor_ids = std::collections::HashSet::new();
-        for field in FIELDS {
+        let mut identities = std::collections::HashSet::new();
+        for field in metadata.field_values() {
             assert!(parameters.insert(field.parameter));
-            assert!(editor_ids.insert(field.editor_id));
+            assert!(identities.insert(serde_json::to_string(&field.field).unwrap()));
             assert_eq!(
-                GROUPS
+                metadata
+                    .editor_groups()
                     .iter()
                     .map(|group| {
                         if group.sections.is_empty() {
@@ -521,7 +356,7 @@ mod tests {
                             group
                                 .sections
                                 .iter()
-                                .flat_map(|section| section.fields)
+                                .flat_map(|section| section.fields.iter())
                                 .filter(|&&id| id == field.field)
                                 .count()
                         }
@@ -530,18 +365,40 @@ mod tests {
                 1,
                 "each metadata field has exactly one editing location"
             );
+            if matches!(
+                field.kind,
+                super::super::FieldKind::Date | super::super::FieldKind::ResourceReference
+            ) {
+                assert!(field.value.is_null());
+                assert!(
+                    metadata
+                        .main_source()
+                        .contains(&format!("{}: none", field.parameter))
+                );
+                continue;
+            }
             let DocumentMetadata::Courrier(fields) = &mut metadata else {
                 unreachable!()
             };
             let mut values = serde_json::to_value(&*fields).unwrap();
-            values[field.parameter] = serde_json::json!(format!("{} é\\#", (field.get)(fields)));
+            values[field.parameter] = serde_json::json!(format!(
+                "{} é\\#",
+                values[field.parameter].as_str().unwrap()
+            ));
             *fields = serde_json::from_value(values).unwrap();
-            let value = (field.get)(fields);
-            assert!(CONTRACT.main_source(fields).contains(&format!(
-                "  {}: {},",
-                field.parameter,
-                crate::document::typst_string(value)
-            )));
+            let value = serde_json::to_value(&*fields).unwrap()[field.parameter]
+                .as_str()
+                .unwrap()
+                .to_owned();
+            assert!(
+                DocumentMetadata::Courrier(fields.clone())
+                    .main_source()
+                    .contains(&format!(
+                        "  {}: {},",
+                        field.parameter,
+                        crate::document::typst_string(&value)
+                    ))
+            );
         }
         assert_eq!(
             serde_json::from_str::<DocumentMetadata>(&serde_json::to_string(&metadata).unwrap())

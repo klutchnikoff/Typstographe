@@ -1,0 +1,65 @@
+# Shared header contract. Rendering belongs to each Typst model.
+---
+id: authorship
+collections:
+- id: authors
+  kind: ordered-records
+  identity: stable-id
+  max-items: 100
+  label-key: field-article-authors
+  item-label-key: article-author
+  summary-field: name
+  fields:
+  - id: name
+    kind: text
+    label-key: field-full-name
+    required-for-export: true
+  - id: affiliation-ids
+    kind: record-references
+    label-key: field-article-affiliations
+    target-collection: affiliations
+    unique: true
+    on-target-remove: restrict
+  - id: email
+    kind: text
+    label-key: field-email
+  - id: orcid
+    kind: text
+    label-key: field-orcid
+  - id: corresponding
+    kind: boolean
+    label-key: field-corresponding
+  summary:
+  - corresponding
+- id: affiliations
+  kind: ordered-records
+  identity: stable-id
+  max-items: 100
+  label-key: field-article-affiliations
+  item-label-key: article-affiliation
+  summary-field: text
+  fields:
+  - id: text
+    kind: text
+    label-key: field-official-affiliation
+    multiline: true
+    required-for-export: true
+bindings:
+- collection: authors
+  typst-parameter: authors
+- collection: affiliations
+  typst-parameter: affiliations
+header:
+  tabs:
+  - id: affiliations
+    label-key: field-article-affiliations
+    view: record-cards
+    collection: affiliations
+    summary-field: text
+    editing: dialog
+  - id: authors
+    label-key: field-article-authors
+    view: record-cards
+    collection: authors
+    summary-field: name
+    editing: dialog

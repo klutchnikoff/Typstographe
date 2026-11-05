@@ -1198,3 +1198,22 @@ type-picker-empty = Choose a document type.
 type-picker-available = Available
 type-picker-preview-unavailable = Preview unavailable
 type-picker-enlarged-preview = Enlarged preview · { "{name}" }
+
+web-follow-model = Follow the model
+web-model-option-substituted = The model uses its default for some settings. Your choices are retained.
+web-no = No
+web-yes = Yes
+web-custom-list-marker = Custom list marker
+
+model-language-unsupported = This model does not support the document language.
+model-option-not-allowed = This setting is not allowed by the active model.
+web-retained-unavailable-choice = Retained choice, unavailable
+
+web-date-mode = Date mode
+web-date-custom = Custom text
+web-date-invalid = Enter a complete, valid date, or clear the date.
+web-date-custom-invalid = Enter a custom date on one line, or clear the date.
+web-date-pending = Enter the replacement date or cancel.
+
+web-remove-resource-image = Remove image
+web-no-resource-image = No image

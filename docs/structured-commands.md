@@ -31,7 +31,7 @@ utilisent maintenant la même façade.
 | `metadata.set` | Modifier un champ simple, un champ d’enregistrement identifié ou une option générale typée |
 | `resource.add` | Admettre une image immuable avec le lot qui l’utilise, sans écriture de fichier |
 | `document.set_signature` | Affecter une ressource image à la signature du courrier, ou retirer la signature avec `path: null` |
-| `document.set_model` | Valider et installer le source Typst et son identifiant de provenance en conservant les branches documentaires |
+| `document.set_model` | Valider et installer le source Typst, son manifeste YAML et son identifiant de provenance en conservant les branches documentaires |
 | `block.insert` | Insérer un sous-arbre à une frontière de blocs |
 | `block.replace` | Remplacer explicitement un sous-arbre |
 | `block.splice` | Remplacer une suite de blocs d’un conteneur, puis réparer ses frontières une seule fois |
@@ -530,14 +530,18 @@ revalidation/annulation s’atteignent par Tab et les flèches de leur groupe.
 Un changement de langue crée seulement les enregistrements linguistiques manquants,
 dans le même lot annulable ; il ne remplace ni les titres ni les résumés existants.
 
-`document.set_model` reçoit `model_id` et `source`. Il modifie la base scalaire du
+`document.set_model` reçoit `model_id`, `source` et `manifest` (YAML). Il modifie la base scalaire du
 modèle sans réinitialiser l’identité du document, les collections, leurs textes
 partagés ou les fragments riches. Le contrat Typst et les dépendances contrôlées
 sont vérifiés hors ligne par compilation du candidat. Cette vérification s’applique
 aussi à un changement de modèle issu d’une mise à jour Yjs brute ou de l’historique.
-Les options conservées ne sont pas réinitialisées ; les éventuels réglages de page
-imposés par un modèle fourni exact sont appliqués avec lui. L’interface des futurs
-régimes libre/restreint/imposé reste dans B : ce lot ne la déclare pas achevée.
+Les choix conservés ne sont pas réinitialisés. Les valeurs effectives dérivent
+exclusivement du manifeste embarqué : [régimes libre/restreint/imposé](model-options.md).
+Une absence de choix suit le modèle ; une substitution conserve le choix initial.
+Les options de présentation ne sont pas des zones de texte, même si leur valeur
+est une chaîne. `metadata.get.model_options` décrit leur résolution et les
+commandes typées contrôlent les nouvelles éditions. L’historique peut restaurer
+les choix précédents sans contourner la validation documentaire.
 Le changement de modèle entre dans l’historique commun comme une seule opération.
 
 `prepare_image` est une préparation pure, commune au profil global et au document :

@@ -21,12 +21,14 @@ pub mod tables;
 pub use schema::{Mark, Node, source};
 
 /// Conserver seulement les ressources du contenu, de la signature et du modèle.
+#[allow(clippy::too_many_arguments)]
 pub fn retained_assets(
     document: &Node,
     metadata: &crate::document_types::Metadata,
     template: &str,
     assets: &crate::assets::Assets,
     dependencies: &crate::packages::Dependencies,
+    manifest: &str,
 ) -> Result<crate::assets::Assets, String> {
     fn paths(node: &Node, required: &mut std::collections::BTreeSet<String>) {
         if node.kind == "figure"
@@ -52,6 +54,7 @@ pub fn retained_assets(
         assets,
         dependencies,
         required,
+        manifest,
     )
     .map_err(|e| e.to_string())
 }

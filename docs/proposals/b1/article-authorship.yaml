@@ -1,0 +1,83 @@
+# Loader fixture, not the active Article type. See ../../b1-type-contracts.md.
+contract-version: 1
+id: article
+label-key: type-card-article
+description-key: type-card-article-description
+composition:
+  function: article
+capabilities:
+  - block.paragraph
+  - text.bold
+  - text.italic
+
+collections:
+  - id: affiliations
+    kind: ordered-records
+    identity: stable-id
+    max-items: 100
+    label-key: field-article-affiliations
+    item-label-key: article-affiliation
+    summary-field: text
+    fields:
+      - id: text
+        kind: text
+        label-key: field-official-affiliation
+        multiline: true
+        default: ""
+        required-for-export: true
+
+  - id: authors
+    kind: ordered-records
+    identity: stable-id
+    max-items: 100
+    label-key: field-article-authors
+    item-label-key: article-author
+    summary-field: name
+    fields:
+      - id: name
+        kind: text
+        label-key: field-full-name
+        default: ""
+        required-for-export: true
+      - id: email
+        kind: text
+        label-key: field-email
+        default: ""
+      - id: orcid
+        kind: text
+        label-key: field-orcid
+        default: ""
+      - id: affiliation-ids
+        kind: record-references
+        label-key: field-article-affiliations
+        target-collection: affiliations
+        unique: true
+        on-target-remove: restrict
+        default: []
+      - id: corresponding
+        kind: boolean
+        label-key: field-corresponding
+        default: false
+
+# These are native parameters of the existing Article composition contract.
+bindings:
+  - collection: affiliations
+    typst-parameter: affiliations
+  - collection: authors
+    typst-parameter: authors
+
+# Views use shared components; they do not define keyboard or CSS behavior.
+header:
+  tabs:
+    - id: affiliations
+      label-key: field-article-affiliations
+      view: record-cards
+      collection: affiliations
+      summary-field: text
+      editing: dialog
+    - id: authors
+      label-key: field-article-authors
+      view: record-cards
+      collection: authors
+      summary-field: name
+      editing: dialog

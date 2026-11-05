@@ -1,8 +1,8 @@
 # Plan technique de développement
 
-Révisé le **31 octobre 2026**. Ce document accompagne la [roadmap produit](ROADMAP.md)
-et ne conserve que les décisions à prendre et les travaux techniques restants.
-Les anciennes phases, leurs réalisations et leurs inventaires historiques sont
+Révisé le **3 novembre 2026**. Ce document accompagne la [roadmap produit](ROADMAP.md)
+et distingue le socle livré des décisions et travaux techniques restants.
+Les réalisations détaillées et les inventaires historiques sont
 dans les bilans de docs/ et l’historique Git.
 
 ## Cadre à préserver
@@ -48,6 +48,13 @@ Les contrats du fichier CAS, de récupération et du comparateur restent courant
 même lorsque leur nom conserve le numéro du lot qui les a définis. Le travail
 livré ne figure plus comme tâche à faire dans ces roadmaps.
 
+B.1 est clôturé après relecture le 3 novembre 2026 ; voir le
+[bilan et les critères vérifiés](docs/b1-closure-results.md). Déclarations YAML,
+structures partagées, régimes de modèles, dates et références d’images alimentent
+le contrat commun de Courrier, Article et du contrat interne Compte-rendu.
+Les codecs et comportements restent intégrés. Les contrats préparatoires de
+C.1–C.4 sont consignés ; les nouveaux types et leurs modèles restent à livrer.
+
 ## B. Types, paramètres et manifestes — P1
 
 **Catalogue validé le 1er novembre 2026 :**
@@ -71,31 +78,33 @@ modèles ; les autres arbitrages ne remplacent pas encore les contrats actuels.
 **Décision validée le 26 octobre 2026 :** le type définit les capacités ; tous
 ses modèles les implémentent. Les options de présentation ont un régime libre,
 restreint ou imposé, déclaré dans le manifeste, y compris pour les options des
-capacités. Une valeur imposée peut être indiquée sans sélecteur. Les métadonnées
+capacités. Les contrôles des valeurs imposées sont masqués. Les métadonnées
 de contenu ne sont pas remplacées par le modèle. Séparer choix enregistré et
 valeur effective : un choix incompatible utilise le défaut avec avertissement,
 sans écrasement ; un choix imposé reste temporaire tant que ce modèle est actif.
 Vérifier notamment brouillon → revue à style imposé → brouillon : les citations
 restent intactes et le choix initial redevient effectif s’il est autorisé.
 
-Décider avant implémentation :
+### Extensions du socle déclaratif — différées
 
-1. Types Rust ou définition déclarative ; migration et limites d’un type installable.
-2. Champs simples et listes d’enregistrements, valeurs absentes et défauts ;
-   conserver les genres jusqu’à la sérialisation Typst et empêcher l’injection
-   de source par les valeurs saisies.
-3. Représentation des paramètres du type, des paramètres généraux et des options
-   du modèle ; schéma des trois régimes validés et exposition des contrôles.
-4. Contrôle de conformité des modèles et diagnostic d’incompatibilité, sans
-   perte ou réécriture implicite du contenu ; conservation des choix lors des
-   changements de régime.
-5. Dates : valeur structurée/ISO, insertion fixe d’aujourd’hui, langue du document,
-   format demandé au modèle et rôle de l’adaptateur Typst/Datify.
-6. Format et emplacement du manifeste, validation des signatures, ressources,
-   dépendances et licence des polices.
+B.1 est clôturé ; les extensions suivantes ne sont pas des critères de sortie
+restants. Leur besoin et leur contrat doivent être validés avant développement.
 
-**Sortie B :** matrice de types/capacités, schémas et contrats testables, avec
-un exemple minimal de modèle et des diagnostics compréhensibles.
+- Types externes, codecs arbitraires, installation et rechargement ; paramètres
+  personnalisables des fragments partagés, aujourd’hui réutilisés à l’identique.
+  Les identités et comportements restent enregistrés en Rust.
+- Paramètres propres aux modèles : étendre les régimes communs avec identités,
+  genres et contrôles dans D ; conserver contenu de l’auteur, choix enregistré
+  et valeur de rendu distincts.
+- Dates ou ressources dans les collections, précision calendaire supplémentaire
+  et genres autres que les images : enregistrer contrôles et validateurs avant
+  de les autoriser. Les déclarations non prises en charge sont refusées.
+- Paquets installables de modèles, versions, provenance, ressources et licences
+  de polices : chantier D, avec les contrôles de distribution dans H.
+
+**Suite du chantier B :** compléter les types, leurs fiches et la matrice
+capacités/modèles à mesure des besoins. La clôture du socle déclaratif ne livre
+pas les types encore annoncés ni leur premier modèle.
 
 ## C. Capacités et interactions — P1/P2
 
@@ -113,14 +122,69 @@ Pour une dépendance Typst, conserver un adaptateur public stable et mettre à j
 l’inventaire des paquets, versions, ressources et licences. Vérifier la compilation
 de l’export déplacé dans un environnement sans cache de paquets.
 
+### C.1–C.4 — Ordre et périmètres validés le 3 novembre 2026
+
+**Dépendance satisfaite :** B.1 est clôturé et ses contrats préparatoires sont
+consignés. Le prochain lot est C.1 (renvois), suivi de C.2 (mathématiques),
+C.3 (bibliographie du projet) et C.4 (bibliothèque personnelle). Préciser ensemble
+les paramètres, commandes/cibles et maquettes avant chaque implémentation ;
+la livraison de tous les types de B n’est pas un prérequis.
+
+- **C.1 — Cibles et renvois.** Séparer identité documentaire stable, éventuel
+  label lisible et numéro composé par Typst. Référencer titres, images et tableaux,
+  puis étendre le même contrat aux équations et théorèmes. Sélection de cible,
+  badge et édition par le cadre commun ; préciser les collisions, copies et
+  suppressions de cibles utilisées. Garder des espaces de noms sûrs pour les
+  labels documentaires et les clés bibliographiques dans le Typst dérivé.
+- **C.2 — Mathématiques.** Un contrat de formule avec source, langage Typst ou
+  LaTeX, description accessible et présentation en ligne/en bloc. Les blocs
+  peuvent être ciblés par C.1 ; les modèles règlent numérotation et présentation.
+  Saisie de code et aperçu en premier, éditeur visuel ensuite, sans conversion
+  bidirectionnelle implicite. MiTeX passe par un adaptateur Typst public stable ;
+  inventorier et embarquer sa version et ses dépendances pour les fichiers et
+  exports hors ligne. Définir le périmètre du code accepté et les diagnostics
+  avant de relier la saisie au compilateur.
+- **C.3 — Notices du projet.** Remplacer les multiples fichiers originaux par
+  une bibliothèque Hayagriva unique, matérialisée dans le `.typsto` et l’export.
+  Réutiliser la crate Hayagriva pour import et sérialisation ; évaluer la
+  conversion BibLaTeX (champs, macros, relations, accents et contenu riche),
+  signaler les pertes et arbitrer les collisions sans écrasement silencieux.
+  Décider la conservation éventuelle des sources importées comme provenance,
+  sans seconde autorité active. Préserver les identités/clés des notices et les
+  liens des citations ; remplacer les cibles actuelles `file_id`/`key` par le
+  contrat retenu, sans couche de compatibilité artificielle.
+  Le gestionnaire utilise une grande modale commune : liste filtrée et recherche
+  fuzzy titre/auteurs à gauche, formulaire par genre à droite, création par +.
+  Les éditions restent des brouillons récupérables avant validation ; changement
+  de notice ou fermeture propose enregistrer, abandonner ou continuer.
+  « Créer et citer » valide la notice et l’insertion dans un seul lot annulable.
+  La suppression d’une notice citée est protégée. UI, CLI et MCP partagent
+  les validations et opérations ; aucun second formulaire pour l’insertion.
+- **C.4 — Bibliothèque personnelle.** Recherche locale au projet avant recherche
+  personnelle ; copie d’une notice lors de son utilisation, liens de provenance
+  conservés et échanges de corrections explicites. Les deux stockages ont leurs
+  révisions et protections contre l’écrasement ; aucune transaction atomique entre
+  eux n’est présumée. Aucune modification personnelle ne réécrit silencieusement
+  un projet. Le gestionnaire de C.3 est réutilisé avec un choix de bibliothèque.
+  Les principes de citekeep (identités, clés locales stables, conflits explicites,
+  planification avant écriture) servent de référence ; son moteur Python et son
+  format BibTeX ne sont pas retenus implicitement. Évaluer leur réutilisation
+  séparément, ainsi que le stockage et le format personnels.
+
+Les contrats actuels de bibliographie restent exécutables jusqu’à leur
+remplacement par C.3. Ces décisions décrivent le futur lot ; elles ne changent
+pas à elles seules le format courant. Recherche en ligne et gestion de PDF ne
+sont pas nécessaires à ce premier parcours.
+
 **Sortie C :** contrat partagé GUI/CLI/MCP, recette clavier et aller-retour du
 fichier ; absence de logique spécifique dupliquée dans les déclencheurs.
 
 ## D. Modèles et bibliothèque — P1
 
-Définir les identités, versions, manifestes et paquets de ressources des modèles,
-leur stockage global et la copie autonome dans chaque document. Distinguer
-modèle installé et modèle embarqué ; aucune mise à jour distante implicite.
+Compléter les identités, versions et paquets installables des modèles à partir
+du manifeste `model.yaml` livré en B.1 ; définir leur stockage global et la copie
+autonome dans chaque document. Distinguer modèle installé et modèle embarqué ;
+aucune mise à jour distante implicite.
 
 Faire découler création, sélection et commandes des catalogues disponibles.
 Ajouter validation/import, provenance, retrait, aperçu et remplacement explicite.

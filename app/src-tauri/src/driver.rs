@@ -295,11 +295,10 @@ fn dispatch(
             )?;
             Ok(serde_json::Value::Null)
         }
-        "model_policy" => serde_json::to_value(bibliography::policy(
-            &*bridge.session()?,
-            args["template"].as_str().unwrap_or("").into(),
-        )?)
-        .map_err(CommandError::from),
+        "model_policy" => bibliography::model_policy(
+            serde_json::from_value(args["metadata"].clone())?,
+            args["manifest"].as_str().unwrap_or("").into(),
+        ),
         "sync_forward" | "sync_backward" | "sync_selection" => {
             let revision = args["revision"].as_u64().ok_or("Révision absente.")?;
             let session = bridge.session()?;

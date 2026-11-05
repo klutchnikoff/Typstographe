@@ -57,6 +57,7 @@ pub(super) fn save_project(
         document: snapshot.document,
         metadata: settings.metadata,
         template: settings.template.clone(),
+        model_manifest: settings.model_manifest.clone(),
         model_id: settings.model_id,
         assets,
         dependencies,
@@ -123,6 +124,7 @@ pub(super) fn open_project(
     let settings = Settings {
         metadata: archive.metadata.clone(),
         template: archive.template.clone(),
+        model_manifest: archive.model_manifest.clone(),
         model_id: archive.model_id.clone(),
     };
     settings

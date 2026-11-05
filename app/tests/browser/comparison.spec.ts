@@ -277,7 +277,12 @@ test('Article snapshots show deleted and inserted words beside a citation in lig
     return {
       generation: provider.generation,
       revision: provider.revision,
-      settings: { metadata, modelId: kind.models[0].id, template: kind.models[0].source },
+      settings: {
+        metadata,
+        modelId: kind.models[0].id,
+        modelManifest: kind.models[0].manifest,
+        template: kind.models[0].source,
+      },
     }
   })
   const created = await page.request.post('/__spike/invoke', {

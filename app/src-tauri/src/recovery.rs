@@ -504,7 +504,10 @@ mod tests {
         else {
             unreachable!()
         };
-        meta.signature = Some("images/signature.svg".into());
+        meta.signature = Some(
+            typstographe_core::resources::ResourceReference::new("images/signature.svg".into())
+                .unwrap(),
+        );
         cp.resources = vec![crate::session::Resource {
             path: "images/signature.svg".into(),
             data: base64::engine::general_purpose::STANDARD

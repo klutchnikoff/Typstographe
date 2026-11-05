@@ -7,10 +7,20 @@ refonte de `crates/core/src/document_types/`.
 
 **Statut : proposition partiellement validée avec la feuille de route.** Les
 régimes de paramètres et l’interchangeabilité des modèles décrits aux sections
-2 et 3 sont validés le 26 octobre 2026 ; leur implémentation reste à faire.
-Le passage à des types déclaratifs et le déplacement du formatage des dates
-restent des propositions à arbitrer avant de remplacer les contrats actuels.
+2 et 3 sont validés le 26 octobre 2026 ; le premier périmètre est
+implémenté le 3 novembre 2026, voir le [contrat courant](model-options.md).
+Le passage aux déclarations YAML est validé le 3 novembre 2026 ; les propositions
+de formatage des dates ci-dessous sont remplacées par le
+[contrat de dates structurées et Typst/Datify](structured-dates.md) implémenté le
+3 novembre 2026. Le formatage reste dans Typst, sans passage par Fluent.
 L’organisation de l’en-tête décrite ci-dessous est validée le 27 octobre 2026.
+
+**Implémentation au 3 novembre 2026 :** les déclarations YAML des types intégrés
+sont maintenant raccordées aux adaptateurs et au moteur ; voir le
+[contrat courant](type-definitions.md). Les exemples de `TextField`, `ModelContract`
+et `letter_only` plus bas sont des constats antérieurs à ce raccordement, retirés
+du code. Les propositions de formatage manuel des dates ne remplacent pas le
+fonctionnement courant Typst/Datify ; les [régimes de modèles](model-options.md) sont maintenant implémentés pour le premier périmètre.
 
 Il nuance le principe du lot 6.4a (« les types restent intégrés en Rust, les
 modèles en Typst ») : à terme, un type est une donnée déclarative, et seules les
@@ -278,7 +288,8 @@ Chaque modèle est accompagné d’un manifeste de données. Il contient :
 Le manifeste est un fichier à côté du `.typ`, pas un en-tête de ce fichier : le
 modèle reste du Typst pur.
 
-*Format exact (TOML, JSON) : à décider lors de l’implémentation.*
+**Format retenu : YAML**, embarqué avec le modèle. Le [contrat courant](model-options.md)
+précise les cinq options prises en charge et les paramètres propres différés.
 
 ## 6. Premiers types
 

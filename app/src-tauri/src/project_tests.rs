@@ -50,7 +50,8 @@ fn native_preview_policy_export_and_recovery_use_application_libraries() {
         settings: current.state().settings,
     };
     let restored = Session::from_checkpoint(root.path().join("session"), checkpoint).unwrap();
-    crate::bibliography::policy(&restored, current.template.clone()).unwrap();
+    crate::bibliography::model_policy(current.metadata.clone(), current.model_manifest.clone())
+        .unwrap();
     assert_eq!(
         restored.dependencies_for(&restored.settings),
         application_libraries

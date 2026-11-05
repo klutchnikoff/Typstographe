@@ -29,6 +29,7 @@ pub(super) fn prepare(mut archive: Archive, initialize: bool) -> Result<Archive,
         &archive.template,
         &archive.assets,
         &archive.dependencies,
+        &archive.model_manifest,
     )
     .map_err(|reason| crate::content::contract::Error::InvalidDocument { reason })?;
     Ok(archive)
@@ -63,9 +64,18 @@ pub(super) fn encode(store: &mut Store, archive: &Archive) -> Result<ObjectId, E
         model: Model {
             id: archive.model_id.clone(),
             source: store.insert(archive.template.as_bytes())?,
+            manifest: store.insert(archive.model_manifest.as_bytes())?,
         },
         sources: Sources {
-            main: store.insert(archive.metadata.main_source().into_bytes())?,
+            main: store.insert(
+                archive
+                    .state()
+                    .settings
+                    .resolve_model()
+                    .map_err(|reason| crate::content::contract::Error::InvalidSettings { reason })?
+                    .main_source()
+                    .into_bytes(),
+            )?,
             body: store.insert(body.into_bytes())?,
         },
         resources: store.insert_json(&resources)?,
@@ -163,6 +173,7 @@ pub(super) fn decode(store: &Store, id: &ObjectId) -> Result<Archive, Error> {
         document: store.read_json(&descriptor.document)?,
         metadata: store.read_json(&descriptor.metadata)?,
         template: text(store, &descriptor.model.source)?,
+        model_manifest: text(store, &descriptor.model.manifest)?,
         model_id: descriptor.model.id,
         assets,
         dependencies: Arc::new(dependencies),
@@ -181,7 +192,14 @@ pub(super) fn decode(store: &Store, id: &ObjectId) -> Result<Archive, Error> {
     if body != text(store, &descriptor.sources.body)? {
         return Err(inconsistent("source"));
     }
-    if archive.metadata.main_source() != text(store, &descriptor.sources.main)? {
+    if archive
+        .state()
+        .settings
+        .resolve_model()
+        .map_err(|reason| crate::content::contract::Error::InvalidSettings { reason })?
+        .main_source()
+        != text(store, &descriptor.sources.main)?
+    {
         return Err(StorageError::MainMismatch.into());
     }
     Ok(archive)

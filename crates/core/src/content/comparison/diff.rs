@@ -156,5 +156,13 @@ pub(super) fn files(before: &Archive, after: &Archive) -> Vec<FileChange> {
             after: Some(state(after.template.as_bytes())),
         });
     }
+    if before.model_manifest != after.model_manifest {
+        result.push(FileChange {
+            kind: "model".into(),
+            path: "model.yaml".into(),
+            before: Some(state(before.model_manifest.as_bytes())),
+            after: Some(state(after.model_manifest.as_bytes())),
+        });
+    }
     result
 }

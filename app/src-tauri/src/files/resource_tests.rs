@@ -27,7 +27,7 @@ fn images_and_signature_survive_save_reopen_removal_undo_and_redo_without_unused
         Command::AddResource { resource: resource("images/unused.svg") },
         Command::InsertBlock { parent: TreeTarget { root: TreeRoot::Body, path: vec![] }, index: 1,
             node: serde_json::from_value(json!({"type":"figure","attrs":{"src":image.path,"alt":"Signature manuscrite"},"content":[{"type":"text","text":"Légende 😀"}]})).unwrap() },
-        Command::SetSignature { path: Some(image.path.clone()) },
+        Command::SetField { target: typstographe_core::content::commands::FieldTarget::Metadata { field: typstographe_core::document_types::MetadataField::SenderSignature }, value: serde_json::json!(image.path.clone()) },
     ]);
     f.persist_draft();
     f.save(&f.path());
@@ -38,7 +38,12 @@ fn images_and_signature_survive_save_reopen_removal_undo_and_redo_without_unused
     assert_eq!(original.assets.len(), 1);
     assert_eq!(original.assets[&image.path].as_ref(), image.data);
     assert_eq!(
-        original.metadata.signature_path(),
+        original
+            .metadata
+            .resource_paths()
+            .into_iter()
+            .next()
+            .as_deref(),
         Some(image.path.as_str())
     );
     execute(
@@ -50,7 +55,12 @@ fn images_and_signature_survive_save_reopen_removal_undo_and_redo_without_unused
                     path: vec![1],
                 },
             },
-            Command::SetSignature { path: None },
+            Command::SetField {
+                target: typstographe_core::content::commands::FieldTarget::Metadata {
+                    field: typstographe_core::document_types::MetadataField::SenderSignature,
+                },
+                value: serde_json::Value::Null,
+            },
         ],
     );
     f.save(&f.path());
@@ -128,7 +138,7 @@ fn article_reopening_preserves_original_bibliography_image_caption_and_citation(
         {"type":"paragraph","content":[{"type":"text","text":"Une référence "},{"type":"citation","attrs":{"items":[{"file_id":"sources","key":"martin2026"}],"form":"normal"}}]},
         {"type":"figure","attrs":{"src":"images/signature.svg","alt":"Illustration"},"content":[{"type":"text","text":"Légende"}]},
         {"type":"paragraph"}
-    ]})).unwrap(), Settings { metadata, template:DocumentType::Article.default_model(), model_id:DocumentType::Article.models().next().unwrap().model.id().into() });
+    ]})).unwrap(), Settings { metadata, model_manifest:DocumentType::Article.default_model_manifest().into(), template:DocumentType::Article.default_model(), model_id:DocumentType::Article.models().next().unwrap().model.id().into() });
     let mut assets = Assets::default();
     assets.insert(
         "images/signature.svg".into(),

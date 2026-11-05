@@ -20,6 +20,7 @@ export interface RecordField {
     | 'boolean'
     | 'references'
     | 'language'
+    | 'choice'
     | 'tokens'
     | 'rich'
     | 'rich_inline'
@@ -27,6 +28,7 @@ export interface RecordField {
   default: unknown
   references?: string
   statistics?: boolean
+  choices?: string[]
 }
 export interface RecordCollection {
   field: string

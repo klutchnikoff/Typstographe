@@ -443,6 +443,7 @@ fn record_contexts_rebase_rich_zones_but_invalid_history_stays_private() {
     }
     let settings = Settings {
         metadata,
+        model_manifest: DocumentType::Article.default_model_manifest().into(),
         template: DocumentType::Article.default_model(),
         model_id: "article.model.working".into(),
     };

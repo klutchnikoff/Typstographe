@@ -216,6 +216,7 @@ impl Session {
             document: s.document.clone(),
             metadata: s.settings.metadata.clone(),
             template: s.settings.template.clone(),
+            model_manifest: s.settings.model_manifest.clone(),
             model_id: s.settings.model_id.clone(),
             assets,
             dependencies,
@@ -336,6 +337,7 @@ impl Session {
                     Settings {
                         metadata,
                         template: model.source.into(),
+                        model_manifest: model.manifest.into(),
                         model_id: model.model.id().into(),
                     },
                 );
@@ -526,7 +528,7 @@ impl Session {
         self.world.set_dependencies(&a.dependencies);
         self.world.set_assets(&a.assets);
         self.world
-            .compile_with_template(&source, &a.metadata, &a.template)
+            .compile_with_model(&source, &a.metadata, &a.template, &a.model_manifest)
             .map_err(|e| CommandError::with_cause(ErrorCode::Template, "export_compile", e))
     }
     pub fn page_png(&mut self, page: u32) -> Result<Vec<u8>, CommandError> {
@@ -555,6 +557,7 @@ impl Session {
             &a.template,
             &a.assets,
             &a.dependencies,
+            &a.model_manifest,
         )
         .map_err(|s| {
             content_error(crate::content::contract::Error::InvalidDocument { reason: s })
@@ -565,6 +568,7 @@ impl Session {
 
             metadata: a.metadata,
             template: a.template,
+            model_manifest: a.model_manifest,
             assets,
             dependencies: a.dependencies,
         };

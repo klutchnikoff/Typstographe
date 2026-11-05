@@ -11,11 +11,10 @@ pub struct Capability {
     pub group: &'static str,
     pub node: Option<&'static str>,
     pub mark: Option<&'static str>,
-    pub letter_only: bool,
     pub description: &'static str,
 }
 macro_rules! capability {
-    ($id:literal,$label:literal,$icon:literal,$group:literal,$node:expr,$mark:expr,$letter:expr,$description:literal) => {
+    ($id:literal,$label:literal,$icon:literal,$group:literal,$node:expr,$mark:expr,$description:literal) => {
         Capability {
             id: $id,
             label_key: $label,
@@ -23,7 +22,6 @@ macro_rules! capability {
             group: $group,
             node: $node,
             mark: $mark,
-            letter_only: $letter,
             description: $description,
         }
     };
@@ -36,7 +34,6 @@ pub const ALL: &[Capability] = &[
         "headings",
         Some("paragraph"),
         None,
-        false,
         "Ordinary prose. A soft return stays inside the paragraph; two returns create a paragraph."
     ),
     capability!(
@@ -46,7 +43,6 @@ pub const ALL: &[Capability] = &[
         "headings",
         Some("heading"),
         None,
-        false,
         "Level-one heading; final presentation belongs to the Typst model."
     ),
     capability!(
@@ -56,7 +52,6 @@ pub const ALL: &[Capability] = &[
         "headings",
         Some("heading"),
         None,
-        false,
         "Level-two heading."
     ),
     capability!(
@@ -66,7 +61,6 @@ pub const ALL: &[Capability] = &[
         "headings",
         Some("heading"),
         None,
-        false,
         "Level-three heading."
     ),
     capability!(
@@ -76,7 +70,6 @@ pub const ALL: &[Capability] = &[
         "inline",
         None,
         Some("bold"),
-        false,
         "Bold selection or subsequent typing. Disable explicitly to stop subsequent bold text."
     ),
     capability!(
@@ -86,7 +79,6 @@ pub const ALL: &[Capability] = &[
         "inline",
         None,
         Some("italic"),
-        false,
         "Emphasize selection or subsequent typing. Disable explicitly to stop subsequent emphasis."
     ),
     capability!(
@@ -96,7 +88,6 @@ pub const ALL: &[Capability] = &[
         "inline",
         None,
         Some("link"),
-        false,
         "Editable label and http, https or mailto URL. Never fetch the URL."
     ),
     capability!(
@@ -106,7 +97,6 @@ pub const ALL: &[Capability] = &[
         "lists",
         Some("bulletList"),
         None,
-        false,
         "Unordered list. The model chooses the marker; initially no nesting."
     ),
     capability!(
@@ -116,7 +106,6 @@ pub const ALL: &[Capability] = &[
         "lists",
         Some("orderedList"),
         None,
-        false,
         "Ordered list with optional initial number; initially no nesting."
     ),
     capability!(
@@ -126,7 +115,6 @@ pub const ALL: &[Capability] = &[
         "lists",
         Some("descriptionList"),
         None,
-        false,
         "Term and definition zones; Tab moves to the definition."
     ),
     capability!(
@@ -136,7 +124,6 @@ pub const ALL: &[Capability] = &[
         "insert",
         Some("quote"),
         None,
-        false,
         "Block quote with optional editable attribution; final appearance belongs to the model."
     ),
     capability!(
@@ -146,7 +133,6 @@ pub const ALL: &[Capability] = &[
         "insert",
         Some("figure"),
         None,
-        false,
         "Internal image, optional editable caption and alternative text. No external URL is loaded."
     ),
     capability!(
@@ -156,7 +142,6 @@ pub const ALL: &[Capability] = &[
         "insert",
         Some("tableFigure"),
         None,
-        false,
         "Table figure with an optional rich caption, 1–12 columns and 1–100 rows. No merged cells; independent column and row headers."
     ),
     capability!(
@@ -166,7 +151,6 @@ pub const ALL: &[Capability] = &[
         "insert",
         Some("citation"),
         None,
-        false,
         "Article-only bibliographic citation. Choose references from the published project metadata; items use file_id and key, with optional literal supplement. Rendering belongs to Typst and the model."
     ),
     capability!(
@@ -176,7 +160,6 @@ pub const ALL: &[Capability] = &[
         "insert",
         Some("footnote"),
         None,
-        false,
         "Inline reference with editable plain-text content; numbering and placement belong to Typst."
     ),
     capability!(
@@ -186,7 +169,6 @@ pub const ALL: &[Capability] = &[
         "letter",
         Some("postscript"),
         None,
-        true,
         "Postscript collected and rendered after the signature by the letter model."
     ),
     capability!(
@@ -196,15 +178,13 @@ pub const ALL: &[Capability] = &[
         "letter",
         Some("attachment"),
         None,
-        true,
         "Enclosure mention after the signature. Does not embed the mentioned file."
     ),
 ];
 pub fn for_type(kind: DocumentType) -> impl Iterator<Item = &'static Capability> {
-    ALL.iter().filter(move |c| {
-        (!c.letter_only || kind == DocumentType::Courrier)
-            && (c.id != "insert.citation" || kind == DocumentType::Article)
-    })
+    let enabled = &kind.definition().definition().capabilities;
+    ALL.iter()
+        .filter(move |c| enabled.iter().any(|id| id == c.id))
 }
 /// The type's capability catalogue is an execution boundary, not only a UI filter.
 pub(crate) fn validate_document(
@@ -307,7 +287,7 @@ mod tests {
                 c.id
             );
         }
-        assert!(!for_type(DocumentType::CompteRendu).any(|c| c.letter_only));
+        assert!(!for_type(DocumentType::CompteRendu).any(|c| c.id.starts_with("letter.")));
         assert!(for_type(DocumentType::Courrier).any(|c| c.id == "insert.footnote"));
     }
 

@@ -16,7 +16,6 @@ function capability(node: string, parameters: Capability['parameters'] = {}): Ca
     label_key: node,
     icon: 'quote',
     group: 'test',
-    letter_only: false,
   }
 }
 afterEach(() => document.body.replaceChildren())

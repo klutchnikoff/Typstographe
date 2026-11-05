@@ -554,7 +554,8 @@ impl EditingSession {
             .diff(&before.delete_set)
             .diff(&context.owned_insertions);
         let candidate = if foreign_deletions.is_empty() {
-            self.owner.prepare(guard, std::slice::from_ref(&update))
+            self.owner
+                .prepare_history(guard, std::slice::from_ref(&update))
         } else {
             Err(Error::EditingContext {
                 reason: "history_conflict".into(),

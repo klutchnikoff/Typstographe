@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Manifest",
+  "type": "object",
+  "properties": {
+    "contract-version": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "document-type": {
+      "$ref": "#/$defs/DocumentType"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/DocumentLanguage"
+      }
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "bullet-marker": {
+          "$ref": "#/$defs/Policy"
+        },
+        "citation-style": {
+          "$ref": "#/$defs/Policy"
+        },
+        "landscape": {
+          "$ref": "#/$defs/Policy"
+        },
+        "outline": {
+          "$ref": "#/$defs/Policy"
+        },
+        "paper": {
+          "$ref": "#/$defs/Policy"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "contract-version",
+    "document-type",
+    "languages",
+    "options"
+  ],
+  "$defs": {
+    "DocumentLanguage": {
+      "type": "string",
+      "enum": [
+        "fr",
+        "en",
+        "de",
+        "es",
+        "it",
+        "pt",
+        "nl"
+      ]
+    },
+    "DocumentType": {
+      "type": "string",
+      "enum": [
+        "article",
+        "courrier",
+        "compte-rendu"
+      ]
+    },
+    "Policy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "default": true,
+            "regime": {
+              "type": "string",
+              "const": "free"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "regime",
+            "default"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "allowed": {
+              "type": "array",
+              "items": true
+            },
+            "default": true,
+            "regime": {
+              "type": "string",
+              "const": "restricted"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "regime",
+            "allowed",
+            "default"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "regime": {
+              "type": "string",
+              "const": "imposed"
+            },
+            "value": true
+          },
+          "additionalProperties": false,
+          "required": [
+            "regime",
+            "value"
+          ]
+        }
+      ]
+    }
+  }
+}

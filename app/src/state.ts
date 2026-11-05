@@ -5,6 +5,7 @@ import type { Catalogue, DocumentType } from './shell'
 export interface Settings {
   metadata: { type: string; fields: Record<string, unknown> & { options: Record<string, unknown> } }
   template: string
+  modelManifest: string
   modelId: string
 }
 let catalogue: Catalogue
@@ -18,6 +19,7 @@ export function initializeSettings(provider: Provider, c: Catalogue, fallback?: 
       fallback || {
         metadata: kind.metadata,
         template: kind.models[0].source,
+        modelManifest: kind.models[0].manifest,
         modelId: kind.models[0].id,
       },
     )
@@ -40,7 +42,6 @@ export function settingsFor(provider: Provider): Settings {
   for (const key of ['paper', 'language', 'landscape', 'bullet_marker', 'spelling_ignored'])
     if (map.has(`options.${key}`)) base.metadata.fields.options[key] = map.get(`options.${key}`)
   if (kind.structured) snapshotRecords(provider, kind.structured, base.metadata.fields)
-  if (map.has('signature')) base.metadata.fields.signature = map.get('signature')
   return base
 }
 export function setSetting(provider: Provider, key: string, value: unknown) {

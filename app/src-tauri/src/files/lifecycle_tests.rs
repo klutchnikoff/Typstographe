@@ -71,7 +71,10 @@ fn new_signed_document_requires_valid_resources_before_clearing_the_previous_wor
     let typstographe_core::document_types::Metadata::Courrier(meta) = &mut settings.metadata else {
         unreachable!()
     };
-    meta.signature = Some("images/signature.svg".into());
+    meta.signature = Some(
+        typstographe_core::resources::ResourceReference::new("images/signature.svg".into())
+            .unwrap(),
+    );
     let mut s = f.session.lock().unwrap();
     let revision = s.revision;
     for resources in [
@@ -101,7 +104,12 @@ fn new_signed_document_requires_valid_resources_before_clearing_the_previous_wor
     assert_ne!(s.generation, old);
     assert_eq!(s.assets.len(), 1);
     assert_eq!(
-        s.settings.metadata.signature_path(),
+        s.settings
+            .metadata
+            .resource_paths()
+            .into_iter()
+            .next()
+            .as_deref(),
         Some("images/signature.svg")
     );
     assert!(s.file_lease.is_none());

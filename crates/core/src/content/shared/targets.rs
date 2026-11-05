@@ -129,7 +129,16 @@ pub(in crate::content) fn field<T: ReadTxn>(
                 .as_str()
                 .unwrap()
                 .to_owned();
-            let kind = if descriptor.value.is_string() {
+            let kind = if let Some(option) = descriptor.presentation {
+                match option {
+                    crate::document_types::model_options::OptionId::Outline => "boolean",
+                    _ => "choice",
+                }
+            } else if descriptor.kind == crate::document_types::FieldKind::ResourceReference {
+                "resource-reference"
+            } else if descriptor.kind == crate::document_types::FieldKind::Date {
+                "date"
+            } else if descriptor.value.is_string() {
                 "text"
             } else if descriptor.value.is_boolean() {
                 "boolean"
@@ -183,8 +192,11 @@ pub(in crate::content) fn resolve(
             Ok(Resolved::Annotation(value))
         }
         TextZone::Metadata { field: key } => {
-            let (map, key, value, _) =
+            let (map, key, value, kind) =
                 field(doc, &tx, state, &FieldTarget::Metadata { field: *key })?;
+            if matches!(kind.as_str(), "choice" | "resource-reference") {
+                return Err(invalid(TargetReason::NotTextZone));
+            }
             Ok(Resolved::Scalar {
                 map,
                 key,

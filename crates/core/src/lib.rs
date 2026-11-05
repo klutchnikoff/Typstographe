@@ -11,6 +11,7 @@ pub mod document_types;
 pub mod errors;
 pub mod exporting;
 mod file_access;
+pub mod resources;
 pub use file_access::DocumentLease;
 pub mod fonts;
 pub mod navigation;

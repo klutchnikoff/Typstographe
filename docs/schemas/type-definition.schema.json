@@ -1,0 +1,1155 @@
+{
+  "$defs": {
+    "AssemblyOrder": {
+      "additionalProperties": false,
+      "description": "Exact permutations, not filters or overrides. Empty lists retain assembly order.",
+      "properties": {
+        "bindings": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "collections": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "tabs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "Binding": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "metadata-key": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "typst-parameter": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "field",
+            "typst-parameter"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "collection": {
+              "type": "string"
+            },
+            "metadata-key": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "typst-parameter": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "collection",
+            "typst-parameter"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Collection": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Field"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "identity": {
+          "$ref": "#/$defs/Identity"
+        },
+        "item-label-key": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/CollectionKind"
+        },
+        "label-key": {
+          "type": "string"
+        },
+        "language-key": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "max-items": {
+          "format": "uint32",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "removal-notice-key": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "summary": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "summary-field": {
+          "type": "string"
+        },
+        "unique-by": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "identity",
+        "max-items",
+        "label-key",
+        "item-label-key",
+        "summary-field"
+      ],
+      "type": "object"
+    },
+    "CollectionKind": {
+      "enum": [
+        "ordered-records",
+        "reference-files"
+      ],
+      "type": "string"
+    },
+    "Composition": {
+      "additionalProperties": false,
+      "properties": {
+        "function": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "function"
+      ],
+      "type": "object"
+    },
+    "DateValue": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "iso": {
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "type": "string"
+            },
+            "kind": {
+              "const": "calendar",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "iso"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "custom",
+              "type": "string"
+            },
+            "text": {
+              "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$",
+              "type": "string",
+              "x-max-utf8-bytes": 16000
+            }
+          },
+          "required": [
+            "kind",
+            "text"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "DocumentLanguage": {
+      "enum": [
+        "fr",
+        "en",
+        "de",
+        "es",
+        "it",
+        "pt",
+        "nl"
+      ],
+      "type": "string"
+    },
+    "Editing": {
+      "enum": [
+        "dialog"
+      ],
+      "type": "string"
+    },
+    "ExportRequirement": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "collection": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "primary-language",
+              "type": "string"
+            },
+            "language-field": {
+              "type": "string"
+            },
+            "value-field": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "collection",
+            "language-field",
+            "value-field"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Field": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
+              "default": "",
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "text",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "multiline": {
+              "default": false,
+              "type": "boolean"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/DateValue"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "date",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ResourceReference"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "resource-reference",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "profile-default": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ProfileDefault"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "resource-kind": {
+              "$ref": "#/$defs/ResourceKind"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key",
+            "resource-kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
+              "default": false,
+              "type": "boolean"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "boolean",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "choices": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "choice",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key",
+            "choices"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
+              "$ref": "#/$defs/DocumentLanguage",
+              "default": "fr"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "language",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "tokens",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
+              "$ref": "#/$defs/Node",
+              "default": {
+                "content": [
+                  {
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "doc"
+              }
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "rich-text",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "profile": {
+              "$ref": "#/$defs/RichProfile"
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key",
+            "profile"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "record-references",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "on-target-remove": {
+              "$ref": "#/$defs/ReferenceRemoval"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            },
+            "target-collection": {
+              "type": "string"
+            },
+            "unique": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "label-key",
+            "target-collection",
+            "unique",
+            "on-target-remove"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "FieldControl": {
+      "description": "Registered controls change editing, not the stored value or Typst formatting.",
+      "enum": [
+        "outline"
+      ],
+      "type": "string"
+    },
+    "Header": {
+      "additionalProperties": false,
+      "properties": {
+        "tabs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Tab"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "HeaderStructure": {
+      "enum": [
+        "authorship"
+      ],
+      "type": "string"
+    },
+    "Identity": {
+      "enum": [
+        "stable-id"
+      ],
+      "type": "string"
+    },
+    "Mark": {
+      "additionalProperties": false,
+      "properties": {
+        "attrs": true,
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "Node": {
+      "additionalProperties": false,
+      "properties": {
+        "attrs": true,
+        "content": {
+          "items": {
+            "$ref": "#/$defs/Node"
+          },
+          "type": "array"
+        },
+        "marks": {
+          "items": {
+            "$ref": "#/$defs/Mark"
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "OptionId": {
+      "enum": [
+        "paper",
+        "landscape",
+        "bullet-marker",
+        "citation-style",
+        "outline"
+      ],
+      "type": "string"
+    },
+    "ProfileDefault": {
+      "enum": [
+        "signature"
+      ],
+      "type": "string"
+    },
+    "ReferenceRemoval": {
+      "enum": [
+        "restrict"
+      ],
+      "type": "string"
+    },
+    "ResourceKind": {
+      "enum": [
+        "image"
+      ],
+      "type": "string"
+    },
+    "ResourceReference": {
+      "description": "Logical project path, serialized as a string; bytes belong to the immutable pool.",
+      "maxLength": 128,
+      "pattern": "^images/[A-Za-z0-9_-]+\\.(png|jpg|svg)$",
+      "type": "string"
+    },
+    "RichProfile": {
+      "enum": [
+        "inline-text",
+        "rich-text"
+      ],
+      "type": "string"
+    },
+    "Section": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "label-key": {
+          "type": "string"
+        },
+        "layout": {
+          "$ref": "#/$defs/SectionLayout",
+          "default": "compact"
+        }
+      },
+      "required": [
+        "id",
+        "label-key",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "SectionLayout": {
+      "enum": [
+        "compact",
+        "inline",
+        "editorial"
+      ],
+      "type": "string"
+    },
+    "Tab": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "sections": {
+              "items": {
+                "$ref": "#/$defs/Section"
+              },
+              "type": "array"
+            },
+            "view": {
+              "const": "form",
+              "type": "string"
+            }
+          },
+          "required": [
+            "view",
+            "id",
+            "label-key",
+            "sections"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "collection": {
+              "type": "string"
+            },
+            "editing": {
+              "$ref": "#/$defs/Editing"
+            },
+            "fields": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "id": {
+              "type": "string"
+            },
+            "item-label-key": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "summary-field": {
+              "type": "string"
+            },
+            "view": {
+              "const": "record-cards",
+              "type": "string"
+            }
+          },
+          "required": [
+            "view",
+            "id",
+            "label-key",
+            "collection",
+            "summary-field",
+            "editing"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "collection": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "style-field": {
+              "type": "string"
+            },
+            "view": {
+              "const": "bibliography",
+              "type": "string"
+            }
+          },
+          "required": [
+            "view",
+            "id",
+            "label-key",
+            "collection",
+            "style-field"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Declarative data, before semantic validation. Use `load_yaml` or `validate`.",
+  "properties": {
+    "bindings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Binding"
+      },
+      "type": "array"
+    },
+    "capabilities": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "collections": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Collection"
+      },
+      "type": "array"
+    },
+    "composition": {
+      "$ref": "#/$defs/Composition"
+    },
+    "contract-version": {
+      "format": "uint32",
+      "maximum": 1,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "description-key": {
+      "type": "string"
+    },
+    "export-requirements": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ExportRequirement"
+      },
+      "type": "array"
+    },
+    "fields": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Field"
+      },
+      "type": "array"
+    },
+    "header": {
+      "$ref": "#/$defs/Header",
+      "default": {
+        "tabs": []
+      }
+    },
+    "id": {
+      "type": "string"
+    },
+    "label-key": {
+      "type": "string"
+    },
+    "order": {
+      "$ref": "#/$defs/AssemblyOrder"
+    },
+    "settings-heading-key": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "structures": {
+      "items": {
+        "$ref": "#/$defs/HeaderStructure"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "contract-version",
+    "id",
+    "label-key",
+    "description-key",
+    "composition"
+  ],
+  "title": "Definition",
+  "type": "object"
+}

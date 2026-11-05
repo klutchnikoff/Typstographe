@@ -85,6 +85,9 @@ pub fn zones(state: &State) -> Vec<Zone> {
     let mut out = vec![];
     walk(&state.document, &mut vec![], &TreeRoot::Body, &mut out);
     for field in state.settings.metadata.field_values() {
+        if field.presentation.is_some() || field.resource.is_some() {
+            continue;
+        }
         if let Some(text) = field.value.as_str() {
             out.push(Zone {
                 zone: TextZone::Metadata { field: field.field },
@@ -307,10 +310,10 @@ pub fn run(
             json!({"matches":find(state,p["query"].as_str().ok_or_else(||invalid("query"))?,p["case_sensitive"].as_bool().unwrap_or(false))})
         }
         "metadata.get" => {
-            json!({"metadata":state.settings.metadata,"fields":state.settings.metadata.field_values(),"structured_metadata":state.settings.metadata.document_type().structured_metadata()})
+            json!({"model_options":crate::document_types::model_options::describe(&state.settings.model_manifest,&state.settings.metadata).map_err(|reason| Error::InvalidSettings {reason})?,"metadata":state.settings.metadata,"fields":state.settings.metadata.field_values(),"structured_metadata":state.settings.metadata.document_type().structured_metadata()})
         }
         "models.list" => {
-            json!({"models":super::type_description(state.settings.metadata.document_type())["models"],"active":{"id":state.settings.model_id,"embedded":!state.settings.metadata.document_type().models().any(|m|m.model.id()==state.settings.model_id&&m.source==state.settings.template)}})
+            json!({"models":super::type_description(state.settings.metadata.document_type())["models"],"active":{"id":state.settings.model_id,"embedded":!state.settings.metadata.document_type().models().any(|m|m.model.id()==state.settings.model_id&&m.source==state.settings.template&&m.manifest==state.settings.model_manifest)}})
         }
         "resources.list" => {
             json!({"resources":assets.iter().map(|(path,data)|json!({"path":path,"bytes":data.len()})).collect::<Vec<_>>()})

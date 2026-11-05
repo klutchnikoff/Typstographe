@@ -32,7 +32,7 @@ pub struct RecoveryContext {
     pub archive: Backup,
     pub saved_origin: bool,
 }
-type CachedBackup = Option<(String, String, Backup)>;
+type CachedBackup = Option<(String, String, String, Backup)>;
 pub struct Context {
     pub owner: Project,
     pub saved_origin: bool,
@@ -48,9 +48,10 @@ impl Context {
     }
     pub fn recovery(&self, current: Archive) -> Result<RecoveryContext, CommandError> {
         let mut cache = self.backup.lock()?;
-        if let Some((template, model, backup)) = &*cache
+        if let Some((template, model, manifest, backup)) = &*cache
             && *template == current.template
             && *model == current.model_id
+            && *manifest == current.model_manifest
         {
             return Ok(RecoveryContext {
                 archive: backup.clone(),
@@ -59,7 +60,12 @@ impl Context {
         }
         let prepared = self.owner.with_current(current.clone()).map_err(error)?;
         let backup = Backup::capture(&prepared).map_err(error)?;
-        *cache = Some((current.template, current.model_id, backup.clone()));
+        *cache = Some((
+            current.template,
+            current.model_id,
+            current.model_manifest,
+            backup.clone(),
+        ));
         Ok(RecoveryContext {
             archive: backup,
             saved_origin: self.saved_origin,
@@ -79,6 +85,7 @@ pub fn archive(
         document: state.document,
         metadata: state.settings.metadata,
         template: state.settings.template,
+        model_manifest: state.settings.model_manifest,
         model_id: state.settings.model_id,
         yjs: update,
         assets,

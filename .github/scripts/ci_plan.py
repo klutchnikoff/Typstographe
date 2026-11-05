@@ -22,7 +22,11 @@ def plan(paths):
         documentation = (name.startswith("docs/") or name == "app/README.md"
                          or (path.parent == Path(".") and path.suffix == ".md"))
         # This generated catalogue is compared with the engine by the tests.
-        code |= dependency or not documentation or name == "docs/commands.json"
+        code |= dependency or not documentation or name in {
+            "docs/commands.json", "docs/schemas/type-definition.schema.json",
+            "docs/schemas/model-manifest.schema.json",
+            "docs/proposals/b1/article-authorship.yaml",
+        }
         dependencies |= dependency
     return {"code": code, "dependencies": dependencies}
 
@@ -32,6 +36,15 @@ RECIPES = Path("app/tests/browser")
 # Graphical recipes a pull request runs beyond @smoke, by edited area. A source
 # missing here only runs @smoke on the PR; the full suite runs after merging.
 BROWSER_AREAS = (
+    (("crates/core/src/resources.rs", "app/src/metadata-resource.ts", "app/src/metadata-commands.ts"),
+     ("structured-resources", "metadata", "structured-metadata", "recovery-resume")),
+    (("crates/core/src/dates.rs", "crates/core/templates/capabilities/dates.typ"),
+     ("metadata", "structured-metadata")),
+    (("crates/core/src/document_types/model_options*", "crates/core/templates/*.model.yaml",
+      "app/src/model-option-control.ts", "app/src/document-options.ts"),
+     ("model-options", "metadata", "bibliography", "structured-resources")),
+    (("crates/core/types/*/type.yaml", "crates/core/structures/*.yaml"),
+     ("document-types", "metadata", "article", "bibliography")),
     (("app/src/side-rail.ts", "app/src/shell-layout.ts", "app/src/resizable-separator.ts"),
      ("sidebar", "splitter")),
     (("app/src/bibliography-panel.ts", "app/src/citation-*.ts"), ("bibliography",)),

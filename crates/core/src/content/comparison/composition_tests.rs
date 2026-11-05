@@ -88,7 +88,7 @@ fn choosing_a_whole_side_recovers_content_settings_model_and_image_in_one_undoab
         .unwrap(),
     );
     let mut after = archive(&["Revised text", ""]);
-    after.metadata.options_mut().landscape = true;
+    after.metadata.options_mut().landscape = Some(true);
     after.template.push_str("\n// Alternate presentation");
     let right = image("red");
     after.assets.insert(right.path.clone(), right.data.into());

@@ -132,9 +132,9 @@ Supprimer une langue secondaire retire ses titres, son résumé et ses mots-clé
 la confirmation annonce cette portée. La langue principale ne peut pas être supprimée.
 
 Bibliographie gère les fichiers originaux et le style autorisé par le modèle.
-Général propose le sommaire si le modèle le permet. Les déclarations Typst
-`editor-options.outline` et `editor-options.citation-styles` contrôlent ces choix ;
-une valeur absente ou un choix unique ne produit pas de contrôle inutile.
+Général propose le sommaire si le modèle le permet. Le [manifeste YAML du modèle](model-options.md)
+déclare les régimes de ces options ; un contrôle imposé est masqué. Une absence
+de choix explicite suit le modèle, sans figer son défaut dans le document.
 Ajouter une affiliation une seule fois, puis la cocher pour chacun de ses auteurs.
 Les titres, auteurs, affiliations et résumés utilisent les mêmes cartes
 réordonnables et la même modale, avec fond atténué et légèrement flouté. La poignée

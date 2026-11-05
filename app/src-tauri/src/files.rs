@@ -205,12 +205,16 @@ pub fn create(
         .map_err(CommandError::localized_content)?;
     session.lifecycle(revision)?;
     let mut assets = typstographe_core::assets::Assets::default();
-    if let Some(signature) = settings.metadata.signature_path() {
-        let resource = resources
-            .iter()
-            .find(|r| r.path == signature)
-            .ok_or("Signature absente des ressources.")?;
-        assets.insert(signature.into(), resource.decoded()?.into());
+    for path in settings.metadata.resource_paths() {
+        let resource = resources.iter().find(|r| r.path == path).ok_or_else(|| {
+            CommandError::localized_core(
+                typstographe_core::errors::StorageError::ImageResourceMissing {
+                    path: path.clone(),
+                }
+                .into(),
+            )
+        })?;
+        assets.insert(path, resource.decoded()?.into());
     }
     let document: typstographe_core::content::Node =
         serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph"}]}))
@@ -244,8 +248,8 @@ mod tests {
 
     #[test]
     fn existing_article_opens_and_compiles_with_its_original_model_and_history() {
-        let path =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/article-working.typsto");
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/projects/article-working.typsto");
         let before = std::fs::read(&path).unwrap();
         let archive = typstographe_core::content::project::Project::read(&path)
             .unwrap()
@@ -288,8 +292,8 @@ mod tests {
             ))
         ));
 
-        let original =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/article-working.typsto");
+        let original = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/projects/article-working.typsto");
         let corrupt = dir.path().join("corrupt.typsto");
         let mut source = zip::ZipArchive::new(std::fs::File::open(original).unwrap()).unwrap();
         let manifest: serde_json::Value =

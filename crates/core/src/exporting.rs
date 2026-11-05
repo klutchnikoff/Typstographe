@@ -69,7 +69,15 @@ pub fn write_document(
         )?;
     }
     if format != ExportFormat::Pdf {
-        write(path, "main.typ", request.metadata.main_source().as_bytes())?;
+        write(
+            path,
+            "main.typ",
+            crate::document_types::model_options::load(&request.model_manifest)
+                .and_then(|m| m.resolve(&request.metadata))
+                .map_err(CoreError::external)?
+                .main_source()
+                .as_bytes(),
+        )?;
         write(path, "contenu.typ", request.source.as_bytes())?;
         if !assets.is_empty() {
             std::fs::create_dir(path.join("images")).map_err(CoreError::external)?;
@@ -88,6 +96,7 @@ pub fn write_document(
             write(path, name, data)?;
         }
         write(path, "modele.typ", request.template.as_bytes())?;
+        write(path, "model.yaml", request.model_manifest.as_bytes())?;
         write(
             path,
             "metadonnees.json",
@@ -162,6 +171,7 @@ mod tests {
             source,
             metadata,
             template,
+            model_manifest: DocumentType::Courrier.default_model_manifest().into(),
             dependencies,
             assets,
         };

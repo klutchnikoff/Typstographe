@@ -217,15 +217,20 @@ export function metadataCollections(
     const input =
       field.kind === 'multiline' || field.kind === 'tokens'
         ? document.createElement('textarea')
-        : field.kind === 'language'
+        : field.kind === 'language' || field.kind === 'choice'
           ? document.createElement('select')
           : document.createElement('input')
     input.id = id
     if (input instanceof HTMLTextAreaElement) input.rows = field.kind === 'tokens' ? 2 : 3
     if (input instanceof HTMLInputElement)
       input.type = field.kind === 'boolean' ? 'checkbox' : 'text'
-    if (input instanceof HTMLSelectElement)
-      for (const item of catalogue.languages) input.add(new Option(item.label, item.value))
+    if (input instanceof HTMLSelectElement) {
+      const choices =
+        field.kind === 'choice'
+          ? (field.choices || []).map((value) => ({ label: value, value }))
+          : catalogue.languages
+      for (const item of choices) input.add(new Option(item.label, item.value))
+    }
     input.oninput = () => {
       const value =
         field.kind === 'boolean'
@@ -235,7 +240,8 @@ export function metadataCollections(
             : input.value
       if (store === provider) return // The common native-field binding owns live publication and IME.
       const update = () => setRecordField(store, record, field.key, value)
-      if (field.kind === 'boolean' || field.kind === 'language') discrete(update)
+      if (field.kind === 'boolean' || field.kind === 'language' || field.kind === 'choice')
+        discrete(update)
       else update()
     }
     input.onfocus = input.onblur = () => history?.stopCapturing()

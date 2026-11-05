@@ -31,6 +31,7 @@ pub struct Archive {
     pub document: Node,
     pub metadata: Metadata,
     pub template: String,
+    pub model_manifest: String,
     pub model_id: String,
     pub assets: Assets,
     pub dependencies: Dependencies,
@@ -56,6 +57,7 @@ impl Archive {
             super::contract::Settings {
                 metadata: self.metadata.clone(),
                 template: self.template.clone(),
+                model_manifest: self.model_manifest.clone(),
                 model_id: self.model_id.clone(),
             },
         )
@@ -69,21 +71,9 @@ impl Archive {
         self.metadata.validate().map_err(Error::document)?;
         crate::bibliography::validate_document(&self.document, &self.metadata)
             .map_err(Error::document)?;
-        for (path, data) in &self.assets {
-            if !crate::assets::valid_path(path) {
-                return Err(StorageError::UnexpectedEntry { name: path.clone() }.into());
-            }
-            crate::assets::decode(data, path.rsplit('.').next().unwrap_or(""))
-                .map_err(CoreError::from)?;
-        }
-        if let Some(signature) = self.metadata.signature_path()
-            && !self.assets.contains_key(signature)
-        {
-            return Err(StorageError::ImageResourceMissing {
-                path: signature.into(),
-            }
-            .into());
-        }
+        crate::resources::validate_pool(&self.assets)?;
+        crate::resources::validate_references(&self.metadata, &self.assets)
+            .map_err(CoreError::from)?;
         let source = source(&self.document, &self.assets).map_err(Error::document)?;
         let state = self.state();
         state.settings.validate()?;
@@ -110,7 +100,7 @@ mod tests {
     fn fixture() -> Archive {
         let metadata = Metadata::blank(crate::document_types::DocumentType::Courrier);
         let template = metadata.document_type().default_model();
-        Archive{document:serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Un texte é😀"},{"type":"footnote","attrs":{"text":"Une note."}}]}]})).unwrap(),metadata,dependencies:crate::packages::for_template(&template),template,model_id:"courrier.model.personal".into(),assets:Assets::default(),yjs:vec![]}
+        Archive{model_manifest:crate::document_types::DocumentType::Courrier.default_model_manifest().into(),document:serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Un texte é😀"},{"type":"footnote","attrs":{"text":"Une note."}}]}]})).unwrap(),metadata,dependencies:crate::packages::for_template(&template),template,model_id:"courrier.model.personal".into(),assets:Assets::default(),yjs:vec![]}
     }
     #[test]
     fn saved_model_snapshot_remains_self_contained_after_catalogue_changes() {

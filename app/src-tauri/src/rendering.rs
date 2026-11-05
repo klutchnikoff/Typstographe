@@ -104,7 +104,12 @@ impl Renderer {
         world.set_assets(assets);
         world.set_dependencies(&context.dependencies);
         world
-            .validate_model(source, &settings.metadata, &settings.template)
+            .validate_with_model(
+                source,
+                &settings.metadata,
+                &settings.template,
+                &settings.model_manifest,
+            )
             .map(|_| ())
             .map_err(CommandError::localized_core)
     }
@@ -174,6 +179,7 @@ impl Renderer {
 
             metadata: settings.metadata.clone(),
             template,
+            model_manifest: settings.model_manifest.clone(),
         };
         let start = Instant::now();
         let mut timings = PreviewTimings::default();
@@ -185,7 +191,12 @@ impl Renderer {
         timings.prepare_ms = milliseconds(start);
         let compile_start = Instant::now();
         let document = world
-            .compile_with_template(&request.source, &request.metadata, &request.template)
+            .compile_with_model(
+                &request.source,
+                &request.metadata,
+                &request.template,
+                &request.model_manifest,
+            )
             .map_err(CommandError::message)?;
         timings.compile_ms = milliseconds(compile_start);
         let export_start = Instant::now();
@@ -349,6 +360,9 @@ mod tests {
         meta.references.push(reference.clone());
         let settings = crate::settings::Settings {
             metadata: typstographe_core::document_types::Metadata::Article(meta),
+            model_manifest: typstographe_core::document_types::DocumentType::Article
+                .default_model_manifest()
+                .into(),
             template: typstographe_core::document_types::DocumentType::Article.default_model(),
             model_id: "article.model.working".into(),
         };
@@ -411,7 +425,12 @@ mod tests {
             let source = "#rect(width: 20pt, height: 20pt, fill: rgb(\"#80402080\"), stroke: none)";
             let mut world = TypstWorld::default();
             let document = world
-                .compile_with_template(source, &settings.metadata, &settings.template)
+                .compile_with_model(
+                    source,
+                    &settings.metadata,
+                    &settings.template,
+                    &settings.model_manifest,
+                )
                 .unwrap();
             let raster = typst_render::render(
                 &document.pages()[0],
@@ -541,6 +560,7 @@ mod tests {
         let article = typstographe_core::document_types::DocumentType::Article;
         let settings = crate::settings::Settings {
             metadata: typstographe_core::document_types::Metadata::blank(article),
+            model_manifest: article.default_model_manifest().into(),
             template: article.default_model(),
             model_id: "article.model.working".into(),
         };

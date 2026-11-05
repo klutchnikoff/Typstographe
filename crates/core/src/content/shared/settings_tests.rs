@@ -29,8 +29,11 @@ fn resource_and_signature_are_atomic_immutable_and_retained_through_history() {
         Command::AddResource {
             resource: image.clone(),
         },
-        Command::SetSignature {
-            path: Some(image.path.clone()),
+        Command::SetField {
+            target: crate::content::commands::FieldTarget::Metadata {
+                field: crate::document_types::MetadataField::SenderSignature,
+            },
+            value: serde_json::json!(image.path.clone()),
         },
     ];
     let result = owner
@@ -47,13 +50,30 @@ fn resource_and_signature_are_atomic_immutable_and_retained_through_history() {
     owner
         .history(&owner.guard().clone(), context, Direction::Undo)
         .unwrap();
-    assert!(owner.state().settings.metadata.signature_path().is_none());
+    assert!(
+        owner
+            .state()
+            .settings
+            .metadata
+            .resource_paths()
+            .into_iter()
+            .next()
+            .as_deref()
+            .is_none()
+    );
     assert!(owner.assets().contains_key(&image.path));
     owner
         .history(&owner.guard().clone(), context, Direction::Redo)
         .unwrap();
     assert_eq!(
-        owner.state().settings.metadata.signature_path(),
+        owner
+            .state()
+            .settings
+            .metadata
+            .resource_paths()
+            .into_iter()
+            .next()
+            .as_deref(),
         Some(image.path.as_str())
     );
     let before = owner.update();
@@ -80,8 +100,11 @@ fn resource_and_signature_are_atomic_immutable_and_retained_through_history() {
                     Command::AddResource {
                         resource: other.clone()
                     },
-                    Command::SetSignature {
-                        path: Some("images/missing.svg".into())
+                    Command::SetField {
+                        target: crate::content::commands::FieldTarget::Metadata {
+                            field: crate::document_types::MetadataField::SenderSignature
+                        },
+                        value: serde_json::json!("images/missing.svg")
                     }
                 ]
             )
@@ -93,6 +116,19 @@ fn resource_and_signature_are_atomic_immutable_and_retained_through_history() {
 #[test]
 fn options_validate_and_language_creates_only_missing_primary_records_in_one_batch() {
     let mut s = session(DocumentType::Article);
+    let source = s.state().settings.template.clone();
+    let manifest = DocumentType::Article.default_model_manifest().replace(
+        "regime: imposed, value: auto",
+        "regime: free, default: auto",
+    );
+    execute(
+        &mut s,
+        vec![Command::SetModel {
+            model_id: "article.free".into(),
+            source,
+            manifest,
+        }],
+    );
     let before = s.state().document.clone();
     for (name, value) in [
         ("paper", json!("a5")),
@@ -157,6 +193,9 @@ fn models_validate_offline_without_rebuilding_collections_and_failure_publishes_
     execute(
         &mut s,
         vec![Command::SetModel {
+            manifest: crate::document_types::DocumentType::Article
+                .default_model_manifest()
+                .into(),
             model_id: "article.custom".into(),
             source: source.clone(),
         }],
@@ -180,6 +219,9 @@ fn models_validate_offline_without_rebuilding_collections_and_failure_publishes_
                     resource: resource()
                 },
                 Command::SetModel {
+                    manifest: crate::document_types::DocumentType::Article
+                        .default_model_manifest()
+                        .into(),
                     model_id: "broken".into(),
                     source: "#let nothing = 1".into()
                 }
@@ -194,6 +236,9 @@ fn models_validate_offline_without_rebuilding_collections_and_failure_publishes_
         s.prepare_commands(
             &guard,
             &[Command::SetModel {
+                manifest: crate::document_types::DocumentType::Article
+                    .default_model_manifest()
+                    .into(),
                 model_id: "courrier.model.personal".into(),
                 source: DocumentType::Courrier.default_model()
             }]
@@ -227,6 +272,9 @@ fn model_resources_roundtrip_in_an_autonomous_archive_and_wire_images_are_base64
                 resource: image.clone(),
             },
             Command::SetModel {
+                manifest: crate::document_types::DocumentType::Article
+                    .default_model_manifest()
+                    .into(),
                 model_id: "article.with-logo".into(),
                 source,
             },
@@ -240,6 +288,7 @@ fn model_resources_roundtrip_in_an_autonomous_archive_and_wire_images_are_base64
         document: s.state().document.clone(),
         metadata: settings.metadata.clone(),
         template: settings.template.clone(),
+        model_manifest: settings.model_manifest.clone(),
         model_id: settings.model_id.clone(),
         assets: s.assets().clone(),
         dependencies: crate::packages::for_template(&settings.template),

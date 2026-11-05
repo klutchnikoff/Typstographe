@@ -1,5 +1,5 @@
 //! Moteur Typst embarqué : fichiers virtuels et polices embarquées, sans réseau.
-use crate::document_types::{Metadata, ModelPresentation};
+use crate::document_types::{Metadata, model_options};
 use crate::errors::{CoreError, TemplateError};
 use comemo::Track;
 use std::collections::HashMap;
@@ -104,12 +104,13 @@ impl TypstWorld {
         })
         .map_err(|error| CoreError::from(TemplateError::Compilation { error }))
     }
-    pub fn validate_model(
+    pub fn validate_with_model(
         &mut self,
         source: &str,
         metadata: &Metadata,
         template: &str,
-    ) -> Result<ModelPresentation, CoreError> {
+        manifest: &str,
+    ) -> Result<model_options::Manifest, CoreError> {
         let module = self.model_module(template)?;
         let function = metadata.document_type().composition_function();
         if !module
@@ -118,58 +119,39 @@ impl TypstWorld {
             .is_some_and(|binding| matches!(binding.read(), Value::Func(_)))
         {
             return Err(CoreError::from(TemplateError::ContractMissing {
-                function: (function).to_string(),
+                function: function.into(),
             }));
         }
-        self.compile_with_template(source, metadata, template)?;
-        self.model_presentation(template)
+        self.compile_with_model(source, metadata, template, manifest)?;
+        model_options::load(manifest).map_err(CoreError::external)
     }
-    pub fn model_presentation(&mut self, template: &str) -> Result<ModelPresentation, CoreError> {
-        let module = self.model_module(template)?;
-        let mut policy = ModelPresentation::default();
-        let Some(binding) = module.scope().get("editor-options") else {
-            return Ok(policy);
-        };
-        let invalid = || CoreError::from(TemplateError::InvalidEditorOptions);
-        let Value::Dict(options) = binding.read() else {
-            return Err(invalid());
-        };
-        for (key, value) in options.iter() {
-            match (key.as_str(), value) {
-                ("bullet-markers", Value::Array(markers)) => {
-                    for marker in markers.iter() {
-                        let Value::Str(marker) = marker else {
-                            return Err(invalid());
-                        };
-                        if !crate::document::valid_bullet_marker(marker.as_str()) {
-                            return Err(invalid());
-                        }
-                        if !policy.bullet_markers.iter().any(|s| s == marker.as_str()) {
-                            policy.bullet_markers.push(marker.to_string());
-                        }
-                    }
-                }
-                ("outline", Value::Bool(allowed)) => policy.outline = *allowed,
-                ("citation-styles", Value::Array(styles)) => {
-                    for style in styles.iter() {
-                        let Value::Str(style) = style else {
-                            return Err(invalid());
-                        };
-                        if !["chicago-author-date", "apa", "ieee"].contains(&style.as_str()) {
-                            return Err(invalid());
-                        }
-                        if !policy.citation_styles.iter().any(|s| s == style.as_str()) {
-                            policy.citation_styles.push(style.to_string());
-                        }
-                    }
-                }
-                ("custom-bullet-marker", Value::Bool(allowed)) => {
-                    policy.custom_bullet_marker = *allowed
-                }
-                _ => return Err(invalid()),
-            }
-        }
-        Ok(policy)
+    #[cfg(test)]
+    pub fn validate_model(
+        &mut self,
+        source: &str,
+        metadata: &Metadata,
+        template: &str,
+    ) -> Result<model_options::Manifest, CoreError> {
+        self.validate_with_model(
+            source,
+            metadata,
+            template,
+            metadata.document_type().default_model_manifest(),
+        )
+    }
+    #[cfg(test)]
+    pub fn compile_with_template(
+        &mut self,
+        source: &str,
+        metadata: &Metadata,
+        template: &str,
+    ) -> Result<PagedDocument, CoreError> {
+        self.compile_with_model(
+            source,
+            metadata,
+            template,
+            metadata.document_type().default_model_manifest(),
+        )
     }
     #[cfg(test)]
     #[cfg_attr(coverage_nightly, coverage(off))]
@@ -181,19 +163,18 @@ impl TypstWorld {
     ) -> Result<PagedDocument, CoreError> {
         self.compile_with_template(source, metadata, &model.source())
     }
-    pub fn compile_with_template(
+    pub fn compile_with_model(
         &mut self,
         source: &str,
         metadata: &Metadata,
         template: &str,
+        manifest: &str,
     ) -> Result<PagedDocument, CoreError> {
-        let presentation = self.model_presentation(template)?;
-        if let Some(marker) = &metadata.options().bullet_marker
-            && !presentation.allows_bullet_marker(marker)
-        {
-            return Err(CoreError::from(TemplateError::BulletMarkerNotAllowed));
-        }
         metadata.validate().map_err(CoreError::external)?;
+        let resolved = model_options::load(manifest)
+            .and_then(|m| m.resolve(metadata))
+            .map_err(CoreError::external)?;
+        let metadata = &resolved.metadata;
         self.files
             .retain(|id, _| !id.vpath().get_with_slash().starts_with("/bibliography/"));
         for (path, data) in crate::bibliography::resources(metadata) {
@@ -202,7 +183,7 @@ impl TypstWorld {
                 std::str::from_utf8(&data).map_err(CoreError::external)?,
             );
         }
-        self.set_source("main.typ", &metadata.main_source());
+        self.set_source("main.typ", &resolved.main_source());
         self.set_source("modele.typ", template);
         self.set_source("contenu.typ", source);
         let result = typst::compile::<PagedDocument>(self);
@@ -294,6 +275,7 @@ pub struct RenderRequest {
 
     pub metadata: Metadata,
     pub template: String,
+    pub model_manifest: String,
 }
 
 /// Même rasterisation pour une page demandée par un adaptateur et les PNG d’export.
@@ -313,6 +295,7 @@ pub(crate) fn page_png(
 }
 
 /// Même rétention pour un adaptateur qui possède déjà les chemins de ses objets.
+#[allow(clippy::too_many_arguments)]
 pub fn retained_assets_for_paths(
     source: &str,
     metadata: &Metadata,
@@ -320,11 +303,12 @@ pub fn retained_assets_for_paths(
     assets: &crate::assets::Assets,
     dependencies: &crate::packages::Dependencies,
     mut required: std::collections::BTreeSet<String>,
+    manifest: &str,
 ) -> Result<crate::assets::Assets, CoreError> {
     if assets.is_empty() {
         return Ok(assets.clone());
     }
-    required.extend(metadata.signature_path().map(str::to_owned));
+    required.extend(metadata.resource_paths());
     fn declared_paths(
         node: &typst_syntax::SyntaxNode,
         required: &mut std::collections::BTreeSet<String>,
@@ -356,7 +340,7 @@ pub fn retained_assets_for_paths(
     let mut world = TypstWorld::default();
     world.set_assets(assets);
     world.set_dependencies(dependencies);
-    let Ok(baseline) = world.compile_with_template(source, metadata, template) else {
+    let Ok(baseline) = world.compile_with_model(source, metadata, template, manifest) else {
         // L’enregistrement doit rester possible pendant une erreur de modèle.
         // Sans résultat de référence, conserver les ressources est le seul choix sûr.
         return Ok(assets.clone());
@@ -390,7 +374,7 @@ pub fn retained_assets_for_paths(
     prune(&candidates, &mut retained, &mut |trial| {
         world.set_assets(trial);
         world
-            .compile_with_template(source, metadata, template)
+            .compile_with_model(source, metadata, template, manifest)
             .is_ok_and(|output| typst::utils::hash128(&output) == expected)
     });
     Ok(retained)
@@ -433,6 +417,7 @@ mod asset_tests {
                 &assets,
                 &crate::packages::for_template(&template),
                 Default::default(),
+                DocumentType::Courrier.default_model_manifest(),
             )
             .unwrap();
             assert_eq!(retained.keys().cloned().collect::<Vec<_>>(), expected);
@@ -462,6 +447,7 @@ mod asset_tests {
                 &assets,
                 &Default::default(),
                 Default::default(),
+                DocumentType::Courrier.default_model_manifest(),
             )
             .unwrap(),
             assets

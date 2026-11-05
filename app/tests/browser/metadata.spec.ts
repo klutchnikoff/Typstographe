@@ -110,7 +110,7 @@ test('en-tête partagé, focus conservé, export Typst et sauvegarde sans duplic
     'objet: "Objet relu ensemble"',
     'reference: "DOC-42"',
     'lieu: "Lyon"',
-    'date: "2026-10-28"',
+    'date: datetime(year: 2026, month: 10, day: 28)',
   ])
     expect(source).toContain(fragment)
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
@@ -133,13 +133,11 @@ test('Général compact : format et orientation libres, choix utiles et langue i
   await page.getByRole('button', { name: 'Général', exact: true }).click()
   const panel = page.locator('#metadata-content')
   await expect(panel.getByRole('combobox')).toHaveCount(4)
-  await expect(page.getByRole('combobox', { name: 'Format', exact: true })).toHaveValue('a4')
-  await expect(page.getByRole('combobox', { name: 'Orientation', exact: true })).toHaveValue(
-    'false',
-  )
+  await expect(page.getByRole('combobox', { name: 'Format', exact: true })).toHaveValue('')
+  await expect(page.getByRole('combobox', { name: 'Orientation', exact: true })).toHaveValue('')
   await expect(panel.locator('output, #document-page-policy')).toHaveCount(0)
   await expect(panel.locator('input[type=file]')).toHaveCount(0)
-  await expect(panel.getByText('Puces des listes', { exact: true })).toHaveCount(0)
+  await expect(panel.getByText('Puces des listes', { exact: true })).toBeHidden()
   const model = page.getByRole('combobox', { name: 'Modèle', exact: true })
   const language = page.getByRole('combobox', { name: 'Langue du document', exact: true })
   const geometry = await panel.evaluate((element) => {
@@ -197,7 +195,7 @@ test('tous les formats du catalogue sont réellement compilés en portrait et pa
     await paper
       .locator('option')
       .evaluateAll((options) => options.map((option) => (option as HTMLOptionElement).value)),
-  ).toEqual(Object.keys(sizes))
+  ).toEqual(['', ...Object.keys(sizes)])
   for (const [format, [width, height]] of Object.entries(sizes)) {
     await paper.selectOption(format)
     for (const landscape of ['false', 'true']) {
@@ -244,7 +242,7 @@ test('expéditeur compact : identité, coordonnées et organisation, clavier et 
     'Service',
     'Fonction',
   ]
-  await expect(content.locator('label')).toHaveText(labels)
+  await expect(content.locator('label:not(.sr-only)')).toHaveText(labels)
   await expect(content.locator('legend')).toHaveText([
     'Coordonnées',
     'Organisation',
@@ -261,8 +259,7 @@ test('expéditeur compact : identité, coordonnées et organisation, clavier et 
   await expect(content.getByLabel('Fonction', { exact: true })).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(content.getByLabel('Signature du document', { exact: true })).toBeFocused()
-  await page.keyboard.press('Tab')
-  await expect(content.getByRole('button', { name: 'Sans signature', exact: true })).toBeFocused()
+  await expect(content.getByRole('button', { name: 'Sans signature', exact: true })).toBeDisabled()
   const contact = content.locator('[data-section=contact]'),
     organisation = content.locator('[data-section=organisation]')
   const left = (await contact.boundingBox())!,
@@ -324,7 +321,7 @@ test('en-tête compact : destinataire, objet et référence puis lieu et date, s
   await header(page)
   const content = page.locator('#metadata-content')
   const labels = ['Destinataire', 'Adresse', 'Objet', 'Référence', 'Lieu', 'Date']
-  await expect(content.locator('label')).toHaveText(labels)
+  await expect(content.locator('label:not(.sr-only)')).toHaveText(labels)
   const recipient = content.getByRole('group', { name: 'Destinataire', exact: true })
   const information = content.getByRole('group', { name: 'Informations', exact: true })
   await expect(recipient.locator('label')).toHaveText(labels.slice(0, 2))
@@ -404,7 +401,7 @@ test('date facultative : suppression au clavier, partage, sauvegarde et export s
   await expect(message).toContainText('PDF et sources Typst exportés', { timeout: 30000 })
   const folder = (await message.textContent())!.split(' · ').at(-1)!
   const source = await readFile(join(folder, 'main.typ'), 'utf8')
-  expect(source).toContain('date: ""')
+  expect(source).toContain('date: none')
   expect(source).toContain('lieu: ""')
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.save"]').click()
@@ -418,4 +415,49 @@ test('date facultative : suppression au clavier, partage, sauvegarde et export s
   await page.getByRole('button', { name: 'Aujourd’hui', exact: true }).click()
   await expect(page.getByLabel('Date', { exact: true })).not.toHaveValue('')
   await expect(page.getByRole('button', { name: 'Supprimer la date', exact: true })).toBeEnabled()
+})
+
+test('dates structurées : changement de mode annulable, texte littéral, synchronisation et export', async ({
+  page,
+  context,
+}) => {
+  await header(page)
+  const date = page.getByLabel('Date', { exact: true })
+  const mode = page.getByLabel('Mode de la date', { exact: true })
+  await date.fill('2024-02-29')
+  await page.evaluate(() => window.__spike!.provider.flush())
+  await mode.selectOption('custom')
+  await expect(date).toBeFocused()
+  await expect(date).toHaveAttribute('type', 'text')
+  await date.press('Escape')
+  await expect(date).toHaveAttribute('type', 'date')
+  await expect(date).toHaveValue('2024-02-29')
+  await expect(page.locator('#metadata-content')).toBeVisible()
+  await mode.selectOption('custom')
+  await date.fill('2026-02-30')
+  await expect(date).toBeFocused()
+  await page.evaluate(() => window.__spike!.provider.flush())
+  await page.evaluate(() => window.__spike!.provider.history('undo'))
+  await expect(date).toHaveAttribute('type', 'date')
+  await expect(date).toHaveValue('2024-02-29')
+  await page.evaluate(() => window.__spike!.provider.history('redo'))
+  await expect(mode).toHaveValue('custom')
+  await expect(date).toHaveValue('2026-02-30')
+  await page.getByLabel('Lieu', { exact: true }).fill('Rennes')
+  const peer = await context.newPage()
+  await peer.goto('/?client=peer-custom-date')
+  await peer.waitForFunction(() => window.__spike?.ready)
+  await header(peer)
+  await expect(peer.getByLabel('Mode de la date', { exact: true })).toHaveValue('custom')
+  await expect(peer.getByLabel('Date', { exact: true })).toHaveValue('2026-02-30')
+  await expectPreviewReady(page)
+  await page.getByRole('button', { name: 'Fichier', exact: true }).click()
+  await page.locator('[data-command="document.export"]').click()
+  const message = page.locator('#message')
+  await expect(message).toContainText('PDF et sources Typst exportés', { timeout: 30000 })
+  const folder = (await message.textContent())!.split(' · ').at(-1)!
+  expect(await readFile(join(folder, 'main.typ'), 'utf8')).toContain('date: "2026-02-30"')
+  const metadata = JSON.parse(await readFile(join(folder, 'metadonnees.json'), 'utf8'))
+  expect(metadata.fields.date).toEqual({ kind: 'custom', text: '2026-02-30' })
+  await peer.close()
 })

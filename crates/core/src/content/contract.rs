@@ -77,6 +77,7 @@ pub enum UnavailableReason {
 pub struct Settings {
     pub metadata: Metadata,
     pub template: String,
+    pub model_manifest: String,
     pub model_id: String,
 }
 impl Default for Settings {
@@ -84,11 +85,17 @@ impl Default for Settings {
         Self {
             metadata: Metadata::demo(DocumentType::Courrier),
             template: DocumentType::Courrier.default_model(),
+            model_manifest: DocumentType::Courrier.default_model_manifest().into(),
             model_id: "courrier.model.personal".into(),
         }
     }
 }
 impl Settings {
+    pub fn resolve_model(
+        &self,
+    ) -> Result<crate::document_types::model_options::Resolution, String> {
+        crate::document_types::model_options::load(&self.model_manifest)?.resolve(&self.metadata)
+    }
     pub fn validate(&self) -> Result<(), Error> {
         let invalid = |reason: &str| Error::InvalidSettings {
             reason: reason.into(),
@@ -104,17 +111,7 @@ impl Settings {
         if self.model_id.trim().is_empty() || self.model_id.len() > 256 {
             return Err(invalid("invalid_model_id"));
         }
-        if let Some(model) = self
-            .metadata
-            .document_type()
-            .models()
-            .find(|m| m.model.id() == self.model_id && m.source == self.template)
-            && let Some((paper, landscape)) = model.page
-            && (self.metadata.options().paper != paper
-                || self.metadata.options().landscape != landscape)
-        {
-            return Err(invalid("fixed_page"));
-        }
+        self.resolve_model().map_err(|reason| invalid(&reason))?;
         Ok(())
     }
 }
@@ -158,16 +155,11 @@ impl State {
         )?;
         crate::bibliography::validate_document(&self.document, &self.settings.metadata)
             .map_err(|reason| Error::InvalidDocument { reason })?;
-        if self
-            .settings
-            .metadata
-            .signature_path()
-            .is_some_and(|path| !assets.contains_key(path))
-        {
-            return Err(Error::InvalidDocument {
-                reason: "missing_signature".into(),
-            });
-        }
+        crate::resources::validate_references(&self.settings.metadata, assets).map_err(
+            |error| Error::InvalidDocument {
+                reason: format!("missing_resource: {error:?}"),
+            },
+        )?;
         source(&self.document, assets).map_err(|reason| Error::InvalidDocument { reason })
     }
 }

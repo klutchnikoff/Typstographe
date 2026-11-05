@@ -1,17 +1,11 @@
 import { bibliographyPanel } from './bibliography-panel'
 import { documentOptions } from './document-options'
 import { tr } from './i18n'
-import { actionRow, keyboardScope, navigationGroup } from './keyboard-navigation'
+import { keyboardScope, navigationGroup } from './keyboard-navigation'
 import { metadataCollections } from './metadata-collections'
 import { metadataCommands } from './metadata-commands'
-import {
-  destroyMetadataFields,
-  metadataFields,
-  metadataSection,
-  refreshMetadataFields,
-} from './metadata-fields'
+import { destroyMetadataFields, metadataFields, refreshMetadataFields } from './metadata-fields'
 import type { RecoveredItem } from './recovered-work'
-import { prepareImage, resourceCommand } from './resource-commands'
 import type { ModelPolicy } from './shell'
 import type { ShellContext } from './shell-context'
 import { byId } from './shell-layout'
@@ -36,25 +30,39 @@ export function shellMetadata(ctx: ShellContext, context: HTMLElement) {
   let recordPanel: RecordPanel | undefined
   const metadataEditor = metadataCommands(editor, provider)
   const policies = new Map<string, ModelPolicy>(),
-    loadingPolicies = new Set<string>()
+    loadingPolicies = new Set<string>(),
+    latestPolicies = new Map<string, ModelPolicy>()
   const currentPolicy = (): ModelPolicy | undefined => {
-    const current = settingsFor(provider),
-      kind = documentType(provider)
-    const bundled = kind.models.find(
-      (model) => model.id === current.modelId && model.source === current.template,
-    )
-    if (bundled?.policy) return bundled.policy
-    if (!policies.has(current.template) && !loadingPolicies.has(current.template)) {
-      loadingPolicies.add(current.template)
+    const current = settingsFor(provider)
+    const kind = documentType(provider)
+    const key = JSON.stringify([
+      current.modelManifest,
+      current.metadata.fields.options,
+      ...kind.fields.filter((f) => f.presentation).map((f) => current.metadata.fields[f.parameter]),
+    ])
+    if (!policies.has(key) && !loadingPolicies.has(key)) {
+      loadingPolicies.add(key)
       void transport
-        .invoke<ModelPolicy>('model_policy', { template: current.template })
+        .invoke<ModelPolicy>('model_policy', {
+          manifest: current.modelManifest,
+          metadata: current.metadata,
+        })
         .then((policy) => {
-          policies.set(current.template, policy)
+          policies.set(key, policy)
+          if (policies.size > 16) policies.delete(policies.keys().next().value!)
+          latestPolicies.set(current.modelManifest, policy)
+          if (latestPolicies.size > 16) latestPolicies.delete(latestPolicies.keys().next().value!)
           render()
         })
-        .catch(() => {})
+        .catch(ctx.reportError)
+        .finally(() => loadingPolicies.delete(key))
     }
-    return policies.get(current.template)
+    // Domains stay stable while only the retained choice changes; keep the control and focus.
+    return (
+      policies.get(key) ||
+      latestPolicies.get(current.modelManifest) ||
+      kind.models.find((model) => model.manifest === current.modelManifest)?.policy
+    )
   }
 
   function render() {
@@ -159,11 +167,16 @@ export function shellMetadata(ctx: ShellContext, context: HTMLElement) {
             ),
           {
             commands: metadataEditor,
+            resources: {
+              provider,
+              transport,
+              profile: () => ctx.state.preferences.signature,
+              guarded: ctx.guarded,
+            },
             read: (field) => settingsFor(provider).metadata.fields[field.parameter],
           },
         )
     }
-    if (tab === 'sender') content.append(signatureSection(ctx, metadataEditor))
   }
 
   keyboardScope(context, {
@@ -202,60 +215,4 @@ export function shellMetadata(ctx: ShellContext, context: HTMLElement) {
     /** Hands a recovered form to the record panel currently shown, if it accepts it. */
     resumeRecord: (item: RecoveredItem) => recordPanel?.resume?.(item) || false,
   }
-}
-
-/** The signature controls of the sender tab, applied through the metadata commands. */
-function signatureSection(ctx: ShellContext, metadataEditor: ReturnType<typeof metadataCommands>) {
-  const { provider, transport, state } = ctx
-  const actions = actionRow()
-  for (const [label, useDefault] of [
-    [tr('Sans signature'), false],
-    [tr('Signature des préférences'), true],
-  ] as const) {
-    const button = document.createElement('button')
-    button.textContent = label
-    button.onclick = () => {
-      const { preferences } = state
-      const value = useDefault ? preferences.signature?.path || null : null
-      const before = settingsFor(provider).metadata.fields.signature
-      ctx.guarded(() =>
-        metadataEditor.run(
-          [
-            ...(value && preferences.signature ? [resourceCommand(preferences.signature)] : []),
-            { id: 'document.set_signature', params: { path: value } },
-          ],
-          () => settingsFor(provider).metadata.fields.signature === before,
-        ),
-      )
-    }
-    actions.append(button)
-  }
-  const image = document.createElement('input')
-  image.type = 'file'
-  image.accept = 'image/png,image/jpeg,image/svg+xml'
-  image.setAttribute('aria-label', tr('Signature du document'))
-  image.onchange = () =>
-    ctx.guarded(async () => {
-      const file = image.files?.[0]
-      if (!file) return
-      const before = settingsFor(provider).metadata.fields.signature
-      const resource = await prepareImage(provider, transport, file)
-      await metadataEditor.run(
-        [
-          resourceCommand(resource),
-          { id: 'document.set_signature', params: { path: resource.path } },
-        ],
-        () => settingsFor(provider).metadata.fields.signature === before,
-      )
-      image.value = ''
-    })
-  const signature = metadataSection({
-    id: 'signature',
-    label: tr('Signature du document'),
-    layout: 'editorial',
-  })
-  signature.root.classList.add('metadata-signature')
-  signature.content.classList.add('metadata-signature-controls')
-  signature.content.append(image, actions)
-  return signature.root
 }

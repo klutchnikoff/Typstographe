@@ -1,0 +1,7 @@
+contract-version: 1
+document-type: compte-rendu
+languages: [fr, en, de, es, it, pt, nl]
+options:
+  paper: { regime: free, default: a4 }
+  landscape: { regime: free, default: false }
+  bullet-marker: { regime: imposed, value: auto }

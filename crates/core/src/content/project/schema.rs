@@ -5,8 +5,8 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use uuid::Uuid;
 
-pub const FORMAT_VERSION: u32 = 11;
-pub(super) const SOURCE_GENERATOR_VERSION: u32 = 2;
+pub const FORMAT_VERSION: u32 = 14;
+pub(super) const SOURCE_GENERATOR_VERSION: u32 = 4;
 pub const MAX_SNAPSHOTS: usize = 100;
 pub const MAX_ARCHIVE_BYTES: u64 = 512 * 1024 * 1024;
 pub const MAX_OBJECTS: usize = 16_384;
@@ -200,12 +200,13 @@ impl StateDescriptor {
         }
         Ok(())
     }
-    pub fn refs(&self) -> [&ObjectId; 7] {
+    pub fn refs(&self) -> [&ObjectId; 8] {
         [
             &self.document,
             &self.metadata,
             &self.yjs.object,
             &self.model.source,
+            &self.model.manifest,
             &self.sources.main,
             &self.sources.body,
             &self.resources,
@@ -223,7 +224,8 @@ record!(Checkpoint {
 });
 record!(Model {
     id: String,
-    source: ObjectId
+    source: ObjectId,
+    manifest: ObjectId
 });
 record!(Sources {
     main: ObjectId,

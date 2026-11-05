@@ -129,6 +129,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -577,6 +578,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -1094,6 +1096,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -1611,6 +1614,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -2128,6 +2132,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -2586,6 +2591,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -3038,6 +3044,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -3555,6 +3562,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -4072,6 +4080,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -4594,6 +4603,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -5061,6 +5071,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -5578,6 +5589,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -6026,6 +6038,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -6459,6 +6472,7 @@
                   "article.authors",
                   "article.affiliations",
                   "article.localizations",
+                  "sender.signature",
                   "sender.name",
                   "sender.role",
                   "sender.department",
@@ -6799,38 +6813,15 @@
                 "additionalProperties": false,
                 "properties": {
                   "id": {
-                    "const": "document.set_signature",
-                    "type": "string"
-                  },
-                  "params": {
-                    "additionalProperties": false,
-                    "properties": {
-                      "path": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      }
-                    },
-                    "type": "object"
-                  }
-                },
-                "required": [
-                  "id",
-                  "params"
-                ],
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "id": {
                     "const": "document.set_model",
                     "type": "string"
                   },
                   "params": {
                     "additionalProperties": false,
                     "properties": {
+                      "manifest": {
+                        "type": "string"
+                      },
                       "model_id": {
                         "type": "string"
                       },
@@ -6840,7 +6831,8 @@
                     },
                     "required": [
                       "model_id",
-                      "source"
+                      "source",
+                      "manifest"
                     ],
                     "type": "object"
                   }
@@ -8020,6 +8012,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -8462,6 +8455,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -8904,6 +8898,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -9352,6 +9347,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -9929,6 +9925,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -10381,6 +10378,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -10864,6 +10862,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -11310,6 +11309,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -11769,6 +11769,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -12211,6 +12212,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -12672,6 +12674,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -13127,6 +13130,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -13569,6 +13573,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -13890,7 +13895,7 @@
     },
     {
       "batch_step": true,
-      "description": "Set the model ID and full pure Typst source together. The model must implement this document type; publication validates its policy.",
+      "description": "Set model_id, full pure Typst source and YAML manifest together. Every option regime and supported language is validated. Retained choices survive model switches; metadata.get reports effective values and substitutions.",
       "family": "edit",
       "id": "document.set_model",
       "params_schema": {
@@ -14017,6 +14022,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -14326,6 +14332,9 @@
         },
         "additionalProperties": false,
         "properties": {
+          "manifest": {
+            "type": "string"
+          },
           "model_id": {
             "type": "string"
           },
@@ -14335,456 +14344,9 @@
         },
         "required": [
           "model_id",
-          "source"
+          "source",
+          "manifest"
         ],
-        "type": "object"
-      }
-    },
-    {
-      "batch_step": true,
-      "description": "Typed structured document operation; discover targets and parameters in params_schema.",
-      "family": "edit",
-      "id": "document.set_signature",
-      "params_schema": {
-        "$defs": {
-          "DocumentLanguage": {
-            "enum": [
-              "fr",
-              "en",
-              "de",
-              "es",
-              "it",
-              "pt",
-              "nl"
-            ],
-            "type": "string"
-          },
-          "FieldTarget": {
-            "oneOf": [
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "kind": {
-                    "const": "option",
-                    "type": "string"
-                  },
-                  "name": {
-                    "$ref": "#/$defs/OptionName"
-                  }
-                },
-                "required": [
-                  "kind",
-                  "name"
-                ],
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "field": {
-                    "$ref": "#/$defs/MetadataField"
-                  },
-                  "kind": {
-                    "const": "metadata",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "kind",
-                  "field"
-                ],
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "collection": {
-                    "type": "string"
-                  },
-                  "field": {
-                    "type": "string"
-                  },
-                  "id": {
-                    "type": "string"
-                  },
-                  "kind": {
-                    "const": "record",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
-                "type": "object"
-              }
-            ]
-          },
-          "HeaderAxis": {
-            "description": "The axis labelled by the header cells (columns = first row, rows = first column).",
-            "enum": [
-              "columns",
-              "rows"
-            ],
-            "type": "string"
-          },
-          "ImageResource": {
-            "additionalProperties": false,
-            "description": "Validated immutable image bytes, separate from the shared text/history.",
-            "properties": {
-              "data": {
-                "description": "Base64 on the wire; decoded immutable bytes in the engine.",
-                "type": "string"
-              },
-              "path": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "path",
-              "data"
-            ],
-            "type": "object"
-          },
-          "Mark": {
-            "additionalProperties": false,
-            "properties": {
-              "attrs": true,
-              "type": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "type"
-            ],
-            "type": "object"
-          },
-          "MetadataField": {
-            "enum": [
-              "article.references",
-              "article.citation_style",
-              "article.show_outline",
-              "article.authors",
-              "article.affiliations",
-              "article.localizations",
-              "sender.name",
-              "sender.role",
-              "sender.department",
-              "sender.email",
-              "sender.organisation",
-              "sender.address",
-              "sender.phone",
-              "recipient.name",
-              "recipient.address",
-              "letter.subject",
-              "letter.reference",
-              "letter.place",
-              "letter.date",
-              "meeting.title",
-              "meeting.date",
-              "meeting.place",
-              "meeting.author",
-              "meeting.attendees",
-              "meeting.apologies"
-            ],
-            "type": "string"
-          },
-          "Node": {
-            "additionalProperties": false,
-            "properties": {
-              "attrs": true,
-              "content": {
-                "items": {
-                  "$ref": "#/$defs/Node"
-                },
-                "type": "array"
-              },
-              "marks": {
-                "items": {
-                  "$ref": "#/$defs/Mark"
-                },
-                "type": "array"
-              },
-              "text": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "type": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "type"
-            ],
-            "type": "object"
-          },
-          "OptionName": {
-            "description": "General document options; values remain JSON, checked against their Rust types.",
-            "enum": [
-              "paper",
-              "landscape",
-              "language",
-              "bullet_marker",
-              "spelling_ignored"
-            ],
-            "type": "string"
-          },
-          "Style": {
-            "oneOf": [
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "type": {
-                    "const": "bold",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "type"
-                ],
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "type": {
-                    "const": "italic",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "type"
-                ],
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "type": {
-                    "const": "link",
-                    "type": "string"
-                  },
-                  "url": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "type",
-                  "url"
-                ],
-                "type": "object"
-              }
-            ]
-          },
-          "Switch": {
-            "enum": [
-              "on",
-              "off"
-            ],
-            "type": "string"
-          },
-          "TextTarget": {
-            "additionalProperties": false,
-            "properties": {
-              "from": {
-                "format": "uint32",
-                "minimum": 0,
-                "type": "integer"
-              },
-              "to": {
-                "format": "uint32",
-                "minimum": 0,
-                "type": "integer"
-              },
-              "zone": {
-                "$ref": "#/$defs/TextZone"
-              }
-            },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
-            "type": "object"
-          },
-          "TextZone": {
-            "description": "Paths use projected child indices in the guarded revision, never Yjs identifiers.",
-            "oneOf": [
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "kind": {
-                    "const": "body",
-                    "type": "string"
-                  },
-                  "path": {
-                    "items": {
-                      "format": "uint",
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "type": "array"
-                  }
-                },
-                "required": [
-                  "kind",
-                  "path"
-                ],
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "kind": {
-                    "const": "annotation",
-                    "type": "string"
-                  },
-                  "path": {
-                    "items": {
-                      "format": "uint",
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "type": "array"
-                  }
-                },
-                "required": [
-                  "kind",
-                  "path"
-                ],
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "field": {
-                    "$ref": "#/$defs/MetadataField"
-                  },
-                  "kind": {
-                    "const": "metadata",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "kind",
-                  "field"
-                ],
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "collection": {
-                    "type": "string"
-                  },
-                  "field": {
-                    "type": "string"
-                  },
-                  "id": {
-                    "type": "string"
-                  },
-                  "kind": {
-                    "const": "record",
-                    "type": "string"
-                  },
-                  "path": {
-                    "default": [],
-                    "items": {
-                      "format": "uint",
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "type": "array"
-                  }
-                },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
-                "type": "object"
-              }
-            ]
-          },
-          "TreeRoot": {
-            "description": "A body tree or one rich record field. No XML identifiers or global positions.",
-            "oneOf": [
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "kind": {
-                    "const": "body",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "kind"
-                ],
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "collection": {
-                    "type": "string"
-                  },
-                  "field": {
-                    "type": "string"
-                  },
-                  "id": {
-                    "type": "string"
-                  },
-                  "kind": {
-                    "const": "record",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
-                "type": "object"
-              }
-            ]
-          },
-          "TreeTarget": {
-            "additionalProperties": false,
-            "properties": {
-              "path": {
-                "default": [],
-                "items": {
-                  "format": "uint",
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                "type": "array"
-              },
-              "root": {
-                "$ref": "#/$defs/TreeRoot"
-              }
-            },
-            "required": [
-              "root"
-            ],
-            "type": "object"
-          }
-        },
-        "additionalProperties": false,
-        "properties": {
-          "path": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
         "type": "object"
       }
     },
@@ -14917,6 +14479,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -15359,6 +14922,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -15805,6 +15369,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -16247,6 +15812,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -16693,6 +16259,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -17008,7 +16575,7 @@
     },
     {
       "batch_step": false,
-      "description": "Describe one type by ID. Integrated types include their actual metadata, capabilities and models; types without an implemented contract return only a product profile. Always check can_create.",
+      "description": "Describe one type by ID. Integrated types include actual metadata, values_schema, capabilities and models; types without an implemented contract return only a product profile. Always check can_create.",
       "family": "query",
       "id": "document_types.describe",
       "params_schema": {
@@ -17135,6 +16702,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -17583,6 +17151,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -18025,6 +17594,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -18467,6 +18037,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -18909,6 +18480,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -19431,6 +19003,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -19905,6 +19478,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -20422,6 +19996,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -20874,6 +20449,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -21264,7 +20840,7 @@
     },
     {
       "batch_step": false,
-      "description": "Read document metadata and field/collection definitions.",
+      "description": "Read metadata, fields and resolved model_options: choice (null = follow model), effective, regime, allowed/default and substituted warning. Language remains documentary data.",
       "family": "query",
       "id": "metadata.get",
       "params_schema": {
@@ -21391,6 +20967,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -21706,7 +21283,7 @@
     },
     {
       "batch_step": true,
-      "description": "Set a typed metadata, record field or document option. Values are validated against the type and model policy.",
+      "description": "Set a typed metadata, record field or document option. Values are validated against the type and model policy. Date fields accept null, {kind: calendar, iso: YYYY-MM-DD}, or {kind: custom, text: literal text}; never a raw string. Today must be resolved to a fixed local date by the caller. Discover documentary values_schema with document_types.describe.",
       "family": "edit",
       "id": "metadata.set",
       "params_schema": {
@@ -21833,6 +21410,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -22353,6 +21931,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -22795,6 +22374,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -23318,6 +22898,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -23782,6 +23363,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -24241,6 +23823,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -24693,6 +24276,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -25135,6 +24719,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -25625,6 +25210,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -26074,6 +25660,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -26522,6 +26109,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -26970,6 +26558,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -27412,6 +27001,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -27864,6 +27454,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -28390,6 +27981,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -28832,6 +28424,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -29284,6 +28877,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -29808,6 +29402,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -30332,6 +29927,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -30858,6 +30454,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -31382,6 +30979,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -31906,6 +31504,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -32427,6 +32026,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -32944,6 +32544,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -33461,6 +33062,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -33990,6 +33592,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -34511,6 +34114,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -35033,6 +34637,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -35667,6 +35272,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",
@@ -36109,6 +35715,7 @@
               "article.authors",
               "article.affiliations",
               "article.localizations",
+              "sender.signature",
               "sender.name",
               "sender.role",
               "sender.department",

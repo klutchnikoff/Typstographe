@@ -232,7 +232,7 @@ fn drafts_are_valid_without_required_export_fields_and_models_are_embedded() {
     let template = s.state().unwrap().settings.template.clone() + "\n// project-owned version\n";
     s.execute(
         "document.set_model",
-        json!({"model_id":"article.model.working","source":template}),
+        json!({"model_id":"article.model.working","source":template,"manifest":s.state().unwrap().settings.model_manifest}),
     )
     .unwrap();
     assert_eq!(
@@ -366,11 +366,34 @@ fn admitted_images_signatures_and_figures_share_retention_and_runtime_undo() {
         &[
             call("resource.add", json!({"resource":resource})),
             serde_json::from_value(figure).unwrap(),
-            call("document.set_signature", json!({"path":path})),
+            call(
+                "metadata.set",
+                json!({"target":{"kind":"metadata","field":"sender.signature"},"value":path}),
+            ),
         ],
         None,
     )
     .unwrap();
+    let signature = describe_type("courrier").unwrap()["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["field"] == "sender.signature")
+        .unwrap()
+        .clone();
+    assert_eq!(signature["kind"], "resource-reference");
+    assert_eq!(signature["resource"]["kind"], "image");
+    assert!(
+        super::queries::zones(s.state().unwrap())
+            .iter()
+            .all(|zone| !matches!(
+                zone.zone,
+                TextZone::Metadata {
+                    field: crate::document_types::MetadataField::SenderSignature
+                }
+            ))
+    );
+    assert!(s.execute("text.insert",json!({"target":{"zone":{"kind":"metadata","field":"sender.signature"},"from":0,"to":0},"text":"overwrite"})).is_err());
     let dir = tempfile::tempdir().unwrap();
     let file = dir.path().join("signed.typsto");
     s.save_as(&file).unwrap();
@@ -389,7 +412,10 @@ fn admitted_images_signatures_and_figures_share_retention_and_runtime_undo() {
                 "block.remove",
                 json!({"target":{"root":{"kind":"body"},"path":[0]}}),
             ),
-            call("document.set_signature", json!({"path":null})),
+            call(
+                "metadata.set",
+                json!({"target":{"kind":"metadata","field":"sender.signature"},"value":null}),
+            ),
         ],
         Some(Save::Current),
     )

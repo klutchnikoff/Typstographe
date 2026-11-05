@@ -70,7 +70,7 @@ l’historique confirmés. L’export multi-fichiers reste une opération sépar
 
 Les chemins d’import implicites de l’ancien contrat disparaissent : `resource.add`
 reçoit les octets validés (base64 sur le fil), `document.set_model` le source
-Typst. Seuls les chemins documentaires d’ouverture, sauvegarde et export sont
+Typst et son manifeste YAML embarqué. Seuls les chemins documentaires d’ouverture, sauvegarde et export sont
 résolus par les adaptateurs. Les préférences personnelles ne sont pas implicites.
 
 ## Recettes et limites

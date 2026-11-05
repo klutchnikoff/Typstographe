@@ -92,8 +92,8 @@ fn document_options_control_real_page_dimensions_and_text_language() {
         (PaperFormat::Legal, 215.9, 355.6),
     ] {
         for landscape in [false, true] {
-            metadata.options_mut().paper = paper;
-            metadata.options_mut().landscape = landscape;
+            metadata.options_mut().paper = Some(paper);
+            metadata.options_mut().landscape = Some(landscape);
             {
                 let document = world.compile_with_template("A short letter.", &metadata,
                     "#let courrier(..args, options: (:), body) = { set page(paper: options.paper, flipped: options.landscape); set text(lang: options.language); body }").unwrap();
@@ -110,8 +110,8 @@ fn document_options_control_real_page_dimensions_and_text_language() {
             }
         }
     }
-    metadata.options_mut().paper = PaperFormat::A4;
-    metadata.options_mut().landscape = false;
+    metadata.options_mut().paper = Some(PaperFormat::A4);
+    metadata.options_mut().landscape = Some(false);
     for language in DocumentLanguage::ALL {
         metadata.options_mut().language = language;
         let document = world
@@ -176,48 +176,60 @@ fn literal_metadata_and_structured_body_cannot_execute_typst_markup() {
 }
 
 #[test]
-fn compilation_respects_fixed_allowed_and_custom_model_bullet_policies() {
-    use crate::errors::{CoreError, TemplateError};
+fn rendering_uses_imposed_and_restricted_bullets_without_rewriting_retained_choices() {
+    use crate::document_types::model_options::{self, OptionId, Policy};
+    use serde_json::json;
+    use typst::World;
     let mut world = crate::rendering::TypstWorld::default();
     let mut metadata = Metadata::demo(DocumentType::Courrier);
-    let fixed = "#let courrier(..args,body) = body";
     metadata.options_mut().bullet_marker = Some("—".into());
-    assert!(matches!(
-        world.compile_with_template("Texte", &metadata, fixed),
-        Err(CoreError::TemplateError(
-            TemplateError::BulletMarkerNotAllowed
-        ))
-    ));
-    let allowed = format!(
-        "#let editor-options = (bullet-markers: (\"—\",), custom-bullet-marker: false)\n{fixed}"
+    let template = "#let courrier(options: (:), ..args, body) = [#options.bullet-marker #body]";
+    let mut manifest =
+        model_options::load(DocumentType::Courrier.default_model_manifest()).unwrap();
+    manifest.options.insert(
+        OptionId::BulletMarker,
+        Policy::Imposed {
+            value: json!("•")
+        },
     );
+    let source = yaml_serde::to_string(&manifest).unwrap();
+    world
+        .compile_with_model("Text", &metadata, template, &source)
+        .unwrap();
+    assert_eq!(metadata.options().bullet_marker.as_deref(), Some("—"));
     assert!(
         world
-            .compile_with_template("Texte", &metadata, &allowed)
-            .is_ok()
+            .source(crate::rendering::file_id("main.typ"))
+            .unwrap()
+            .text()
+            .contains("bullet-marker: \"•\"")
     );
-    metadata.options_mut().bullet_marker = Some("•".into());
+    manifest.options.insert(
+        OptionId::BulletMarker,
+        Policy::Restricted {
+            allowed: vec![json!("▪")],
+            default: json!("▪"),
+        },
+    );
+    world
+        .compile_with_model(
+            "Text",
+            &metadata,
+            template,
+            &yaml_serde::to_string(&manifest).unwrap(),
+        )
+        .unwrap();
     assert!(
         world
-            .compile_with_template("Texte", &metadata, &allowed)
-            .is_err()
-    );
-    let custom = format!("#let editor-options = (custom-bullet-marker: true)\n{fixed}");
-    assert!(
-        world
-            .compile_with_template("Texte", &metadata, &custom)
-            .is_ok()
+            .source(crate::rendering::file_id("main.typ"))
+            .unwrap()
+            .text()
+            .contains("bullet-marker: \"▪\"")
     );
     metadata.options_mut().bullet_marker = Some("\n".into());
     assert!(
         world
-            .compile_with_template("Texte", &metadata, &custom)
+            .compile_with_model("Text", &metadata, template, &source)
             .is_err()
-    );
-    metadata.options_mut().bullet_marker = None;
-    assert!(
-        world
-            .compile_with_template("Texte", &metadata, fixed)
-            .is_ok()
     );
 }

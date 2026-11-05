@@ -104,9 +104,32 @@ fn set_field(
     if let crate::content::commands::FieldTarget::Option { name } = target {
         return super::settings::set_option(doc, state, *name, value);
     }
+    let mut presentation = false;
+    if let FieldTarget::Metadata { field } = target {
+        let kind = state.settings.metadata.document_type();
+        let field_id = serde_json::to_value(field).expect("field identity");
+        if let Some(id) = kind
+            .definition()
+            .definition()
+            .fields
+            .iter()
+            .find(|f| f.id() == field_id.as_str().unwrap())
+            .and_then(|f| f.presentation())
+        {
+            crate::document_types::model_options::load(&state.settings.model_manifest)
+                .and_then(|m| m.check_write(id, value))
+                .map_err(super::projection::invalid)?;
+            presentation = true;
+        }
+    }
     let (map, key, before, kind) = targets::field(doc, &doc.transact(), state, target)?;
     let valid = match kind.as_str() {
-        "text" | "multiline" | "source" | "language" => value.is_string(),
+        "text" | "multiline" | "source" | "language" | "choice" => value.is_string(),
+        "resource-reference" => {
+            serde_json::from_value::<Option<crate::resources::ResourceReference>>(value.clone())
+                .is_ok()
+        }
+        "date" => serde_json::from_value::<Option<crate::dates::DateValue>>(value.clone()).is_ok(),
         "boolean" => value.is_boolean(),
         "tokens" | "references" => value
             .as_array()
@@ -118,7 +141,7 @@ fn set_field(
             ));
         }
     };
-    if !valid {
+    if !valid && !(presentation && value.is_null()) {
         return Err(parameter("value"));
     }
     if kind == "language"
@@ -373,9 +396,7 @@ fn format(
 }
 pub(super) fn apply(doc: &Doc, state: &State, command: &Command) -> Result<(), Error> {
     match command {
-        Command::SetModel { .. } | Command::SetSignature { .. } => {
-            super::settings::apply(doc, state, command)
-        }
+        Command::SetModel { .. } => super::settings::apply(doc, state, command),
         Command::AddResource { .. } => {
             unreachable!("resource commands are prepared with their private assets")
         }

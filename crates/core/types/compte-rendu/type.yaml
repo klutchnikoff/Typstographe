@@ -1,0 +1,83 @@
+# Built-in type contract. Presentation belongs to the Typst model.
+---
+contract-version: 1
+id: compte-rendu
+label-key: minutes-type
+description-key: type-card-compte-rendu-description
+settings-heading-key: minutes-settings-heading
+composition:
+  function: compte-rendu
+fields:
+- id: meeting.title
+  kind: text
+  label-key: field-meeting-title
+  required-for-export: true
+- id: meeting.date
+  kind: date
+  label-key: field-date
+- id: meeting.place
+  kind: text
+  label-key: field-meeting-place
+- id: meeting.author
+  kind: text
+  label-key: field-minutes-author
+- id: meeting.attendees
+  kind: text
+  label-key: field-attendees
+  multiline: true
+- id: meeting.apologies
+  kind: text
+  label-key: field-apologies
+  multiline: true
+capabilities:
+- block.paragraph
+- block.heading_1
+- block.heading_2
+- block.heading_3
+- text.bold
+- text.italic
+- text.link
+- block.bullet
+- block.numbered
+- block.description
+- block.quote
+- insert.image
+- insert.table
+- insert.footnote
+bindings:
+- field: meeting.title
+  typst-parameter: titre
+- field: meeting.date
+  typst-parameter: date
+- field: meeting.place
+  typst-parameter: lieu
+- field: meeting.author
+  typst-parameter: redacteur
+- field: meeting.attendees
+  typst-parameter: participants
+- field: meeting.apologies
+  typst-parameter: excuses
+header:
+  tabs:
+  - id: meeting
+    label-key: group-meeting
+    view: form
+    sections:
+    - id: meeting
+      label-key: group-meeting
+      fields:
+      - meeting.title
+      - meeting.date
+      - meeting.place
+      - meeting.author
+      layout: editorial
+  - id: attendees
+    label-key: group-attendees
+    view: form
+    sections:
+    - id: attendees
+      label-key: group-attendees
+      fields:
+      - meeting.attendees
+      - meeting.apologies
+      layout: editorial

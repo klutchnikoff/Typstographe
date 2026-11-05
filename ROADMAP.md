@@ -1,11 +1,11 @@
 # Feuille de route de typstOgraphe
 
-Révisée le **1er novembre 2026**. Objectif : transformer le prototype validé en une
+Révisée le **3 novembre 2026**. Objectif : transformer le prototype validé en une
 application de rédaction utilisable au quotidien, pour l’administration,
 l’enseignement et la recherche en sciences humaines et sociales.
 
-Cette feuille de route ne contient que le travail restant. Les réalisations,
-mesures et décisions historiques restent dans Git et les bilans de docs/.
+Cette feuille distingue le socle livré des travaux restants. Les réalisations
+détaillées, mesures et décisions historiques restent dans Git et les bilans de docs/.
 Le [plan technique](ROADMAP-ARCHITECTURE.md) précise les dépendances et les
 conditions de sortie ; il ne constitue pas une seconde liste de fonctionnalités.
 
@@ -89,6 +89,13 @@ candidat sur les trois systèmes reste distincte des résultats macOS locaux.
 Le socle ne constitue pas encore un outil de rédaction complet : les lots
 ci-dessous portent les fonctionnalités restantes et leurs arbitrages.
 
+B.1 est clôturé après relecture le 3 novembre 2026 ; le
+[bilan de clôture](docs/b1-closure-results.md) rassemble les critères acquis,
+les contrats, les preuves et les limites. Déclarations de types, `authorship`,
+options de modèles, dates et références d’images sont raccordés aux adaptateurs.
+Courrier et Article sont créables ; le Compte-rendu reste un contrat interne
+sans modèle fourni. Le chantier B continue pour les autres types.
+
 ## B — Définir les types utiles et leurs contrats
 
 Le [catalogue validé et les fiches par type](docs/document-type-catalogue.md)
@@ -127,34 +134,31 @@ formulaires ; le dernier est une zone composée de sections décrites par le typ
 avec les informations propres au document. Ces contrôles éditent les valeurs
 structurées existantes, sans duplication dans le corps ni dépendance aux fonctions
 internes des modèles. Pour l’Article : Général, Titres (titre, sous-titre et titre
-court par langue), Affiliations, Auteurs, Résumés (résumé riche et mots-clés par
-langue) et Bibliographie. Les mêmes enregistrements multilingues alimentent
+court par langue), Résumés (résumé riche et mots-clés par langue), Affiliations,
+Auteurs et Bibliographie. Les mêmes enregistrements multilingues alimentent
 Titres et Résumés.
 Les ajouts par + sont provisoires jusqu’à validation et annulables par Échap ;
 ils ne sont pas diffusés ni sauvegardés avant confirmation. La
 [décision détaillée](docs/types-modeles-libertes.md#interface-de-len-tête--décision-du-27-octobre-2026)
 et le [contrat Article](docs/article-contract.md) servent de référence.
 
-**Décisions à mettre en œuvre et arbitrages avant refonte :**
+### Extensions des contrats — différées
 
-- Types intégrés en Rust ou définition déclarative : la note propose une évolution,
-  qui doit être validée avant de remplacer l’organisation actuelle.
-- Mettre en œuvre le choix validé pour les modèles : options de présentation
-  libres, restreintes ou imposées, y compris pour les capacités du type. Le type
-  définit les capacités disponibles ; tous ses modèles doivent les présenter,
-  sans suppression ni masquage de contenu. Les métadonnées de contenu restent
-  celles de l’auteur.
-- Dates : conserver une valeur structurée et la langue du document ; décider
-  de l’évolution éventuelle du contrat en tenant compte de l’adaptateur Typst
-  et de Datify. Ne pas déplacer implicitement la composition vers Fluent.
-- Listes d’enregistrements et champs facultatifs : préciser les genres et les
-  valeurs absentes. Pour les options de présentation, distinguer choix conservé
-  et valeur effective : un modèle imposé ne réécrit pas le choix ; une valeur
-  exclue utilise le défaut avec avertissement. Le retour au modèle précédent
-  retrouve le choix conservé lorsqu’il est de nouveau autorisé.
+B.1 est clôturé. Les extensions suivantes restent à examiner selon les besoins,
+sans retarder le prochain lot C.1 :
 
-**Sortie :** une fiche par type retenu et une matrice type/capacité/modèle,
-compréhensibles pour l’utilisateur, le créateur de modèles et les agents.
+- Types installables, codecs de données arbitraires et personnalisation des
+  fragments partagés : les identités et comportements restent intégrés ;
+  modifier une déclaration livrée demande une reconstruction.
+- Paramètres entièrement propres à un modèle : étendre les régimes et contrôles
+  communs après validation dans D.
+- Dates ou ressources en collections, nouveaux genres de ressources et précision
+  calendaire supplémentaire : valider leurs contrôles avant d’étendre le
+  vocabulaire ; les formes non prises en charge sont refusées.
+
+**Suite du chantier B :** définir les prochains types et fournir une fiche et
+une matrice type/capacité/modèle, au rythme des besoins et des capacités livrées.
+Le Document libre et les nouveaux contrats de types restent à préciser.
 
 ## C — Compléter les capacités à partir des besoins des types
 
@@ -190,6 +194,43 @@ présentation et les défauts. Les identifiants publics restent anglais ou latin
 Une dépendance ou une logique Typst spécifique passe par un adaptateur stable ;
 les primitives natives simples n’ont pas besoin d’un wrapper systématique.
 
+### Lots validés le 3 novembre 2026 — après les contrats de B.1
+
+B.1 est clôturé. L’ordre de réalisation validé est désormais
+**C.1 → C.2 → C.3 → C.4**, à partir des contrats préparatoires consignés en B.1.
+Valider ensemble les choix détaillés et les interfaces avant de coder chaque
+lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C.
+
+1. **C.1 — Labels et références croisées.** Cibles à identité stable pour titres,
+   images et tableaux, extensibles aux équations et théorèmes ; insertion depuis
+   un sélecteur, badge éditable et protection des cibles référencées. Typst et le
+   modèle composent les numéros et le texte des renvois.
+2. **C.2 — Formules mathématiques.** Saisie de code Typst ou LaTeX via MiTeX,
+   dans le texte ou en bloc ; conserver le langage et la source, prévoir la
+   description accessible et les références aux blocs. L’éditeur visuel viendra
+   ensuite sur le même objet, sans promettre une conversion réversible des
+   syntaxes.
+3. **C.3 — Bibliographie du projet.** Consolider les imports BibLaTeX et Hayagriva
+   dans un unique fichier Hayagriva interne au `.typsto` et à l’export. Remplacer
+   le contrat actuel de plusieurs fichiers originaux après évaluation des pertes
+   de conversion, des collisions et de la conservation des citations.
+   Ajouter un gestionnaire dans une grande modale : à gauche, recherche fuzzy
+   sur titres et auteurs, notices filtrées et bouton + ; à droite, formulaire
+   adapté au genre de la notice. Création, modification et suppression protégée
+   des notices citées ; brouillon local avec Annuler/Enregistrer et choix explicite
+   avant de quitter une notice modifiée. Réutiliser le formulaire depuis
+   l’insertion de citation avec « Créer et citer », en une opération annulable.
+4. **C.4 — Bibliothèque bibliographique personnelle.** Recherche projet d’abord,
+   bibliothèque personnelle ensuite ; copier la notice dans le projet lors de
+   l’insertion. Échanges et corrections explicites, identités et clés stables,
+   conflits soumis à décision, aucune mise à jour silencieuse des documents.
+   Réutiliser le gestionnaire avec un choix Projet/Bibliothèque personnelle.
+
+La séparation bibliothèque personnelle/projet et les garanties de citekeep
+servent de référence de conception ; son intégration comme moteur et le format
+de la bibliothèque personnelle ne sont pas décidés. Chaque projet reste autonome
+et utilisable hors ligne, indépendamment de cette bibliothèque.
+
 **Choix à valider :** périmètre par capacité, paramètres, contenus et imbrications
 autorisés, saisie, clavier et cibles MCP ; fonctions natives ou paquet externe.
 
@@ -221,7 +262,8 @@ vérifiés, avec la même disponibilité dans les interfaces qui exposent la cap
 - Vérifier les conventions typographiques et les langues sur des exemples réels ;
   garder leur composition dans Typst et les règles de modèles.
 
-**Choix à valider :** format des manifestes et des paquets, paramètres exposés,
+**Choix à valider :** format des paquets installables, extensions du manifeste
+`model.yaml` livré en B.1 et paramètres propres aux modèles,
 polices et licences d’incorporation, import, stockage et politique de mise à jour.
 
 **Accessibilité des exports :** viser PDF/UA-1, avec un profil PDF/A pour
@@ -527,12 +569,17 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 ## Prochain lot proposé
 
-1. Vérifier la qualification CI du candidat A.5, puis préciser ensemble le
-   prochain périmètre de types et capacités (**B/C**).
-2. Reprendre le périmètre administratif restant, un type à la fois,
-   avec un modèle utile et une recette représentative.
-3. Engager ACP après stabilisation du contrat documentaire et validation de sa
-   maquette (**F**), sans attendre la livraison de tous les types SHS/enseignement.
+**C.1 — Labels et références croisées**, après la clôture de B.1.
 
-Ce prochain lot est une proposition à discuter ; cette réécriture documentaire
-n’autorise pas à implémenter d’avance les choix encore ouverts.
+1. Valider ensemble les identités et labels lisibles, les formes de renvois,
+   les règles de copie/suppression des cibles utilisées et les paramètres
+   laissés aux modèles. Commencer par titres, images et tableaux.
+2. Maquetter le sélecteur et les badges avec les composants communs, préciser
+   clavier et cibles CLI/MCP, puis implémenter le lot après validation.
+3. Poursuivre dans l’ordre C.2, C.3, C.4 et compléter les types/modèles selon
+   leurs besoins. L’assistance ACP conserve son propre parcours de validation
+   et de maquette dans F ; elle n’attend pas tous les types SHS/enseignement.
+
+La qualification CI du candidat reste à consulter avant fusion. La clôture
+locale de B.1 ne vaut pas qualification multisystème ni autorisation d’implémenter
+les choix encore ouverts de C.1.

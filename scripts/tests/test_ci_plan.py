@@ -21,7 +21,8 @@ class CIPlanTests(unittest.TestCase):
         for name in ["app/src/main.ts", "crates/core/src/lib.rs", "scripts/check_file_length.py",
                      "assets/font.ttf", "examples/article.typsto", ".cargo/config.toml",
                      "new-component/config.json", "docs/commands.json", "app/src/embedded.md",
-                     "crates/core/assets/vendor/README.md"]:
+                     "crates/core/assets/vendor/README.md", "crates/core/types/article/type.yaml",
+                     "docs/schemas/model-manifest.schema.json", "docs/schemas/type-definition.schema.json", "docs/proposals/b1/article-authorship.yaml"]:
             self.assertTrue(planner.plan([name])["code"], name)
 
     def test_manifests_locks_and_ci_changes_keep_dependency_audits(self):
@@ -78,11 +79,28 @@ class CIPlanTests(unittest.TestCase):
                          ["tests/browser/tables.spec.ts"])
         self.assertIn("tests/browser/bands.spec.ts",
                       planner.browser_recipes(["patches/@tiptap+y-tiptap+3.0.10.patch"], root))
+        self.assertEqual(planner.browser_recipes(["crates/core/types/article/type.yaml"], root),
+                         ["tests/browser/article.spec.ts", "tests/browser/bibliography.spec.ts",
+                          "tests/browser/document-types.spec.ts", "tests/browser/metadata.spec.ts"])
+        self.assertEqual(planner.browser_recipes(["crates/core/structures/authorship.yaml"], root),
+                         planner.browser_recipes(["crates/core/types/article/type.yaml"], root))
+        self.assertIn("tests/browser/model-options.spec.ts", planner.browser_recipes(["crates/core/templates/article-working.model.yaml"], root))
         # A shared helper selects each recipe importing it.
         self.assertIn("tests/browser/title-dialogs.spec.ts",
                       planner.browser_recipes(["app/tests/browser/record-dialog-controls.ts"], root))
         for paths in [None, [], ["README.md"], ["crates/core/src/lib.rs"], ["app/src/main.ts"]]:
             self.assertEqual(planner.browser_recipes(paths, root), [], paths)
+
+    def test_date_contract_and_wrapper_changes_run_metadata_recipes(self):
+        for source in ["crates/core/src/dates.rs", "crates/core/templates/capabilities/dates.typ"]:
+            self.assertEqual(planner.browser_recipes([source]), [
+                "tests/browser/metadata.spec.ts", "tests/browser/structured-metadata.spec.ts"])
+
+    def test_resource_contract_changes_cover_metadata_and_recovery(self):
+        for source in ["crates/core/src/resources.rs", "app/src/metadata-resource.ts"]:
+            recipes = planner.browser_recipes([source])
+            self.assertIn("tests/browser/structured-resources.spec.ts", recipes)
+            self.assertIn("tests/browser/recovery-resume.spec.ts", recipes)
 
     def test_every_browser_area_names_existing_sources_and_recipes(self):
         root = SCRIPT.parents[2]

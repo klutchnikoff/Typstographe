@@ -21,6 +21,11 @@ fn type_indexes_lead_to_exact_metadata_and_capability_details_without_eager_sche
                 .find(|entry| entry["id"] == json!(kind))
                 .unwrap();
             assert!(summary.get("metadata").is_none());
+            assert!(summary.get("definition").is_none());
+            assert_eq!(
+                description["definition"],
+                json!(kind.definition().definition())
+            );
             assert_eq!(summary["models"], canonical["models"]);
             assert_eq!(description["metadata"], canonical["metadata"]);
             assert_eq!(description["fields"], canonical["fields"]);

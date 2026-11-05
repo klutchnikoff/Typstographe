@@ -2,7 +2,6 @@
 #import "capabilities/authorship.typ": prepare-authorship, show-authorship
 #import "capabilities/abstracts.typ": show-abstracts, abstract-labels
 #import "capabilities/references.typ": reference-list
-#let editor-options = (bullet-markers: (), custom-bullet-marker: false, outline: true, citation-styles: ("chicago-author-date", "apa", "ieee"))
 #let article(localizations: (), authors: (), affiliations: (), references: (), citation-style: "chicago-author-date", show-outline: false, options: (
   paper: "a4", landscape: false, language: "fr", bullet-marker: auto,
 ), body) = {

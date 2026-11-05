@@ -41,7 +41,6 @@ function capabilities(): Capability[] {
     icon: 'pilcrow',
     node: null,
     mark: id === 'text.bold' ? 'bold' : null,
-    letter_only: false,
     parameters: {},
     editor: { availability: availability as 'style' },
   }))

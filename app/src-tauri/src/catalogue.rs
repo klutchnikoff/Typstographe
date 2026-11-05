@@ -26,32 +26,23 @@ fn document_type(kind: DocumentType) -> Value {
                 Model::Personal => text("model-personal-letter"),
                 Model::ArticleWorking => text("model-working-article"),
             };
-            let page = model
-                .page
-                .map(|(paper, landscape)| json!({"paper":paper,"landscape":landscape}));
             json!({
                 "id":model.model.id(), "label":label, "description":model.description,
-                "keywords":model.keywords, "source":model.source, "fixedPage":page,
-                "policy":typstographe_core::rendering::TypstWorld::default().model_presentation(model.source).expect("bundled model policy")
+                "keywords":model.keywords, "source":model.source, "manifest":model.manifest,
+                "policy":typstographe_core::document_types::model_options::describe(model.manifest,&metadata).expect("bundled model policy")
             })
         })
         .collect();
-    let heading = if kind == DocumentType::Article {
-        "article-settings-heading"
-    } else if kind == DocumentType::Courrier {
-        "document-settings-heading"
-    } else {
-        "minutes-settings-heading"
-    };
+    let heading = kind.settings_heading_key();
     let groups: Vec<_> = metadata
         .editor_groups()
         .iter()
         .map(|group| {
             let sections: Vec<_> = group.sections.iter().map(|section| json!({
-                "id": section.id, "label": text(section.label_key), "fields": section.fields,
+                "id": section.id, "label": text(&section.label_key), "fields": section.fields,
                 "layout": section.layout
             })).collect();
-            json!({"id":group.id,"label":text(group.label_key),"sections":sections})
+            json!({"id":group.id,"label":text(&group.label_key),"sections":sections})
         })
         .collect();
     let mut structured = kind.structured_metadata();
@@ -138,6 +129,54 @@ pub fn content_catalogue() -> Value {
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
+
+    #[test]
+    fn localized_type_views_and_capabilities_follow_the_same_loaded_contract_as_cli_and_mcp() {
+        for kind in DocumentType::ALL {
+            let view = document_type(kind);
+            let canonical = typstographe_core::content::api::type_description(kind);
+            let definition = kind.definition().definition();
+            assert_eq!(view["settingsHeading"], text(kind.settings_heading_key()));
+            assert_eq!(
+                view["groups"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|g| g["id"].as_str().unwrap())
+                    .collect::<Vec<_>>(),
+                definition
+                    .header
+                    .tabs
+                    .iter()
+                    .map(|t| t.id())
+                    .collect::<Vec<_>>()
+            );
+            assert_eq!(
+                view["capabilities"].as_array().unwrap().len(),
+                definition.capabilities.len()
+            );
+            assert!(
+                view["capabilities"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|id| definition.capabilities.iter().any(|d| json!(d) == *id))
+            );
+            for field in view["fields"].as_array().unwrap() {
+                let original = canonical["fields"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|f| f["field"] == field["field"])
+                    .unwrap();
+                assert_eq!(field["parameter"], original["parameter"]);
+                assert_eq!(
+                    field["required_for_export"],
+                    original["required_for_export"]
+                );
+            }
+        }
+    }
 
     #[test]
     fn editorial_sections_keep_localized_labels_and_canonical_field_bindings() {

@@ -385,7 +385,7 @@ fn invalid_index_and_envelope_are_refused() {
             "date" => index["snapshots"][0]["created_at"] = "2026-10-31T12:00:00+02:00".into(),
             "unknown-field" => index["unexpected"] = true.into(),
             "nil-project" => manifest["project_id"] = Uuid::nil().to_string().into(),
-            "future-version" => manifest["version"] = 12.into(),
+            "future-version" => manifest["version"] = (FORMAT_VERSION + 1).into(),
             "invalid-hash" => manifest["current"] = "sha256:../escape".into(),
             "path" => {
                 files.insert("objects/sha256/../escape".into(), vec![]);

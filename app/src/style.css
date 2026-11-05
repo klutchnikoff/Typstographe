@@ -843,14 +843,19 @@ summary svg {
 .metadata-field-controls textarea {
   resize: vertical;
 }
-/* A date keeps a readable input; its auxiliary action wraps on narrow columns. */
+/* Keep the editable value aligned with its label; compact actions occupy one row below. */
 .metadata-date-controls {
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.metadata-date-controls select {
+  min-width: 0;
+  width: 100%;
+  padding: 4px 8px;
 }
 .metadata-date-controls input {
-  width: auto;
-  flex: 1 1 140px;
-  max-width: 100%;
+  grid-column: 1 / -1;
+  width: 100%;
 }
 .metadata-date-clear {
   display: inline-flex;
@@ -895,23 +900,6 @@ summary svg {
 .metadata-section-compact input,
 .metadata-section-compact textarea {
   padding: 4px 8px;
-}
-.metadata-signature {
-  padding: 8px 10px;
-}
-.metadata-signature-controls {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-}
-.metadata-signature-controls > input {
-  flex: 1 1 180px;
-  min-width: 0;
-  max-width: 100%;
-}
-.metadata-signature-controls .panel-actions {
-  margin: 0 0 0 auto;
 }
 @container (max-width: 560px) {
   .metadata-section-compact {
@@ -2325,4 +2313,26 @@ li:has(.interline-band-gap[data-marker])::marker {
   .type-model-band {
     padding: 10px 16px;
   }
+}
+
+/* Type-defined image fields share preview, input and actions in every metadata section. */
+.metadata-section .field.metadata-resource-field {
+  display: block;
+}
+.metadata-resource-preview {
+  display: block;
+  max-width: min(100%, 220px);
+  max-height: 72px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+.metadata-resource-preview[hidden] {
+  display: none;
+}
+.metadata-resource-controls input {
+  width: 100%;
+  min-width: 0;
+}
+.metadata-resource-controls .panel-actions {
+  margin: 8px 0 0;
 }

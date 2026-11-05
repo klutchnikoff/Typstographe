@@ -142,9 +142,6 @@ pub(super) fn read(doc: &Doc) -> Result<State, Error> {
             fields["options"][key] = value(out, &tx)?;
         }
     }
-    if let Some(out) = root.get(&tx, "signature") {
-        fields.insert("signature".into(), value(out, &tx)?);
-    }
     if let Some(out) = root.get(&tx, "collections") {
         let Out::YMap(collections) = out else {
             return Err(invalid("collections_must_be_shared_map"));
