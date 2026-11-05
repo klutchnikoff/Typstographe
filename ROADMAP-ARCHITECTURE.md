@@ -152,8 +152,22 @@ la livraison de tous les types de B n’est pas un prérequis.
   reconstructions complètes et synchronisations vérifiées. Sur 24 pages,
   édition de formule : 270 ms en RGBA complet, 102 ms pour les deux candidats
   différentiels ; premier rendu : 713 ms en RGBA différentiel et 455 ms pour
-  Reflexo. Proposition : RGBA différentiel d’abord, puis pages visibles en
-  priorité au premier rendu. Reflexo reste une référence évaluée ; son format
+  Reflexo. La [contre-épreuve VS Code/Tinymist et parcours commun](experiments/tinymist-pipeline/RESULTS.md)
+  affine l’arbitrage : sur 24 pages, deux frames après une édition de formule,
+  47 ms p50 dans Tinymist avec rendu partiel, 123 ms dans notre candidat RGBA ;
+  p95 respectifs 168 et 126 ms. Les premières mutations SVG précèdent parfois
+  le post-traitement : ne pas les comparer à notre callback de publication.
+  Les 24 sessions vérifient 792 états de source identiques ; six comparaisons
+  natives de synchronisation et les reconstructions/erreurs passent.
+  Priorités proposées : dédupliquer les rafraîchissements d’interface et éviter
+  les transactions de références inchangées, puis réduire les allocations de
+  projection et étudier la mise en cache/indexation à la demande de RenderSync.
+  Préserver UTF-16, échappements, zones et gardes ; mesurer chaque gain avant
+  l’arbitrage final RGBA / SVG partiel, idéalement dans le même hôte WebKit.
+  Le contrôle automatisé source→aperçu dans VS Code reste non concluant ;
+  les retours par Cmd-clic et les parcours natifs passent. Le premier chargement
+  VS Code est exploratoire et non monotone ; aucun classement sur ce point.
+  RGBA différentiel et Reflexo restent des candidats évalués ; le format
   Rust/WASM doit être assorti et ses adaptations à Typst officiel, notamment
   les PDF importés, demandent une qualification de production.
   À valider avant intégration : protocole et cache par document/génération,

@@ -223,8 +223,15 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    pour une édition de formule sur 24 pages. Reflexo atteint aussi 102 ms et
    accélère le premier rendu complet (455 ms contre 713 ms), avec un transfert
    plus petit mais des adaptations et une qualification supplémentaires.
-   Proposition : intégrer d’abord le RGBA différentiel, puis évaluer le rendu
-   initial des pages visibles. Le protocole de production reste à valider :
+   La [contre-épreuve dans VS Code/Tinymist](experiments/tinymist-pipeline/RESULTS.md)
+   complète cette conclusion : sur 24 pages, deux frames après une édition de
+   formule, p50 de 47 ms dans Tinymist avec rendu partiel, contre 123 ms dans
+   notre candidat RGBA (p95 respectifs 168 et 126 ms). La première étude ne
+   comparait que les renderers dans notre parcours commun.
+   Priorité proposée : réduire les rafraîchissements d’interface et transactions
+   de références inutiles, puis étudier les cartes de source/synchronisation.
+   Réévaluer ensuite RGBA et SVG partiel avant de figer le renderer ; conserver
+   le RGBA différentiel comme candidat qualifié. Le protocole reste à valider :
    cache par document/génération, options et flux de vue, réinitialisation,
    refus des résultats périmés, cartes de synchronisation actualisées et tests
    multi-fenêtres/erreurs/révisions sans changement de pixels. L’application

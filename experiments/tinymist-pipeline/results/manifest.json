@@ -1,0 +1,36 @@
+{
+  "application_commit": "49c789ff5d020bf2effc61d170a98bd08e61a4a1",
+  "scope": "Native common pipeline scalar profiling and real VS Code Tinymist comparison",
+  "reflexo_commit": "e1974e566ba63dcf8ecdd6730cff25de26c7dbd2",
+  "renderer_version": "0.8.0-rc3",
+  "typst": "0.15.1",
+  "variants": [
+    "rgba-delta",
+    "reflexo",
+    "vscode-partial",
+    "vscode-full"
+  ],
+  "tinymist_version": "tinymist \nBuild Timestamp:     2026-11-03T06:24:32.789738000Z\nBuild Git Describe:  v0.15.12\nCommit SHA:          9681433b09c3ae15b9794a42a399fecec0aa0747\nCommit Date:         None\nCommit Branch:       None\nCargo Target Triple: aarch64-apple-darwin\nTypst Version:       0.15.1\nTypst Source:        git+https://github.com/Myriad-Dreamin/typst.git?tag=tinymist/v0.15.1#59b5999da8e74e74583069408d2564fc1f9bc973\n\n",
+  "tinymist_sha256": "92f1d92e7822be822a054aa29a97b4099439ee907c6676034a5002d572ae2f67",
+  "vscode_version": "1.144.0\n2c33b50b16c472efe58357d1d2a8a5414bc23fbf\narm64",
+  "repetitions": 2,
+  "source_states_per_run": 33,
+  "common_pipeline_instrumentation": "Scalar counters and milestones; no profiling trace or screenshot",
+  "identity": "All paragraph identities deterministic in benchmark inputs only",
+  "initial_protocol": "Initialized blank Article, then insert complete corpus; first-render results have only two observations",
+  "native_environment": {
+    "cpu": "Apple M1 Max",
+    "ram": 34359738368,
+    "os": "25.6.0",
+    "arch": "arm64",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01) (Homebrew)"
+  },
+  "native_binary_sha256": "2348e3b9e2f3c5eb4586c1f9f9abdcea1b01dd147a0d4bb13624e6af3b39d7d0",
+  "vscode_browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/150.0.7871.250",
+    "revision": "@f916f1b7136907af19d96b95b891533d091d932a",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.144.0 Chrome/150.0.7871.250 Electron/43.8.3 Safari/537.36",
+    "jsVersion": "15.0.245.31"
+  }
+}

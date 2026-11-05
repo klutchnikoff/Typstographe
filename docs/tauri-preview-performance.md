@@ -219,3 +219,25 @@ complet. Les reconstructions et les synchronisations passent les contrôles
 natifs. La proposition est d’intégrer le RGBA différentiel en premier, après
 validation du protocole de flux et de ses garanties multi-vues. Ce benchmark
 ne modifie pas le chemin de rendu décrit plus haut pour l’application.
+
+
+## Contre-épreuve VS Code/Tinymist et parcours commun — 5 novembre 2026
+
+Le [bilan complémentaire](../experiments/tinymist-pipeline/RESULTS.md) compare
+la véritable extension VS Code/Tinymist, avec SVG partiel ou complet, à nos
+deux candidats instrumentés : 24 sessions, 792 états de source vérifiés et
+géométrie identique. Sur 24 pages, deux frames après une édition de formule :
+47 ms p50 dans Tinymist avec rendu partiel, 123 ms en RGBA différentiel chez nous.
+Les p95 sont respectivement 168 et 126 ms ; le pic Tinymist est conservé.
+
+La première mutation SVG et notre callback après publication/références ne
+sont pas des événements de fin équivalents. L’attente de deux frames reste
+un indicateur de navigateur, sans datation de présentation GPU. Les hôtes et
+éditeurs diffèrent : cette mesure ne chiffre pas le seul apport de SVG.
+
+Les compteurs communs mesurent quatre rafraîchissements d’interface par édition
+(environ 21 ms cumulés), une publication de références avec transaction (8 ms),
+la carte source (11,6 ms) et RenderSync (12,3 ms). Les compteurs sont imbriqués :
+ne pas additionner ces chiffres. Réduire ce travail avant de figer le renderer,
+puis requalifier le SVG partiel, de préférence dans le même hôte WebKit.
+Aucune optimisation de production n’est encore appliquée.

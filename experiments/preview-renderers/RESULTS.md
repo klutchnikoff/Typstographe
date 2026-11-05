@@ -1,5 +1,10 @@
 # Differential RGBA and Tinymist/Reflexo — 5 November 2026
 
+**Follow-up:** the [real VS Code/Tinymist comparison and common-pipeline profile](../tinymist-pipeline/RESULTS.md)
+qualify the recommendation below. This experiment compares renderers inside our
+pipeline; the follow-up observes Tinymist's complete partial-SVG/editor path.
+Use that follow-up for the current optimization priorities.
+
 **Recommendation: implement differential RGBA first, keeping official Typst,
 our compiler and RenderSync.** On the 24-page article it cuts warm formula-edit
 publication from **270 ms to 102 ms** (62% less), with identical pixels. Reflexo
