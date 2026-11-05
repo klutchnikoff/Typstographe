@@ -34,6 +34,49 @@ fn contains(boxes: &[SelectionHighlight], point: PagePoint) -> bool {
         }
     })
 }
+
+#[test]
+fn syntax_index_matches_typst_lookup_and_rebuilds_ranges_after_incremental_edits() {
+    use typst::syntax::LinkedNode;
+    fn verify(source: Source) -> AnchorSource {
+        let mut indexed = AnchorSource::new(Some(source.clone()));
+        let mut pending = vec![LinkedNode::new(source.root())];
+        while let Some(node) = pending.pop() {
+            let expected = source
+                .find(node.span())
+                .map(|node| (node.range(), node.kind()));
+            assert_eq!(indexed.find(node.span()), expected);
+            pending.extend(node.children());
+        }
+        assert_eq!(indexed.find(Span::detached()), None);
+        let other = Source::new(file_id("other.typ"), "Autre".into());
+        assert_eq!(indexed.find(other.root().span()), None);
+        let missing = Span::from_raw(
+            std::num::NonZeroU64::new(source.root().span().into_raw().get() + 1).unwrap(),
+        );
+        let expected = source.find(missing).map(|node| (node.range(), node.kind()));
+        assert_eq!(indexed.find(missing), expected);
+        assert_eq!(indexed.find(missing), expected);
+        indexed
+    }
+    let mut source = Source::new(file_id("contenu.typ"), "= Titre\n\nNoël 😀 \\# *gras* _italique_ $a/b$ #link(\"https://example.org\")[lien]\n\nFin".into());
+    let old = source.clone();
+    let mut old_index = verify(old.clone());
+    source.edit(0..0, "Préface 😀\n\n");
+    let mut new_index = verify(source.clone());
+    for node in LinkedNode::new(old.root()).children() {
+        let span = node.span();
+        assert_eq!(
+            old_index.find(span),
+            old.find(span).map(|n| (n.range(), n.kind()))
+        );
+        assert_eq!(
+            new_index.find(span),
+            source.find(span).map(|n| (n.range(), n.kind()))
+        );
+    }
+    assert_eq!(AnchorSource::new(None).find(old.root().span()), None);
+}
 #[test]
 fn structured_unicode_styles_links_and_repeated_passages_keep_bidirectional_geometry() {
     let node=serde_json::from_value(json!({"type":"doc","content":[

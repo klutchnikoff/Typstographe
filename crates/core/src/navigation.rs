@@ -10,7 +10,7 @@ use std::{collections::HashMap, ops::Range};
 use typst::{
     World,
     layout::{Abs, Frame, FrameItem, Point},
-    syntax::{Source, Span, SyntaxKind},
+    syntax::{Source, Span, SpanKind, SyntaxKind},
 };
 use typst_layout::PagedDocument;
 
@@ -50,10 +50,7 @@ impl RenderSync {
     pub fn new(revision: u64, world: TypstWorld, document: PagedDocument, map: SourceMap) -> Self {
         let mut anchors = Vec::new();
         let mut frames = Vec::new();
-        let mut source = AnchorSource {
-            source: world.source(file_id("contenu.typ")).ok(),
-            nodes: HashMap::new(),
-        };
+        let mut source = AnchorSource::new(world.source(file_id("contenu.typ")).ok());
         for (page, output) in document.pages().iter().enumerate() {
             collect_anchors(&mut source, &output.frame, page, &mut anchors);
             let mut frame = output.frame.clone();
@@ -172,13 +169,35 @@ fn remove_links(frame: &mut Frame) {
     });
 }
 
-/// Many glyphs share a syntax span. Resolve each span once in this immutable
-/// compilation, including failed lookups. Never reuse it across source revisions.
+/// Index numbered spans in one walk of this compilation's syntax tree. Looking
+/// up each span from the root rescans preceding siblings in long documents.
+/// Explicit byte-range spans still use Typst's own resolver, including misses.
+/// Never reuse source ranges across revisions, even when layout is unchanged.
 struct AnchorSource {
     source: Option<Source>,
     nodes: HashMap<Span, Option<(Range<usize>, SyntaxKind)>>,
 }
 impl AnchorSource {
+    fn new(source: Option<Source>) -> Self {
+        let mut nodes = HashMap::new();
+        if let Some(source) = &source {
+            let mut pending = vec![(source.root(), 0)];
+            while let Some((node, offset)) = pending.pop() {
+                if matches!(node.span().get(), SpanKind::Number { .. }) {
+                    nodes.insert(
+                        node.span(),
+                        Some((offset..offset + node.len(), node.kind())),
+                    );
+                }
+                let mut offset = offset;
+                for child in node.children() {
+                    pending.push((child, offset));
+                    offset += child.len();
+                }
+            }
+        }
+        Self { source, nodes }
+    }
     fn find(&mut self, span: Span) -> Option<(Range<usize>, SyntaxKind)> {
         let source = self.source.as_ref()?;
         if span.id() != Some(source.id()) {
