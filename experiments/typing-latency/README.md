@@ -27,6 +27,10 @@ atomic page publication. IPC is timed separately and does not imply blocking of
 the JavaScript thread. Final text/selection/source/pixels/navigation must match
 between modes and variants. Every character must survive native editing and
 document confirmation; each report verifies compiled core and frontend stamps.
+The final pixel check pauses the render queue after confirmation, outside all
+timed input phases. A same-revision refresh must not retire canvases midway
+through the asynchronous hashing loop. This validation-only correction leaves
+the input-phase probes unchanged.
 
 Prepare uses a disposable Git archive and a recipe-only CSP permission for the
 worker clock (`worker-src blob:`). It never opens a personal project, captures

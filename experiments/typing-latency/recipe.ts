@@ -253,6 +253,9 @@ export async function nativePreviewPerformance(
     if (config.preview === "off") harness.resume();
     await provider.flush();
     await settled();
+    // A same-revision render can retire canvases while the asynchronous hash
+    // loop reads them. Freeze publication outside the timed input phases.
+    await harness.pause();
     await frame();
     await frame();
     const hashes = [];
