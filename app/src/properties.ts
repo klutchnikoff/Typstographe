@@ -19,6 +19,7 @@ import { applyObjectEdit, removeObject, treeTarget } from './object-commands'
 import { editingProvider } from './editing-history'
 import { documentContent } from './shared-inline-marks'
 import { errorText } from './command-error'
+import { NODE_ATTRIBUTE_COMMITTED } from './node-attribute-field'
 
 export function propertyPanel(
   editor: Editor,
@@ -106,6 +107,27 @@ export function propertyPanel(
     if (opened.resource) fields.replaceImage(opened.resource.path)
     return true
   }
+  const synchronize = (event: Event) => {
+    if (!opened || opened.remove || !(event instanceof CustomEvent)) return
+    const { position, attribute } = event.detail
+    if (bands.target?.from !== position || typeof attribute !== 'string') return
+    const current = editor.state.doc.nodeAt(position),
+      previous = opened.node
+    if (!current || current.type !== previous.type) return
+    const expected = previous.type.create(
+      { ...previous.attrs, [attribute]: current.attrs[attribute] },
+      previous.content,
+      previous.marks,
+    )
+    if (!current.eq(expected)) return // Other changes still require reopening the panel.
+    opened.node = current
+    fields.synchronize(attribute, previous.attrs[attribute], current.attrs[attribute])
+    panel.draftChanged()
+  }
+  editor.view.dom.addEventListener(NODE_ATTRIBUTE_COMMITTED, synchronize)
+  editor.on('destroy', () =>
+    editor.view.dom.removeEventListener(NODE_ATTRIBUTE_COMMITTED, synchronize),
+  )
   function valid() {
     const anchor = bands.target,
       current = opened

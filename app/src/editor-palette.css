@@ -128,3 +128,24 @@ pre.math-source {
   opacity: 0.7;
   margin-inline-end: auto;
 }
+
+.widget-mathBlock .widget-kind {
+  flex: 0 0 auto;
+}
+.widget-mathBlock .math-language {
+  flex: 0 0 auto;
+  margin-inline: auto 8px;
+}
+.widget-attribute-field {
+  min-width: 0;
+  max-width: min(22ch, 55%);
+  margin-inline: 6px;
+}
+.widget-attribute-field input {
+  width: 100%;
+  padding: 2px 5px;
+  font: inherit;
+}
+.widget-attribute-field input[aria-invalid] {
+  border-color: var(--danger, #b43a34);
+}

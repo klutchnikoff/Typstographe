@@ -106,6 +106,23 @@ export class ParameterFields {
       this.controls.set(field, input)
     }
   }
+  /** Rebase a pristine panel field after another local control confirms it.
+   * A draft already edited in this form keeps priority until explicit validation.
+   */
+  synchronize(attribute: string, before: Scalar | undefined, value: Scalar | undefined) {
+    for (const [field, input] of this.controls) {
+      if (field.attribute !== attribute || this.drafts[field.name] !== before) continue
+      this.drafts[field.name] = value
+      if (input instanceof HTMLInputElement && input.type === 'checkbox') input.checked = !!value
+      else
+        input.value =
+          input instanceof HTMLSelectElement
+            ? value === undefined
+              ? ''
+              : JSON.stringify(value)
+            : String(value ?? '')
+    }
+  }
   read() {
     for (const [field, input] of this.controls) {
       if (!input.checkValidity()) {

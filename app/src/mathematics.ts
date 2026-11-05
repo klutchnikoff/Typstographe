@@ -6,6 +6,8 @@ import { widgetFrame as frame, type WidgetAction } from './widget-frame'
 import { insertBlock } from './editing'
 import { capabilityAvailability } from './command-availability'
 import { tr } from './i18n'
+import { nodeAttributeField } from './node-attribute-field'
+import { focusEditorSelection } from './editor-focus'
 
 export const isMath = (kind: string) => kind === 'mathInline' || kind === 'mathBlock'
 const delimiters = (language: string) => (language === 'latex' ? '$$' : '$')
@@ -87,21 +89,50 @@ export function mathExtensions(properties: WidgetAction, presentations: WidgetPr
         ],
         addNodeView:
           () =>
-          ({ node, getPos }) => {
+          ({ node, getPos, editor }) => {
             const contentDOM = document.createElement(block ? 'pre' : 'code')
             contentDOM.className = 'math-source'
             contentDOM.setAttribute('aria-label', tr('Code mathématique'))
             contentDOM.setAttribute('spellcheck', 'false')
+            let alias: ReturnType<typeof nodeAttributeField> | undefined
+            const action: WidgetAction = (pos, kind, remove) => {
+              if (remove) alias?.cancel()
+              if (!alias) properties(pos, kind, remove)
+              else
+                void alias.commit().then((ok) => {
+                  const current = getPos()
+                  if (ok && current !== undefined && !editor.isDestroyed)
+                    properties(current, kind, remove)
+                })
+            }
             const widget = block
-              ? frame('mathBlock', getPos, properties, undefined, presentations.mathBlock)
+              ? frame('mathBlock', getPos, action, undefined, presentations.mathBlock)
               : undefined
             const dom = widget?.dom || document.createElement('span')
             if (!block) dom.className = 'math-source-inline'
             const language = document.createElement('span')
             language.className = 'math-language'
             if (widget) widget.dom.querySelector('.widget-kind')?.after(language)
+            const aliasField = presentations.mathBlock?.settings.fields.find(
+              (field) => field.attribute === 'alias',
+            )
+            if (widget && aliasField) {
+              const done = () => {
+                const pos = getPos()
+                if (pos === undefined || editor.isDestroyed) return
+                editor.commands.setTextSelection(pos + 1)
+                focusEditorSelection(editor)
+              }
+              alias = nodeAttributeField(editor, getPos, node, aliasField, done, () => {
+                const pos = getPos()
+                if (pos !== undefined) action(pos, 'mathBlock')
+              })
+              widget.dom.querySelector('.widget-kind')?.after(alias.dom)
+            }
             const update = (next: typeof node) => {
-              if (next.type !== node.type) return false
+              if (next.type !== node.type || next.attrs.language !== node.attrs.language)
+                return false
+              alias?.update(next)
               dom.dataset.mathSource = next.attrs.language
               language.textContent = next.attrs.language === 'latex' ? 'LaTeX' : 'Typst'
               dom.dataset.delimiter = delimiters(next.attrs.language)
@@ -129,6 +160,8 @@ export function mathExtensions(properties: WidgetAction, presentations: WidgetPr
                       record.type !== 'selection' && !contentDOM.contains(record.target),
                   }),
               update,
+              stopEvent: (event: Event) => alias?.stopEvent(event) ?? false,
+              destroy: () => alias?.destroy(),
             }
           },
       }),

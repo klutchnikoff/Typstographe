@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
 import { createRichZone } from '../src/rich-zone'
 import { normalizeWhitespace } from '../src/document-whitespace'
 import { mathContent } from '../src/mathematics'
@@ -170,4 +170,79 @@ it('Backspace removes an empty opening code zone without consuming its neighbori
   enter(e, 'Backspace')
   expect(e.state.doc.firstChild!.textContent).toBe('Avant ')
   expect(e.state.doc.firstChild!.lastChild!.isText).toBe(true)
+})
+
+it('the header alias uses the settings field, preserves math source, synchronizes updates and supports undo', async () => {
+  const { widgetPresentations } = await import('../src/widget-frame')
+  const capability = {
+    id: 'math.block',
+    node: 'mathBlock',
+    mark: null,
+    icon: 'sigma',
+    label: 'Equation',
+    label_key: '',
+    group: 'math',
+    parameters: {
+      properties: {
+        language: {
+          type: 'string',
+          enum: ['typst', 'latex'],
+          'x-editor': { placement: 'creation', storage: 'attribute' },
+        },
+        alias: {
+          type: 'string',
+          default: '',
+          maxLength: 128,
+          pattern: '^[^\\s:$]*$',
+          title: 'Label facultatif',
+          'x-editor': { prefix: 'eq:' },
+        },
+        alt: { type: 'string', default: '', title: 'Description accessible' },
+      },
+    },
+  } as import('../src/commands').Capability
+  const e = createRichZone({
+    profile: 'document',
+    label: 'Math header',
+    presentations: widgetPresentations([capability]),
+    content: {
+      type: 'doc',
+      content: [mathContent(true, 'latex', '\\frac{a}{b}'), { type: 'paragraph' }],
+    },
+  })
+  editors.push(e)
+  document.body.append(e.view.dom)
+  bindEditorTarget(e, { kind: 'body' })
+  const input = e.view.dom.querySelector<HTMLInputElement>('.widget-bar input')!
+  expect(input.getAttribute('aria-label')).toBe('Label facultatif')
+  expect(input.parentElement!.querySelector('span')!.textContent).toBe('eq:')
+  input.focus()
+  input.value = 'fraction'
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+  input.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+  )
+  await vi.waitFor(() => expect(document.activeElement).toBe(e.view.dom))
+  expect(e.state.doc.firstChild!.attrs.alias).toBe('fraction')
+  expect(e.state.doc.firstChild!.attrs.language).toBe('latex')
+  expect(e.state.doc.firstChild!.textContent).toBe('\\frac{a}{b}')
+  e.commands.undo()
+  expect(input.value).toBe('')
+  e.view.dispatch(
+    e.state.tr.setNodeMarkup(0, undefined, { ...e.state.doc.firstChild!.attrs, alias: 'updated' }),
+  )
+  expect(input.value).toBe('updated')
+  input.focus()
+  input.value = 'bad label'
+  input.dispatchEvent(new Event('input'))
+  input.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+  )
+  expect(input.getAttribute('aria-invalid')).toBe('true')
+  expect(e.state.doc.firstChild!.attrs.alias).toBe('updated')
+  input.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+  )
+  expect(input.value).toBe('updated')
+  expect(input.hasAttribute('aria-invalid')).toBe(false)
 })

@@ -83,7 +83,7 @@ test('standalone markers create raw-code widgets, preserve multiline spacing and
   expect(await page.evaluate(() => JSON.stringify(window.__spike!.editor.getJSON()))).toBe(before)
 })
 
-test('toolbar insertion enters inline source and its shared properties can change language', async ({
+test('toolbar insertion enters Typst inline source and only exposes editable mathematical settings', async ({
   page,
 }) => {
   await page.getByRole('button', { name: 'Mathématiques', exact: true }).click()
@@ -102,12 +102,11 @@ test('toolbar insertion enters inline source and its shared properties can chang
   await page.keyboard.press('Control+Enter')
   const properties = page.locator('#properties')
   await expect(properties).toBeVisible()
-  await properties
-    .getByRole('combobox', { name: 'Langage mathématique' })
-    .selectOption(JSON.stringify('latex'))
+  await expect(properties.getByRole('combobox', { name: 'Langage mathématique' })).toHaveCount(0)
+  await properties.getByRole('textbox', { name: 'Description accessible' }).fill('x au carré')
   await properties.getByRole('button', { name: 'Valider', exact: true }).click()
   await expect(properties).toBeHidden()
-  await expect(page.locator('.math-source-inline')).toHaveAttribute('data-math-source', 'latex')
+  await expect(page.locator('.math-source-inline')).toHaveAttribute('data-math-source', 'typst')
   await page.keyboard.press('Tab')
   await page.keyboard.type(' après')
   await page.evaluate(() => window.__spike!.provider.flush())
@@ -275,4 +274,118 @@ test('typing after an equation reference never swaps its label or changes its wi
   })
   await expect(page.locator('#render-status')).toContainText('Contenu à corriger')
   await expect(badge).toHaveText('(2)')
+})
+
+test('the header label and properties share one attribute while mathematical language stays fixed', async ({
+  page,
+}) => {
+  await page.keyboard.type('$$')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('\\frac{a}{b}')
+  await page.evaluate(() => window.__spike!.provider.flush())
+  const widget = page.locator('[data-editor-widget="mathBlock"]')
+  const label = widget.locator('.widget-bar').getByRole('textbox', { name: 'Label facultatif' })
+  await expect(label.locator('..').locator('span')).toHaveText('eq:')
+  await label.fill('fraction')
+  await label.press('Enter')
+  await expect
+    .poll(() => page.evaluate(() => window.__spike!.editor.state.doc.firstChild!.attrs.alias))
+    .toBe('fraction')
+  await expect.poll(() => page.evaluate(() => window.__spike!.editor.view.hasFocus())).toBe(true)
+  expect(
+    await page.evaluate(() => window.__spike!.editor.state.selection.$from.parent.type.name),
+  ).toBe('mathBlock')
+  await widget.getByRole('button', { name: 'Paramètres · Équation', exact: true }).click()
+  const panel = page.locator('#properties')
+  await expect(panel.getByRole('combobox', { name: 'Langage mathématique' })).toHaveCount(0)
+  await expect(panel.getByRole('textbox', { name: 'Label facultatif' })).toHaveValue('fraction')
+  await panel.getByRole('textbox', { name: 'Description accessible' }).fill('a divisé par b')
+  await label.fill('header-update')
+  await label.press('Enter')
+  await expect(panel.getByRole('textbox', { name: 'Label facultatif' })).toHaveValue(
+    'header-update',
+  )
+  await expect(panel.getByRole('textbox', { name: 'Description accessible' })).toHaveValue(
+    'a divisé par b',
+  )
+  await panel.getByRole('textbox', { name: 'Label facultatif' }).fill('ratio')
+  await panel.getByRole('button', { name: 'Valider', exact: true }).click()
+  await expect(label).toHaveValue('ratio')
+  await expect(widget).toHaveAttribute('data-math-source', 'latex')
+  await expect(widget.locator('.math-source')).toHaveText('\\frac{a}{b}')
+  await label.fill('cancelled')
+  await label.press('Escape')
+  await expect(label).toHaveValue('ratio')
+  expect(await page.evaluate(() => window.__spike!.provider.rejected)).toBeFalsy()
+})
+
+test('a duplicate header label remains an editable draft without rejecting the document', async ({
+  page,
+}) => {
+  await page.evaluate(async () => {
+    const { editor, provider } = window.__spike!
+    editor.commands.setContent({
+      type: 'doc',
+      content: [
+        {
+          type: 'mathBlock',
+          attrs: { language: 'typst', anchor: 'equation-one', alias: 'one' },
+          content: [{ type: 'text', text: 'x' }],
+        },
+        {
+          type: 'mathBlock',
+          attrs: { language: 'latex', anchor: 'equation-two', alias: 'two' },
+          content: [{ type: 'text', text: 'y' }],
+        },
+        { type: 'paragraph' },
+      ],
+    })
+    await provider.flush()
+  })
+  const label = page.locator('[data-editor-widget="mathBlock"]').nth(1).locator('.widget-bar input')
+  await label.fill('one')
+  await label.press('Enter')
+  await expect(label).toHaveAttribute('aria-invalid', 'true')
+  await expect(label).toHaveValue('one')
+  expect(await page.evaluate(() => window.__spike!.editor.state.doc.child(1).attrs.alias)).toBe(
+    'two',
+  )
+  expect(await page.evaluate(() => window.__spike!.provider.rejected)).toBeFalsy()
+  await label.press('Escape')
+  await expect(label).toHaveValue('two')
+})
+
+test('Escape cancels a pending header-label edit before native publication', async ({ page }) => {
+  await page.keyboard.type('$')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('x')
+  await page.evaluate(() => window.__spike!.provider.flush())
+  let release!: () => void,
+    waiting = false
+  await page.route('**/__spike/invoke', async (route) => {
+    if (route.request().postDataJSON().command === 'prepare_structured_commands') {
+      waiting = true
+      await new Promise<void>((resolve) => {
+        release = resolve
+      })
+    }
+    await route.continue()
+  })
+  const label = page.locator('[data-editor-widget="mathBlock"] .widget-bar input')
+  await label.fill('cancelled')
+  await label.press('Enter')
+  await expect.poll(() => waiting).toBe(true)
+  await label.press('Escape')
+  const reply = page.waitForResponse(
+    (response) => response.request().postDataJSON()?.command === 'prepare_structured_commands',
+  )
+  release()
+  await reply
+  await page.evaluate(() => Promise.resolve())
+  expect(await page.evaluate(() => window.__spike!.editor.state.doc.firstChild!.attrs.alias)).toBe(
+    '',
+  )
+  await expect(label).toHaveValue('')
+  await expect(label).not.toHaveAttribute('aria-invalid', 'true')
+  expect(await page.evaluate(() => window.__spike!.provider.rejected)).toBeFalsy()
 })
