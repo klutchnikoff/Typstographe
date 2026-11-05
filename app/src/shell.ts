@@ -113,6 +113,7 @@ export async function mountShell(s: ShellOptions) {
     active: () => state.active,
     native: s.isTauri ? transport : undefined,
     onError: ctx.reportError,
+    requestRefresh: s.refresh,
   })
   window.addEventListener('pagehide', () => commandSurfaces.destroy(), { once: true })
   mountToolMenus(layout.menu, commands)

@@ -499,6 +499,7 @@ async function start() {
     commands,
     save,
     schedule,
+    refresh,
     message,
     isTauri,
     opened: bootstrap.opened,
