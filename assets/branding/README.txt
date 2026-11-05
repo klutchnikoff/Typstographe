@@ -1,61 +1,70 @@
-typstOgraphe — identité tO
+typstOgraphe — identité st
 
-La source du signe est ligature.svg. Les lettres sont dessinées en courbes,
-sans dépendance à une police. La traverse du t rejoint la panse du O.
+SOURCES
+ligature-st.svg : ligature st d’EB Garamond Italic, agrandie de 15 % pour
+les icônes. Son orientation italique originale et son contour sont conservés.
+wordmark.svg : Typ et ographe en EB Garamond romain ; st italique rouille,
+tourné de 25° et inséré entre les deux parties du nom.
+PROVENANCE.txt et licenses/EB-Garamond-OFL.txt consignent la provenance.
+Tous les dessins sont des tracés SVG autonomes, sans police à installer.
+L’ancien signe tO reste disponible dans ligature.svg.
 
-ICÔNE D’INTERFACE RÉUTILISABLE
-Le catalogue d’icônes expose le monogramme sous le nom « typstographe », depuis
-optical/24.svg, en monochrome et sans contour ajouté. Son style dans la barre
-latérale est conservé pour un usage ultérieur. La palette utilise désormais
-l’icône Lucide « wrench ».
+SPLASH ET ACCUEIL
+La prévisualisation splash.html et l’accueil Tauri utilisent splash.svg,
+brand.css et le même module motion.mjs. Une seule lecture, sans bloquer les
+actions ; le retour à l’accueil et les changements de thème ne la rejouent pas.
+Le mode mouvement réduit affiche immédiatement le logotype complet.
+Le tracé du s descend, puis la liaison et le retournement dans la tête du t,
+la hampe et le pied, enfin la barre. La caméra recule et pivote de 25° ; les
+autres lettres apparaissent progressivement. Durée totale : 2,7 secondes.
+Les trajectoires éditables sont dans strokes.json. generate.py produit
+stroke-data.mjs ; reveal.mjs définit les zones de révélation. Le contour de
+la police n’est jamais échantillonné ni modifié. Le même découpage vectoriel
+est conservé jusqu’à la fin, sans changement d’épaisseur au raccord.
 
-APERÇU
-Servir la racine du dépôt avec :
-python3 -m http.server 8341 --bind 127.0.0.1
-Puis consulter http://127.0.0.1:8341/docs/mockups/branding.html
+ICÔNES
+exports/macos/icon.icns : 16 à 1024 px, avec Retina.
+exports/windows/icon.ico : 16, 24, 32, 48, 64, 128, 256 px ; couche 32 en premier.
+exports/linux/hicolor/ : PNG et SVG scalable de l’application.
+exports/documents/ : mêmes déclinaisons pour les projets .typsto, sous forme
+d’une feuille portant st. Le fond macOS conserve son léger dégradé ; les
+fonds Windows et Linux sont unis. Les PNG sont en RGBA 8 bits par canal.
+Les petits dessins monochromes sont dans optical/. Les fichiers @2x utilisent
+la même silhouette à double résolution, sans épaississement artificiel.
+Le catalogue d’interface expose st sous « typstographe » ; la palette conserve
+l’icône Lucide wrench.
 
-SPLASH
-splash.html joue une seule fois à son ouverture et reste sur tO.
-Le changement de thème et le redimensionnement ne relancent rien.
-Le bouton de la maquette recharge explicitement le document pour le revoir.
-Le mode prefers-reduced-motion affiche immédiatement le signe complet.
-L’accueil Tauri utilise ce même dessin et le module motion.mjs : une seule
-lecture de 2,1 s au premier affichage, sans bloquer les trois boutons.
-Le retour à l’accueil conserve le signe immobile. Sans session récupérable,
-le bouton de reprise reste visible, désactivé.
-La vidéo de previews/ est une capture de cette même animation, sans boucle.
+ASSOCIATIONS DES FICHIERS
+L’extension reste .typsto. La configuration Tauri déclare le type
+org.typstographe.project et le MIME application/x-typstographe.
+Le générateur de langues natives ajoute les déclarations et l’icône document
+au même Info.plist que les langues Fluent. Le paquet macOS inclut document.icns.
+Le hook Windows NSIS choisit document.ico pour la classe créée par Tauri.
+Les paquets Linux incluent le type MIME, ses icônes et un lanceur qui transmet
+le chemin avec %f. Les paquets DEB/RPM actualisent les caches du bureau ;
+l’AppImage embarque ces métadonnées et dépend de son intégration au bureau.
+L’installation du paquet est nécessaire pour enregistrer les associations :
+npm start n’installe pas les associations sur le système.
 
-EXPORTS
-macos/icon.icns : 16 à 1024 px, y compris les couches Retina.
-windows/icon.ico : 16, 24, 32, 48, 64, 128, 256 px ; couche 32 px en premier.
-linux/hicolor/ : SVG scalable et PNG de 16 à 512 px.
-Les PNG sont en RGBA 8 bits par canal. Les tailles 16, 24, 32 et 48 px
-ont chacune leur dessin dédié dans optical/, avec traverse calée sur
-des pixels entiers, contreformes ouvertes et déliés épaissis.
-Les fichiers @2x reprennent le dessin de la taille logique, à double
-résolution ; les couches Retina de l’ICNS utilisent ces mêmes dessins.
-L’ICNS est une icône aplatie pour le paquet Tauri ;
-il ne contient pas un projet Icon Composer ni des couches Liquid Glass.
+Les demandes natives attendent que l’interface soit prête, puis suivent le
+même choix de conservation/enregistrement/abandon que l’ouverture ordinaire.
+Un formulaire déjà ouvert est terminé avant de présenter ce choix.
+Le plugin officiel single-instance transmet les demandes à l’instance active ;
+les recettes isolées et MCP conservent leur fonctionnement indépendant.
 
-RÉGÉNÉRER
+RÉGÉNÉRER ET PRÉVISUALISER
 python3 assets/branding/generate.py
-Prérequis : Python 3 et rsvg-convert (librsvg).
-Le script régénère les SVG d’icône, PNG, ICO, ICNS, splash.html et splash.svg
-depuis ligature.svg, optical/ et splash.template.html. Il met aussi à jour
-experiments/web-editor/src-tauri/icons/ pour les trois plateformes.
-Les configurations Tauri sélectionnent le dégradé macOS, le bleu uni Windows
-et le bleu uni Linux. Les ressources sont embarquées ; aucun téléchargement
-ni serveur de prévisualisation n’est requis dans l’application compilée.
-Le script ne change pas les aperçus capturés.
-
-RÉFÉRENCES DE FORMAT
-https://v2.tauri.app/fr/develop/icons/
-https://developer.apple.com/design/human-interface-guidelines/app-icons
-https://learn.microsoft.com/en-us/windows/apps/design/style/iconography/app-icon-construction
-https://specifications.freedesktop.org/icon-theme/
+Prérequis : Python 3 et rsvg-convert (librsvg). Aucune police ni bibliothèque
+Python supplémentaire n’est nécessaire. --icons-only conserve le splash.
+Le script met à jour app/src-tauri/icons/ et les ressources de document MIME.
+Pour consulter docs/mockups/branding.html, servir la racine du dépôt avec
+python3 -m http.server 8341 --bind 127.0.0.1
+Les aperçus se trouvent dans previews/ ; identity.png et mobile.png sont des
+références historiques de l’ancienne identité tO.
 
 VÉRIFICATION
-Prévisualisation Chromium et WebKit, lecture unique, thèmes, mode mouvement
-réduit et mise en page de la maquette entre 320 et 1180 px.
-ICO relu avec ImageMagick ; ICNS extrait avec l’outil macOS iconutil.
-L’identité est intégrée à l’écran d’accueil et aux ressources natives Tauri.
+Contrôler les PNG RGBA, les couches ICO et ICNS, et leur correspondance avec
+les ressources natives. Les tests d’accueil couvrent Chromium et WebKit,
+les petites fenêtres, le thème sombre, la lecture unique et le mouvement réduit.
+Les tests des associations contrôlent les fichiers des paquets et les déclarations
+macOS même après régénération des langues.

@@ -1,5 +1,23 @@
 //! Parse launch options before any window or filesystem mutation.
 use std::path::PathBuf;
+/// File managers may pass a local file URL instead of a filesystem path.
+pub fn local_path(argument: &str, directory: &std::path::Path) -> Result<PathBuf, String> {
+    if argument.starts_with("file:") {
+        return tauri::Url::parse(argument)
+            .map_err(|error| error.to_string())?
+            .to_file_path()
+            .map_err(|_| "The file URL does not identify a local file.".into());
+    }
+    if argument.contains("://") {
+        return Err("Only local project files can be opened.".into());
+    }
+    let path = PathBuf::from(argument);
+    Ok(if path.is_absolute() {
+        path
+    } else {
+        directory.join(path)
+    })
+}
 #[derive(Default, Debug)]
 pub struct Options {
     pub root: Option<PathBuf>,
@@ -67,8 +85,7 @@ impl Options {
                         return Err("Only one project can be opened at launch.".into());
                     }
                     result.initial_path = Some(
-                        std::path::absolute(arg)
-                            .map_err(|e| e.to_string())?
+                        local_path(&arg, &std::env::current_dir().map_err(|e| e.to_string())?)?
                             .to_string_lossy()
                             .into_owned(),
                     );

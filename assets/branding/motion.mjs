@@ -1,72 +1,71 @@
-// Shared by the approved preview and the application welcome screen.
-export function createLigatureAnimation(root) {
-  const camera = root.querySelector(".camera");
-  const wordmark = root.querySelector(".wordmark");
-  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-  const tracks = [];
-  const duration = 2100;
-  let started = false;
+// The standalone preview and the welcome screen use this same approved animation.
+import { strokeData } from "./stroke-data.mjs";
+import { traceClip } from "./reveal.mjs";
 
-  function track(element, frames, timing) {
-    const animation = element.animate(frames, {
-      fill: "both",
-      iterations: 1,
-      ...timing,
-    });
-    tracks.push(animation);
+let nextClip = 0;
+const clamp = (value) => Math.max(0, Math.min(1, value));
+const segment = (time, start, end) => clamp((time - start) / (end - start));
+const smooth = (value) => value ** 3 * (value * (value * 6 - 15) + 10);
+
+export function createLigatureAnimation(root) {
+  const camera = root.querySelector("[data-brand-camera]");
+  const letters = root.querySelector("[data-brand-letters]");
+  const ligature = root.querySelector("[data-brand-ligature]");
+  const clip = root.querySelector("clipPath");
+  const reveal = root.querySelector("[data-brand-reveal]");
+  if (!camera || !letters || !ligature || !clip || !reveal)
+    throw new Error("Incomplete typstOgraphe brand scene");
+  clip.id = `typstographe-reveal-${++nextClip}`;
+  ligature.setAttribute("clip-path", `url(#${clip.id})`);
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  const duration = strokeData.duration;
+  let started = false;
+  let disposed = false;
+  let frame = 0;
+
+  function render(time) {
+    time = Math.max(0, Math.min(duration, time));
+    reveal.setAttribute(
+      "d",
+      strokeData.traces
+        .map((trace) => traceClip(trace, segment(time, trace.start, trace.end)))
+        .join("") || "M0 0Z",
+    );
+    const progress = smooth(segment(time, 1620, 2480));
+    const [cx, cy] = strokeData.ligatureCenter;
+    const x = 600 + (cx - 600) * progress;
+    const y = 360 + (cy - 360) * progress;
+    const zoom = Math.exp(Math.log(3.1) * (1 - progress));
+    camera.setAttribute(
+      "transform",
+      `translate(${x} ${y}) rotate(${25 * (1 - progress)}) scale(${zoom}) translate(${-cx} ${-cy})`,
+    );
+    letters.setAttribute("opacity", smooth(segment(time, 2260, duration)));
+    root.dataset.state = time >= duration ? "settled" : "writing";
   }
 
   function finish() {
-    for (const animation of tracks) animation.finish();
-    root.dataset.state = "settled";
+    cancelAnimationFrame(frame);
+    frame = 0;
+    render(duration);
   }
 
   function play() {
-    if (started) return;
+    if (started || disposed) return;
     started = true;
-    if (reducedMotion.matches || !camera.animate) {
+    if (reducedMotion.matches || document.hidden) {
       finish();
       return;
     }
-    root.dataset.state = "writing";
-    const draw = (selector, delay, time) =>
-      track(
-        root.querySelector(selector),
-        [{ strokeDashoffset: "100" }, { strokeDashoffset: "0" }],
-        { duration: time, delay, easing: "cubic-bezier(.42,0,.25,1)" },
-      );
-    draw(".reveal-t", 80, 650);
-    draw(".reveal-crossbar", 530, 320);
-    draw(".reveal-o", 720, 1050);
-    track(
-      camera,
-      [
-        {
-          transform: "translate(-7px, 9px) scale(1.14)",
-          filter: "blur(2.5px)",
-          opacity: 0.4,
-        },
-        {
-          transform: "translate(-2px, 2px) scale(1.035)",
-          filter: "blur(.5px)",
-          opacity: 1,
-          offset: 0.65,
-        },
-        {
-          transform: "translate(0, 0) scale(1)",
-          filter: "blur(0)",
-          opacity: 1,
-        },
-      ],
-      { duration, easing: "cubic-bezier(.2,.55,.3,1)" },
-    );
-    track(wordmark, [{ opacity: 0 }, { opacity: 1 }], {
-      duration: 450,
-      delay: 1550,
-    });
-    Promise.all(tracks.map((animation) => animation.finished))
-      .then(finish)
-      .catch(finish);
+    render(0);
+    let beginning;
+    const tick = (now) => {
+      beginning ??= now;
+      const time = now - beginning;
+      render(time);
+      frame = time < duration ? requestAnimationFrame(tick) : 0;
+    };
+    frame = requestAnimationFrame(tick);
   }
 
   const onMotionChange = (event) => {
@@ -77,19 +76,19 @@ export function createLigatureAnimation(root) {
   };
   reducedMotion.addEventListener("change", onMotionChange);
   document.addEventListener("visibilitychange", onVisibilityChange);
+  finish();
   return {
     duration,
     play,
     finish,
     seek(time) {
-      for (const animation of tracks) {
-        animation.pause();
-        animation.currentTime = Math.max(0, Math.min(duration, time));
-      }
+      cancelAnimationFrame(frame);
+      frame = 0;
+      render(time);
     },
     dispose() {
-      finish();
-      for (const animation of tracks) animation.cancel();
+      disposed = true;
+      cancelAnimationFrame(frame);
       reducedMotion.removeEventListener("change", onMotionChange);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     },

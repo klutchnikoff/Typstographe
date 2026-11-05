@@ -45,7 +45,17 @@ export function readInterfaceLanguages(directory) {
   }
 }
 
-export function nativeMetadata({ fallback, languages }) {
+function plistValue(value) {
+  const escape = (text) =>
+    text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+  if (typeof value === 'string') return `<string>${escape(value)}</string>`
+  if (Array.isArray(value)) return `<array>${value.map(plistValue).join('')}</array>`
+  return `<dict>${Object.entries(value)
+    .map(([key, item]) => `<key>${escape(key)}</key>${plistValue(item)}`)
+    .join('')}</dict>`
+}
+
+export function nativeMetadata({ fallback, languages }, associations = []) {
   const installers = languages.map((language) => {
     const identifiers = installerLanguages[language]
     if (!identifiers)
@@ -54,6 +64,30 @@ export function nativeMetadata({ fallback, languages }) {
       )
     return identifiers
   })
+  const documentTypes = associations
+    .filter((association) => association.exportedType)
+    .map((association) => ({
+      CFBundleTypeName: association.description || association.name,
+      CFBundleTypeRole: association.role,
+      CFBundleTypeIconFile: 'document.icns',
+      LSHandlerRank: association.rank,
+      LSItemContentTypes: [association.exportedType.identifier],
+      CFBundleTypeExtensions: association.ext,
+    }))
+  const exportedTypes = associations
+    .filter((association) => association.exportedType)
+    .map((association) => ({
+      UTTypeIdentifier: association.exportedType.identifier,
+      UTTypeDescription: association.description || association.name,
+      UTTypeConformsTo: association.exportedType.conformsTo,
+      UTTypeTagSpecification: {
+        'public.filename-extension': association.ext,
+        'public.mime-type': association.mimeType,
+      },
+    }))
+  const declarations = documentTypes.length
+    ? `<key>CFBundleDocumentTypes</key>${plistValue(documentTypes)}\n<key>UTExportedTypeDeclarations</key>${plistValue(exportedTypes)}\n`
+    : ''
   return {
     plist: `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -65,7 +99,7 @@ export function nativeMetadata({ fallback, languages }) {
     <array>
 ${languages.map((language) => `        <string>${language}</string>`).join('\n')}
     </array>
-</dict>
+${declarations}</dict>
 </plist>
 `,
     windows: {
@@ -80,7 +114,11 @@ export function generateNativeLocaleConfig(
   catalogueRoot = resolve(projectRoot, '../crates/i18n'),
 ) {
   const source = readInterfaceLanguages(catalogueRoot)
-  const metadata = nativeMetadata(source)
+  const configPath = join(projectRoot, 'src-tauri/tauri.conf.json')
+  const associations = existsSync(configPath)
+    ? JSON.parse(readFileSync(configPath, 'utf8')).bundle?.fileAssociations || []
+    : []
+  const metadata = nativeMetadata(source, associations)
   const directory = join(projectRoot, 'src-tauri/gen/native-locales')
   mkdirSync(directory, { recursive: true })
   const writeIfChanged = (path, value) => {

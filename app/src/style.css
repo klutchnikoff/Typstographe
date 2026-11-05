@@ -1,5 +1,6 @@
 @import './editor-palette.css';
 @import './recovery.css';
+@import '../../assets/branding/brand.css';
 
 @font-face {
   font-family: Inter;
@@ -42,8 +43,7 @@
   --soft: #e8f0f4;
   --danger: #a83f33;
   --brand-ink: #285c77;
-  --brand-name: #25333b;
-  --brand-name-accent: #19779e;
+  --brand-rust: #ad542f;
   --editor-width: 50%;
   background: var(--bg);
   color: var(--text);
@@ -59,8 +59,7 @@
     --soft: #26343d;
     --danger: #f09180;
     --brand-ink: #f8f5ec;
-    --brand-name: #8c9ca6;
-    --brand-name-accent: #b4e9ff;
+    --brand-rust: #e6a17e;
   }
 }
 * {
@@ -624,51 +623,11 @@ summary svg {
   gap: 32px;
 }
 .welcome-brand {
-  display: grid;
-  justify-items: center;
-  gap: 14px;
+  width: min(680px, calc(100vw - 64px));
   color: var(--brand-ink);
 }
-.welcome-brand .camera {
-  width: clamp(96px, 23vmin, 160px);
-}
-.welcome-brand .ligature {
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-}
-.welcome-brand mask path {
-  fill: none;
-  stroke: white;
-  stroke-width: 76;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 100;
-  stroke-dashoffset: 0;
-}
-.welcome-brand mask .reveal-crossbar {
-  stroke-width: 32;
-  stroke-linecap: butt;
-}
-.welcome-brand mask .reveal-t {
-  stroke-width: 96;
-}
-.welcome-brand[data-state='settled'] [mask] {
-  mask: none;
-}
-.welcome-brand .wordmark {
-  margin: 0;
-  padding-left: 0.06em;
-  font-size: clamp(15px, 2.8vmin, 18px);
-  line-height: 1.2;
-  font-weight: 400;
-  letter-spacing: 0.035em;
-  color: var(--brand-name);
-}
-.welcome-brand .wordmark span {
-  color: var(--brand-name-accent);
-  font-weight: 600;
+.welcome-brand .brand-scene {
+  max-height: min(360px, 45vh);
 }
 .welcome-actions {
   display: flex;
@@ -716,10 +675,6 @@ summary svg {
 @media (prefers-reduced-motion: reduce) {
   .loading-spinner {
     animation: none;
-  }
-  .welcome-brand .camera {
-    transform: none !important;
-    filter: none !important;
   }
 }
 .metadata-tabs {
@@ -1309,8 +1264,7 @@ main[data-rail='labelled'] {
   --soft: #e8eff3;
   --accent: #276c8c;
   --brand-ink: #285c77;
-  --brand-name: #25333b;
-  --brand-name-accent: #19779e;
+  --brand-rust: #ad542f;
 }
 :root[data-appearance='dark'] {
   color-scheme: dark;
@@ -1322,8 +1276,7 @@ main[data-rail='labelled'] {
   --soft: #263640;
   --accent: #94cee9;
   --brand-ink: #f8f5ec;
-  --brand-name: #8c9ca6;
-  --brand-name-accent: #b4e9ff;
+  --brand-rust: #e6a17e;
 }
 .content-widget {
   border: 1px solid var(--border);

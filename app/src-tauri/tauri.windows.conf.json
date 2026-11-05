@@ -6,6 +6,14 @@
       "icons/windows/128x128@2x.png",
       "icons/windows/icon.png",
       "icons/icon.ico"
-    ]
+    ],
+    "resources": {
+      "icons/document.ico": "document.ico"
+    },
+    "windows": {
+      "nsis": {
+        "installerHooks": "associations/windows.nsh"
+      }
+    }
   }
 }
