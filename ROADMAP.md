@@ -271,6 +271,17 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    20 → 30 ms) ; conserver les contrôles sans aperçu et les pointes restantes,
    sans promettre une amélioration uniforme ni attribuer le gain à l’annulation
    seule, qui n’a pas été sollicitée dans les phases chronométrées après.
+   **Priorité à l’éditeur :** [comparaison en trois étapes](experiments/editor-priority/RESULTS.md)
+   après suppression des déplacements de pages inchangées puis regroupement des
+   mises à jour secondaires après une possibilité d’afficher le caractère.
+   Les rafraîchissements de commandes passent par le même ordonnanceur ; les
+   contrôles d’exécution restent immédiats. 479 tests frontend, 30 parcours
+   navigateur et 36 sessions natives valident 1 728 entrées et les états finaux.
+   Sur 24 pages : frappe p95 17 → 13 ms à 100 ms/caractère et 25 → 16 ms à
+   250 ms/caractère. Le premier créneau du nouvel aperçu, désormais mesuré
+   directement de bout en bout, passe respectivement de 70 à 60 ms et de 90 à
+   80 ms. Aucun délai de frappe ajouté. Les petits documents restent variables
+   (7 pages à 100 ms : 13 → 17 ms) ; conserver tous les cas et les pointes.
    **Saisie validée :** `$` seul sur une ligne suivi d’Entrée crée un widget
    Typst ; `$$` seuls suivis d’Entrée créent un widget LaTeX. Dans le texte,
    `$cos(x)$` désigne une formule Typst et `$$\cos(x)$$` une formule LaTeX.

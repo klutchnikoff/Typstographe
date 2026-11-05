@@ -1,5 +1,10 @@
 # Continuous native input after production differential RGBA
 
+Follow-up: [editor-priority measurements](../editor-priority/RESULTS.md) isolate
+DOM reconciliation and deferred UI work with a new, identical protocol across
+three variants, including direct input-to-preview publication/frame timings.
+Do not pool these two probes as a single before/after study.
+
 Measured 5 November 2026 on Apple M1 Max (32 GiB), macOS 25.6.0,
 Rust 1.98.1, Node 26.9.0. Full machine metadata, exact application/frontend/core
 identities and aggregates are in

@@ -352,6 +352,19 @@ transfert et disparition de toutes les pointes de latence. La
 Le rapport distingue les gains, les métriques dégradées et le témoin sans aperçu ;
 il n’isole pas le bénéfice de l’annulation, non sollicitée dans ces phases après.
 
+**Priorité à la frappe (5 novembre 2026) :** ne déplacer dans le DOM que les
+pages remplacées/retirées, conserver les autres en place et éviter les écritures
+sur des surlignages vides. Les événements des surfaces de commandes et le
+rafraîchissement général partagent une mise à jour secondaire après une
+possibilité de rendu du texte (callback de frame puis nouvelle tâche, avec repli
+borné pour fenêtre masquée). La disponibilité est toujours contrôlée à
+l’invocation ; la présentation différée n’accorde aucun droit supplémentaire.
+La [recette en trois variantes](experiments/editor-priority/RESULTS.md) conserve
+36 sessions et des états finaux identiques. Elle mesure directement entrée →
+frame du texte et entrée → publication/frame du nouvel aperçu, sans les
+confondre avec l’aller-retour IPC ni prétendre mesurer la présentation physique.
+Sur 24 pages à 250 ms/caractère, frappe p95 25 → 16 ms ; aperçu 90 → 80 ms.
+
 **Budget relatif :** exprimer la cible comme un facteur (1,5 à 2, en p95) de la
 compilation incrémentale de Typst seul sur le même document, avec une référence
 distincte pour le natif et pour le WebAssembly, un plancher absolu pour les petits

@@ -89,3 +89,6 @@ transfer and publication. Neither frame metric proves physical GPU presentation.
 Protocol 2 also stamps the recipe/probe sources and verifies this identity in
 addition to the compiled application frontend/core. Use the same probe in every
 variant; do not combine protocol 1 and 2 timing sessions as a single comparison.
+
+[Completed editor-priority comparison](../editor-priority/RESULTS.md): three
+variants, 36 native sessions, direct typing and complete preview-frame delays.
