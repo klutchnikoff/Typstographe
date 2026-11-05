@@ -59,7 +59,7 @@ export function previewController(
         })
       : transport.invoke<T>(`sync_${kind}`, { revision: publication.revision, ...args })
   const clear = () => {
-    for (const svg of container.querySelectorAll('svg')) svg.replaceChildren()
+    for (const svg of container.querySelectorAll('svg')) if (svg.firstChild) svg.replaceChildren()
   }
   const selection = () => {
     clearTimeout(timer)
@@ -291,8 +291,12 @@ export function previewController(
       const scrollTop = container.scrollTop
       // No reused DOM or handler is touched during preparation. Publish pixels,
       // page order and fresh navigation closures together in this one task.
+      const retained = new Set(pages.map((entry) => entry.page))
+      for (const child of [...container.children])
+        if (!retained.has(child as HTMLElement)) child.remove()
       for (const [index, entry] of pages.entries()) {
-        entry.page.querySelector('svg')?.replaceChildren()
+        const overlay = entry.page.querySelector('svg')
+        if (overlay?.firstChild) overlay.replaceChildren()
         bindBackward(entry.page, entry.image, index, entry.size, publication, generation)
         const position = container.children[index]
         if (position !== entry.page) container.insertBefore(entry.page, position ?? null)

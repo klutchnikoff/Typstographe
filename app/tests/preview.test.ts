@@ -412,3 +412,30 @@ it('page deletion and addition keep the correct order and retire only removed ca
     probe.close()
   }
 })
+
+it('replaces only the changed first page and never moves the unchanged following pages', async () => {
+  const probe = canvasProbe()
+  const mutations: MutationRecord[] = []
+  const container = document.getElementById('pages')!
+  const observer = new MutationObserver((records) => mutations.push(...records))
+  try {
+    await controller.show(differential(1, 'first', null, ['a', 'b', 'c'], [0, 1, 2]), 1)
+    const [first, ...retained] = [...container.children]
+    observer.observe(container, { childList: true, subtree: true })
+    await controller.show(differential(1, 'changed', 'first', ['d', 'b', 'c'], [0]), 1)
+    await Promise.resolve()
+    const removed = mutations.flatMap((m) => [...m.removedNodes])
+    const added = mutations.flatMap((m) => [...m.addedNodes])
+    expect(removed).toEqual([first])
+    expect(added).toEqual([container.firstElementChild])
+    expect([...container.children].slice(1)).toEqual(retained)
+    mutations.length = 0
+    controller.invalidate() // Empty highlights must not generate DOM writes either.
+    await controller.show(differential(1, 'same', 'changed', ['d', 'b', 'c'], []), 1)
+    await Promise.resolve()
+    expect(mutations).toHaveLength(0)
+  } finally {
+    observer.disconnect()
+    probe.close()
+  }
+})
