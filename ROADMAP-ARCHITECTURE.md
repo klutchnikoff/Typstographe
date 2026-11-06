@@ -272,12 +272,16 @@ la livraison de tous les types de B n’est pas un prérequis.
   atomique ; pas de fusion par clé, score fuzzy ou transitivité des candidats.
   Porter les garanties de Citekeep une seule fois, avec les adaptations explicites
   pour les états de publication et versions de logiciels. Le corpus documentaire
-  contient des entrées et assertions ; les tests exécutables et les chemins CAS
-  restent à implémenter après validation de la maquette.
+  contient des entrées et assertions ; les chemins CAS restent à implémenter.
+  Le [premier lot](docs/c3-bibliography-foundation.md) livre la crate pure, les
+  24 scénarios d'identité exécutables, ses tests complémentaires et le partage
+  de lecture/synthèse/recherche avec le cœur. Le format et les cibles de citations
+  actuellement utilisés ne changent pas dans ce premier raccordement.
   La [présentation validée](docs/c3-bibliography-interface.md) utilise une liste
   compacte à deux lignes et les composants communs de dialogues, champs,
-  collections et navigation. Le premier lot implémente la crate pure et ses
-  garanties ; migration du format et gestionnaire restent des raccordements distincts.
+  collections et navigation. Restent les commandes/requêtes de notices, la migration
+  des cibles et du format, les codecs de formulaires et le gestionnaire ; les
+  contrôles futurs doivent respecter les structures et valeurs importées.
 - **C.4 — Bibliothèque personnelle.** Recherche locale au projet avant recherche
   personnelle ; copie d’une notice lors de son utilisation, liens de provenance
   conservés et échanges de corrections explicites. Les deux stockages ont leurs

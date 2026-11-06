@@ -153,7 +153,8 @@ impl Facts {
             }
         }
         let arxiv_version = arxiv_value.as_deref().and_then(|v| {
-            let value = v.trim_end_matches(".pdf");
+            let lower = v.to_ascii_lowercase();
+            let value = lower.trim_end_matches(".pdf");
             value
                 .rsplit_once('v')
                 .filter(|(_, suffix)| {

@@ -47,9 +47,10 @@ les composantes des renvois, leur composition Typst et les interactions communes
 ## Contrats préparatoires
 
 - [C.3 — Crate bibliographique, genres et rapprochement](c3-bibliography-contract.md) :
-  décisions validées le 6 novembre 2026, avant maquette et implémentation.
+  [premier lot implémenté](c3-bibliography-foundation.md) et
+  [présentation validée](c3-bibliography-interface.md), avant raccordement documentaire.
   Le [corpus de qualification inspiré de Citekeep](../fixtures/bibliography/README.md)
-  contient les entrées et attentes à porter en tests ; il n'est pas encore exécuté.
+  contient 24 scénarios d'identité exécutés et les matrices d'intégration restantes.
   Le [contrat bibliographique actuel](article-bibliography.md) reste applicable.
 
 ## Bilans et références historiques

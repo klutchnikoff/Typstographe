@@ -334,12 +334,14 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    candidature, contradictions et décisions ; prépublication/publié et versions
    de logiciel ne sont pas fusionnés silencieusement. Valider une notice est une
    édition annulable, sans écriture immédiate du fichier ; les conflits se
-   résolvent avant publication du lot d'import. **Prochain jalon : la maquette**,
-   avant l'implémentation de cette crate et le raccordement aux adaptateurs.
+   résolvent avant publication du lot d'import. Le
+   [premier lot de crate](docs/c3-bibliography-foundation.md) est implémenté,
+   avec les 24 scénarios d'identité exécutés et un raccordement de la lecture et
+   de la recherche actuelles ; la migration documentaire reste à faire.
    **Présentation validée :** [gestionnaire commun](docs/c3-bibliography-interface.md),
    liste compacte à deux lignes (auteur/année puis titre tronqué), défilement
-   indépendant, détails et formulaire à droite. Commencer par la crate et son
-   corpus exécuté, puis raccorder le moteur et la modale sans doubler les règles.
+   indépendant, détails et formulaire à droite. Raccorder l'état documentaire,
+   les citations par identité, le CAS et la modale sans doubler les règles.
 4. **C.4 — Bibliothèque bibliographique personnelle.** Recherche projet d’abord,
    bibliothèque personnelle ensuite ; copier la notice dans le projet lors de
    l’insertion. Échanges et corrections explicites, identités et clés stables,
@@ -692,12 +694,13 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 ## Prochain lot proposé
 
-**C.3 — Maquette du gestionnaire bibliographique**, à partir du contrat validé.
+**C.3 — Raccordement documentaire de la crate bibliographique commune.**
 
-1. Le contrat de crate, les correspondances de genres et le corpus de tests
-   sont consignés ; ils ne sont pas encore implémentés ni exécutés.
-2. Valider ensemble la maquette du gestionnaire, des imports/arbitrages et des
-   brouillons avant de coder, puis qualifier conversion et rendu sur le corpus.
+1. Raccorder l'état structuré et les commandes/requêtes communes aux notices et
+   aux citations par identité ; la crate et le corpus d'identité sont livrés.
+2. Migrer le CAS et l'export vers un seul Hayagriva actif avec les originaux de
+   provenance, puis le gestionnaire selon la présentation validée. Qualifier
+   les détails de conversion, les codecs de champs composés et leur rendu.
 3. Poursuivre avec C.4 ; macros LaTeX et fonctions Typst personnalisées restent
    explicitement à traiter dans un lot ultérieur. L’assistance ACP conserve son
    parcours de validation et de maquette dans F.

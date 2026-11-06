@@ -1,7 +1,7 @@
 {
   "format": "typstographe-bibliography-contract-cases",
   "version": 1,
-  "status": "specification_not_executed",
+  "status": "identity_cases_executed_by_rust_crate",
   "reference": {
     "project": "citekeep",
     "commit": "935efc9b207e318805e1eaa270b01a5db3324fd2",

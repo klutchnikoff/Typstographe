@@ -1,8 +1,9 @@
 # Corpus de contrat bibliographique C.3
 
-**État : spécification, pas encore de moteur ni de tests exécutables.**
-Ces entrées et résultats attendus serviront aux tests de la future crate
-`typstographe-bibliography`. Le [contrat](../../docs/c3-bibliography-contract.md)
+**État : les 24 scénarios d'identité sont exécutés par la crate Rust commune.**
+Les autres matrices restent des objectifs de qualification, partiellement
+couverts par les tests complémentaires du [premier lot](../../docs/c3-bibliography-foundation.md).
+Le [contrat](../../docs/c3-bibliography-contract.md)
 fixe les responsabilités ; ce répertoire ne définit pas un format de projet.
 
 ## Provenance et licence
@@ -115,7 +116,7 @@ validation, reprise après incident, concurrence sur la même notice sans perte 
 saisie. Aucun scénario n'est annoncé réussi tant que son test n'est pas raccordé
 et exécuté. Ce lot ne produit aucune capture.
 
-## Vérifications de ce lot documentaire — 6 novembre 2026
+## Vérifications à la préparation du corpus — 6 novembre 2026
 
 - JSON et YAML lisibles : 24 cas distincts, 51 notices de scénario, 6 notices
   natives ; les cibles d'identité mentionnées existent dans leurs cas.
@@ -124,6 +125,20 @@ et exécuté. Ce lot ne produit aucune capture.
   via la CLI Typst 0.15.1, sans PDF ni capture conservés dans le dépôt.
 - Liens Markdown locaux et absence d'erreurs d'espacement vérifiés.
 
-Ces contrôles qualifient les **entrées de la spécification**, pas les résultats
-de rapprochement, les pertes de conversion ni les garanties d'intégration. Les
-tests Rust de la crate épinglée et les recettes GUI/CLI/MCP restent à écrire.
+Ces premiers contrôles qualifiaient les **entrées de la spécification**, pas les
+résultats de rapprochement, les pertes de conversion ni les garanties
+d'intégration. La section suivante décrit leur raccordement ultérieur au moteur.
+
+## Premier raccordement exécutable
+
+`crates/bibliography/src/tests/corpus.rs` exécute les 24 cas d'identité, chacun
+dans un test nommé. Chaque attente est vérifiée ; une attente inconnue provoque
+un échec. Les tests complémentaires qualifient les entrées natives/BibLaTeX,
+la conservation, les plans et leurs gardes. La préparation/allocation de
+nouvelles identités simule un nouvel import lors de la vérification d'idempotence.
+Le moteur n'appelle pas Python et ne dépend pas du dépôt Citekeep installé.
+
+Les contrôles documentaires ci-dessus restent le bilan de la préparation du
+corpus. Les résultats de l'implémentation et les raccordements encore nécessaires
+sont précisés dans le [bilan C.3](../../docs/c3-bibliography-foundation.md) ; les
+matrices d'intégration et C.4 ne sont pas annoncées toutes exécutées.

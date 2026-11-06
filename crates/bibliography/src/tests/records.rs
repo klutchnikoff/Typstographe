@@ -144,3 +144,21 @@ fn fuzzy_search_is_unicode_aware_and_does_not_mutate_records() {
     assert!(search(&records, "", 0).is_empty());
     assert_eq!(records, before);
 }
+
+#[test]
+fn key_suggestions_avoid_existing_names_without_renaming_or_inventing_identity() {
+    let one = record(
+        "a",
+        "stable-key",
+        json!({"type":"article","title":"Une enquête collective","author":"Durand, Élise","date":2025}),
+    );
+    let occupied = ["durand_une_2025".into(), "durand_une_2025_1".into()]
+        .into_iter()
+        .collect();
+    assert_eq!(suggest_key(one.entry(), &occupied), "durand_une_2025_2");
+    assert_eq!(one.key(), "stable-key");
+    assert_eq!(
+        suggest_key(&Genre::Other.empty_entry("pending"), &Default::default()),
+        "anonymous_untitled_nd"
+    );
+}

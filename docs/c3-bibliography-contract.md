@@ -2,8 +2,9 @@
 
 Décisions validées le **6 novembre 2026**, avant maquette et implémentation.
 Ce document définit le contrat cible ; le [contrat actuel](article-bibliography.md)
-reste exécutable jusqu'à son remplacement. Aucune crate ni commande décrite ici
-n'est encore livrée. Les identifiants techniques sont anglais.
+reste exécutable jusqu'à son remplacement. Le [premier lot de crate](c3-bibliography-foundation.md)
+est implémenté ; nouvelles commandes, migration documentaire et gestionnaire
+restent à raccorder. Les identifiants techniques sont anglais.
 
 ## Frontière de la crate
 

@@ -1,10 +1,12 @@
 //! Bibliographic values and pure operations shared by project and personal libraries.
 //! Callers own identity allocation, persistence, document history and publication.
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 
 mod diagnostic;
 mod genre;
 mod identity;
 mod import;
+mod keys;
 mod model;
 mod plan;
 mod search;
@@ -18,6 +20,7 @@ pub use identity::{
 pub use import::{
     ImportFormat, ImportSource, PreparedImport, completeness, parse_native, prepare_import,
 };
+pub use keys::suggest_key;
 pub use model::{FieldPatch, Fingerprint, Library, Provenance, Record, RecordId};
 pub use plan::{Action, Decision, ImportPlan, PlanItem};
 pub use search::{EntrySummary, SearchQuery, normalize_text, search, summarize};
