@@ -581,3 +581,69 @@ test('volume et numéro hérités restent visibles et modifiables après un chan
   expect(record.entry).not.toHaveProperty('volume')
   expect(record.entry.parent[0].volume).toBe(13)
 })
+
+test('a late usage error cannot overwrite the next notice or its private input', async ({
+  page,
+}) => {
+  await create(page)
+  let release!: () => void
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  let captured!: () => void
+  const started = new Promise<void>((resolve) => {
+    captured = resolve
+  })
+  let delayed = false
+  await page.route('**/__spike/invoke', async (route) => {
+    const request = route.request().postDataJSON()
+    if (
+      !delayed &&
+      request.command === 'bibliography_query' &&
+      request.args?.operation === 'bibliography.usage'
+    ) {
+      delayed = true
+      captured()
+      await held
+      await route.fulfill({ json: { error: 'obsolete usage failure' } })
+    } else await route.continue()
+  })
+  try {
+    await manage(page)
+    await started
+    const rows = page.locator('.bibliography-list-row')
+    await expect(rows).toHaveCount(2)
+    await expect(manager(page).getByLabel('Titre', { exact: true })).toBeEditable()
+    await rows.nth(1).click()
+    await expect(rows.nth(1)).toHaveAttribute('aria-selected', 'true')
+    const title = manager(page).getByLabel('Titre', { exact: true })
+    await title.fill('Private text must survive a late response')
+    const response = page.waitForResponse((response) => {
+      const request = response.request().postDataJSON()
+      return (
+        request?.command === 'bibliography_query' &&
+        request.args?.operation === 'bibliography.usage'
+      )
+    })
+    release()
+    await (await response).finished()
+    await page.unrouteAll({ behavior: 'wait' })
+    // Let fetch/JSON and the manager's rejected-query callback settle before
+    // a negative assertion, which otherwise could pass before the held error.
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    )
+    await expect(title).toHaveValue('Private text must survive a late response')
+    await expect(manager(page)).not.toContainText('obsolete usage failure')
+    await title.press('Escape')
+    await page
+      .locator('#bibliography-leave')
+      .getByRole('button', { name: 'Abandonner', exact: true })
+      .click()
+  } finally {
+    release()
+  }
+})

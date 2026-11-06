@@ -1,9 +1,9 @@
-import type { Editor, JSONContent } from '@tiptap/core'
+import type { Editor } from '@tiptap/core'
 import type { Provider, Transport } from './provider'
 import { stableJSON } from './provider'
 import { metadataCommands } from './metadata-commands'
 import { formDialog } from './form-dialog'
-import { bibliographyQuery } from './bibliography-query'
+import { bibliographyRequests } from './bibliography-requests'
 import { bibliographyFields, diagnosticText } from './bibliography-fields'
 import {
   importReview,
@@ -13,25 +13,18 @@ import {
 } from './bibliography-import'
 import type { Browse, Form, Draft, Notice, Source, Report } from './bibliography-types'
 import { profiles } from './bibliography-types'
-import { navigationGroup, actionRow } from './keyboard-navigation'
 import { labeledField } from './form-field'
 import { referenceRecords } from './citation-index'
 import { documentContent } from './shared-inline-marks'
 import { positionAtPath } from './editor-targets'
 import { consumeRecovered, type RecoveredItem } from './recovered-work'
-import { icon } from './icons'
+import { bibliographyBrowser } from './bibliography-browser'
 import { tr } from './i18n'
 import { errorText } from './command-error'
-import type { StructuredCommand } from './structured-commands'
-interface Cite {
-  node?: JSONContent
-  target: Record<string, unknown>
-  document: JSONContent
-  position: number
-}
+import { prepareBibliographyPublication, type CitationDraft } from './bibliography-publication'
 interface Options {
   create?: boolean
-  cite?: Cite
+  cite?: CitationDraft
   done?: () => void
   recovered?: RecoveredItem
 }
@@ -64,19 +57,15 @@ export function openBibliography(
   let alive = true,
     busy = false,
     browsing = false,
-    ticket = 0,
-    reviewTicket = 0,
     draft: Draft | undefined,
     imported: ImportDraft | undefined,
     baseline = '',
     recovered = options.recovered,
     cite = options.cite
   let cleanupFields = () => {}
-  let rows: Browse['entries'] = [],
-    total = 0,
-    lastLibrary = stableJSON(referenceRecords(provider))
-  const generation = provider.generation,
-    identity = provider.doc.getMap('settings').get('identity')
+  let lastLibrary = stableJSON(referenceRecords(provider))
+  const requests = bibliographyRequests(provider, editor, transport)
+  const { current, query: api } = requests
   const initialFocus = document.activeElement as HTMLElement
   const form = formDialog({
     id: 'bibliography-manager',
@@ -85,42 +74,10 @@ export function openBibliography(
     returnFocus: () => (initialFocus?.isConnected ? initialFocus : editor.view.dom),
   })
   form.dialog.classList.add('bibliography-dialog')
-  const layout = document.createElement('div'),
-    left = document.createElement('aside'),
-    right = document.createElement('section'),
-    list = document.createElement('div'),
-    search = document.createElement('input'),
-    count = document.createElement('p'),
-    add = document.createElement('button'),
-    load = document.createElement('button'),
-    file = document.createElement('input')
-  layout.className = 'bibliography-layout'
-  left.className = 'bibliography-browser'
-  right.className = 'bibliography-detail'
-  list.className = 'bibliography-list'
-  list.id = 'bibliography-list'
-  list.role = 'listbox'
-  list.setAttribute('aria-label', tr('Notices'))
-  search.type = 'search'
-  search.placeholder = tr('Rechercher par titre ou auteur…')
-  search.setAttribute('aria-label', tr('Rechercher une référence'))
-  search.role = 'combobox'
-  search.setAttribute('aria-controls', list.id)
-  search.setAttribute('aria-expanded', 'true')
-  search.dataset.initialFocus = ''
-  add.type = load.type = 'button'
-  add.innerHTML = icon('plus')
-  add.setAttribute('aria-label', tr('Créer une notice'))
-  load.textContent = tr('Importer…')
-  file.type = 'file'
-  file.accept = '.bib,.yaml,.yml'
-  file.hidden = true
-  file.setAttribute('aria-label', tr('Fichiers bibliographiques'))
-  const top = actionRow()
-  top.append(load, add)
-  left.append(search, count, top, list, file)
-  layout.append(left, right)
-  form.body.append(layout)
+  const browser = bibliographyBrowser(form.body, (id) => {
+    if (!browsing && !busy) leave(() => void select(id, true))
+  })
+  const { right, list, search, add, load, file } = browser
   const remove = form.action({
     label: tr('Supprimer'),
     danger: true,
@@ -129,22 +86,9 @@ export function openBibliography(
   const cancel = form.action({ label: tr('Annuler'), run: () => leave(() => destroy()) })
   const save = form.action({ label: tr('Valider'), primary: true, run: () => void publish() })
   const close = form.action({ label: tr('Fermer'), run: () => leave(() => destroy()) })
-  const navigation = navigationGroup(list, {
-    axis: 'vertical',
-    input: search,
-    onActivate: (row) => {
-      if (!browsing && !busy) leave(() => void select(row.dataset.recordId!, true))
-    },
-  })
-  const api = <T>(operation: string, params: Record<string, unknown> = {}) =>
-    bibliographyQuery<T>(provider, transport, operation, params, documentContent(editor.getJSON()))
-  const current = () =>
-    alive &&
-    !editor.isDestroyed &&
-    generation === provider.generation &&
-    identity === provider.doc.getMap('settings').get('identity')
   const message = (error: unknown) => {
-    form.error.textContent = error instanceof Error ? error.message : errorText(error)
+    if (current())
+      form.error.textContent = error instanceof Error ? error.message : errorText(error)
   }
   const data = () => ({ draft, imported, cite, query: search.value })
   const dirty = () => !!imported || (!!draft && stableJSON(draft) !== baseline)
@@ -204,10 +148,9 @@ export function openBibliography(
     if (!alive) return
     alive = false
     cleanupFields()
-    ticket++
-    reviewTicket++
+    requests.destroy()
     provider.doc.getMap('settings').unobserveDeep(observe)
-    navigation.destroy()
+    browser.destroy()
     managers.delete(provider)
     form.destroy()
   }
@@ -249,56 +192,34 @@ export function openBibliography(
     question.open()
   }
   async function browse() {
-    const id = ++ticket
+    const latest = requests.latest('browse')
     browsing = true
     refreshActions()
     list.inert = true
     list.setAttribute('aria-busy', 'true')
     try {
       const result = await api<Browse>('bibliography.browse', { query: search.value })
-      if (!current() || id !== ticket) return
+      if (!latest()) return
       list.inert = false
       list.setAttribute('aria-busy', 'false')
-      rows = result.entries
-      total = result.total
-      count.textContent = tr('{count} / {total} notices', { count: rows.length, total })
-      list.replaceChildren()
-      for (const record of rows) {
-        const row = document.createElement('button'),
-          name = document.createElement('span'),
-          title = document.createElement('span')
-        row.type = 'button'
-        row.dataset.recordId = record.id
-        row.className = 'bibliography-list-row'
-        row.setAttribute('aria-selected', String(record.id === draft?.base.id))
-        name.textContent = `${record.names} · ${record.year ?? '—'}${record.incomplete ? ' ◦' : ''}`
-        title.textContent = record.title || record.key
-        row.setAttribute(
-          'aria-label',
-          `${record.names} · ${record.year ?? '—'} · ${record.title || record.key}${record.incomplete ? ` · ${tr('Notice incomplète')}` : ''}`,
-        )
-        row.append(name, title)
-        list.append(row)
-      }
-      navigation.refresh()
-      if (!draft && !imported && rows.length) await select(rows[0].id, false)
+      browser.render(result, draft?.base.id)
+      if (!draft && !imported && result.entries.length) await select(result.entries[0].id, false)
     } catch (error) {
-      if (current() && id === ticket) {
+      if (latest()) {
         list.inert = false
         list.setAttribute('aria-busy', 'false')
         list.replaceChildren()
         message(error)
       }
     } finally {
-      if (id === ticket) {
+      if (latest()) {
         browsing = false
         refreshActions()
       }
     }
   }
   function show() {
-    for (const row of list.querySelectorAll<HTMLElement>('[data-record-id]'))
-      row.setAttribute('aria-selected', String(row.dataset.recordId === draft?.base.id))
+    browser.select(draft?.base.id)
     cleanupFields()
     cleanupFields = () => {}
     right.replaceChildren()
@@ -351,15 +272,18 @@ export function openBibliography(
     usage.hidden = draft.creating
     usage.onclick = () => void findCitations().catch(message)
     right.append(usage)
+    const usageCurrent = requests.latest('usage')
     if (!draft.creating)
       void api<{ targets: { path: number[] }[] }>('bibliography.usage', { id: draft.base.id })
         .then((result) => {
-          if (current() && draft === selected) {
+          if (usageCurrent() && draft === selected) {
             usage.textContent = tr('Voir les citations ({count})', { count: result.targets.length })
             usage.disabled = !result.targets.length
           }
         })
-        .catch(message)
+        .catch((error: unknown) => {
+          if (usageCurrent() && draft === selected) message(error)
+        })
     refreshActions()
   }
   async function select(id: string, focus: boolean) {
@@ -481,69 +405,17 @@ export function openBibliography(
     refreshActions()
     form.error.textContent = ''
     try {
-      const batch: StructuredCommand[] = []
-      if (review) {
-        if (review.report.plan.blocked || review.ready !== stableJSON(review.decisions))
-          return false
-        batch.push({
-          id: 'bibliography.apply',
-          params: {
-            expected: review.report.library_fingerprint,
-            change: {
-              kind: 'import',
-              source: review.source,
-              preparation: review.report.fingerprint,
-              decisions: review.decisions,
-            },
-          },
-        })
-      } else if (selected) {
-        const prepared = await api<Form>('bibliography.prepare_form', {
-          record: selected.working,
-          values: selected.values,
-          key: selected.key || null,
-        })
-        const inspection = await api<{ fingerprint: string }>('bibliography.inspect')
-        if (selected.creating || stableJSON(prepared.record) !== stableJSON(selected.base))
-          batch.push({
-            id: 'bibliography.apply',
-            params: {
-              expected: inspection.fingerprint,
-              change: selected.creating
-                ? { kind: 'create', record: prepared.record }
-                : {
-                    kind: 'replace',
-                    id: selected.base.id,
-                    expected: selected.fingerprint,
-                    record: prepared.record,
-                  },
-            },
-          })
-        if (cite) {
-          if (stableJSON(documentContent(editor.getJSON())) !== stableJSON(cite.document))
-            throw new Error(
-              tr('La cible de citation a changé ; votre notice est conservée dans ce formulaire.'),
-            )
-          batch.push({
-            id: 'inline.replace',
-            params: {
-              target: cite.target,
-              node: {
-                type: 'citation',
-                marks: cite.node?.marks,
-                attrs: {
-                  ...cite.node?.attrs,
-                  items: [
-                    ...(cite.node?.attrs?.items || []),
-                    { record_id: selected.base.id, supplement: '' },
-                  ],
-                  form: cite.node?.attrs?.form || 'normal',
-                },
-              },
-            },
-          })
-        }
-      }
+      const batch = await prepareBibliographyPublication(
+        api,
+        structuredClone(selected),
+        structuredClone(review),
+        structuredClone(cite),
+      )
+      if (!batch) return false
+      if (cite && stableJSON(documentContent(editor.getJSON())) !== stableJSON(cite.document))
+        throw new Error(
+          tr('La cible de citation a changé ; votre notice est conservée dans ce formulaire.'),
+        )
       if (!current() || draft !== selected || imported !== review) return false
       await metadataCommands(editor, provider).run(
         batch,
@@ -631,11 +503,13 @@ export function openBibliography(
   }
   async function findCitations() {
     if (!draft) return
+    const selected = draft
+    const latest = requests.latest('navigation')
     const result = await api<{ targets: { path: number[] }[] }>('bibliography.usage', {
-      id: draft.base.id,
+      id: selected.base.id,
     })
     const target = result.targets[0]
-    if (target)
+    if (target && latest() && draft === selected)
       leave(() => {
         destroy()
         const position = positionAtPath(editor, target.path)
@@ -646,11 +520,11 @@ export function openBibliography(
   async function resolve() {
     const selected = imported
     if (!selected) return
-    const id = ++reviewTicket
+    const latest = requests.latest('review')
     refreshActions()
     try {
       const result = await reviewImport(provider, transport, selected)
-      if (current() && imported === selected && id === reviewTicket) {
+      if (latest() && imported === selected) {
         selected.report.plan = result.plan
         refreshImportPlan(right, result.plan)
         selected.ready = stableJSON(selected.decisions)
@@ -660,7 +534,7 @@ export function openBibliography(
         changed()
       }
     } catch (error) {
-      if (current() && id === reviewTicket) message(error)
+      if (latest()) message(error)
     }
   }
   file.onchange = async () => {
