@@ -138,6 +138,31 @@ pub(crate) fn valid_key(key: &str) -> Result<()> {
 
 pub(crate) fn entry_from_value(key: &str, value: Value) -> Result<Entry> {
     valid_key(key)?;
+    fn fields(value: &Value, key: &str, path: &str) -> Result<()> {
+        if let Some(map) = value.as_object() {
+            for (field, child) in map {
+                let path = format!("{path}/{field}");
+                if !crate::import::native_field(field) {
+                    return Err(Error::new(
+                        Code::UnsupportedField,
+                        "Unknown native field would be discarded",
+                    )
+                    .at(key, Some(&path)));
+                }
+                if field == "parent" {
+                    if let Some(parents) = child.as_array() {
+                        for (i, parent) in parents.iter().enumerate() {
+                            fields(parent, key, &format!("{path}/{i}"))?;
+                        }
+                    } else {
+                        fields(child, key, &format!("{path}/0"))?;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+    fields(&value, key, "")?;
     let library: hayagriva::Library = serde_json::from_value(Value::Object(
         [(key.to_owned(), value)].into_iter().collect(),
     ))
@@ -204,7 +229,9 @@ impl Record {
         canonical_entry(&self.entry)
     }
     pub(crate) fn add_provenance(&mut self, source: Provenance) {
-        if !self.provenance.contains(&source) {
+        if !self.provenance.iter().any(|old| {
+            old.source_digest == source.source_digest && old.original_key == source.original_key
+        }) {
             self.provenance.push(source);
         }
     }
@@ -231,7 +258,9 @@ impl Record {
                 || (!ancestors.is_empty()
                     && ancestors.len().is_multiple_of(2)
                     && ancestors
-                        .chunks_exact(2)
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
                         .all(|pair| pair[0] == "parent" && pair[1].parse::<usize>().is_ok()));
             if !valid_container
                 || !crate::import::native_field(field)

@@ -73,6 +73,9 @@ fn invalid_edits_are_atomic_and_cannot_target_an_unrelated_nested_object() {
     }
     assert_eq!(original.entry().title().unwrap().value.to_string(), "Title");
     assert_eq!(original.key(), "k");
+    let mut payload = serde_json::to_value(&original).unwrap();
+    payload["entry"]["custom"] = json!("Would be lost by a permissive parser");
+    assert!(serde_json::from_value::<Record>(payload).is_err());
 }
 
 #[test]

@@ -20,5 +20,7 @@ fn import(text: &str, format: ImportFormat) -> PreparedImport {
     .unwrap()
 }
 
+mod corpus;
 mod imports;
+mod plans;
 mod records;

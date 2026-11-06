@@ -20,8 +20,9 @@ pub enum Genre {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FieldKind {
-    Text,
+    FormattedText,
     People,
+    Publisher,
     Date,
     NumberOrText,
     Url,
@@ -116,12 +117,12 @@ impl Genre {
                 recommended,
             })
         };
-        add("/title", Text, "work", true);
+        add("/title", FormattedText, "work", true);
         add("/author", People, "work", true);
         add("/date", Date, "work", true);
         match self {
             Self::JournalArticle | Self::BookChapter | Self::ConferencePaper => {
-                add("/parent/0/title", Text, "publication", true);
+                add("/parent/0/title", FormattedText, "publication", true);
                 add("/page-range", NumberOrText, "publication", false);
                 if self == Self::JournalArticle {
                     add("/volume", NumberOrText, "publication", false);
@@ -131,13 +132,13 @@ impl Genre {
                 }
             }
             Self::Book => {
-                add("/publisher", Text, "publication", true);
+                add("/publisher", Publisher, "publication", true);
                 add("/edition", NumberOrText, "publication", false);
                 add("/editor", People, "publication", false);
             }
             Self::Report | Self::Thesis => {
-                add("/organization", Text, "publication", true);
-                add("/genre", Text, "publication", false);
+                add("/organization", FormattedText, "publication", true);
+                add("/genre", FormattedText, "publication", false);
             }
             Self::Software => add("/edition", NumberOrText, "publication", true),
             _ => {}

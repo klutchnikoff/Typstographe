@@ -48,37 +48,52 @@ pub fn normalize_text(value: &str) -> String {
         .collect()
 }
 
-/// Shared score for adapters that still expose source files during C.3 migration.
-pub fn search_score(title: &str, authors: &str, query: &str) -> Option<f64> {
-    if query.len() > 512 {
-        return None;
-    }
-    let text = normalize_text(&format!("{title} {authors}"));
-    let query = normalize_text(query);
-    let mut score = 0.0;
-    for token in query.split_whitespace() {
-        let best = if text.contains(token) {
-            1.0
-        } else {
-            text.split(|c: char| !c.is_alphanumeric())
-                .map(|word| strsim::jaro_winkler(token, word))
-                .fold(0.0, f64::max)
-        };
-        if best < 0.84 {
-            return None;
+/// Normalize query tokens once per search, including for source-based callers.
+pub struct SearchQuery {
+    tokens: Option<Vec<String>>,
+}
+
+impl SearchQuery {
+    pub fn new(query: &str) -> Self {
+        Self {
+            tokens: (query.len() <= 512).then(|| {
+                normalize_text(query)
+                    .split_whitespace()
+                    .map(Into::into)
+                    .collect()
+            }),
         }
-        score += best;
     }
-    Some(score)
+    pub fn score(&self, title: &str, authors: &str) -> Option<f64> {
+        let tokens = self.tokens.as_ref()?;
+        let text = normalize_text(&format!("{title} {authors}"));
+        let mut score = 0.0;
+        for token in tokens {
+            let best = if text.contains(token) {
+                1.0
+            } else {
+                text.split(|c: char| !c.is_alphanumeric())
+                    .map(|word| strsim::jaro_winkler(token, word))
+                    .fold(0.0, f64::max)
+            };
+            if best < 0.84 {
+                return None;
+            }
+            score += best;
+        }
+        Some(score)
+    }
 }
 
 /// Fuzzy search is a discovery aid, never evidence permitting a merge.
 pub fn search(records: &[Record], query: &str, limit: usize) -> Vec<RecordId> {
+    let query = SearchQuery::new(query);
     let mut scored = records
         .iter()
         .filter_map(|record| {
             let summary = summarize(record.entry());
-            search_score(&summary.title, &summary.authors, query)
+            query
+                .score(&summary.title, &summary.authors)
                 .map(|score| (score, record.id(), summary))
         })
         .collect::<Vec<_>>();
