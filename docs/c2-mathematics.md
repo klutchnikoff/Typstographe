@@ -209,4 +209,34 @@ et ne promet pas la conformité du document entier sur cette seule base.
   ligne ; correspondance du wrapper et de tous les fichiers MiTeX embarqués
   vérifiée. Les quatre documents locaux préexistants restent identiques.
 
+## Correctifs de qualification — 6 novembre 2026
+
+La branche intègre `main`, avec les corrections C.1 de construction du texte Yjs
+et de l’exemple archivé. Les contrôles d’intégrité à la reprise restent actifs.
+
+- Les profils riches conservent les ancres des champs d’en-tête. Les formulaires
+  privés utilisent l’état confirmé comme base de reprise, sans perdre les
+  identités ni produire une édition des champs inchangés. Les recettes couvrent
+  reprise, annulation, nouvelle reprise puis validation des titres et résumés.
+- Les paragraphes de continuation créés par le moteur, ainsi que le document
+  vide servant à isoler un import refusé, reçoivent leur ancre avant publication.
+  La reprise ne doit pas modifier l’identité de ces paragraphes.
+- Les transactions d’initialisation n’utilisent pas le contrôleur d’aperçu avant
+  sa création. La demande finale de démarrage prend le document courant.
+- Les assertions de texte DOM excluent les décorations `.paragraph-marker` ;
+  elles vérifient séparément la présence de ¶, le texte éditable et les éditions.
+  Aucun contenu documentaire n’est masqué par cette correction des recettes.
+
+Les vérifications utilisent une installation npm isolée avec le `postinstall`
+versionné de `patch-package`, comme la CI. Les trois exemples versionnés ont été
+ouverts par le moteur et contrôlés pour les ancres manquantes ; les copies de
+travail locales sont conservées.
+
+Vérifications : 483 tests Vitest, 10 contrôles Node, 31 tests du contrat partagé,
+278 tests du cœur et 131 tests natifs réussis (un test ignoré). Les 66 scénarios
+Chromium/WebKit ont été vérifiés : 64 réussites dans la recette élargie, puis les
+deux imports rejoués avec succès après leur correction. TypeScript, les builds
+web et natif de recettes, Clippy, le formatage, les limites de modules Rust et
+la frontière des dépendances du cœur passent. Aucune capture ni trace.
+
 Qualification CI multisystème et recette utilisateur à confirmer avant fusion.
