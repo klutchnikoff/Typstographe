@@ -270,7 +270,7 @@ export function openBibliography(
     usage.type = 'button'
     usage.textContent = tr('Voir les citations')
     usage.hidden = draft.creating
-    usage.onclick = () => void findCitations().catch(message)
+    usage.onclick = () => void findCitations()
     right.append(usage)
     const usageCurrent = requests.latest('usage')
     if (!draft.creating)
@@ -505,17 +505,21 @@ export function openBibliography(
     if (!draft) return
     const selected = draft
     const latest = requests.latest('navigation')
-    const result = await api<{ targets: { path: number[] }[] }>('bibliography.usage', {
-      id: selected.base.id,
-    })
-    const target = result.targets[0]
-    if (target && latest() && draft === selected)
-      leave(() => {
-        destroy()
-        const position = positionAtPath(editor, target.path)
-        editor.commands.setTextSelection(position + 1)
-        editor.view.focus()
+    try {
+      const result = await api<{ targets: { path: number[] }[] }>('bibliography.usage', {
+        id: selected.base.id,
       })
+      const target = result.targets[0]
+      if (target && latest() && draft === selected)
+        leave(() => {
+          destroy()
+          const position = positionAtPath(editor, target.path)
+          editor.commands.setTextSelection(position + 1)
+          editor.view.focus()
+        })
+    } catch (error) {
+      if (latest() && draft === selected) message(error)
+    }
   }
   async function resolve() {
     const selected = imported
