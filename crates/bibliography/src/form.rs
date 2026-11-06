@@ -114,7 +114,14 @@ pub fn form_fields(record: &Record) -> Vec<FormField> {
             }
         } else if matches!(
             path.as_str(),
-            "/author" | "/date" | "/publisher" | "/editor" | "/organization"
+            "/author"
+                | "/date"
+                | "/publisher"
+                | "/editor"
+                | "/organization"
+                | "/volume"
+                | "/issue"
+                | "/edition"
         ) && let Some(actual) = find_field(&native, "", &path[1..])
         {
             path = actual;

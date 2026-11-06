@@ -110,3 +110,33 @@ fn adding_a_missing_publication_uses_native_defaults_without_replacing_other_fie
     assert_eq!(edited.native_value()["parent"][0]["type"], "periodical");
     assert_eq!(edited.native_value()["note"], "Keep");
 }
+
+#[test]
+fn publication_numbers_remain_editable_at_their_native_parent_paths_after_type_roundtrips() {
+    let record=Record::from_native(id("r"),"work",json!({"type":"article","title":"Work","parent":{"type":"periodical","title":"Journal","volume":12,"issue":2}})).unwrap();
+    let book = record
+        .reclassified(&record.fingerprint(), Profile::Book)
+        .unwrap();
+    let journal = book
+        .reclassified(&book.fingerprint(), Profile::JournalArticle)
+        .unwrap();
+    let fields = form_fields(&journal);
+    for (path, value) in [("/parent/0/volume", "12"), ("/parent/0/issue", "2")] {
+        assert!(fields.iter().any(|f| f.path == path && f.value == value));
+    }
+    let patches = form_patches(
+        &journal,
+        &std::collections::BTreeMap::from([("/parent/0/volume".into(), json!("13"))]),
+    )
+    .unwrap();
+    let edited = journal.edited(&journal.fingerprint(), &patches).unwrap();
+    assert_eq!(
+        form_fields(&edited)
+            .into_iter()
+            .find(|f| f.path == "/parent/0/volume")
+            .unwrap()
+            .value,
+        "13"
+    );
+    assert!(edited.native_value().get("volume").is_none());
+}
