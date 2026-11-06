@@ -1,8 +1,9 @@
 # C.3 — Gestionnaire bibliographique : présentation validée
 
 Décisions du **6 novembre 2026**, après exploration de la maquette. Cette page
-décrit l'interface à raccorder au [moteur commun](c3-bibliography-contract.md),
-pas une fonctionnalité déjà disponible.
+décrit l’interface retenue pour le [moteur commun](c3-bibliography-contract.md).
+Son [raccordement et ses limites](c3-bibliography-manager.md) sont documentés
+séparément.
 
 - Grande modale centrée, environ 90 % de la fenêtre, arrière-plan atténué et
   légèrement flouté comme les dialogues existants.
@@ -39,7 +40,7 @@ pas une fonctionnalité déjà disponible.
 - Pas de sélecteur de bibliothèque à option unique : C.4 ajoutera le choix
   Projet/Personnelle et réutilisera le même gestionnaire.
 
-Recettes à prévoir : nombreuses notices et titres longs, recherche Unicode,
+Recettes de qualification : nombreuses notices et titres longs, recherche Unicode,
 clair/sombre, focus et défilements indépendants, import au clavier, fermeture
 d'un brouillon et reprise après incident. Les contrôles de la maquette ne
 remplacent pas ces recettes dans l'application ; aucune capture n'est demandée.

@@ -94,9 +94,9 @@ silencieusement. Le nouvel exemple ouvrable est
 Le panneau d’en-tête existant utilise maintenant les notices : import après
 revue, refus visible si le plan demande un arbitrage, liste de clés et suppression
 protégée. Le sélecteur de citations, ses raccourcis, les badges et les aperçus
-utilisent les identités actives. Les formulaires complets, arbitrages interactifs
-et brouillons du gestionnaire restent le prochain lot, avec les composants et
-la liste compacte validés.
+utilisent les identités actives. Le [lot suivant du gestionnaire](c3-bibliography-manager.md)
+raccorde les formulaires, arbitrages interactifs et brouillons, avec les
+composants et la liste compacte validés.
 
 Le compactage des schémas est mutualisé dans le cœur, puis réutilisé par MCP.
 Le catalogue n’embarque plus les définitions inutilisées dans chaque opération ;

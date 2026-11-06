@@ -288,8 +288,13 @@ la livraison de tous les types de B n’est pas un prérequis.
   collections et navigation. Le [raccordement documentaire](docs/c3-bibliography-document-state.md)
   livre l’état partagé par notice/source, `bibliography.apply`, les gardes, les
   citations par identité et le CAS 15 avec contrôle de la projection Hayagriva.
-  Restent les codecs de formulaires et le gestionnaire complet ; les
-  contrôles futurs doivent respecter les structures et valeurs importées.
+  Le [gestionnaire et ses codecs](docs/c3-bibliography-manager.md) sont raccordés :
+  champs natifs préservés, décisions d’import explicites, formulaires privés
+  récupérables, création/citation atomique et garde de notice concurrente. Les
+  requêtes communes projettent et préparent les formulaires, parcourent toute
+  la bibliothèque, localisent les citations et revoient les imports sans
+  publication. La modification de genre d’une notice existante reste distincte
+  et n’est pas proposée par ce premier formulaire.
 - **C.4 — Bibliothèque personnelle.** Recherche locale au projet avant recherche
   personnelle ; copie d’une notice lors de son utilisation, liens de provenance
   conservés et échanges de corrections explicites. Les deux stockages ont leurs

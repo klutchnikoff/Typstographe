@@ -337,8 +337,7 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    édition annulable, sans écriture immédiate du fichier ; les conflits se
    résolvent avant publication du lot d'import. Le
    [premier lot de crate](docs/c3-bibliography-foundation.md) est implémenté,
-   avec les 24 scénarios d'identité exécutés et un raccordement de la lecture et
-   de la recherche actuelles ; la migration documentaire reste à faire.
+   avec les 24 scénarios d'identité exécutés et le partage de lecture/recherche.
    Le [lot de préparation commune](docs/c3-bibliography-preparation.md) expose
    genres, préparation de notices et rapports d'import dans la CLI et MCP, avec
    schémas et diagnostics typés, sans publier d'édition ni changer le format.
@@ -347,8 +346,13 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    l’annulation et le CAS 15 avec un Hayagriva actif unique.
    **Présentation validée :** [gestionnaire commun](docs/c3-bibliography-interface.md),
    liste compacte à deux lignes (auteur/année puis titre tronqué), défilement
-   indépendant, détails et formulaire à droite. Raccorder la modale et ses
-   brouillons aux commandes communes, sans doubler les règles documentaires.
+   indépendant, détails et formulaire à droite. Le [gestionnaire implémenté](docs/c3-bibliography-manager.md)
+   raccorde formulaires, récupération privée et décisions d’import au moteur
+   commun, avec création/citation atomique, gardes concurrentes et navigation
+   clavier. Les codecs préservent parents, valeurs composées et champs non
+   exposés ; les requêtes de formulaire, revue, parcours et usages sont communes
+   à Tauri, CLI et MCP. Le genre est choisi à la création et reste en lecture
+   seule sur une notice existante dans ce premier gestionnaire.
 4. **C.4 — Bibliothèque bibliographique personnelle.** Recherche projet d’abord,
    bibliothèque personnelle ensuite ; copier la notice dans le projet lors de
    l’insertion. Échanges et corrections explicites, identités et clés stables,
