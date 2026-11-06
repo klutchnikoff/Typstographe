@@ -300,6 +300,25 @@ impl Record {
                 return Err(Error::new(Code::InvalidField, "Unsupported field patch")
                     .at(self.key(), Some(&patch.path)));
             }
+            // Fill only the registered first publication container, never replace an existing tree.
+            if container == "/parent/0"
+                && patch.value.is_some()
+                && value.pointer(container).is_none()
+                && value
+                    .get("parent")
+                    .is_none_or(|v| v.as_array().is_some_and(Vec::is_empty))
+            {
+                let template = self.genre.empty_entry(self.key());
+                let template = canonical_entry(&template);
+                value["parent"] = if template["type"] == value["type"] {
+                    template
+                        .get("parent")
+                        .cloned()
+                        .unwrap_or_else(|| serde_json::json!([{}]))
+                } else {
+                    serde_json::json!([{}])
+                };
+            }
             let target = value
                 .pointer_mut(container)
                 .and_then(Value::as_object_mut)

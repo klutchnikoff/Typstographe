@@ -34,3 +34,5 @@ pub const MAX_RECORDS: usize = 10_000;
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests;
+
+pub mod form;
