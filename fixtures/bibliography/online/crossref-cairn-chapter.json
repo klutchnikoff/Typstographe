@@ -1,0 +1,108 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message-version": "1.0.0",
+  "message": {
+    "indexed": {
+      "date-parts": [[2026, 9, 30]],
+      "date-time": "2026-09-30T07:32:15Z",
+      "timestamp": 1790753535608,
+      "version": "4.1.0"
+    },
+    "reference-count": 2,
+    "publisher": "De Boeck Supérieur",
+    "isbn-type": [
+      {
+        "value": "9782807340534",
+        "type": "print"
+      }
+    ],
+    "content-domain": {
+      "domain": [],
+      "crossmark-restriction": false
+    },
+    "short-container-title": [],
+    "published-print": {
+      "date-parts": [[2022, 5, 1]]
+    },
+    "DOI": "10.3917/dbu.jorro.2022.01.0155",
+    "type": "book-chapter",
+    "created": {
+      "date-parts": [[2023, 3, 15]],
+      "date-time": "2023-03-15T09:29:44Z",
+      "timestamp": 1678872584000
+    },
+    "page": "155-159",
+    "source": "Crossref",
+    "is-referenced-by-count": 4,
+    "title": ["Dictionnaire des concepts de la professionnalisation"],
+    "prefix": "10.3917",
+    "author": [
+      {
+        "given": "Jérôme",
+        "family": "Eneau",
+        "sequence": "first",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ],
+    "member": "2273",
+    "reference": [
+      {
+        "key": "rb3",
+        "doi-asserted-by": "publisher",
+        "first-page": "13",
+        "DOI": "10.3917/savo.051.0013",
+        "article-title": "Émancipation et formation : une alliance en question",
+        "volume": "N° 51",
+        "author": "Broussal Dominique",
+        "year": "",
+        "journal-title": "Savoirs",
+        "ISSN": "https://id.crossref.org/issn/1763-4229",
+        "issn-type": "print"
+      },
+      {
+        "key": "rb10",
+        "isbn-type": "print",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.3917/puf.label.1996.01",
+        "volume-title": "La réciprocité éducative",
+        "author": "Labelle Jean-Marie",
+        "year": "",
+        "ISBN": "https://id.crossref.org/isbn/9782130475026",
+        "journal-title": ""
+      }
+    ],
+    "container-title": ["Dictionnaire des concepts de la professionnalisation"],
+    "original-title": [],
+    "deposited": {
+      "date-parts": [[2024, 9, 3]],
+      "date-time": "2024-09-03T20:53:48Z",
+      "timestamp": 1725396828000
+    },
+    "score": 1,
+    "resource": {
+      "primary": {
+        "URL": "https://shs.cairn.info/dictionnaire-des-concepts-de-la-professionnalisation--9782807340534-page-155?site_lang=fr"
+      }
+    },
+    "subtitle": [],
+    "short-title": [],
+    "issued": {
+      "date-parts": [[2022, 5, 1]]
+    },
+    "ISBN": ["9782807340534"],
+    "references-count": 2,
+    "URL": "https://doi.org/10.3917/dbu.jorro.2022.01.0155",
+    "relation": {},
+    "subject": [],
+    "published": {
+      "date-parts": [[2022, 5, 1]]
+    }
+  }
+}

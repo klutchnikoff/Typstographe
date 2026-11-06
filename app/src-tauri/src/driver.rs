@@ -292,6 +292,10 @@ fn dispatch(
             })
             .map_err(CommandError::from)
         }
+        "bibliography_online" => serde_json::to_value(tauri::async_runtime::block_on(
+            bibliography::bibliography_online(serde_json::from_value(args["request"].clone())?),
+        ))
+        .map_err(CommandError::from),
         "bibliography_query" => bibliography::bibliography_query(
             serde_json::from_value(args["metadata"].clone())?,
             args["operation"].as_str().unwrap_or("").into(),

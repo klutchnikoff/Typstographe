@@ -28,6 +28,7 @@ tokio = { version = "1", features = ["sync", "rt", "net", "io-util", "time"] }
 typstographe-mcp = { workspace = true }
 uuid.workspace = true
 typstographe-core = { workspace = true }
+typstographe-bibliography-sources.workspace = true
 typstographe-i18n = { workspace = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

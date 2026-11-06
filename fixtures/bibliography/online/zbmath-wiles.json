@@ -1,0 +1,77 @@
+{
+  "result": [
+    {
+      "identifier": "0823.11029",
+      "title": {
+        "addition": null,
+        "original": null,
+        "subtitle": null,
+        "title": "Modular elliptic curves and Fermat's Last Theorem"
+      },
+      "contributors": {
+        "authors": [
+          {
+            "aliases": [],
+            "checked": "1",
+            "codes": ["wiles.andrew-j"],
+            "name": "Wiles, Andrew"
+          }
+        ],
+        "author_references": [],
+        "editors": []
+      },
+      "year": "1995",
+      "links": [
+        {
+          "identifier": "10.2307/2118559",
+          "type": "doi",
+          "url": "https://doi.org/10.2307/2118559"
+        },
+        {
+          "identifier": "A019590",
+          "type": "oeis",
+          "url": "https://oeis.org/A019590"
+        },
+        {
+          "identifier": "A262536",
+          "type": "oeis",
+          "url": "https://oeis.org/A262536"
+        }
+      ],
+      "source": {
+        "book": [],
+        "pages": "443-551",
+        "series": [
+          {
+            "acronym": null,
+            "issn": [
+              {
+                "number": "0003-486X",
+                "type": "print"
+              },
+              {
+                "number": "1939-8980",
+                "type": "electronic"
+              }
+            ],
+            "issue": "3",
+            "issue_id": 27183,
+            "parallel_title": null,
+            "part": null,
+            "publisher": "Princeton University, Mathematics Department, Princeton, NJ",
+            "series_id": 2531,
+            "short_title": "Ann. Math. (2)",
+            "title": "Annals of Mathematics. Second Series",
+            "volume": "141",
+            "year": "1995"
+          }
+        ],
+        "source": "Ann. Math. (2) 141, No. 3, 443-551 (1995)."
+      },
+      "document_type": {
+        "code": "j",
+        "description": "journal article"
+      }
+    }
+  ]
+}

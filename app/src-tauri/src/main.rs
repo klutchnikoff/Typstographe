@@ -630,6 +630,7 @@ fn main() {
             files::open_file,
             bibliography::bibliography_search,
             bibliography::bibliography_query,
+            bibliography::bibliography_online,
             bibliography::bibliography_index,
             bibliography::validate_bibliography,
             bibliography::model_policy,
