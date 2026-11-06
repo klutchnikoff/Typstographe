@@ -326,6 +326,32 @@ restent hors de ce premier parcours.
 **Sortie C :** contrat partagé GUI/CLI/MCP, recette clavier et aller-retour du
 fichier ; absence de logique spécifique dupliquée dans les déclencheurs.
 
+### C.5 — Recherche bibliographique en ligne — lot validé le 6 novembre 2026
+
+**Priorité P1, indépendante de C.4 différé.** Ajouter des notices à la seule
+bibliothèque du projet depuis Crossref, zbMATH Open et une récupération ciblée
+Cairn par DOI, URL ou identifiant. La recherche générale dans Cairn et le
+moissonnage/indexage de son catalogue restent hors du premier lot.
+
+- Recherche locale conservée ; interrogation en ligne déclenchée explicitement.
+  Sources visibles, résultats bornés, erreurs partielles distinguées d’une
+  recherche sans résultat ; aucune attente réseau ne bloque la rédaction.
+- Une notice choisie reste un brouillon : formulaire commun modifiable avant
+  ajout, diagnostics et rapprochement existants, annulation sans édition.
+  « Ajouter » / « Ajouter et citer » publie un lot documentaire gardé et annulable.
+- Collecteurs HTTP/XML séparés de la crate bibliographique pure ; normalisation
+  vers Hayagriva, sans moteur Python, stockage central ni dépendance réseau
+  requise pour rouvrir, compiler ou exporter les notices déjà ajoutées.
+- Conserver une source d’import Hayagriva issue de la conversion et distincte
+  de la notice vérifiée ; elle ne prétend pas être le JSON/XML brut du fournisseur.
+  Les corrections de formulaire ne réécrivent pas cette source.
+- Cas de qualification : DOI `10.3917/dbu.jorro.2022.01.0155` : Crossref renvoie
+  le titre de l’ouvrage au lieu du chapitre ; Cairn OAI renvoie « Émancipation ».
+  Garder les réponses distinctes et demander une vérification, sans fusionner
+  silencieusement leurs valeurs. Fixtures hors ligne, erreurs/délais/réponses
+  obsolètes, conflits, récupération, sauvegarde/export et clavier à vérifier.
+- Commits locaux uniquement ; aucune poussée et aucun déclenchement de CI GitHub.
+
 ### Consolidation frontend et E.1 — 6 novembre 2026
 
 Consolidation livrée après C.3 : séparer les responsabilités des contrôleurs existants : rendu et

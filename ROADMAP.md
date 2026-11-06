@@ -391,6 +391,32 @@ autorisés, saisie, clavier et cibles MCP ; fonctions natives ou paquet externe.
 **Sortie :** insertion, édition, annulation, sauvegarde/réouverture et exports
 vérifiés, avec la même disponibilité dans les interfaces qui exposent la capacité.
 
+### C.5 — Recherche bibliographique en ligne — lot validé le 6 novembre 2026
+
+**Priorité P1, indépendante de C.4 différé.** Ajouter des notices à la seule
+bibliothèque du projet depuis Crossref, zbMATH Open et une récupération ciblée
+Cairn par DOI, URL ou identifiant. La recherche générale dans Cairn et le
+moissonnage/indexage de son catalogue restent hors du premier lot.
+
+- Recherche locale conservée ; interrogation en ligne déclenchée explicitement.
+  Sources visibles, résultats bornés, erreurs partielles distinguées d’une
+  recherche sans résultat ; aucune attente réseau ne bloque la rédaction.
+- Une notice choisie reste un brouillon : formulaire commun modifiable avant
+  ajout, diagnostics et rapprochement existants, annulation sans édition.
+  « Ajouter » / « Ajouter et citer » publie un lot documentaire gardé et annulable.
+- Collecteurs HTTP/XML séparés de la crate bibliographique pure ; normalisation
+  vers Hayagriva, sans moteur Python, stockage central ni dépendance réseau
+  requise pour rouvrir, compiler ou exporter les notices déjà ajoutées.
+- Conserver une source d’import Hayagriva issue de la conversion et distincte
+  de la notice vérifiée ; elle ne prétend pas être le JSON/XML brut du fournisseur.
+  Les corrections de formulaire ne réécrivent pas cette source.
+- Cas de qualification : DOI `10.3917/dbu.jorro.2022.01.0155` : Crossref renvoie
+  le titre de l’ouvrage au lieu du chapitre ; Cairn OAI renvoie « Émancipation ».
+  Garder les réponses distinctes et demander une vérification, sans fusionner
+  silencieusement leurs valeurs. Fixtures hors ligne, erreurs/délais/réponses
+  obsolètes, conflits, récupération, sauvegarde/export et clavier à vérifier.
+- Commits locaux uniquement ; aucune poussée et aucun déclenchement de CI GitHub.
+
 ### Consolidation frontend et E.1 — 6 novembre 2026
 
 Consolidation livrée après C.3 : séparer les responsabilités des contrôleurs existants : rendu et
@@ -750,16 +776,12 @@ droits en collaboration, parcours de saisie sur maquette avec de vrais relecteur
 **Sortie :** un article relu par deux personnes et un agent, suggestions
 acceptées ou refusées, aperçu corrigé compilé, sans modification directe du texte.
 
-## Prochain lot à choisir ensemble
+## Prochain lot engagé
 
-C.3 (gestionnaire du projet, profils natifs, CAS 16) et la consolidation frontend /
-E.1 sont livrés localement. C.4 est différé : aucune implémentation personnelle
-n’est engagée et les bibliothèques restent locales aux projets.
+**C.5 — Recherche en ligne et acquisition vérifiée de notices.** Crossref,
+zbMATH et récupération ciblée Cairn, selon le périmètre ci-dessus. C.4 reste
+différé. C.3/CAS 16 et E.1 fournissent le gestionnaire, le moteur et les garanties
+à réutiliser. Commits locaux uniquement tant que la CI GitHub est indisponible.
 
-Choisir ensemble la suite : évaluation des modèles de D sur leur corpus,
-autres besoins de rédaction dans C/E ou reprise de la maquette ACP dans F.
-Le stockage personnel et la synchronisation bibliographique ne bloquent aucun
-de ces chantiers.
-
-Les tests locaux ne remplacent pas la qualification CI avant fusion ni la
-recette utilisateur. Valider les choix et les maquettes du prochain lot avant de coder.
+La suite (modèles de D, autres besoins C/E ou maquette ACP de F) sera choisie
+ensemble. Les tests locaux ne remplacent pas la qualification CI avant fusion.
