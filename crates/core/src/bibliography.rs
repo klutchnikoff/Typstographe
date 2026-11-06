@@ -1,4 +1,5 @@
-//! Original bibliography files are authoritative. Parsed entries and fuzzy results are caches.
+//! Source-file integration until C.3 migrates document storage and citation targets.
+//! Parsing, summaries and fuzzy scoring already use the shared bibliography crate.
 use crate::content::Node;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -6,7 +7,7 @@ use std::{
     collections::{BTreeMap, BTreeSet, VecDeque},
     sync::{Arc, Mutex, OnceLock},
 };
-use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
+use typstographe_bibliography::{ImportFormat, SearchQuery, parse_native, summarize};
 const MAX_FILES: usize = 32;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -70,52 +71,29 @@ fn parse(file: &ReferenceFile) -> Result<Arc<Vec<Entry>>, String> {
     if let Some((_, result)) = cache.lock().unwrap().iter().find(|(key, _)| *key == digest) {
         return Ok(result.clone());
     }
-    let library = if file.name.to_ascii_lowercase().ends_with(".bib") {
-        hayagriva::io::from_biblatex_str(&file.contents)
-            .map_err(|e| format!("{} : {e:?}", file.name))?
+    let format = if file.name.to_ascii_lowercase().ends_with(".bib") {
+        ImportFormat::Biblatex
     } else {
-        hayagriva::io::from_yaml_str(&file.contents).map_err(|e| format!("{} : {e}", file.name))?
+        ImportFormat::Hayagriva
     };
-    if library.len() > 10000 {
-        return Err("Bibliothèque trop volumineuse.".into());
-    }
+    let library =
+        parse_native(&file.contents, format).map_err(|e| format!("{} : {e}", file.name))?;
     let result: Arc<Vec<Entry>> = Arc::new(
         library
             .iter()
-            .map(|entry| {
-                let title = entry
-                    .title()
-                    .map(|v| v.value.to_string())
-                    .unwrap_or_default();
-                let people = entry.authors().or_else(|| entry.editors()).unwrap_or(&[]);
-                let authors = people
-                    .iter()
-                    .map(|a| a.name_first(false, false))
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                let names = match people {
-                    [] => {
-                        if title.is_empty() {
-                            entry.key().into()
-                        } else {
-                            title.clone()
-                        }
-                    }
-                    [a] => a.name.clone(),
-                    [a, b] => format!("{} & {}", a.name, b.name),
-                    [a, ..] => format!("{} et al.", a.name),
-                };
-                let year = entry
-                    .date_any()
-                    .map(|d| d.year.to_string())
+            .map(|native| {
+                let summary = summarize(native);
+                let year = summary
+                    .year
+                    .map(|y| y.to_string())
                     .unwrap_or_else(|| "s. d.".into());
                 Entry {
                     file_id: file.id.clone(),
                     file_name: file.name.clone(),
-                    key: entry.key().into(),
-                    title,
-                    authors,
-                    label: format!("{names}, {year}"),
+                    key: summary.key,
+                    title: summary.title,
+                    authors: summary.authors,
+                    label: format!("{}, {year}", summary.names),
                     year,
                 }
             })
@@ -155,39 +133,14 @@ pub fn index(files: &[ReferenceFile]) -> Result<Vec<Entry>, String> {
     }
     Ok(entries)
 }
-fn normalized(value: &str) -> String {
-    value
-        .nfd()
-        .filter(|c| !is_combining_mark(*c))
-        .flat_map(char::to_lowercase)
-        .collect()
-}
 pub fn search(entries: &[Entry], query: &str) -> Vec<Entry> {
-    if query.len() > 512 {
-        return vec![];
-    }
-    let query = normalized(query);
-    let tokens: Vec<_> = query.split_whitespace().collect();
+    let query = SearchQuery::new(query);
     let mut scored: Vec<_> = entries
         .iter()
         .filter_map(|entry| {
-            let haystack = normalized(&format!("{} {}", entry.title, entry.authors));
-            let mut score = 0.0;
-            for token in &tokens {
-                let best = if haystack.contains(token) {
-                    1.0
-                } else {
-                    haystack
-                        .split(|c: char| !c.is_alphanumeric())
-                        .map(|s| strsim::jaro_winkler(token, s))
-                        .fold(0.0, f64::max)
-                };
-                if best < 0.84 {
-                    return None;
-                }
-                score += best;
-            }
-            Some((score, entry))
+            query
+                .score(&entry.title, &entry.authors)
+                .map(|score| (score, entry))
         })
         .collect();
     scored.sort_by(|a, b| {

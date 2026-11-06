@@ -96,6 +96,12 @@ class CIPlanTests(unittest.TestCase):
             self.assertEqual(planner.browser_recipes([source]), [
                 "tests/browser/metadata.spec.ts", "tests/browser/structured-metadata.spec.ts"])
 
+    def test_shared_bibliography_engine_selects_the_bibliography_recipe(self):
+        for source in ["crates/bibliography/src/import.rs", "crates/bibliography/src/search.rs",
+                       "crates/core/src/bibliography.rs"]:
+            self.assertEqual(planner.browser_recipes([source]),
+                             ["tests/browser/bibliography.spec.ts"])
+
     def test_resource_contract_changes_cover_metadata_and_recovery(self):
         for source in ["crates/core/src/resources.rs", "app/src/metadata-resource.ts"]:
             recipes = planner.browser_recipes([source])
