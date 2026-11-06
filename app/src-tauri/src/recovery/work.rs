@@ -465,10 +465,11 @@ pub fn read_work(path: &Path) -> Result<drafts::Record, CommandError> {
         let checkpoint: Checkpoint = if value.get("confirmed").is_some() {
             serde_json::from_value(value["confirmed"].take())?
         } else {
-            let state = State::new(
+            let mut state = State::new(
                 serde_json::from_value(json!({"type":"doc","content":[{"type":"paragraph"}]}))?,
                 Default::default(),
             );
+            typstographe_core::content::references::assign(&mut state.document);
             let shared = SharedDocument::from_state(&state)?;
             Checkpoint {
                 project: crate::project::recovery_for_state(state.clone(), shared.update())?,

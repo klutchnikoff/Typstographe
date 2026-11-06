@@ -529,6 +529,17 @@ fn structural_batches_normalize_whitespace_before_publication_without_touching_n
     assert_eq!(content.len(), 6);
     assert_eq!(content[4].content[0].text.as_deref(), Some("Fin"));
     assert!(content[5].content.is_empty());
+    let continuation = crate::content::references::anchor(&content[5])
+        .expect("a generated continuation is already anchored before publication")
+        .to_owned();
+    let restored = SharedDocument::from_update(&s.update())
+        .unwrap()
+        .state()
+        .unwrap();
+    assert_eq!(
+        crate::content::references::anchor(restored.document.content.last().unwrap()),
+        Some(continuation.as_str())
+    );
     assert!(!execute(&mut s, vec![]).changed);
 }
 #[test]

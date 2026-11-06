@@ -180,12 +180,12 @@ function schedule() {
   rendering.request()
 }
 async function render() {
-  if (!editor || !provider.online || provider.composing || restoringError) return
+  if (!editor || !preview || !provider.online || provider.composing || restoringError) return
   const localVersion = version
   try {
     await provider.flush()
     if (localVersion !== version) return
-    const { result } = await preview!.request(snapshot(), localVersion)
+    const { result } = await preview.request(snapshot(), localVersion)
     if (localVersion !== version) return
     if (!(await preview?.show(result, localVersion)) || localVersion !== version) return
     setResolvedReferences(editor, result.references || [])
