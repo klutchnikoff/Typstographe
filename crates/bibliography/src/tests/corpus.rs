@@ -246,7 +246,7 @@ fn run(name: &str) {
             }
             "preserve_publication_states" => {
                 assert!(plan.blocked());
-                assert_ne!(existing[0].genre(), incoming[0].genre());
+                assert_ne!(existing[0].profile(), incoming[0].profile());
             }
             "repeat_import_no_change" => {
                 let confirmed = result.as_ref().unwrap();

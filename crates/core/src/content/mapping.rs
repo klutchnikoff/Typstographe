@@ -277,7 +277,6 @@ mod tests {
         meta.references.push(
             typstographe_bibliography::Record::from_native(
                 typstographe_bibliography::RecordId::new("books").unwrap(),
-                typstographe_bibliography::Genre::Book,
                 "/*@typstographe:0*/ /*@typstographe-end*/",
                 serde_json::json!({"type":"book"}),
             )

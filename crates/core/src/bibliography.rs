@@ -9,9 +9,11 @@ use std::{
 pub use typstographe_bibliography::Record;
 pub use typstographe_bibliography::{Code as NoticeErrorCode, Error as NoticeError};
 use typstographe_bibliography::{Library, RecordId, SearchQuery, summarize};
+pub const RETAINED_PATH: &str = "bibliography/retained.json";
 pub const ACTIVE_PATH: &str = "bibliography/references.yaml";
 pub fn valid_path(path: &str) -> bool {
     path == ACTIVE_PATH
+        || path == RETAINED_PATH
         || path
             .strip_prefix("bibliography/sources/")
             .and_then(|s| s.strip_suffix(".bib").or_else(|| s.strip_suffix(".yaml")))
@@ -89,6 +91,16 @@ pub fn resources(metadata: &Metadata) -> BTreeMap<String, Arc<[u8]>> {
             .and_then(|l| l.to_hayagriva())
             .expect("validated bibliography");
         resources.insert(ACTIVE_PATH.into(), Arc::from(yaml.as_bytes()));
+    }
+    let retained: Vec<_> = meta.references.iter().filter(|r| !r.retained_parents().is_empty()).map(|r| {
+        let value=serde_json::to_value(r).expect("validated record");
+        serde_json::json!({"id":r.id(),"key":r.key(),"retained_parents":value["retained_parents"]})
+    }).collect();
+    if !retained.is_empty() {
+        resources.insert(
+            RETAINED_PATH.into(),
+            Arc::from(serde_json::to_vec_pretty(&retained).expect("retained native bibliography")),
+        );
     }
     for source in &meta.reference_sources {
         let ext = match source.format() {
@@ -208,7 +220,6 @@ pub(crate) fn test_record(id: &str, name: &str, contents: &str) -> Record {
     let library = typstographe_bibliography::parse_native(contents, format).unwrap();
     Record::new(
         RecordId::new(id).unwrap(),
-        typstographe_bibliography::Genre::Other,
         library.iter().next().unwrap().clone(),
     )
     .unwrap()
@@ -251,7 +262,6 @@ mod tests {
         collision.push(
             Record::from_native(
                 RecordId::new("copy").unwrap(),
-                files[0].genre(),
                 files[0].key(),
                 files[0].native_value(),
             )

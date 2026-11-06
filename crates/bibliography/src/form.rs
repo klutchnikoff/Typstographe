@@ -82,10 +82,10 @@ fn find_field(value: &Value, path: &str, key: &str) -> Option<String> {
         .enumerate()
         .find_map(|(i, v)| find_field(v, &format!("{path}/parent/{i}"), key))
 }
-fn publication(value: &Value, path: &str, genre: crate::Genre) -> Option<String> {
+fn publication(value: &Value, path: &str, genre: crate::Profile) -> Option<String> {
     let preferred = match genre {
-        crate::Genre::BookChapter => &["book", "anthology"][..],
-        crate::Genre::ConferencePaper => &["proceedings"][..],
+        crate::Profile::BookChapter => &["book", "anthology"][..],
+        crate::Profile::ConferencePaper => &["proceedings"][..],
         _ => &["periodical", "blog"][..],
     };
     let parents = value.get("parent")?.as_array()?;
@@ -106,10 +106,10 @@ fn publication(value: &Value, path: &str, genre: crate::Genre) -> Option<String>
 pub fn form_fields(record: &Record) -> Vec<FormField> {
     let native = record.native_value();
     let mut result = vec![];
-    for field in record.genre().descriptor().fields {
+    for field in record.profile().descriptor().fields {
         let mut path = field.path;
         if let Some(key) = path.strip_prefix("/parent/0/") {
-            if let Some(parent) = publication(&native, "", record.genre()) {
+            if let Some(parent) = publication(&native, "", record.profile()) {
                 path = format!("{parent}/{key}");
             }
         } else if matches!(
@@ -150,11 +150,13 @@ pub fn form_fields(record: &Record) -> Vec<FormField> {
                     .cloned()
                     .unwrap_or(Value::Null);
             }
+            let recommended =
+                field.recommended && !path.ends_with("/location") && path != "/url/date";
             result.push(FormField {
                 path,
                 kind,
                 group: field.group.into(),
-                recommended: field.recommended,
+                recommended,
                 value: plain(&value, kind),
             });
         }

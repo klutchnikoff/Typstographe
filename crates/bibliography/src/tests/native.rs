@@ -9,7 +9,6 @@ fn literal_formatted_text_survives_json_patches_and_direct_hayagriva_reopening()
     ] {
         let before = Record::from_native(
             id("r"),
-            Genre::Book,
             "literal",
             json!({"type":"book","title":title,
             "publisher":{"name":{"value":"eXample press","verbatim":true},"location":"Paris"},
@@ -103,13 +102,7 @@ fn unsupported_nested_members_are_refused_or_reported_without_losing_the_origina
     ] {
         let mut value_with_unknown = json!({"type":"article","title":"Title"});
         value_with_unknown[field] = value;
-        let error = Record::from_native(
-            id("r"),
-            Genre::JournalArticle,
-            "k",
-            value_with_unknown.clone(),
-        )
-        .unwrap_err();
+        let error = Record::from_native(id("r"), "k", value_with_unknown.clone()).unwrap_err();
         assert_eq!(error.code, Code::UnsupportedField);
         assert_eq!(error.field.as_deref(), Some(path));
         let original = yaml_serde::to_string(&json!({"k":value_with_unknown})).unwrap();

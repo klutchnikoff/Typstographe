@@ -135,7 +135,7 @@ fn structured(loaded: &LoadedDefinition) -> Value {
     let collections:Vec<_>=def.collections.iter().map(|c| {
         let binding=def.bindings.iter().find(|b|matches!(b,Binding::Collection {collection,..} if collection==&c.id)).unwrap();
         let fields:Vec<Value>= match c.kind {
-            CollectionKind::BibliographicRecords => ["genre","key","entry","provenance"].iter().map(|key|json!({"key":key,"label_key":"field-bibliography","kind":"native","default":null})).collect(),
+            CollectionKind::BibliographicRecords => ["key","entry","retained_parents","provenance"].iter().map(|key|json!({"key":key,"label_key":"field-bibliography","kind":"native","default":if *key=="retained_parents" || *key=="provenance" {json!([])} else {Value::Null}})).collect(),
             CollectionKind::BibliographicSources => ["name","format","contents","digest"].iter().map(|key|json!({"key":key,"label_key":"field-reference-source","kind":"native","default":null})).collect(),
             _ => c.fields.iter().map(record_field).collect(),
         };

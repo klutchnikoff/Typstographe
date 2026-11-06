@@ -12,7 +12,7 @@ import {
   type ImportDraft,
 } from './bibliography-import'
 import type { Browse, Form, Draft, Notice, Source, Report } from './bibliography-types'
-import { genres } from './bibliography-types'
+import { profiles } from './bibliography-types'
 import { navigationGroup, actionRow } from './keyboard-navigation'
 import { labeledField } from './form-field'
 import { referenceRecords } from './citation-index'
@@ -318,24 +318,23 @@ export function openBibliography(
     }
     const selected = draft
     const header = document.createElement('div'),
-      genre = document.createElement('select')
+      profile = document.createElement('select')
     header.className = 'bibliography-notice-heading'
-    for (const [id, name] of Object.entries(genres)) genre.add(new Option(tr(name), id))
-    genre.value = draft.base.genre
-    genre.disabled = !draft.creating
-    genre.id = 'bibliography-genre'
-    genre.onchange = () => {
-      const next = genre.value
-      genre.value = selected.base.genre
-      leave(() => void create(next))
+    for (const id of draft.profiles) profile.add(new Option(tr(profiles[id] || id), id))
+    profile.value = draft.profile
+    profile.id = 'bibliography-profile'
+    profile.onchange = () => {
+      const next = profile.value
+      profile.value = selected.profile
+      void changeProfile(next)
     }
-    header.append(labeledField(tr('Genre de notice'), genre))
+    header.append(labeledField(tr('Type de notice'), profile))
     right.append(header)
     cleanupFields = bibliographyFields(right, draft.fields, draft.values, changed)
     const key = document.createElement('input')
     key.id = 'bibliography-key'
     key.value = draft.key
-    key.placeholder = draft.base.key
+    key.placeholder = draft.working.key
     key.oninput = () => {
       selected.key = key.value
       changed()
@@ -377,6 +376,9 @@ export function openBibliography(
       clear()
       draft = {
         base: record.record,
+        working: record.record,
+        profile: fields.profile,
+        profiles: fields.profiles,
         fingerprint: record.fingerprint,
         fields: fields.fields,
         values: {},
@@ -396,7 +398,7 @@ export function openBibliography(
       if (focus && current()) right.querySelector<HTMLInputElement>('input')?.focus()
     }
   }
-  async function create(genre = 'journal_article') {
+  async function create(profile = 'journal_article') {
     if (busy) return
     busy = true
     right.inert = true
@@ -404,13 +406,16 @@ export function openBibliography(
     try {
       const record = await api<{ record: Notice; fingerprint: string }>(
         'bibliography.prepare_record',
-        { id: crypto.randomUUID(), genre },
+        { id: crypto.randomUUID(), profile },
       )
       const fields = await api<Form>('bibliography.form', { record: record.record })
       if (!current()) return
       clear()
       draft = {
         base: record.record,
+        working: record.record,
+        profile: fields.profile,
+        profiles: fields.profiles,
         fingerprint: record.fingerprint,
         fields: fields.fields,
         values: {},
@@ -428,6 +433,40 @@ export function openBibliography(
       right.inert = false
       refreshActions()
       if (current()) right.querySelector<HTMLInputElement>('input[data-initial-focus]')?.focus()
+    }
+  }
+  async function changeProfile(profile: string) {
+    const selected = draft
+    if (!selected || busy || form.composing || !current()) return
+    busy = true
+    right.inert = true
+    refreshActions()
+    form.error.textContent = ''
+    const frozen = stableJSON(selected)
+    try {
+      const prepared = await api<Form>('bibliography.prepare_form', {
+        record: selected.working,
+        values: selected.values,
+        key: selected.key || null,
+        profile,
+      })
+      if (!current() || draft !== selected || stableJSON(selected) !== frozen) return
+      selected.working = prepared.record
+      selected.profile = prepared.profile
+      selected.profiles = prepared.profiles
+      selected.fields = prepared.fields
+      selected.values = {}
+      show()
+      changed()
+    } catch (error) {
+      if (current()) message(error)
+    } finally {
+      busy = false
+      right.inert = false
+      refreshActions()
+      right
+        .querySelector<HTMLSelectElement>('#bibliography-profile')
+        ?.focus({ preventScroll: true })
     }
   }
   async function publish(finish = true): Promise<boolean> {
@@ -460,16 +499,12 @@ export function openBibliography(
         })
       } else if (selected) {
         const prepared = await api<Form>('bibliography.prepare_form', {
-          record: selected.base,
+          record: selected.working,
           values: selected.values,
           key: selected.key || null,
         })
         const inspection = await api<{ fingerprint: string }>('bibliography.inspect')
-        if (
-          selected.creating ||
-          prepared.patches.length ||
-          prepared.record.key !== selected.base.key
-        )
+        if (selected.creating || stableJSON(prepared.record) !== stableJSON(selected.base))
           batch.push({
             id: 'bibliography.apply',
             params: {
@@ -477,12 +512,10 @@ export function openBibliography(
               change: selected.creating
                 ? { kind: 'create', record: prepared.record }
                 : {
-                    kind: 'edit',
+                    kind: 'replace',
                     id: selected.base.id,
                     expected: selected.fingerprint,
-                    patches: prepared.patches,
-                    genre: null,
-                    key: prepared.record.key,
+                    record: prepared.record,
                   },
             },
           })

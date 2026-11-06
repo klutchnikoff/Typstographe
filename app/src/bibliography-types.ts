@@ -13,7 +13,7 @@ export interface BrowseEntry {
   names: string
   authors: string
   year: number | null
-  genre: string
+  profile: string
   incomplete: boolean
 }
 export interface Browse {
@@ -29,6 +29,8 @@ export interface Field {
   value: unknown
 }
 export interface Form {
+  profile: string
+  profiles: string[]
   record: Notice
   fields: Field[]
   patches: unknown[]
@@ -69,6 +71,9 @@ export interface Report {
   }
 }
 export interface Draft {
+  working: Notice
+  profile: string
+  profiles: string[]
   base: Notice
   fingerprint: string
   values: Record<string, unknown>
@@ -76,7 +81,8 @@ export interface Draft {
   creating: boolean
   fields: Field[]
 }
-export const genres: Record<string, string> = {
+export const profiles: Record<string, string> = {
+  article: 'Article',
   journal_article: 'Article de revue',
   book: 'Livre',
   book_chapter: 'Chapitre',

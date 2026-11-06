@@ -46,23 +46,23 @@ fn biblatex_conversion_reports_losses_and_keeps_software_intent_and_original() {
         .iter()
         .find(|r| r.key() == "software")
         .unwrap();
-    assert_eq!(software.genre(), Genre::Software);
+    assert_eq!(software.profile(), Profile::Software);
     assert_eq!(
         software.entry().entry_type(),
-        &hayagriva::types::EntryType::Misc
+        &hayagriva::types::EntryType::Repository
     );
     assert!(
         prepared
             .diagnostics
             .iter()
-            .any(|d| d.key == "software" && d.code == Code::GenreMapping)
+            .any(|d| d.key == "software" && d.code == Code::TypeMapping)
     );
     let chapter = prepared
         .records
         .iter()
         .find(|r| r.key() == "chapter")
         .unwrap();
-    assert_eq!(chapter.genre(), Genre::BookChapter);
+    assert_eq!(chapter.profile(), Profile::BookChapter);
     assert!(!chapter.entry().parents().is_empty());
     assert!(prepared.diagnostics.iter().all(|d| !d.detail.is_empty()));
 }

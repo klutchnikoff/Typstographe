@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
 use typstographe_bibliography::{
-    self as bibliography, Diagnostic, Fingerprint, Genre, ImportFormat, Record, RecordId,
+    self as bibliography, Diagnostic, Fingerprint, ImportFormat, Profile, Record, RecordId,
 };
 
 use crate::bibliography::editions::SourceInput as ImportInput;
@@ -15,7 +15,7 @@ use crate::bibliography::editions::SourceInput as ImportInput;
 #[serde(deny_unknown_fields)]
 pub(super) struct RecordInput {
     pub id: RecordId,
-    pub genre: Genre,
+    pub profile: Profile,
     /// Omit to suggest an available key; an explicit occupied key is refused.
     #[serde(default)]
     pub key: Option<String>,
@@ -56,6 +56,7 @@ struct RecordResult {
     #[schemars(extend("const"=false))]
     active: bool,
     record: Record,
+    profile: Profile,
     diagnostics: Vec<Diagnostic>,
     fingerprint: Fingerprint,
 }
@@ -65,6 +66,8 @@ struct FormResult {
     #[schemars(extend("const"=false))]
     active: bool,
     record: Record,
+    profile: Profile,
+    profiles: Vec<Profile>,
     fields: Vec<bibliography::form::FormField>,
     diagnostics: Vec<Diagnostic>,
     patches: Vec<bibliography::FieldPatch>,
@@ -72,8 +75,8 @@ struct FormResult {
 }
 
 #[derive(Serialize, JsonSchema)]
-struct GenresResult {
-    genres: Vec<bibliography::GenreDescriptor>,
+struct ProfilesResult {
+    profiles: Vec<bibliography::ProfileDescriptor>,
 }
 
 pub(super) fn parameter_schema(id: &str) -> Option<Value> {
@@ -95,7 +98,7 @@ pub(super) fn parameter_schema(id: &str) -> Option<Value> {
 }
 pub(super) fn result_schema(id: &str) -> Option<Value> {
     Some(match id {
-        "bibliography.genres" => json!(schemars::schema_for!(GenresResult)),
+        "bibliography.profiles" => json!(schemars::schema_for!(ProfilesResult)),
         "bibliography.form" | "bibliography.prepare_form" => {
             json!(schemars::schema_for!(FormResult))
         }
@@ -132,10 +135,10 @@ pub(super) fn run(state: &State, command: &str, params: &Value) -> Result<Value,
                     detail: "Record not found".into(),
                 })
             })?;
-            json!({"record":record,"fingerprint":record.fingerprint(),"diagnostics":bibliography::completeness(record)})
+            json!({"record":record,"profile":record.profile(),"fingerprint":record.fingerprint(),"diagnostics":bibliography::completeness(record)})
         }
-        "bibliography.genres" => json!(GenresResult {
-            genres: bibliography::genres()
+        "bibliography.profiles" => json!(ProfilesResult {
+            profiles: bibliography::profiles()
         }),
         "bibliography.prepare_import" => {
             let input: ImportInput = serde_json::from_value(params.clone())
@@ -165,11 +168,11 @@ pub(super) fn run(state: &State, command: &str, params: &Value) -> Result<Value,
                 .map_err(|_| invalid("bibliography_record"))?;
             // Use the crate's strict native decoder, preserving field paths on errors.
             let seed_key = input.key.as_deref().unwrap_or("pending");
-            let entry = input.genre.empty_entry(seed_key);
+            let entry = input.profile.empty_entry(seed_key);
             let mut value = serde_json::to_value(entry).expect("native entry");
             value.as_object_mut().unwrap().extend(input.entry);
-            let pending = Record::from_native(input.id, input.genre, seed_key, value)
-                .map_err(Error::bibliography)?;
+            let pending =
+                Record::from_native(input.id, seed_key, value).map_err(Error::bibliography)?;
             let key = input
                 .key
                 .unwrap_or_else(|| bibliography::suggest_key(pending.entry(), &occupied));
@@ -188,6 +191,7 @@ pub(super) fn run(state: &State, command: &str, params: &Value) -> Result<Value,
                 active: false,
                 fingerprint: record.fingerprint(),
                 diagnostics: bibliography::completeness(&record),
+                profile: record.profile(),
                 record
             })
         }
@@ -202,6 +206,8 @@ struct FormInput {
     #[serde(default)]
     values: std::collections::BTreeMap<String, Value>,
     key: Option<String>,
+    /// A transient native classification change, never a stored form genre.
+    profile: Option<Profile>,
 }
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -235,10 +241,15 @@ pub(super) fn manager(state: &State, command: &str, params: &Value) -> Result<Va
                 serde_json::from_value(params.clone()).map_err(|_| invalid("bibliography_form"))?;
             let patches = bibliography::form::form_patches(&input.record, &input.values)
                 .map_err(Error::bibliography)?;
-            let record = input
+            let mut record = input
                 .record
                 .edited(&input.record.fingerprint(), &patches)
                 .map_err(Error::bibliography)?;
+            if let Some(profile) = input.profile {
+                record = record
+                    .reclassified(&record.fingerprint(), profile)
+                    .map_err(Error::bibliography)?;
+            }
             let keys = library
                 .records()
                 .iter()
@@ -265,6 +276,11 @@ pub(super) fn manager(state: &State, command: &str, params: &Value) -> Result<Va
                 .map_err(Error::bibliography)?;
             Ok(json!(FormResult {
                 active: false,
+                profile: record.profile(),
+                profiles: bibliography::profiles()
+                    .into_iter()
+                    .map(|p| p.profile)
+                    .collect(),
                 fields: bibliography::form::form_fields(&record),
                 diagnostics: bibliography::completeness(&record),
                 patches,
@@ -278,7 +294,7 @@ pub(super) fn manager(state: &State, command: &str, params: &Value) -> Result<Va
             Ok(
                 json!({"fingerprint":library.fingerprint(),"total":library.records().len(),"entries":ids.iter().map(|id|{
                 let record=library.get(id).unwrap();let summary=bibliography::summarize(record.entry());
-                json!({"id":id,"key":record.key(),"title":summary.title,"names":summary.names,"authors":summary.authors,"year":summary.year,"genre":record.genre(),"incomplete":!bibliography::completeness(record).is_empty()})
+                json!({"id":id,"key":record.key(),"title":summary.title,"names":summary.names,"authors":summary.authors,"year":summary.year,"profile":record.profile(),"incomplete":!bibliography::completeness(record).is_empty()})
             }).collect::<Vec<_>>() }),
             )
         }

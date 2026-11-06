@@ -10,7 +10,7 @@ use typstographe_core::{
 fn bibliographic_preparation_is_read_only_and_describes_results_in_both_modes() {
     for attached in [false, true] {
         for id in [
-            "bibliography.genres",
+            "bibliography.profiles",
             "bibliography.prepare_import",
             "bibliography.prepare_record",
         ] {
@@ -25,7 +25,7 @@ fn bibliographic_preparation_is_read_only_and_describes_results_in_both_modes() 
             assert_eq!(details["result_schema_scope"], "query_outcome");
             jsonschema::validator_for(&details["result_schema"]).unwrap();
             assert!(!details["examples"].as_array().unwrap().is_empty());
-            if id != "bibliography.genres" {
+            if id != "bibliography.profiles" {
                 assert_eq!(
                     details["result_schema"]["properties"]["active"]["const"],
                     false

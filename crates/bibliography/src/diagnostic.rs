@@ -17,7 +17,7 @@ pub enum Code {
     Incomplete,
     ConversionReview,
     ConversionLoss,
-    GenreMapping,
+    TypeMapping,
     UnresolvedConflict,
     InvalidDecision,
 }

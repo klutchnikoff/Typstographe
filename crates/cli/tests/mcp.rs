@@ -13,14 +13,14 @@ fn bibliography_preparation_through_mcp_preserves_the_guard_and_active_project()
         let document=created["document"].clone();
         let before=call(&client,"document.inspect",json!({"document":document})).await;
         for (operation,params) in [
-            ("bibliography.genres",json!({})),
-            ("bibliography.prepare_record",json!({"id":"draft","genre":"book","entry":{"title":"A book","author":"Doe, Jane"}})),
+            ("bibliography.profiles",json!({})),
+            ("bibliography.prepare_record",json!({"id":"draft","profile":"book","entry":{"title":"A book","author":"Doe, Jane"}})),
             ("bibliography.prepare_import",json!({"id":"source","name":"in.yaml","format":"hayagriva","contents":"example: {type: book, title: Another book}"}))
         ] {
             let mut arguments=params;arguments["document"]=document.clone();
             let prepared=call(&client,operation,arguments).await;
             assert_eq!(prepared["document"],document);
-            if operation!="bibliography.genres" { assert_eq!(prepared["outcome"]["active"],false); }
+            if operation!="bibliography.profiles" { assert_eq!(prepared["outcome"]["active"],false); }
         }
         assert_eq!(call(&client,"document.inspect",json!({"document":document})).await,before);
         assert_eq!(call(&client,"bibliography.search",json!({"document":document,"query":""})).await["outcome"]["entries"],json!([]));

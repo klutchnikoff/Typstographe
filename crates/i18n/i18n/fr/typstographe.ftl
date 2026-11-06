@@ -1343,3 +1343,9 @@ web-bibliography-manager-72 = ISBN
 web-bibliography-manager-73 = ISSN
 web-bibliography-manager-74 = arXiv
 web-bibliography-manager-75 = URL
+
+web-bibliography-profile-article = Article
+
+web-bibliography-profile-type = Type de notice
+
+web-bibliography-profile-review = Vérifier le type de cette notice.

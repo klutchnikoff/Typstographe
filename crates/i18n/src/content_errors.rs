@@ -159,7 +159,7 @@ mod bibliography_tests {
                 Code::StaleBase,
                 Code::UnresolvedConflict,
                 Code::InvalidDecision,
-                Code::GenreMapping,
+                Code::TypeMapping,
             ] {
                 let error = Error::Bibliography {
                     error: NoticeError {

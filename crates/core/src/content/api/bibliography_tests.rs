@@ -67,19 +67,22 @@ fn preparation_is_repeatable_and_does_not_publish_change_history_or_dirty_the_pr
 #[test]
 fn genres_and_new_notices_have_the_same_machine_readable_types_as_the_crate() {
     let mut session = article();
-    let kinds = session.query("bibliography.genres", json!({})).unwrap();
-    validates("bibliography.genres", &kinds);
-    assert_eq!(kinds["genres"], json!(typstographe_bibliography::genres()));
-    for (i, genre) in kinds["genres"].as_array().unwrap().iter().enumerate() {
+    let kinds = session.query("bibliography.profiles", json!({})).unwrap();
+    validates("bibliography.profiles", &kinds);
+    assert_eq!(
+        kinds["profiles"],
+        json!(typstographe_bibliography::profiles())
+    );
+    for (i, genre) in kinds["profiles"].as_array().unwrap().iter().enumerate() {
         let result = session
             .query(
                 "bibliography.prepare_record",
-                json!({"id":format!("draft-{i}"),"genre":genre["genre"]}),
+                json!({"id":format!("draft-{i}"),"profile":genre["profile"]}),
             )
             .unwrap();
         validates("bibliography.prepare_record", &result);
         assert_eq!(result["active"], false);
-        assert_eq!(result["record"]["genre"], genre["genre"]);
+        assert_eq!(result["profile"], genre["profile"]);
         assert!(!result["diagnostics"].as_array().unwrap().is_empty());
         assert_eq!(result["record"]["key"], "anonymous_untitled_nd");
     }
@@ -102,7 +105,7 @@ fn preparation_preserves_compound_fields_and_uses_available_names_without_renami
         )
         .unwrap();
     let before = session.archive().unwrap().yjs;
-    let params = json!({"id":"proposal","genre":"journal_article","entry":{
+    let params = json!({"id":"proposal","profile":"journal_article","entry":{
         "title":{"value":"Une étude","short":"Étude","verbatim":true},
         "author":{"name":"Durand","given-name":"Élise"},"date":2025,
         "parent":{"type":"periodical","title":"Revue","publisher":{"name":"Press","location":"Paris"}},
@@ -157,7 +160,7 @@ fn invalid_sources_fields_and_bounds_return_structured_diagnostics_without_mutat
         &session
             .query(
                 "bibliography.prepare_record",
-                json!({"id":"r","genre":"book","entry":{"custom":"would disappear"}}),
+                json!({"id":"r","profile":"book","entry":{"custom":"would disappear"}}),
             )
             .unwrap_err(),
     );
@@ -197,23 +200,23 @@ fn preparation_schemas_refuse_paths_unknown_fields_and_invalid_identities_and_ty
         );
     }
     for params in [
-        json!({"id":"bad id","genre":"book"}),
-        json!({"id":"r","genre":"invented"}),
-        json!({"id":"r","genre":"book","entry":"not an object"}),
-        json!({"id":"r","genre":"book","publish":true}),
+        json!({"id":"bad id","profile":"book"}),
+        json!({"id":"r","profile":"invented"}),
+        json!({"id":"r","profile":"book","entry":"not an object"}),
+        json!({"id":"r","profile":"book","publish":true}),
     ] {
         assert!(
             check_params("bibliography.prepare_record", &params).is_err(),
             "{params}"
         );
     }
-    assert!(check_params("bibliography.genres", &json!({"publish":true})).is_err());
+    assert!(check_params("bibliography.profiles", &json!({"publish":true})).is_err());
 }
 
 #[test]
 fn bibliography_preparation_does_not_grant_unsupported_types_a_new_capability() {
     let mut session = Session::new();
-    assert!(session.query("bibliography.genres", json!({})).is_err());
+    assert!(session.query("bibliography.profiles", json!({})).is_err());
     session
         .execute("document.new", json!({"type":"courrier"}))
         .unwrap();
@@ -221,7 +224,7 @@ fn bibliography_preparation_does_not_grant_unsupported_types_a_new_capability() 
         &session
             .query(
                 "bibliography.prepare_record",
-                json!({"id":"r","genre":"book"}),
+                json!({"id":"r","profile":"book"}),
             )
             .unwrap_err(),
     );
@@ -232,7 +235,7 @@ fn bibliography_preparation_does_not_grant_unsupported_types_a_new_capability() 
 #[test]
 fn manager_form_preparation_is_private_and_edit_with_key_is_one_guarded_operation() {
     let mut s = article();
-    let seed = s.query("bibliography.prepare_record", json!({"id":"r","genre":"journal_article","key":"old","entry":{"title":{"value":"A title","short":"Short"},"note":"Keep this"}})).unwrap();
+    let seed = s.query("bibliography.prepare_record", json!({"id":"r","profile":"journal_article","key":"old","entry":{"title":{"value":"A title","short":"Short"},"note":"Keep this"}})).unwrap();
     let before = s.archive().unwrap().yjs;
     let form = s
         .query("bibliography.form", json!({"record":seed["record"]}))
@@ -297,7 +300,7 @@ fn import_review_is_private_and_refuses_a_changed_library() {
     let record = s
         .query(
             "bibliography.prepare_record",
-            json!({"id":"r","genre":"book"}),
+            json!({"id":"r","profile":"book"}),
         )
         .unwrap();
     s.execute("bibliography.apply",json!({"expected":prepared["library_fingerprint"],"change":{"kind":"create","record":record["record"]}})).unwrap();
@@ -313,7 +316,7 @@ fn bibliography_usage_finds_objects_inside_widgets_without_changing_editor_conte
     let record = s
         .query(
             "bibliography.prepare_record",
-            json!({"id":"r","genre":"book","entry":{"title":"Example"}}),
+            json!({"id":"r","profile":"book","entry":{"title":"Example"}}),
         )
         .unwrap();
     let base = s.query("bibliography.inspect", json!({})).unwrap();
@@ -335,4 +338,134 @@ fn bibliography_usage_finds_objects_inside_widgets_without_changing_editor_conte
     assert_eq!(browse["entries"][0]["id"], "r");
     assert_eq!(s.archive().unwrap().yjs, before);
     assert_eq!(s.query("context.get", json!({})).unwrap(), context);
+}
+
+#[test]
+fn changing_native_profiles_is_private_until_one_guarded_publication_and_preserves_hidden_data() {
+    let mut s = article();
+    let initial=s.query("bibliography.prepare_record",json!({"id":"r","profile":"journal_article","key":"fixed","entry":{"title":"A work","parent":{"type":"periodical","title":"Original journal","date":2026},"serial-number":{"isbn":"9780000000000"}}})).unwrap();
+    let base = s.query("bibliography.inspect", json!({})).unwrap();
+    s.execute("bibliography.apply",json!({"expected":base["fingerprint"],"change":{"kind":"create","record":initial["record"]}})).unwrap();
+    let before = s.archive().unwrap();
+    let prepared = s
+        .query(
+            "bibliography.prepare_form",
+            json!({"record":initial["record"],"values":{"/title":"Edited work"},"profile":"book"}),
+        )
+        .unwrap();
+    assert_eq!(prepared["profile"], "book");
+    assert!(prepared["record"].get("profile").is_none());
+    assert!(prepared["record"].get("genre").is_none());
+    assert_eq!(
+        prepared["record"]["retained_parents"][0]["title"],
+        "Original journal"
+    );
+    assert_eq!(s.archive().unwrap().yjs, before.yjs);
+    let current = s.query("bibliography.inspect", json!({})).unwrap();
+    let call = json!({"expected":current["fingerprint"],"change":{"kind":"replace","id":"r","expected":initial["fingerprint"],"record":prepared["record"]}});
+    s.execute("bibliography.apply", call).unwrap();
+    let after = s.archive().unwrap();
+    let resources = crate::bibliography::resources(&after.metadata);
+    let retained = &resources[crate::bibliography::RETAINED_PATH];
+    assert!(
+        std::str::from_utf8(retained)
+            .unwrap()
+            .contains("Original journal")
+    );
+    assert!(
+        !std::str::from_utf8(&resources[crate::bibliography::ACTIVE_PATH])
+            .unwrap()
+            .contains("Original journal")
+    );
+    let project = crate::content::project::Project::new(after.clone()).unwrap();
+    let bytes = project.to_bytes().unwrap();
+    let project = crate::content::project::Project::from_bytes(bytes).unwrap();
+    let reopened = project.current();
+    assert_eq!(reopened.metadata, after.metadata);
+    let crate::document_types::Metadata::Article(meta) = &reopened.metadata else {
+        panic!()
+    };
+    assert_eq!(
+        meta.references[0].profile(),
+        typstographe_bibliography::Profile::Book
+    );
+    let restored = meta.references[0]
+        .reclassified(
+            &meta.references[0].fingerprint(),
+            typstographe_bibliography::Profile::JournalArticle,
+        )
+        .unwrap();
+    assert_eq!(
+        restored.entry().parents()[0]
+            .title()
+            .unwrap()
+            .value
+            .to_string(),
+        "Original journal"
+    );
+    let mut world = crate::rendering::TypstWorld::default();
+    world.set_dependencies(&after.dependencies);
+    let source = after.validate().unwrap();
+    let compiled = world
+        .compile_with_template(&source, &after.metadata, &after.template)
+        .unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let output = dir.path().join("export");
+    crate::exporting::write_document(
+        &compiled,
+        &crate::rendering::RenderRequest {
+            source,
+            metadata: after.metadata.clone(),
+            template: after.template.clone(),
+            model_manifest: after.model_manifest.clone(),
+            assets: after.assets.clone(),
+            dependencies: after.dependencies.clone(),
+        },
+        &output,
+        crate::protocol::ExportFormat::Typst,
+        false,
+    )
+    .unwrap();
+    assert_eq!(
+        std::fs::read(output.join(crate::bibliography::RETAINED_PATH)).unwrap(),
+        retained.as_ref()
+    );
+    s.execute("edit.undo", json!({})).unwrap();
+    assert_eq!(s.archive().unwrap().metadata, before.metadata);
+    s.execute("edit.redo", json!({})).unwrap();
+    assert_eq!(s.archive().unwrap().metadata, after.metadata);
+}
+
+#[test]
+fn prepared_type_changes_refuse_invalid_private_fields_and_guard_record_replacement() {
+    let mut s = article();
+    let initial=s.query("bibliography.prepare_record",json!({"id":"r","profile":"book","key":"fixed","entry":{"title":"An example","date":2026}})).unwrap();
+    let base = s.query("bibliography.inspect", json!({})).unwrap();
+    s.execute("bibliography.apply",json!({"expected":base["fingerprint"],"change":{"kind":"create","record":initial["record"]}})).unwrap();
+    let before = s.archive().unwrap().yjs;
+    assert!(s.query("bibliography.prepare_form",json!({"record":initial["record"],"values":{"/date":"not-a-date"},"profile":"journal_article"})).is_err());
+    assert_eq!(s.archive().unwrap().yjs, before);
+    let prepared = s
+        .query(
+            "bibliography.prepare_form",
+            json!({"record":initial["record"],"profile":"thesis"}),
+        )
+        .unwrap();
+    for field in ["id", "provenance"] {
+        let mut record = prepared["record"].clone();
+        record[field] = if field == "id" {
+            json!("wrong")
+        } else {
+            json!([{"source_id":"invented","source_digest":"0".repeat(64),"original_key":"fixed"}])
+        };
+        let base = s.query("bibliography.inspect", json!({})).unwrap();
+        assert!(s.execute("bibliography.apply",json!({"expected":base["fingerprint"],"change":{"kind":"replace","id":"r","expected":initial["fingerprint"],"record":record}})).is_err());
+        assert_eq!(s.archive().unwrap().yjs, before);
+    }
+    let base = s.query("bibliography.inspect", json!({})).unwrap();
+    s.execute("bibliography.apply",json!({"expected":base["fingerprint"],"change":{"kind":"edit","id":"r","expected":initial["fingerprint"],"patches":[],"profile":"journal_article"}})).unwrap();
+    let after = s.archive().unwrap().yjs;
+    let base = s.query("bibliography.inspect", json!({})).unwrap();
+    assert!(s.execute("bibliography.apply",json!({"expected":base["fingerprint"],"change":{"kind":"replace","id":"r","expected":initial["fingerprint"],"record":prepared["record"]}})).is_err());
+    assert_eq!(s.archive().unwrap().yjs, after);
 }

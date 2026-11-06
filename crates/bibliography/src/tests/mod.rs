@@ -6,8 +6,7 @@ fn id(value: &str) -> RecordId {
 }
 
 fn record(identity: &str, key: &str, entry: Value) -> Record {
-    serde_json::from_value(json!({"id":identity,"genre":"journal_article","key":key,"entry":entry}))
-        .unwrap()
+    serde_json::from_value(json!({"id":identity,"key":key,"entry":entry})).unwrap()
 }
 
 fn import(text: &str, format: ImportFormat) -> PreparedImport {
@@ -27,3 +26,5 @@ mod plans;
 mod records;
 
 mod form;
+
+mod classification;

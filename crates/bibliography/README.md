@@ -14,7 +14,9 @@ and own persistence, undo history, recovery and publication.
   gap-only enrichment, full-library guards and all-or-nothing application in memory.
 - Deterministic Hayagriva projection retaining supported native fields and parents.
 
-Public records serialize as `id`, `genre`, `key`, `entry`, `provenance`. The
+Public records serialize as `id`, `key`, `entry`, `retained_parents`, `provenance`.
+Editing profiles are derived from the active native type and its parents; no
+independent genre or profile is stored. The
 `entry` is native Hayagriva data, not a flattened title/author/year schema.
 Parent paths in `native_value` and field descriptors use arrays, including a
 single parent. Field patches replace or remove **complete native fields**;
@@ -47,11 +49,20 @@ after a same-work decision: differing fields are listed for a separate correctio
 
 The prepared import contains review diagnostics, including conservative warnings
 for unqualified BibLaTeX fields. The caller must present those before publication.
-Genre intent is kept independently from conversion: Hayagriva 0.10.1 converts
-`@software` to `misc`, while `repository` also covers data. This crate reports
-the mismatch; it does not silently rewrite imported types. Form descriptors
-describe starting structures; form codecs must account for actual imported
-containers, inheritance and unexposed metadata before editing them.
+Hayagriva 0.10.1 converts `@software` to `misc`, while `repository` also covers
+data. Prepared imports explicitly map `@software` to native `repository` and
+report that choice before publication; original bytes stay immutable. Native
+`repository` derives the software editing profile, consistent with the CSL
+processor. Dataset conversions still require review rather than inventing an
+unsupported native dataset type.
+
+`Record::reclassified` changes the active native structure, preserves common
+inherited values and retains inactive publication containers for later type
+changes. Matching profiles preserve imported variants without normalization.
+The form codec edits only visible changed controls. Returning to a previous
+publication profile restores its container, never a different publication’s
+title. Identity, citation key and provenance remain stable. The project adapter
+materializes inactive containers separately from the active Hayagriva library.
 
 Tests:
 
@@ -64,5 +75,6 @@ The [contract](../../docs/c3-bibliography-contract.md),
 [read-only preparation queries](../../docs/c3-bibliography-preparation.md),
 [validated interface](../../docs/c3-bibliography-interface.md) and
 [Citekeep-derived corpus](../../fixtures/bibliography/README.md) explain the
-remaining integration work and attribution. The current document file format,
-citation command targets and GUI manager are not migrated by this crate alone.
+integration contracts and attribution. See the
+[native-profile decision](../../docs/c3-native-bibliography-profiles.md) for
+guarded transitions, inactive publication data and CAS 16 qualification.

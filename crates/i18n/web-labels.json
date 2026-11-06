@@ -584,5 +584,8 @@
   "ISBN": "web-bibliography-manager-72",
   "ISSN": "web-bibliography-manager-73",
   "arXiv": "web-bibliography-manager-74",
-  "URL": "web-bibliography-manager-75"
+  "URL": "web-bibliography-manager-75",
+  "Article": "web-bibliography-profile-article",
+  "Type de notice": "web-bibliography-profile-type",
+  "Vérifier le type de cette notice.": "web-bibliography-profile-review"
 }

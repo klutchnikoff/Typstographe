@@ -22,7 +22,7 @@ pub fn for_id(id: &str) -> Vec<Call> {
         "bibliography.form" | "bibliography.prepare_form" => {
             return vec![Call {
                 id: id.into(),
-                params: json!({"record":{"id":"notice-draft","genre":"book","key":"draft","entry":{"type":"book","title":"A book"},"provenance":[]},"values":{"/title":"A revised book"}}),
+                params: json!({"record":{"id":"notice-draft","key":"draft","entry":{"type":"book","title":"A book"},"provenance":[]},"values":{"/title":"A revised book"}}),
             }];
         }
         "bibliography.review_import" => {
@@ -40,7 +40,7 @@ pub fn for_id(id: &str) -> Vec<Call> {
         "bibliography.apply" => {
             return vec![Call {
                 id: id.into(),
-                params: json!({"expected":typstographe_bibliography::Library::default().fingerprint(),"change":{"kind":"create","record":{"id":"example-record","genre":"book","key":"example2026","entry":{"type":"book","title":"An example"},"provenance":[]}}}),
+                params: json!({"expected":typstographe_bibliography::Library::default().fingerprint(),"change":{"kind":"create","record":{"id":"example-record","key":"example2026","entry":{"type":"book","title":"An example"},"provenance":[]}}}),
             }];
         }
         "bibliography.inspect" => {
@@ -49,7 +49,7 @@ pub fn for_id(id: &str) -> Vec<Call> {
                 params: json!({}),
             }];
         }
-        "bibliography.genres" => {
+        "bibliography.profiles" => {
             return vec![Call {
                 id: id.into(),
                 params: json!({}),
@@ -58,7 +58,7 @@ pub fn for_id(id: &str) -> Vec<Call> {
         "bibliography.prepare_record" => {
             return vec![Call {
                 id: id.into(),
-                params: json!({"id":"notice-draft","genre":"book","entry":{"title":"A book","author":"Doe, Jane","date":2026}}),
+                params: json!({"id":"notice-draft","profile":"book","entry":{"title":"A book","author":"Doe, Jane","date":2026}}),
             }];
         }
         "bibliography.prepare_import" => {

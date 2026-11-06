@@ -16,10 +16,10 @@ fn cli_can_prepare_notices_under_an_active_writer_without_touching_the_file() {
     owner.save_as(&path).unwrap();
     let original = std::fs::read(&path).unwrap();
     let cases = [
-        ("bibliography.genres", json!({})),
+        ("bibliography.profiles", json!({})),
         (
             "bibliography.prepare_record",
-            json!({"id":"new-record","genre":"book","entry":{"title":"Un ouvrage","author":"Durand, Élise"}}),
+            json!({"id":"new-record","profile":"book","entry":{"title":"Un ouvrage","author":"Durand, Élise"}}),
         ),
         (
             "bibliography.prepare_import",
@@ -36,7 +36,7 @@ fn cli_can_prepare_notices_under_an_active_writer_without_touching_the_file() {
         );
         let expected = owner.query(operation, params).unwrap();
         assert_eq!(actual["outcome"], expected);
-        if operation != "bibliography.genres" {
+        if operation != "bibliography.profiles" {
             assert_eq!(actual["outcome"]["active"], false);
         }
         assert_eq!(std::fs::read(&path).unwrap(), original);
@@ -60,7 +60,7 @@ fn cli_reports_invalid_native_field_data_without_publishing_or_losing_its_path()
             .arg(&path)
             .args([
                 "--params",
-                r#"{"id":"new","genre":"book","entry":{"unknown":"lost"}}"#,
+                r#"{"id":"new","profile":"book","entry":{"unknown":"lost"}}"#,
             ]),
         1,
     );
@@ -81,7 +81,7 @@ fn cli_renames_a_cited_notice_under_guards_and_reopens_the_same_record_identity(
     let prepared = owner
         .query(
             "bibliography.prepare_record",
-            json!({"id":"book","genre":"book","key":"before","entry":{"title":"An example"}}),
+            json!({"id":"book","profile":"book","key":"before","entry":{"title":"An example"}}),
         )
         .unwrap();
     let library = owner.query("bibliography.inspect", json!({})).unwrap();

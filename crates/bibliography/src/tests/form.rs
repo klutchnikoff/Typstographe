@@ -1,7 +1,7 @@
 use super::*;
 use crate::form::{form_fields, form_patches};
 fn record() -> Record {
-    Record::from_native(id("r"),Genre::Book,"book",json!({"type":"book","title":{"value":{"value":"all LOWER","verbatim":true},"short":"Short"},"author":[{"name":"Doe","given-name":"Jane","prefix":"de","alias":"JD"}],"publisher":{"name":{"value":"PRESS","short":"P"},"location":"Paris"},"url":{"value":"https://example.org","date":"2025-02-03"},"serial-number":{"custom":"kept"},"note":"Unexposed"})).unwrap()
+    Record::from_native(id("r"),"book",json!({"type":"book","title":{"value":{"value":"all LOWER","verbatim":true},"short":"Short"},"author":[{"name":"Doe","given-name":"Jane","prefix":"de","alias":"JD"}],"publisher":{"name":{"value":"PRESS","short":"P"},"location":"Paris"},"url":{"value":"https://example.org","date":"2025-02-03"},"serial-number":{"custom":"kept"},"note":"Unexposed"})).unwrap()
 }
 #[test]
 fn form_edits_preserve_compound_metadata_and_unexposed_native_fields() {
@@ -73,7 +73,7 @@ fn unmodified_form_is_a_noop_and_unknown_controls_or_person_ids_are_refused() {
 }
 #[test]
 fn inherited_and_publication_fields_follow_actual_native_parents() {
-    let record=Record::from_native(id("r"),Genre::JournalArticle,"article",json!({"type":"article","parent":[{"type":"repository","title":"Deposit"},{"type":"periodical","title":"Journal","author":"Doe, Jane","date":2026}]})).unwrap();
+    let record=Record::from_native(id("r"),"article",json!({"type":"article","parent":[{"type":"repository","title":"Deposit"},{"type":"periodical","title":"Journal","author":"Doe, Jane","date":2026}]})).unwrap();
     let fields = form_fields(&record);
     assert!(
         fields
@@ -96,9 +96,8 @@ fn inherited_and_publication_fields_follow_actual_native_parents() {
 fn adding_a_missing_publication_uses_native_defaults_without_replacing_other_fields() {
     let record = Record::from_native(
         id("r"),
-        Genre::JournalArticle,
         "article",
-        json!({"type":"article","title":"A study","note":"Keep"}),
+        json!({"type":"article","title":"A study","parent":{"type":"periodical"},"note":"Keep"}),
     )
     .unwrap();
     let patches = form_patches(

@@ -1,5 +1,5 @@
 use crate::{
-    Code, Diagnostic, Error, Fingerprint, Genre, Library, MAX_RECORDS, MAX_SOURCE_BYTES,
+    Code, Diagnostic, Error, Fingerprint, Library, MAX_RECORDS, MAX_SOURCE_BYTES, Profile,
     Provenance, Record, RecordId, Result, Severity,
 };
 use biblatex::ChunksExt;
@@ -211,7 +211,7 @@ pub fn prepare_import(
 ) -> Result<PreparedImport> {
     let native = parse_native(source.contents(), source.format())?;
     let mut diagnostics = vec![];
-    let mut genres = std::collections::BTreeMap::new();
+    let mut mappings = std::collections::BTreeMap::new();
     if source.format() == ImportFormat::Hayagriva {
         let values: Value = yaml_serde::from_str(source.contents())
             .map_err(|e| Error::new(Code::InvalidSyntax, e.to_string()))?;
@@ -232,12 +232,12 @@ pub fn prepare_import(
             .map_err(|e| Error::new(Code::InvalidSyntax, e.to_string()))?;
         for raw in bibliography.iter() {
             let kind = match raw.entry_type {
-                biblatex::EntryType::Software => Some(Genre::Software),
-                biblatex::EntryType::Unpublished => Some(Genre::Preprint),
+                biblatex::EntryType::Software => Some(Profile::Software),
+                biblatex::EntryType::Unpublished => Some(Profile::Preprint),
                 _ => None,
             };
             if let Some(kind) = kind {
-                genres.insert(raw.key.clone(), kind);
+                mappings.insert(raw.key.clone(), kind);
             }
             diagnostics.push(diagnostic(
                 Code::ConversionReview,
@@ -289,18 +289,18 @@ pub fn prepare_import(
                 raw.entry_type,
                 biblatex::EntryType::Software | biblatex::EntryType::Dataset
             ) {
-                diagnostics.push(diagnostic(Code::GenreMapping, &raw.key, Some("type"),
+                diagnostics.push(diagnostic(Code::TypeMapping, &raw.key, Some("type"),
                     "Native conversion does not uniquely preserve the source genre; explicit mapping required"));
             }
         }
     }
     let mut records = vec![];
     for entry in native {
-        let genre = genres
-            .get(entry.key())
-            .copied()
-            .unwrap_or_else(|| Genre::infer(&entry));
-        let mut record = Record::new(identify(entry.key()), genre, entry)?;
+        let mapping = mappings.get(entry.key()).copied();
+        let mut record = Record::new(identify(entry.key()), entry)?;
+        if let Some(profile) = mapping {
+            record = record.reclassified(&record.fingerprint(), profile)?;
+        }
         record.add_provenance(Provenance {
             source_id: source.id.clone(),
             source_digest: source.digest.clone(),
@@ -319,18 +319,13 @@ pub fn prepare_import(
 }
 
 pub fn completeness(record: &Record) -> Vec<Diagnostic> {
-    let value = record.native_value();
-    record
-        .genre()
-        .descriptor()
-        .fields
+    crate::form::form_fields(record)
         .into_iter()
         .filter_map(|field| {
-            let missing = value.pointer(&field.path).is_none_or(|value| {
-                value.is_null()
-                    || value.as_str().is_some_and(|s| s.trim().is_empty())
-                    || value.as_array().is_some_and(Vec::is_empty)
-            });
+            let value = &field.value;
+            let missing = value.is_null()
+                || value.as_str().is_some_and(|s| s.trim().is_empty())
+                || value.as_array().is_some_and(Vec::is_empty);
             (field.recommended && missing).then(|| {
                 diagnostic(
                     Code::Incomplete,

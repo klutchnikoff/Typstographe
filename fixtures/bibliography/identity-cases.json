@@ -21,13 +21,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -39,13 +36,10 @@
         {
           "id": "i1",
           "key": "unrelated",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/ESTIMATE"
@@ -71,13 +65,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -89,13 +80,10 @@
         {
           "id": "i1",
           "key": "foreign",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -108,10 +96,7 @@
       "expected": {
         "action": "enrich",
         "target": "r1",
-        "added_fields": [
-          "volume",
-          "page-range"
-        ],
+        "added_fields": ["volume", "page-range"],
         "keep_key": "doe2019"
       }
     },
@@ -127,13 +112,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -146,13 +128,10 @@
         {
           "id": "i1",
           "key": "foreign",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -163,9 +142,7 @@
         }
       ],
       "expected": {
-        "added_fields": [
-          "volume"
-        ],
+        "added_fields": ["volume"],
         "preserve_fields": {
           "publisher": "Known Press"
         },
@@ -185,13 +162,10 @@
         {
           "id": "i1",
           "key": "one",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive density estimation",
-            "author": [
-              "Bertin, Karine"
-            ],
+            "author": ["Bertin, Karine"],
             "date": "2020",
             "serial-number": {
               "doi": "10.5555/density"
@@ -201,13 +175,10 @@
         {
           "id": "i2",
           "key": "two",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive stationary estimation",
-            "author": [
-              "Bertin, Karine"
-            ],
+            "author": ["Bertin, Karine"],
             "date": "2020",
             "serial-number": {
               "doi": "10.5555/stationary"
@@ -234,13 +205,10 @@
         {
           "id": "r1",
           "key": "doe_adaptive_2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Wavelets",
-            "author": [
-              "Zed, Zoe"
-            ],
+            "author": ["Zed, Zoe"],
             "date": "1990"
           }
         }
@@ -249,13 +217,10 @@
         {
           "id": "i1",
           "key": "doe_adaptive_2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -282,13 +247,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -300,13 +262,10 @@
         {
           "id": "i1",
           "key": "other",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/other"
@@ -332,13 +291,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -350,13 +306,10 @@
         {
           "id": "i1",
           "key": "other",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Minimax rates under dependence",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -381,13 +334,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -399,13 +349,10 @@
         {
           "id": "i1",
           "key": "other",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive stationary estimation",
-            "author": [
-              "Roe, Richard"
-            ],
+            "author": ["Roe, Richard"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/other"
@@ -430,13 +377,10 @@
         {
           "id": "r1",
           "key": "one",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "arxiv": "1005.4444"
@@ -448,13 +392,10 @@
         {
           "id": "i1",
           "key": "two",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "arxiv": "2108.06507"
@@ -479,13 +420,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -497,13 +435,10 @@
         {
           "id": "i1",
           "key": "other",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019"
           }
         }
@@ -526,13 +461,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -544,13 +476,10 @@
         {
           "id": "i1",
           "key": "other",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation: a new approach",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -576,14 +505,10 @@
         {
           "id": "r1",
           "key": "one",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane",
-              "Roe, Richard"
-            ],
+            "author": ["Doe, Jane", "Roe, Richard"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -595,13 +520,10 @@
         {
           "id": "i1",
           "key": "foreign-key",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -627,13 +549,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -645,7 +564,6 @@
         {
           "id": "i1",
           "key": "untitled",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "date": "2019",
@@ -673,13 +591,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -691,12 +606,9 @@
         {
           "id": "i1",
           "key": "untitled",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -724,26 +636,20 @@
         {
           "id": "i1",
           "key": "a",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation of density",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019"
           }
         },
         {
           "id": "i2",
           "key": "b",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation of density",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/density"
@@ -753,13 +659,10 @@
         {
           "id": "i3",
           "key": "c",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation of conditional density",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/conditional"
@@ -785,13 +688,10 @@
         {
           "id": "r1",
           "key": "published",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Confidence bands for densities",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2010",
             "serial-number": {
               "doi": "10.5555/bands",
@@ -804,13 +704,10 @@
         {
           "id": "i1",
           "key": "preprint",
-          "genre": "preprint",
           "entry": {
-            "type": "article",
+            "type": "manuscript",
             "title": "Confidence bands",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2009",
             "serial-number": {
               "arxiv": "1005.4444v1"
@@ -841,13 +738,10 @@
         {
           "id": "r1",
           "key": "published",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/published",
@@ -860,13 +754,10 @@
         {
           "id": "i1",
           "key": "deposit",
-          "genre": "preprint",
           "entry": {
-            "type": "article",
+            "type": "manuscript",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/deposit",
@@ -895,13 +786,10 @@
         {
           "id": "i1",
           "key": "foreign-key",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -911,13 +799,10 @@
         {
           "id": "i2",
           "key": "other",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -928,9 +813,7 @@
       ],
       "expected": {
         "new_count": 1,
-        "preserve_fields": [
-          "page-range"
-        ],
+        "preserve_fields": ["page-range"],
         "repeat_import_no_change": true
       }
     },
@@ -946,13 +829,10 @@
         {
           "id": "r1",
           "key": "existing",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019"
           }
         }
@@ -961,13 +841,10 @@
         {
           "id": "i1",
           "key": "foreign-key",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -977,13 +854,10 @@
         {
           "id": "i2",
           "key": "other",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/other"
@@ -1009,13 +883,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -1025,13 +896,10 @@
         {
           "id": "r2",
           "key": "second",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/second"
@@ -1043,13 +911,10 @@
         {
           "id": "i1",
           "key": "other",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019"
           }
         }
@@ -1077,13 +942,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -1095,13 +957,10 @@
         {
           "id": "i1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/other"
@@ -1133,13 +992,10 @@
         {
           "id": "r1",
           "key": "doe2019",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/estimate"
@@ -1151,13 +1007,10 @@
         {
           "id": "i1",
           "key": "other",
-          "genre": "journal_article",
           "entry": {
             "type": "article",
             "title": "Adaptive estimation",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "serial-number": {
               "doi": "10.5555/other"
@@ -1184,13 +1037,10 @@
         {
           "id": "r1",
           "key": "tool1",
-          "genre": "software",
           "entry": {
             "type": "repository",
             "title": "Example software",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "edition": "1.0"
           }
@@ -1200,13 +1050,10 @@
         {
           "id": "i1",
           "key": "tool2",
-          "genre": "software",
           "entry": {
             "type": "repository",
             "title": "Example software",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "edition": "2.0"
           }
@@ -1214,10 +1061,7 @@
       ],
       "expected": {
         "automatic_merge": false,
-        "preserve_versions": [
-          "1.0",
-          "2.0"
-        ]
+        "preserve_versions": ["1.0", "2.0"]
       }
     },
     {
@@ -1230,13 +1074,10 @@
         {
           "id": "r1",
           "key": "tool1",
-          "genre": "software",
           "entry": {
             "type": "repository",
             "title": "Example software",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "edition": "1.0"
           }
@@ -1246,13 +1087,10 @@
         {
           "id": "i1",
           "key": "foreign",
-          "genre": "software",
           "entry": {
             "type": "repository",
             "title": "Example software",
-            "author": [
-              "Doe, Jane"
-            ],
+            "author": ["Doe, Jane"],
             "date": "2019",
             "edition": "1.0"
           }

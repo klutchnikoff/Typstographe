@@ -335,11 +335,22 @@ impl Executor<'_> {
             &mut fields,
             &mut differences,
         );
-        let mut record = Record::new(
-            existing.id().clone(),
-            existing.genre(),
-            crate::model::entry_from_value(existing.key(), value)?,
-        )?;
+        let mut record = existing.with_entry(value)?;
+        let different_type = existing.entry().entry_type() != incoming.entry().entry_type();
+        for parent in incoming
+            .retained_parents()
+            .iter()
+            .chain(incoming.entry().parents().iter().filter(|_| different_type))
+        {
+            if !record.retained_parents.contains(parent)
+                && !record.entry().parents().contains(parent)
+            {
+                record.retained_parents.push(parent.clone());
+                if !fields.iter().any(|path| path == "/retained_parents") {
+                    fields.push("/retained_parents".into())
+                }
+            }
+        }
         for source in existing.provenance().iter().chain(incoming.provenance()) {
             record.add_provenance(source.clone());
         }
@@ -380,6 +391,10 @@ fn fill_gaps(
                 if existing.get(field).is_some_and(|v| v != value) {
                     differences.push(format!("{path}/type"));
                 }
+                continue;
+            }
+            if field == "parent" && existing.get("type") != incoming.get("type") {
+                differences.push(format!("{path}/parent"));
                 continue;
             }
             if empty(value) {

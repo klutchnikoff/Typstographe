@@ -1,4 +1,4 @@
-use crate::{Code, Error, Genre, MAX_RECORDS, Result};
+use crate::{Code, Error, MAX_RECORDS, Profile, Result};
 use hayagriva::Entry;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -125,8 +125,8 @@ pub struct Provenance {
 #[serde(try_from = "RecordData", into = "RecordData")]
 pub struct Record {
     id: RecordId,
-    genre: Genre,
     entry: Entry,
+    pub(crate) retained_parents: Vec<Entry>,
     provenance: Vec<Provenance>,
 }
 
@@ -134,10 +134,13 @@ pub struct Record {
 #[serde(deny_unknown_fields)]
 struct RecordData {
     id: RecordId,
-    genre: Genre,
     key: String,
     #[schemars(with = "serde_json::Map<String, Value>")]
     entry: Value,
+    /// Inactive native publication containers. Never a second active bibliography.
+    #[serde(default)]
+    #[schemars(with = "Vec<serde_json::Map<String, Value>>")]
+    retained_parents: Vec<Value>,
     #[serde(default)]
     provenance: Vec<Provenance>,
 }
@@ -145,11 +148,12 @@ struct RecordData {
 impl TryFrom<RecordData> for Record {
     type Error = Error;
     fn try_from(data: RecordData) -> Result<Self> {
-        let mut record = Self::new(
-            data.id,
-            data.genre,
-            entry_from_value(&data.key, data.entry)?,
-        )?;
+        let mut record = Self::new(data.id, entry_from_value(&data.key, data.entry)?)?;
+        record.retained_parents = data
+            .retained_parents
+            .into_iter()
+            .map(|value| entry_from_value(record.key(), value))
+            .collect::<Result<_>>()?;
         record.provenance = data.provenance;
         Ok(record)
     }
@@ -158,9 +162,13 @@ impl From<Record> for RecordData {
     fn from(record: Record) -> Self {
         Self {
             id: record.id,
-            genre: record.genre,
             key: record.entry.key().into(),
             entry: crate::native::canonical_entry(&record.entry),
+            retained_parents: record
+                .retained_parents
+                .iter()
+                .map(canonical_entry)
+                .collect(),
             provenance: record.provenance,
         }
     }
@@ -221,15 +229,15 @@ pub struct FieldPatch {
 
 impl Record {
     /// Validate native fields while retaining typed field diagnostics for callers.
-    pub fn from_native(id: RecordId, genre: Genre, key: &str, value: Value) -> Result<Self> {
-        Self::new(id, genre, entry_from_value(key, value)?)
+    pub fn from_native(id: RecordId, key: &str, value: Value) -> Result<Self> {
+        Self::new(id, entry_from_value(key, value)?)
     }
-    pub fn new(id: RecordId, genre: Genre, entry: Entry) -> Result<Self> {
+    pub fn new(id: RecordId, entry: Entry) -> Result<Self> {
         valid_key(entry.key())?;
         Ok(Self {
             id,
-            genre,
             entry,
+            retained_parents: vec![],
             provenance: vec![],
         })
     }
@@ -239,13 +247,16 @@ impl Record {
     pub fn key(&self) -> &str {
         self.entry.key()
     }
-    /// Change only the form intent; native fields and container structure are preserved.
-    pub fn with_genre(mut self, genre: Genre) -> Self {
-        self.genre = genre;
-        self
+    pub fn profile(&self) -> Profile {
+        Profile::infer(&self.entry)
     }
-    pub fn genre(&self) -> Genre {
-        self.genre
+    pub fn retained_parents(&self) -> &[Entry] {
+        &self.retained_parents
+    }
+    pub(crate) fn with_entry(&self, value: Value) -> Result<Self> {
+        let mut result = self.clone();
+        result.entry = entry_from_value(self.key(), value)?;
+        Ok(result)
     }
     pub fn entry(&self) -> &Entry {
         &self.entry
@@ -270,6 +281,11 @@ impl Record {
         self.guard(expected)?;
         let mut result = self.clone();
         result.entry = entry_from_value(key, self.native_value())?;
+        result.retained_parents = self
+            .retained_parents
+            .iter()
+            .map(|entry| entry_from_value(key, canonical_entry(entry)))
+            .collect::<Result<_>>()?;
         Ok(result)
     }
     pub fn edited(&self, expected: &Fingerprint, patches: &[FieldPatch]) -> Result<Self> {
@@ -308,7 +324,7 @@ impl Record {
                     .get("parent")
                     .is_none_or(|v| v.as_array().is_some_and(Vec::is_empty))
             {
-                let template = self.genre.empty_entry(self.key());
+                let template = self.profile().empty_entry(self.key());
                 let template = canonical_entry(&template);
                 value["parent"] = if template["type"] == value["type"] {
                     template
@@ -339,7 +355,7 @@ impl Record {
         result.entry = entry_from_value(self.key(), value)?;
         Ok(result)
     }
-    fn guard(&self, expected: &Fingerprint) -> Result<()> {
+    pub(crate) fn guard(&self, expected: &Fingerprint) -> Result<()> {
         if &self.fingerprint() == expected {
             Ok(())
         } else {

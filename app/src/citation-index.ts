@@ -3,9 +3,9 @@ import type { Provider } from './provider'
 import { documentType, settingsFor } from './state'
 export interface BibliographicRecord {
   id: string
-  genre: string
   key: string
   entry: Record<string, unknown>
+  retained_parents?: Record<string, unknown>[]
   provenance: unknown[]
 }
 export interface ReferenceEntry {

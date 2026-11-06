@@ -1,6 +1,6 @@
 //! Adapted from Citekeep's candidate/refutation/coherence separation.
 //! See fixtures/bibliography for source commit, scenarios and MIT attribution.
-use crate::{Code, Error, Genre, Record, RecordId, Result, normalize_text};
+use crate::{Code, Error, Profile, Record, RecordId, Result, normalize_text};
 use regex::Regex;
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet};
@@ -83,7 +83,7 @@ struct Facts {
     title: Vec<String>,
     authors: BTreeSet<String>,
     prints: BTreeMap<Signal, String>,
-    genre: Genre,
+    profile: Profile,
     edition: Option<String>,
 }
 
@@ -169,7 +169,7 @@ impl Facts {
             title,
             authors,
             prints,
-            genre: record.genre(),
+            profile: record.profile(),
             edition: record
                 .native_value()
                 .get("edition")
@@ -210,13 +210,13 @@ impl Facts {
         if (self.title.is_empty() || other.title.is_empty()) && !shared_arxiv && !shared_doi {
             contradictions.push(ConflictReason::MissingEvidence);
         }
-        if (self.genre == Genre::Preprint || other.genre == Genre::Preprint)
-            && self.genre != other.genre
+        if (self.profile == Profile::Preprint || other.profile == Profile::Preprint)
+            && self.profile != other.profile
         {
             contradictions.push(ConflictReason::PublicationState);
         }
-        let different_software = self.genre == Genre::Software
-            && other.genre == Genre::Software
+        let different_software = self.profile == Profile::Software
+            && other.profile == Profile::Software
             && self.edition.is_some()
             && other.edition.is_some()
             && self.edition != other.edition;

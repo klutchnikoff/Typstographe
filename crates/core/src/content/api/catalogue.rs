@@ -33,11 +33,11 @@ const QUERIES: &[(&str, &str)] = &[
     ),
     (
         "bibliography.prepare_form",
-        "Validate changed form controls against a frozen native record. Returns root-field patches and a proposed record; does not publish. Use bibliography.apply with the original record fingerprint for edits, or create for new notices.",
+        "Validate changed form controls against a frozen native record, then optionally change its native classification with profile. Returns the proposed native record and its derived editing profile, preserving inactive publication containers. Does not publish. Use bibliography.apply (replace) with the original record fingerprint for a prepared form, or create for a new notice; a sequence of private form changes still publishes one undoable edit.",
     ),
     (
         "bibliography.browse",
-        "Search all project notices by title/authors with compact summaries, genre and completeness. No 80-item suggestion limit.",
+        "Search all project notices by title/authors with compact summaries, derived profile and completeness. No 80-item suggestion limit.",
     ),
     (
         "bibliography.usage",
@@ -132,8 +132,8 @@ const QUERIES: &[(&str, &str)] = &[
         "Search the project bibliography by title and author.",
     ),
     (
-        "bibliography.genres",
-        "Describe common bibliographic form genres and native field paths. Article-only; completeness recommendations are not mandatory bibliographic fields.",
+        "bibliography.profiles",
+        "Describe common editing profiles derived from native Hayagriva types and active parents. Profiles are never stored as independent classifications. Article-only; completeness recommendations are not mandatory bibliographic fields.",
     ),
     (
         "bibliography.prepare_import",
@@ -141,7 +141,7 @@ const QUERIES: &[(&str, &str)] = &[
     ),
     (
         "bibliography.prepare_record",
-        "Prepare a new native bibliographic notice with a proposed available key and nonblocking completeness diagnostics. Does not edit active project notices or create a citation. Native fields overlay the genre's starting structure; unexposed fields are retained. Explicit occupied keys and invalid fields are refused. Publish through bibliography.apply (create) before using record_id in a citation, or do both in one atomic batch.",
+        "Prepare a new native bibliographic notice with a proposed available key and nonblocking completeness diagnostics. Does not edit active project notices or create a citation. Native fields overlay the profile's starting structure; the returned profile is derived from the resulting native entry; unexposed fields are retained. Explicit occupied keys and invalid fields are refused. Publish through bibliography.apply (create) before using record_id in a citation, or do both in one atomic batch.",
     ),
     (
         "context.get",
@@ -363,7 +363,7 @@ pub fn describe(id: &str) -> Option<Value> {
 
 fn command_description(id: &str) -> String {
     match id {
-        "bibliography.apply" => "Publish one guarded native-library change in memory, never save. expected is the library fingerprint from bibliography.inspect. Edit, rename and remove also require the record fingerprint from bibliography.record. Import requires the reviewed preparation fingerprint and explicit same/distinct/skip decisions; unresolved plans are refused. Use one atomic batch with inline.replace for create-and-cite. Undo restores notices, citations and provenance together.",
+        "bibliography.apply" => "Publish one guarded native-library change in memory, never save. expected is the library fingerprint from bibliography.inspect. Edit, replace, rename and remove also require the record fingerprint from bibliography.record. Edit profile changes native type/parents; no independent genre is stored. Replace accepts a prepared native record while preserving identity/provenance, including retained inactive parents. Import requires the reviewed preparation fingerprint and explicit same/distinct/skip decisions; unresolved plans are refused. Use one atomic batch with inline.replace for create-and-cite. Undo restores notices, citations and provenance together.",
         "text.insert" => "Insert/replace literal prose in one typed range; marks are explicit and default to none. No Typst/Markdown input rules.",
         "block.join" => "Join explicit adjacent left/right paragraphs or headings in the same container. Two nonempty paragraphs retain a single soft break at the seam (a Typst space); an existing break is reused. Joins involving headings concatenate directly. The nonempty left block keeps its kind and attributes. Remove an empty neighbor without converting its survivor. Widgets, cells and annotation boundaries are protected; the mandatory final editing slot is a no-op.",
         "list.item.split" => "Split a flat bullet/numbered list item at one paragraph range, or a description item at its definition range. Preserve the left item and prefix; the suffix and following paragraphs become a new item. Description terms remain separate, and the new term is empty. Empty-item exit is a separate operation.",

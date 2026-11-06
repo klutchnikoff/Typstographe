@@ -4,8 +4,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use typstographe_bibliography::{
-    self as bib, Decision, FieldPatch, Fingerprint, Genre, ImportFormat, ImportPlan, ImportSource,
-    Library, Record, RecordId,
+    self as bib, Decision, FieldPatch, Fingerprint, ImportFormat, ImportPlan, ImportSource,
+    Library, Profile, Record, RecordId,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -31,9 +31,15 @@ pub enum Change {
         id: RecordId,
         expected: Fingerprint,
         patches: Vec<FieldPatch>,
-        genre: Option<Genre>,
+        profile: Option<Profile>,
         #[serde(default)]
         key: Option<String>,
+    },
+    /// Replace one guarded native record prepared by a form; never changes its identity/provenance.
+    Replace {
+        id: RecordId,
+        expected: Fingerprint,
+        record: Box<Record>,
     },
     Rename {
         id: RecordId,
@@ -186,7 +192,7 @@ pub fn apply(
             id,
             expected,
             patches,
-            genre,
+            profile,
             key,
         } => {
             let current = records
@@ -196,8 +202,10 @@ pub fn apply(
             let mut edited = current
                 .edited(expected, patches)
                 .map_err(Error::bibliography)?;
-            if let Some(genre) = genre {
-                edited = edited.with_genre(*genre);
+            if let Some(profile) = profile {
+                edited = edited
+                    .reclassified(&edited.fingerprint(), *profile)
+                    .map_err(Error::bibliography)?;
             }
             if let Some(key) = key {
                 edited = edited
@@ -205,6 +213,24 @@ pub fn apply(
                     .map_err(Error::bibliography)?;
             }
             *current = edited;
+        }
+        Change::Replace {
+            id,
+            expected,
+            record,
+        } => {
+            let current = records
+                .iter_mut()
+                .find(|r| r.id() == id)
+                .ok_or_else(|| problem(bib::Code::MissingRecord, "Record is missing"))?;
+            current.edited(expected, &[]).map_err(Error::bibliography)?;
+            if record.id() != id || record.provenance() != current.provenance() {
+                return Err(problem(
+                    bib::Code::InvalidField,
+                    "Replacing a notice must preserve its identity and immutable provenance",
+                ));
+            }
+            *current = (**record).clone();
         }
         Change::Rename { id, expected, key } => {
             let current = records

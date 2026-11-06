@@ -35,7 +35,7 @@ fn create_and_cite_is_one_undoable_edit_and_key_changes_preserve_identity() {
     let record = s
         .query(
             "bibliography.prepare_record",
-            json!({"id":"book","genre":"book","key":"old","entry":{"title":"An example"}}),
+            json!({"id":"book","profile":"book","key":"old","entry":{"title":"An example"}}),
         )
         .unwrap();
     let base = library(&mut s);
@@ -87,7 +87,7 @@ fn imported_originals_and_native_fields_survive_edits_reimport_and_undo() {
     let records = library(&mut s);
     let id = records["records"][0]["id"].clone();
     let before = info(&mut s, &id);
-    change(&mut s,json!({"kind":"edit","id":id,"expected":before["fingerprint"],"patches":[{"path":"/note","value":"An added note"}],"genre":null})).unwrap();
+    change(&mut s,json!({"kind":"edit","id":id,"expected":before["fingerprint"],"patches":[{"path":"/note","value":"An added note"}],"profile":null})).unwrap();
     let edited = info(&mut s, &id);
     for field in ["title", "author", "date", "publisher"] {
         assert_eq!(
@@ -211,7 +211,7 @@ fn removing_an_uncited_notice_releases_its_source_but_undo_recovers_both() {
 #[test]
 fn imports_publish_only_after_all_conflicts_have_explicit_decisions() {
     let mut s = article();
-    let proposed=s.query("bibliography.prepare_record",json!({"id":"existing","genre":"book","key":"martin2026","entry":{"title":"A completely different book","author":"Other, Alex","date":1990}})).unwrap();
+    let proposed=s.query("bibliography.prepare_record",json!({"id":"existing","profile":"book","key":"martin2026","entry":{"title":"A completely different book","author":"Other, Alex","date":1990}})).unwrap();
     change(&mut s, json!({"kind":"create","record":proposed["record"]})).unwrap();
     let input = source("source");
     let report = s

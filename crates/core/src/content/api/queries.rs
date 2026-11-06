@@ -375,7 +375,7 @@ pub fn run(
             json!({"records":meta.references,"fingerprint":library.fingerprint(),"sources":meta.reference_sources.iter().map(|s|json!({"id":s.id(),"name":s.name(),"digest":s.digest(),"format":s.format()})).collect::<Vec<_>>()})
         }
         "bibliography.record"
-        | "bibliography.genres"
+        | "bibliography.profiles"
         | "bibliography.prepare_import"
         | "bibliography.prepare_record" => super::bibliography::run(state, id, p)?,
         "bibliography.search" => {

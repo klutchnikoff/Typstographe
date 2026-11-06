@@ -2,7 +2,7 @@
   "entries": [
     {
       "batch_step": true,
-      "description": "Publish one guarded native-library change in memory, never save. expected is the library fingerprint from bibliography.inspect. Edit, rename and remove also require the record fingerprint from bibliography.record. Import requires the reviewed preparation fingerprint and explicit same/distinct/skip decisions; unresolved plans are refused. Use one atomic batch with inline.replace for create-and-cite. Undo restores notices, citations and provenance together.",
+      "description": "Publish one guarded native-library change in memory, never save. expected is the library fingerprint from bibliography.inspect. Edit, replace, rename and remove also require the record fingerprint from bibliography.record. Edit profile changes native type/parents; no independent genre is stored. Replace accepts a prepared native record while preserving identity/provenance, including retained inactive parents. Import requires the reviewed preparation fingerprint and explicit same/distinct/skip decisions; unresolved plans are refused. Use one atomic batch with inline.replace for create-and-cite. Undo restores notices, citations and provenance together.",
       "family": "edit",
       "id": "bibliography.apply",
       "params_schema": {
@@ -13,9 +13,6 @@
               "entry": {
                 "additionalProperties": true,
                 "type": "object"
-              },
-              "genre": {
-                "$ref": "#/$defs/Genre"
               },
               "id": {
                 "$ref": "#/$defs/RecordId"
@@ -29,14 +26,18 @@
                   "$ref": "#/$defs/Provenance"
                 },
                 "type": "array"
+              },
+              "retained_parents": {
+                "default": [],
+                "description": "Inactive native publication containers. Never a second active bibliography.",
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
               }
             },
-            "required": [
-              "id",
-              "genre",
-              "key",
-              "entry"
-            ],
+            "required": ["id", "key", "entry"],
             "type": "object"
           },
           "Change": {
@@ -52,10 +53,7 @@
                     "$ref": "#/$defs/BibliographicRecord"
                   }
                 },
-                "required": [
-                  "kind",
-                  "record"
-                ],
+                "required": ["kind", "record"],
                 "type": "object"
               },
               {
@@ -64,25 +62,12 @@
                   "expected": {
                     "$ref": "#/$defs/Fingerprint"
                   },
-                  "genre": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/$defs/Genre"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
                   "id": {
                     "$ref": "#/$defs/RecordId"
                   },
                   "key": {
                     "default": null,
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "kind": {
                     "const": "edit",
@@ -93,14 +78,40 @@
                       "$ref": "#/$defs/FieldPatch"
                     },
                     "type": "array"
+                  },
+                  "profile": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/Profile"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
-                "required": [
-                  "kind",
-                  "id",
-                  "expected",
-                  "patches"
-                ],
+                "required": ["kind", "id", "expected", "patches"],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "description": "Replace one guarded native record prepared by a form; never changes its identity/provenance.",
+                "properties": {
+                  "expected": {
+                    "$ref": "#/$defs/Fingerprint"
+                  },
+                  "id": {
+                    "$ref": "#/$defs/RecordId"
+                  },
+                  "kind": {
+                    "const": "replace",
+                    "type": "string"
+                  },
+                  "record": {
+                    "$ref": "#/$defs/BibliographicRecord"
+                  }
+                },
+                "required": ["kind", "id", "expected", "record"],
                 "type": "object"
               },
               {
@@ -120,12 +131,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "id",
-                  "expected",
-                  "key"
-                ],
+                "required": ["kind", "id", "expected", "key"],
                 "type": "object"
               },
               {
@@ -142,11 +148,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "id",
-                  "expected"
-                ],
+                "required": ["kind", "id", "expected"],
                 "type": "object"
               },
               {
@@ -170,11 +172,7 @@
                     "$ref": "#/$defs/SourceInput"
                   }
                 },
-                "required": [
-                  "kind",
-                  "source",
-                  "preparation"
-                ],
+                "required": ["kind", "source", "preparation"],
                 "type": "object"
               }
             ]
@@ -195,11 +193,7 @@
                     "$ref": "#/$defs/RecordId"
                   }
                 },
-                "required": [
-                  "kind",
-                  "incoming",
-                  "target"
-                ],
+                "required": ["kind", "incoming", "target"],
                 "type": "object"
               },
               {
@@ -216,11 +210,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "incoming",
-                  "key"
-                ],
+                "required": ["kind", "incoming", "key"],
                 "type": "object"
               },
               {
@@ -234,10 +224,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "incoming"
-                ],
+                "required": ["kind", "incoming"],
                 "type": "object"
               }
             ]
@@ -252,18 +239,21 @@
                 "description": "None removes the field. Present values are validated by Hayagriva."
               }
             },
-            "required": [
-              "path"
-            ],
+            "required": ["path"],
             "type": "object"
           },
           "Fingerprint": {
             "pattern": "^[0-9a-f]{64}$",
             "type": "string"
           },
-          "Genre": {
-            "description": "Form intent is separate from Hayagriva's native type and its container types.",
+          "ImportFormat": {
+            "enum": ["hayagriva", "biblatex"],
+            "type": "string"
+          },
+          "Profile": {
+            "description": "Editing views derived exclusively from the active native entry and its parents.",
             "enum": [
+              "article",
               "journal_article",
               "book",
               "book_chapter",
@@ -274,13 +264,6 @@
               "preprint",
               "software",
               "other"
-            ],
-            "type": "string"
-          },
-          "ImportFormat": {
-            "enum": [
-              "hayagriva",
-              "biblatex"
             ],
             "type": "string"
           },
@@ -298,11 +281,7 @@
                 "$ref": "#/$defs/RecordId"
               }
             },
-            "required": [
-              "source_id",
-              "source_digest",
-              "original_key"
-            ],
+            "required": ["source_id", "source_digest", "original_key"],
             "type": "object"
           },
           "RecordId": {
@@ -329,12 +308,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "name",
-              "format",
-              "contents"
-            ],
+            "required": ["id", "name", "format", "contents"],
             "type": "object"
           }
         },
@@ -347,16 +321,13 @@
             "$ref": "#/$defs/Fingerprint"
           }
         },
-        "required": [
-          "expected",
-          "change"
-        ],
+        "required": ["expected", "change"],
         "type": "object"
       }
     },
     {
       "batch_step": false,
-      "description": "Search all project notices by title/authors with compact summaries, genre and completeness. No 80-item suggestion limit.",
+      "description": "Search all project notices by title/authors with compact summaries, derived profile and completeness. No 80-item suggestion limit.",
       "family": "query",
       "id": "bibliography.browse",
       "params_schema": {
@@ -383,9 +354,6 @@
                 "additionalProperties": true,
                 "type": "object"
               },
-              "genre": {
-                "$ref": "#/$defs/Genre"
-              },
               "id": {
                 "$ref": "#/$defs/RecordId"
               },
@@ -398,23 +366,28 @@
                   "$ref": "#/$defs/Provenance"
                 },
                 "type": "array"
+              },
+              "retained_parents": {
+                "default": [],
+                "description": "Inactive native publication containers. Never a second active bibliography.",
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
               }
             },
-            "required": [
-              "id",
-              "genre",
-              "key",
-              "entry"
-            ],
+            "required": ["id", "key", "entry"],
             "type": "object"
           },
           "Fingerprint": {
             "pattern": "^[0-9a-f]{64}$",
             "type": "string"
           },
-          "Genre": {
-            "description": "Form intent is separate from Hayagriva's native type and its container types.",
+          "Profile": {
+            "description": "Editing views derived exclusively from the active native entry and its parents.",
             "enum": [
+              "article",
               "journal_article",
               "book",
               "book_chapter",
@@ -442,11 +415,7 @@
                 "$ref": "#/$defs/RecordId"
               }
             },
-            "required": [
-              "source_id",
-              "source_digest",
-              "original_key"
-            ],
+            "required": ["source_id", "source_digest", "original_key"],
             "type": "object"
           },
           "RecordId": {
@@ -458,10 +427,18 @@
         "additionalProperties": false,
         "properties": {
           "key": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Profile"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A transient native classification change, never a stored form genre."
           },
           "record": {
             "$ref": "#/$defs/BibliographicRecord"
@@ -472,22 +449,8 @@
             "type": "object"
           }
         },
-        "required": [
-          "record"
-        ],
+        "required": ["record"],
         "title": "FormInput",
-        "type": "object"
-      }
-    },
-    {
-      "batch_step": false,
-      "description": "Describe common bibliographic form genres and native field paths. Article-only; completeness recommendations are not mandatory bibliographic fields.",
-      "family": "query",
-      "id": "bibliography.genres",
-      "params_schema": {
-        "additionalProperties": false,
-        "properties": {},
-        "required": [],
         "type": "object"
       }
     },
@@ -505,7 +468,7 @@
     },
     {
       "batch_step": false,
-      "description": "Validate changed form controls against a frozen native record. Returns root-field patches and a proposed record; does not publish. Use bibliography.apply with the original record fingerprint for edits, or create for new notices.",
+      "description": "Validate changed form controls against a frozen native record, then optionally change its native classification with profile. Returns the proposed native record and its derived editing profile, preserving inactive publication containers. Does not publish. Use bibliography.apply (replace) with the original record fingerprint for a prepared form, or create for a new notice; a sequence of private form changes still publishes one undoable edit.",
       "family": "query",
       "id": "bibliography.prepare_form",
       "params_schema": {
@@ -516,9 +479,6 @@
               "entry": {
                 "additionalProperties": true,
                 "type": "object"
-              },
-              "genre": {
-                "$ref": "#/$defs/Genre"
               },
               "id": {
                 "$ref": "#/$defs/RecordId"
@@ -532,23 +492,28 @@
                   "$ref": "#/$defs/Provenance"
                 },
                 "type": "array"
+              },
+              "retained_parents": {
+                "default": [],
+                "description": "Inactive native publication containers. Never a second active bibliography.",
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
               }
             },
-            "required": [
-              "id",
-              "genre",
-              "key",
-              "entry"
-            ],
+            "required": ["id", "key", "entry"],
             "type": "object"
           },
           "Fingerprint": {
             "pattern": "^[0-9a-f]{64}$",
             "type": "string"
           },
-          "Genre": {
-            "description": "Form intent is separate from Hayagriva's native type and its container types.",
+          "Profile": {
+            "description": "Editing views derived exclusively from the active native entry and its parents.",
             "enum": [
+              "article",
               "journal_article",
               "book",
               "book_chapter",
@@ -576,11 +541,7 @@
                 "$ref": "#/$defs/RecordId"
               }
             },
-            "required": [
-              "source_id",
-              "source_digest",
-              "original_key"
-            ],
+            "required": ["source_id", "source_digest", "original_key"],
             "type": "object"
           },
           "RecordId": {
@@ -592,10 +553,18 @@
         "additionalProperties": false,
         "properties": {
           "key": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Profile"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A transient native classification change, never a stored form genre."
           },
           "record": {
             "$ref": "#/$defs/BibliographicRecord"
@@ -606,9 +575,7 @@
             "type": "object"
           }
         },
-        "required": [
-          "record"
-        ],
+        "required": ["record"],
         "title": "FormInput",
         "type": "object"
       }
@@ -621,10 +588,7 @@
       "params_schema": {
         "$defs": {
           "ImportFormat": {
-            "enum": [
-              "hayagriva",
-              "biblatex"
-            ],
+            "enum": ["hayagriva", "biblatex"],
             "type": "string"
           },
           "RecordId": {
@@ -652,26 +616,22 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "format",
-          "contents"
-        ],
+        "required": ["id", "name", "format", "contents"],
         "title": "SourceInput",
         "type": "object"
       }
     },
     {
       "batch_step": false,
-      "description": "Prepare a new native bibliographic notice with a proposed available key and nonblocking completeness diagnostics. Does not edit active project notices or create a citation. Native fields overlay the genre's starting structure; unexposed fields are retained. Explicit occupied keys and invalid fields are refused. Publish through bibliography.apply (create) before using record_id in a citation, or do both in one atomic batch.",
+      "description": "Prepare a new native bibliographic notice with a proposed available key and nonblocking completeness diagnostics. Does not edit active project notices or create a citation. Native fields overlay the profile's starting structure; the returned profile is derived from the resulting native entry; unexposed fields are retained. Explicit occupied keys and invalid fields are refused. Publish through bibliography.apply (create) before using record_id in a citation, or do both in one atomic batch.",
       "family": "query",
       "id": "bibliography.prepare_record",
       "params_schema": {
         "$defs": {
-          "Genre": {
-            "description": "Form intent is separate from Hayagriva's native type and its container types.",
+          "Profile": {
+            "description": "Editing views derived exclusively from the active native entry and its parents.",
             "enum": [
+              "article",
               "journal_article",
               "book",
               "book_chapter",
@@ -699,26 +659,32 @@
             "description": "Native Hayagriva fields over the genre's starting structure, not a source document.",
             "type": "object"
           },
-          "genre": {
-            "$ref": "#/$defs/Genre"
-          },
           "id": {
             "$ref": "#/$defs/RecordId"
           },
           "key": {
             "default": null,
             "description": "Omit to suggest an available key; an explicit occupied key is refused.",
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
+          },
+          "profile": {
+            "$ref": "#/$defs/Profile"
           }
         },
-        "required": [
-          "id",
-          "genre"
-        ],
+        "required": ["id", "profile"],
         "title": "RecordInput",
+        "type": "object"
+      }
+    },
+    {
+      "batch_step": false,
+      "description": "Describe common editing profiles derived from native Hayagriva types and active parents. Profiles are never stored as independent classifications. Article-only; completeness recommendations are not mandatory bibliographic fields.",
+      "family": "query",
+      "id": "bibliography.profiles",
+      "params_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
         "type": "object"
       }
     },
@@ -741,9 +707,7 @@
             "$ref": "#/$defs/RecordId"
           }
         },
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "title": "RecordIdentity",
         "type": "object"
       }
@@ -771,11 +735,7 @@
                     "$ref": "#/$defs/RecordId"
                   }
                 },
-                "required": [
-                  "kind",
-                  "incoming",
-                  "target"
-                ],
+                "required": ["kind", "incoming", "target"],
                 "type": "object"
               },
               {
@@ -792,11 +752,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "incoming",
-                  "key"
-                ],
+                "required": ["kind", "incoming", "key"],
                 "type": "object"
               },
               {
@@ -810,10 +766,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "incoming"
-                ],
+                "required": ["kind", "incoming"],
                 "type": "object"
               }
             ]
@@ -823,10 +776,7 @@
             "type": "string"
           },
           "ImportFormat": {
-            "enum": [
-              "hayagriva",
-              "biblatex"
-            ],
+            "enum": ["hayagriva", "biblatex"],
             "type": "string"
           },
           "RecordId": {
@@ -853,12 +803,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "name",
-              "format",
-              "contents"
-            ],
+            "required": ["id", "name", "format", "contents"],
             "type": "object"
           }
         },
@@ -878,11 +823,7 @@
             "$ref": "#/$defs/SourceInput"
           }
         },
-        "required": [
-          "source",
-          "expected",
-          "decisions"
-        ],
+        "required": ["source", "expected", "decisions"],
         "title": "ReviewInput",
         "type": "object"
       }
@@ -899,9 +840,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "query"
-        ],
+        "required": ["query"],
         "type": "object"
       }
     },
@@ -924,9 +863,7 @@
             "$ref": "#/$defs/RecordId"
           }
         },
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "title": "RecordIdentity",
         "type": "object"
       }
@@ -949,9 +886,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -971,12 +906,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -997,9 +927,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -1007,23 +935,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -1032,32 +952,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -1102,9 +1012,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -1124,12 +1032,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -1150,9 +1053,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -1160,23 +1061,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -1185,32 +1078,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -1255,9 +1138,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -1277,12 +1158,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -1303,9 +1179,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -1313,23 +1187,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -1338,32 +1204,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -1405,9 +1261,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "type": "object"
           },
           "Node": {
@@ -1427,18 +1281,13 @@
                 "type": "array"
               },
               "text": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": ["string", "null"]
               },
               "type": {
                 "type": "string"
               }
             },
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "type": "object"
           },
           "TreeRoot": {
@@ -1452,9 +1301,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -1474,12 +1321,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -1500,9 +1342,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -1520,11 +1360,7 @@
             "$ref": "#/$defs/TreeTarget"
           }
         },
-        "required": [
-          "parent",
-          "index",
-          "node"
-        ],
+        "required": ["parent", "index", "node"],
         "type": "object"
       }
     },
@@ -1546,9 +1382,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -1568,12 +1402,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -1594,9 +1423,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -1609,10 +1436,7 @@
             "$ref": "#/$defs/TreeTarget"
           }
         },
-        "required": [
-          "left",
-          "right"
-        ],
+        "required": ["left", "right"],
         "type": "object"
       }
     },
@@ -1634,9 +1458,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -1656,12 +1478,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -1682,9 +1499,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -1692,23 +1507,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -1717,32 +1524,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -1787,9 +1584,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -1809,12 +1604,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -1835,9 +1625,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -1845,23 +1633,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -1870,32 +1650,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -1937,9 +1707,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "type": "object"
           },
           "Node": {
@@ -1959,18 +1727,13 @@
                 "type": "array"
               },
               "text": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": ["string", "null"]
               },
               "type": {
                 "type": "string"
               }
             },
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "type": "object"
           },
           "TreeRoot": {
@@ -1984,9 +1747,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -2006,12 +1767,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -2032,9 +1788,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -2042,23 +1796,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -2070,32 +1816,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -2118,9 +1854,7 @@
             "$ref": "#/$defs/TreeTarget"
           }
         },
-        "required": [
-          "node"
-        ],
+        "required": ["node"],
         "type": "object"
       }
     },
@@ -2139,9 +1873,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "type": "object"
           },
           "Node": {
@@ -2161,18 +1893,13 @@
                 "type": "array"
               },
               "text": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": ["string", "null"]
               },
               "type": {
                 "type": "string"
               }
             },
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "type": "object"
           },
           "TreeRoot": {
@@ -2186,9 +1913,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -2208,12 +1933,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -2234,9 +1954,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -2262,12 +1980,7 @@
             "$ref": "#/$defs/TreeTarget"
           }
         },
-        "required": [
-          "parent",
-          "index",
-          "delete_count",
-          "nodes"
-        ],
+        "required": ["parent", "index", "delete_count", "nodes"],
         "type": "object"
       }
     },
@@ -2327,11 +2040,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -2353,10 +2062,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -2375,10 +2081,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -2392,10 +2095,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -2424,12 +2124,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -2439,23 +2134,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -2464,32 +2151,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -2528,9 +2205,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "type": "object"
       }
     },
@@ -2548,9 +2223,6 @@
                 "additionalProperties": true,
                 "type": "object"
               },
-              "genre": {
-                "$ref": "#/$defs/Genre"
-              },
               "id": {
                 "$ref": "#/$defs/RecordId"
               },
@@ -2563,14 +2235,18 @@
                   "$ref": "#/$defs/Provenance"
                 },
                 "type": "array"
+              },
+              "retained_parents": {
+                "default": [],
+                "description": "Inactive native publication containers. Never a second active bibliography.",
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
               }
             },
-            "required": [
-              "id",
-              "genre",
-              "key",
-              "entry"
-            ],
+            "required": ["id", "key", "entry"],
             "type": "object"
           },
           "Change": {
@@ -2586,10 +2262,7 @@
                     "$ref": "#/$defs/BibliographicRecord"
                   }
                 },
-                "required": [
-                  "kind",
-                  "record"
-                ],
+                "required": ["kind", "record"],
                 "type": "object"
               },
               {
@@ -2598,25 +2271,12 @@
                   "expected": {
                     "$ref": "#/$defs/Fingerprint"
                   },
-                  "genre": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/$defs/Genre"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
                   "id": {
                     "$ref": "#/$defs/RecordId"
                   },
                   "key": {
                     "default": null,
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "kind": {
                     "const": "edit",
@@ -2627,14 +2287,40 @@
                       "$ref": "#/$defs/FieldPatch"
                     },
                     "type": "array"
+                  },
+                  "profile": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/Profile"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
-                "required": [
-                  "kind",
-                  "id",
-                  "expected",
-                  "patches"
-                ],
+                "required": ["kind", "id", "expected", "patches"],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "description": "Replace one guarded native record prepared by a form; never changes its identity/provenance.",
+                "properties": {
+                  "expected": {
+                    "$ref": "#/$defs/Fingerprint"
+                  },
+                  "id": {
+                    "$ref": "#/$defs/RecordId"
+                  },
+                  "kind": {
+                    "const": "replace",
+                    "type": "string"
+                  },
+                  "record": {
+                    "$ref": "#/$defs/BibliographicRecord"
+                  }
+                },
+                "required": ["kind", "id", "expected", "record"],
                 "type": "object"
               },
               {
@@ -2654,12 +2340,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "id",
-                  "expected",
-                  "key"
-                ],
+                "required": ["kind", "id", "expected", "key"],
                 "type": "object"
               },
               {
@@ -2676,11 +2357,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "id",
-                  "expected"
-                ],
+                "required": ["kind", "id", "expected"],
                 "type": "object"
               },
               {
@@ -2704,11 +2381,7 @@
                     "$ref": "#/$defs/SourceInput"
                   }
                 },
-                "required": [
-                  "kind",
-                  "source",
-                  "preparation"
-                ],
+                "required": ["kind", "source", "preparation"],
                 "type": "object"
               }
             ]
@@ -2729,11 +2402,7 @@
                     "$ref": "#/$defs/RecordId"
                   }
                 },
-                "required": [
-                  "kind",
-                  "incoming",
-                  "target"
-                ],
+                "required": ["kind", "incoming", "target"],
                 "type": "object"
               },
               {
@@ -2750,11 +2419,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "incoming",
-                  "key"
-                ],
+                "required": ["kind", "incoming", "key"],
                 "type": "object"
               },
               {
@@ -2768,24 +2433,13 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "incoming"
-                ],
+                "required": ["kind", "incoming"],
                 "type": "object"
               }
             ]
           },
           "DocumentLanguage": {
-            "enum": [
-              "fr",
-              "en",
-              "de",
-              "es",
-              "it",
-              "pt",
-              "nl"
-            ],
+            "enum": ["fr", "en", "de", "es", "it", "pt", "nl"],
             "type": "string"
           },
           "FieldPatch": {
@@ -2798,9 +2452,7 @@
                 "description": "None removes the field. Present values are validated by Hayagriva."
               }
             },
-            "required": [
-              "path"
-            ],
+            "required": ["path"],
             "type": "object"
           },
           "FieldTarget": {
@@ -2816,10 +2468,7 @@
                     "$ref": "#/$defs/OptionName"
                   }
                 },
-                "required": [
-                  "kind",
-                  "name"
-                ],
+                "required": ["kind", "name"],
                 "type": "object"
               },
               {
@@ -2833,10 +2482,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -2856,12 +2502,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -2870,28 +2511,9 @@
             "pattern": "^[0-9a-f]{64}$",
             "type": "string"
           },
-          "Genre": {
-            "description": "Form intent is separate from Hayagriva's native type and its container types.",
-            "enum": [
-              "journal_article",
-              "book",
-              "book_chapter",
-              "conference_paper",
-              "report",
-              "thesis",
-              "web_resource",
-              "preprint",
-              "software",
-              "other"
-            ],
-            "type": "string"
-          },
           "HeaderAxis": {
             "description": "The axis labelled by the header cells (columns = first row, rows = first column).",
-            "enum": [
-              "columns",
-              "rows"
-            ],
+            "enum": ["columns", "rows"],
             "type": "string"
           },
           "ImageResource": {
@@ -2906,17 +2528,11 @@
                 "type": "string"
               }
             },
-            "required": [
-              "path",
-              "data"
-            ],
+            "required": ["path", "data"],
             "type": "object"
           },
           "ImportFormat": {
-            "enum": [
-              "hayagriva",
-              "biblatex"
-            ],
+            "enum": ["hayagriva", "biblatex"],
             "type": "string"
           },
           "Mark": {
@@ -2927,9 +2543,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "type": "object"
           },
           "MetadataField": {
@@ -2981,18 +2595,13 @@
                 "type": "array"
               },
               "text": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": ["string", "null"]
               },
               "type": {
                 "type": "string"
               }
             },
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "type": "object"
           },
           "OptionName": {
@@ -3003,6 +2612,23 @@
               "language",
               "bullet_marker",
               "spelling_ignored"
+            ],
+            "type": "string"
+          },
+          "Profile": {
+            "description": "Editing views derived exclusively from the active native entry and its parents.",
+            "enum": [
+              "article",
+              "journal_article",
+              "book",
+              "book_chapter",
+              "conference_paper",
+              "report",
+              "thesis",
+              "web_resource",
+              "preprint",
+              "software",
+              "other"
             ],
             "type": "string"
           },
@@ -3020,11 +2646,7 @@
                 "$ref": "#/$defs/RecordId"
               }
             },
-            "required": [
-              "source_id",
-              "source_digest",
-              "original_key"
-            ],
+            "required": ["source_id", "source_digest", "original_key"],
             "type": "object"
           },
           "RecordId": {
@@ -3051,12 +2673,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "name",
-              "format",
-              "contents"
-            ],
+            "required": ["id", "name", "format", "contents"],
             "type": "object"
           },
           "Style": {
@@ -3069,9 +2686,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type"
-                ],
+                "required": ["type"],
                 "type": "object"
               },
               {
@@ -3082,9 +2697,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type"
-                ],
+                "required": ["type"],
                 "type": "object"
               },
               {
@@ -3098,19 +2711,13 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type",
-                  "url"
-                ],
+                "required": ["type", "url"],
                 "type": "object"
               }
             ]
           },
           "Switch": {
-            "enum": [
-              "on",
-              "off"
-            ],
+            "enum": ["on", "off"],
             "type": "string"
           },
           "TextTarget": {
@@ -3130,11 +2737,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -3156,10 +2759,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -3178,10 +2778,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -3195,10 +2792,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -3227,12 +2821,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -3248,9 +2837,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -3270,12 +2857,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -3296,9 +2878,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -3313,9 +2893,6 @@
                     "additionalProperties": true,
                     "type": "object"
                   },
-                  "genre": {
-                    "$ref": "#/$defs/Genre"
-                  },
                   "id": {
                     "$ref": "#/$defs/RecordId"
                   },
@@ -3328,14 +2905,18 @@
                       "$ref": "#/$defs/Provenance"
                     },
                     "type": "array"
+                  },
+                  "retained_parents": {
+                    "default": [],
+                    "description": "Inactive native publication containers. Never a second active bibliography.",
+                    "items": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    },
+                    "type": "array"
                   }
                 },
-                "required": [
-                  "id",
-                  "genre",
-                  "key",
-                  "entry"
-                ],
+                "required": ["id", "key", "entry"],
                 "type": "object"
               },
               "Change": {
@@ -3351,10 +2932,7 @@
                         "$ref": "#/$defs/BibliographicRecord"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "record"
-                    ],
+                    "required": ["kind", "record"],
                     "type": "object"
                   },
                   {
@@ -3363,25 +2941,12 @@
                       "expected": {
                         "$ref": "#/$defs/Fingerprint"
                       },
-                      "genre": {
-                        "anyOf": [
-                          {
-                            "$ref": "#/$defs/Genre"
-                          },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
                       "id": {
                         "$ref": "#/$defs/RecordId"
                       },
                       "key": {
                         "default": null,
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       },
                       "kind": {
                         "const": "edit",
@@ -3392,14 +2957,40 @@
                           "$ref": "#/$defs/FieldPatch"
                         },
                         "type": "array"
+                      },
+                      "profile": {
+                        "anyOf": [
+                          {
+                            "$ref": "#/$defs/Profile"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "id",
-                      "expected",
-                      "patches"
-                    ],
+                    "required": ["kind", "id", "expected", "patches"],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "Replace one guarded native record prepared by a form; never changes its identity/provenance.",
+                    "properties": {
+                      "expected": {
+                        "$ref": "#/$defs/Fingerprint"
+                      },
+                      "id": {
+                        "$ref": "#/$defs/RecordId"
+                      },
+                      "kind": {
+                        "const": "replace",
+                        "type": "string"
+                      },
+                      "record": {
+                        "$ref": "#/$defs/BibliographicRecord"
+                      }
+                    },
+                    "required": ["kind", "id", "expected", "record"],
                     "type": "object"
                   },
                   {
@@ -3419,12 +3010,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "id",
-                      "expected",
-                      "key"
-                    ],
+                    "required": ["kind", "id", "expected", "key"],
                     "type": "object"
                   },
                   {
@@ -3441,11 +3027,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "id",
-                      "expected"
-                    ],
+                    "required": ["kind", "id", "expected"],
                     "type": "object"
                   },
                   {
@@ -3469,11 +3051,7 @@
                         "$ref": "#/$defs/SourceInput"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "source",
-                      "preparation"
-                    ],
+                    "required": ["kind", "source", "preparation"],
                     "type": "object"
                   }
                 ]
@@ -3494,11 +3072,7 @@
                         "$ref": "#/$defs/RecordId"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "incoming",
-                      "target"
-                    ],
+                    "required": ["kind", "incoming", "target"],
                     "type": "object"
                   },
                   {
@@ -3515,11 +3089,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "incoming",
-                      "key"
-                    ],
+                    "required": ["kind", "incoming", "key"],
                     "type": "object"
                   },
                   {
@@ -3533,24 +3103,13 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "incoming"
-                    ],
+                    "required": ["kind", "incoming"],
                     "type": "object"
                   }
                 ]
               },
               "DocumentLanguage": {
-                "enum": [
-                  "fr",
-                  "en",
-                  "de",
-                  "es",
-                  "it",
-                  "pt",
-                  "nl"
-                ],
+                "enum": ["fr", "en", "de", "es", "it", "pt", "nl"],
                 "type": "string"
               },
               "FieldPatch": {
@@ -3563,9 +3122,7 @@
                     "description": "None removes the field. Present values are validated by Hayagriva."
                   }
                 },
-                "required": [
-                  "path"
-                ],
+                "required": ["path"],
                 "type": "object"
               },
               "FieldTarget": {
@@ -3581,10 +3138,7 @@
                         "$ref": "#/$defs/OptionName"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "name"
-                    ],
+                    "required": ["kind", "name"],
                     "type": "object"
                   },
                   {
@@ -3598,10 +3152,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "field"
-                    ],
+                    "required": ["kind", "field"],
                     "type": "object"
                   },
                   {
@@ -3621,12 +3172,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "collection",
-                      "id",
-                      "field"
-                    ],
+                    "required": ["kind", "collection", "id", "field"],
                     "type": "object"
                   }
                 ]
@@ -3635,28 +3181,9 @@
                 "pattern": "^[0-9a-f]{64}$",
                 "type": "string"
               },
-              "Genre": {
-                "description": "Form intent is separate from Hayagriva's native type and its container types.",
-                "enum": [
-                  "journal_article",
-                  "book",
-                  "book_chapter",
-                  "conference_paper",
-                  "report",
-                  "thesis",
-                  "web_resource",
-                  "preprint",
-                  "software",
-                  "other"
-                ],
-                "type": "string"
-              },
               "HeaderAxis": {
                 "description": "The axis labelled by the header cells (columns = first row, rows = first column).",
-                "enum": [
-                  "columns",
-                  "rows"
-                ],
+                "enum": ["columns", "rows"],
                 "type": "string"
               },
               "ImageResource": {
@@ -3671,17 +3198,11 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "path",
-                  "data"
-                ],
+                "required": ["path", "data"],
                 "type": "object"
               },
               "ImportFormat": {
-                "enum": [
-                  "hayagriva",
-                  "biblatex"
-                ],
+                "enum": ["hayagriva", "biblatex"],
                 "type": "string"
               },
               "Mark": {
@@ -3692,9 +3213,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type"
-                ],
+                "required": ["type"],
                 "type": "object"
               },
               "MetadataField": {
@@ -3746,18 +3265,13 @@
                     "type": "array"
                   },
                   "text": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "type": {
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type"
-                ],
+                "required": ["type"],
                 "type": "object"
               },
               "OptionName": {
@@ -3768,6 +3282,23 @@
                   "language",
                   "bullet_marker",
                   "spelling_ignored"
+                ],
+                "type": "string"
+              },
+              "Profile": {
+                "description": "Editing views derived exclusively from the active native entry and its parents.",
+                "enum": [
+                  "article",
+                  "journal_article",
+                  "book",
+                  "book_chapter",
+                  "conference_paper",
+                  "report",
+                  "thesis",
+                  "web_resource",
+                  "preprint",
+                  "software",
+                  "other"
                 ],
                 "type": "string"
               },
@@ -3785,11 +3316,7 @@
                     "$ref": "#/$defs/RecordId"
                   }
                 },
-                "required": [
-                  "source_id",
-                  "source_digest",
-                  "original_key"
-                ],
+                "required": ["source_id", "source_digest", "original_key"],
                 "type": "object"
               },
               "RecordId": {
@@ -3816,12 +3343,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "id",
-                  "name",
-                  "format",
-                  "contents"
-                ],
+                "required": ["id", "name", "format", "contents"],
                 "type": "object"
               },
               "Style": {
@@ -3834,9 +3356,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "type"
-                    ],
+                    "required": ["type"],
                     "type": "object"
                   },
                   {
@@ -3847,9 +3367,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "type"
-                    ],
+                    "required": ["type"],
                     "type": "object"
                   },
                   {
@@ -3863,19 +3381,13 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "type",
-                      "url"
-                    ],
+                    "required": ["type", "url"],
                     "type": "object"
                   }
                 ]
               },
               "Switch": {
-                "enum": [
-                  "on",
-                  "off"
-                ],
+                "enum": ["on", "off"],
                 "type": "string"
               },
               "TextTarget": {
@@ -3895,11 +3407,7 @@
                     "$ref": "#/$defs/TextZone"
                   }
                 },
-                "required": [
-                  "zone",
-                  "from",
-                  "to"
-                ],
+                "required": ["zone", "from", "to"],
                 "type": "object"
               },
               "TextZone": {
@@ -3921,10 +3429,7 @@
                         "type": "array"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "path"
-                    ],
+                    "required": ["kind", "path"],
                     "type": "object"
                   },
                   {
@@ -3943,10 +3448,7 @@
                         "type": "array"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "path"
-                    ],
+                    "required": ["kind", "path"],
                     "type": "object"
                   },
                   {
@@ -3960,10 +3462,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "field"
-                    ],
+                    "required": ["kind", "field"],
                     "type": "object"
                   },
                   {
@@ -3992,12 +3491,7 @@
                         "type": "array"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "collection",
-                      "id",
-                      "field"
-                    ],
+                    "required": ["kind", "collection", "id", "field"],
                     "type": "object"
                   }
                 ]
@@ -4013,9 +3507,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind"
-                    ],
+                    "required": ["kind"],
                     "type": "object"
                   },
                   {
@@ -4035,12 +3527,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "collection",
-                      "id",
-                      "field"
-                    ],
+                    "required": ["kind", "collection", "id", "field"],
                     "type": "object"
                   }
                 ]
@@ -4061,9 +3548,7 @@
                     "$ref": "#/$defs/TreeRoot"
                   }
                 },
-                "required": [
-                  "root"
-                ],
+                "required": ["root"],
                 "type": "object"
               }
             },
@@ -4087,17 +3572,11 @@
                         "$ref": "#/$defs/Fingerprint"
                       }
                     },
-                    "required": [
-                      "expected",
-                      "change"
-                    ],
+                    "required": ["expected", "change"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4114,16 +3593,11 @@
                         "$ref": "#/$defs/ImageResource"
                       }
                     },
-                    "required": [
-                      "resource"
-                    ],
+                    "required": ["resource"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4146,18 +3620,11 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "model_id",
-                      "source",
-                      "manifest"
-                    ],
+                    "required": ["model_id", "source", "manifest"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4184,17 +3651,11 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "target",
-                      "text"
-                    ],
+                    "required": ["target", "text"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4211,16 +3672,11 @@
                         "$ref": "#/$defs/TextTarget"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4241,16 +3697,11 @@
                         "default": "on"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4271,16 +3722,11 @@
                         "default": "on"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4300,17 +3746,11 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "target",
-                      "url"
-                    ],
+                    "required": ["target", "url"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4327,16 +3767,11 @@
                         "$ref": "#/$defs/TextTarget"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4353,16 +3788,11 @@
                         "$ref": "#/$defs/TextTarget"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4385,18 +3815,11 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "target",
-                      "language",
-                      "word"
-                    ],
+                    "required": ["target", "language", "word"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4421,18 +3844,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "parent",
-                      "index",
-                      "node"
-                    ],
+                    "required": ["parent", "index", "node"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4452,17 +3868,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target",
-                      "node"
-                    ],
+                    "required": ["target", "node"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4495,19 +3905,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "parent",
-                      "index",
-                      "delete_count",
-                      "nodes"
-                    ],
+                    "required": ["parent", "index", "delete_count", "nodes"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4527,17 +3929,11 @@
                         "$ref": "#/$defs/TextTarget"
                       }
                     },
-                    "required": [
-                      "target",
-                      "node"
-                    ],
+                    "required": ["target", "node"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4558,17 +3954,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target",
-                      "attrs"
-                    ],
+                    "required": ["target", "attrs"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4585,16 +3975,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4611,16 +3996,11 @@
                         "$ref": "#/$defs/TextTarget"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4640,17 +4020,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "left",
-                      "right"
-                    ],
+                    "required": ["left", "right"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4667,16 +4041,11 @@
                         "$ref": "#/$defs/TextTarget"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4696,17 +4065,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "left",
-                      "right"
-                    ],
+                    "required": ["left", "right"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4723,16 +4086,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4749,16 +4107,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4775,16 +4128,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4801,16 +4149,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4827,16 +4170,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target"
-                    ],
+                    "required": ["target"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4885,10 +4223,7 @@
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4910,17 +4245,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target",
-                      "index"
-                    ],
+                    "required": ["target", "index"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4942,17 +4271,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target",
-                      "index"
-                    ],
+                    "required": ["target", "index"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -4974,17 +4297,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target",
-                      "index"
-                    ],
+                    "required": ["target", "index"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -5006,17 +4323,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target",
-                      "index"
-                    ],
+                    "required": ["target", "index"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -5040,17 +4351,11 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "target",
-                      "enabled"
-                    ],
+                    "required": ["target", "enabled"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -5065,10 +4370,7 @@
                     "properties": {
                       "after": {
                         "default": null,
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       },
                       "collection": {
                         "type": "string"
@@ -5082,17 +4384,11 @@
                         "type": "object"
                       }
                     },
-                    "required": [
-                      "collection",
-                      "id"
-                    ],
+                    "required": ["collection", "id"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -5112,17 +4408,11 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "collection",
-                      "id"
-                    ],
+                    "required": ["collection", "id"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -5137,10 +4427,7 @@
                     "properties": {
                       "before": {
                         "default": null,
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       },
                       "collection": {
                         "type": "string"
@@ -5149,17 +4436,11 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "collection",
-                      "id"
-                    ],
+                    "required": ["collection", "id"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               },
               {
@@ -5177,26 +4458,18 @@
                       },
                       "value": true
                     },
-                    "required": [
-                      "target",
-                      "value"
-                    ],
+                    "required": ["target", "value"],
                     "type": "object"
                   }
                 },
-                "required": [
-                  "id",
-                  "params"
-                ],
+                "required": ["id", "params"],
                 "type": "object"
               }
             ],
             "title": "Command"
           }
         },
-        "required": [
-          "command"
-        ],
+        "required": ["command"],
         "type": "object"
       }
     },
@@ -5236,9 +4509,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "text"
-        ],
+        "required": ["text"],
         "type": "object"
       }
     },
@@ -5291,9 +4562,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type"
-                ],
+                "required": ["type"],
                 "type": "object"
               },
               {
@@ -5304,9 +4573,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type"
-                ],
+                "required": ["type"],
                 "type": "object"
               },
               {
@@ -5320,10 +4587,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type",
-                  "url"
-                ],
+                "required": ["type", "url"],
                 "type": "object"
               }
             ]
@@ -5340,10 +4604,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "offset"
-            ],
+            "required": ["zone", "offset"],
             "type": "object"
           },
           "TextZone": {
@@ -5365,10 +4626,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -5387,10 +4645,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -5404,10 +4659,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -5436,12 +4688,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -5457,9 +4704,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -5479,12 +4724,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -5505,9 +4745,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -5531,11 +4769,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "anchor",
-                      "head"
-                    ],
+                    "required": ["kind", "anchor", "head"],
                     "type": "object"
                   },
                   {
@@ -5549,10 +4783,7 @@
                         "$ref": "#/$defs/TreeTarget"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "target"
-                    ],
+                    "required": ["kind", "target"],
                     "type": "object"
                   },
                   {
@@ -5569,11 +4800,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "anchor",
-                      "head"
-                    ],
+                    "required": ["kind", "anchor", "head"],
                     "type": "object"
                   },
                   {
@@ -5587,10 +4814,7 @@
                         "$ref": "#/$defs/TreeRoot"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "root"
-                    ],
+                    "required": ["kind", "root"],
                     "type": "object"
                   },
                   {
@@ -5605,10 +4829,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "kind",
-                      "before"
-                    ],
+                    "required": ["kind", "before"],
                     "type": "object"
                   }
                 ],
@@ -5627,10 +4848,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "selection",
-          "typing_styles"
-        ],
+        "required": ["selection", "typing_styles"],
         "type": "object"
       }
     },
@@ -5651,9 +4869,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type"
-                ],
+                "required": ["type"],
                 "type": "object"
               },
               {
@@ -5664,9 +4880,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type"
-                ],
+                "required": ["type"],
                 "type": "object"
               },
               {
@@ -5680,19 +4894,13 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type",
-                  "url"
-                ],
+                "required": ["type", "url"],
                 "type": "object"
               }
             ]
           },
           "Switch": {
-            "enum": [
-              "on",
-              "off"
-            ],
+            "enum": ["on", "off"],
             "type": "string"
           }
         },
@@ -5705,10 +4913,7 @@
             "$ref": "#/$defs/Switch"
           }
         },
-        "required": [
-          "style",
-          "value"
-        ],
+        "required": ["style", "value"],
         "type": "object"
       }
     },
@@ -5724,18 +4929,13 @@
             "additionalProperties": false,
             "properties": {
               "kind": {
-                "enum": [
-                  "current",
-                  "as"
-                ]
+                "enum": ["current", "as"]
               },
               "path": {
                 "type": "string"
               }
             },
-            "required": [
-              "kind"
-            ],
+            "required": ["kind"],
             "type": "object"
           },
           "steps": {
@@ -5749,9 +4949,7 @@
                   "type": "object"
                 }
               },
-              "required": [
-                "id"
-              ],
+              "required": ["id"],
               "type": "object"
             },
             "maxItems": 256,
@@ -5759,9 +4957,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "steps"
-        ],
+        "required": ["steps"],
         "type": "object"
       }
     },
@@ -5793,20 +4989,13 @@
             "type": "string"
           },
           "format": {
-            "enum": [
-              "pdf",
-              "typst",
-              "both"
-            ]
+            "enum": ["pdf", "typst", "both"]
           },
           "page_images": {
             "type": "boolean"
           }
         },
-        "required": [
-          "directory",
-          "format"
-        ],
+        "required": ["directory", "format"],
         "type": "object"
       }
     },
@@ -5840,16 +5029,10 @@
             "type": "string"
           },
           "type": {
-            "enum": [
-              "courrier",
-              "compte-rendu",
-              "article"
-            ]
+            "enum": ["courrier", "compte-rendu", "article"]
           }
         },
-        "required": [
-          "type"
-        ],
+        "required": ["type"],
         "type": "object"
       }
     },
@@ -5872,9 +5055,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "path"
-        ],
+        "required": ["path"],
         "type": "object"
       }
     },
@@ -5902,9 +5083,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "path"
-        ],
+        "required": ["path"],
         "type": "object"
       }
     },
@@ -5926,11 +5105,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "model_id",
-          "source",
-          "manifest"
-        ],
+        "required": ["model_id", "source", "manifest"],
         "type": "object"
       }
     },
@@ -6002,11 +5177,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -6028,10 +5199,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -6050,10 +5218,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -6067,10 +5232,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -6099,12 +5261,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -6188,11 +5345,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -6214,10 +5367,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -6236,10 +5386,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -6253,10 +5400,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -6285,12 +5429,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -6330,9 +5469,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "type"
-        ],
+        "required": ["type"],
         "type": "object"
       }
     },
@@ -6387,9 +5524,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "type": "object"
           },
           "MetadataField": {
@@ -6441,18 +5576,13 @@
                 "type": "array"
               },
               "text": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": ["string", "null"]
               },
               "type": {
                 "type": "string"
               }
             },
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "type": "object"
           },
           "TextTarget": {
@@ -6472,11 +5602,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -6498,10 +5624,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -6520,10 +5643,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -6537,10 +5657,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -6569,12 +5686,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -6584,23 +5696,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -6612,32 +5716,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -6660,9 +5754,7 @@
             "$ref": "#/$defs/TextTarget"
           }
         },
-        "required": [
-          "node"
-        ],
+        "required": ["node"],
         "type": "object"
       }
     },
@@ -6684,9 +5776,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -6706,12 +5796,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -6732,9 +5817,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -6766,13 +5849,7 @@
             "type": "integer"
           }
         },
-        "required": [
-          "parent",
-          "index",
-          "rows",
-          "columns",
-          "header"
-        ],
+        "required": ["parent", "index", "rows", "columns", "header"],
         "type": "object"
       }
     },
@@ -6794,9 +5871,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -6816,12 +5891,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -6842,9 +5912,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -6852,23 +5920,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -6877,32 +5937,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -6947,9 +5997,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -6969,12 +6017,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -6995,9 +6038,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -7010,10 +6051,7 @@
             "$ref": "#/$defs/TreeTarget"
           }
         },
-        "required": [
-          "left",
-          "right"
-        ],
+        "required": ["left", "right"],
         "type": "object"
       }
     },
@@ -7073,11 +6111,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -7099,10 +6133,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -7121,10 +6152,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -7138,10 +6166,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -7170,12 +6195,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -7185,23 +6205,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -7210,32 +6222,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -7294,10 +6296,7 @@
                     "$ref": "#/$defs/OptionName"
                   }
                 },
-                "required": [
-                  "kind",
-                  "name"
-                ],
+                "required": ["kind", "name"],
                 "type": "object"
               },
               {
@@ -7311,10 +6310,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -7334,12 +6330,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -7392,23 +6383,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -7417,32 +6400,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -7466,9 +6439,7 @@
           },
           "value": true
         },
-        "required": [
-          "value"
-        ],
+        "required": ["value"],
         "type": "object"
       }
     },
@@ -7502,9 +6473,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -7524,12 +6493,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -7550,9 +6514,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -7560,23 +6522,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -7589,32 +6543,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -7637,9 +6581,7 @@
             "$ref": "#/$defs/TreeTarget"
           }
         },
-        "required": [
-          "attrs"
-        ],
+        "required": ["attrs"],
         "type": "object"
       }
     },
@@ -7653,10 +6595,7 @@
         "properties": {
           "after": {
             "default": null,
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "collection": {
             "type": "string"
@@ -7670,10 +6609,7 @@
             "type": "object"
           }
         },
-        "required": [
-          "collection",
-          "id"
-        ],
+        "required": ["collection", "id"],
         "type": "object"
       }
     },
@@ -7687,10 +6623,7 @@
         "properties": {
           "before": {
             "default": null,
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "collection": {
             "type": "string"
@@ -7699,10 +6632,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "collection",
-          "id"
-        ],
+        "required": ["collection", "id"],
         "type": "object"
       }
     },
@@ -7721,10 +6651,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "collection",
-          "id"
-        ],
+        "required": ["collection", "id"],
         "type": "object"
       }
     },
@@ -7808,11 +6735,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -7834,10 +6757,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -7856,10 +6776,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -7873,10 +6790,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -7905,12 +6819,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -7920,23 +6829,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "point"
-              ]
+              "required": ["point"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "point"
-            ]
+            "required": ["point"]
           }
         ],
         "properties": {
@@ -7956,10 +6857,7 @@
                 "type": "array"
               }
             },
-            "required": [
-              "page",
-              "point"
-            ],
+            "required": ["page", "point"],
             "type": "object"
           },
           "target": {
@@ -7983,9 +6881,7 @@
             "type": "integer"
           }
         },
-        "required": [
-          "page"
-        ],
+        "required": ["page"],
         "type": "object"
       }
     },
@@ -8045,11 +6941,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -8071,10 +6963,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -8093,10 +6982,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -8110,10 +6996,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -8142,12 +7025,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -8159,9 +7037,7 @@
             "$ref": "#/$defs/TextTarget"
           }
         },
-        "required": [
-          "target"
-        ],
+        "required": ["target"],
         "type": "object"
       }
     },
@@ -8184,10 +7060,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "path",
-              "data"
-            ],
+            "required": ["path", "data"],
             "type": "object"
           }
         },
@@ -8197,9 +7070,7 @@
             "$ref": "#/$defs/ImageResource"
           }
         },
-        "required": [
-          "resource"
-        ],
+        "required": ["resource"],
         "type": "object"
       }
     },
@@ -8231,9 +7102,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "query"
-        ],
+        "required": ["query"],
         "type": "object"
       }
     },
@@ -8245,15 +7114,7 @@
       "params_schema": {
         "$defs": {
           "DocumentLanguage": {
-            "enum": [
-              "fr",
-              "en",
-              "de",
-              "es",
-              "it",
-              "pt",
-              "nl"
-            ],
+            "enum": ["fr", "en", "de", "es", "it", "pt", "nl"],
             "type": "string"
           },
           "MetadataField": {
@@ -8305,11 +7166,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -8331,10 +7188,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -8353,10 +7207,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -8370,10 +7221,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -8402,12 +7250,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -8417,23 +7260,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -8445,32 +7280,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -8496,10 +7321,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "language",
-          "word"
-        ],
+        "required": ["language", "word"],
         "type": "object"
       }
     },
@@ -8523,15 +7345,7 @@
       "params_schema": {
         "$defs": {
           "DocumentLanguage": {
-            "enum": [
-              "fr",
-              "en",
-              "de",
-              "es",
-              "it",
-              "pt",
-              "nl"
-            ],
+            "enum": ["fr", "en", "de", "es", "it", "pt", "nl"],
             "type": "string"
           }
         },
@@ -8544,10 +7358,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "word",
-          "language"
-        ],
+        "required": ["word", "language"],
         "type": "object"
       }
     },
@@ -8569,9 +7380,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -8591,12 +7400,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -8617,9 +7421,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -8627,23 +7429,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -8657,32 +7451,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -8705,9 +7489,7 @@
             "$ref": "#/$defs/TreeTarget"
           }
         },
-        "required": [
-          "index"
-        ],
+        "required": ["index"],
         "type": "object"
       }
     },
@@ -8729,9 +7511,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -8751,12 +7531,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -8777,9 +7552,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -8787,23 +7560,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -8817,32 +7582,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -8865,9 +7620,7 @@
             "$ref": "#/$defs/TreeTarget"
           }
         },
-        "required": [
-          "index"
-        ],
+        "required": ["index"],
         "type": "object"
       }
     },
@@ -8880,10 +7633,7 @@
         "$defs": {
           "HeaderAxis": {
             "description": "The axis labelled by the header cells (columns = first row, rows = first column).",
-            "enum": [
-              "columns",
-              "rows"
-            ],
+            "enum": ["columns", "rows"],
             "type": "string"
           },
           "TreeRoot": {
@@ -8897,9 +7647,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -8919,12 +7667,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -8945,9 +7688,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -8955,23 +7696,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -8987,32 +7720,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -9035,9 +7758,7 @@
             "$ref": "#/$defs/TreeTarget"
           }
         },
-        "required": [
-          "enabled"
-        ],
+        "required": ["enabled"],
         "type": "object"
       }
     },
@@ -9059,9 +7780,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -9081,12 +7800,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -9107,9 +7821,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -9117,23 +7829,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -9147,32 +7851,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -9195,9 +7889,7 @@
             "$ref": "#/$defs/TreeTarget"
           }
         },
-        "required": [
-          "index"
-        ],
+        "required": ["index"],
         "type": "object"
       }
     },
@@ -9219,9 +7911,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind"
-                ],
+                "required": ["kind"],
                 "type": "object"
               },
               {
@@ -9241,12 +7931,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -9267,9 +7952,7 @@
                 "$ref": "#/$defs/TreeRoot"
               }
             },
-            "required": [
-              "root"
-            ],
+            "required": ["root"],
             "type": "object"
           }
         },
@@ -9277,23 +7960,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -9307,32 +7982,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -9355,9 +8020,7 @@
             "$ref": "#/$defs/TreeTarget"
           }
         },
-        "required": [
-          "index"
-        ],
+        "required": ["index"],
         "type": "object"
       }
     },
@@ -9401,10 +8064,7 @@
             "type": "string"
           },
           "Switch": {
-            "enum": [
-              "on",
-              "off"
-            ],
+            "enum": ["on", "off"],
             "type": "string"
           },
           "TextTarget": {
@@ -9424,11 +8084,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -9450,10 +8106,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -9472,10 +8125,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -9489,10 +8139,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -9521,12 +8168,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -9536,23 +8178,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -9561,32 +8195,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -9673,11 +8297,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -9699,10 +8319,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -9721,10 +8338,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -9738,10 +8352,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -9770,12 +8381,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -9785,23 +8391,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -9810,32 +8408,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -9918,11 +8506,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -9944,10 +8528,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -9966,10 +8547,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -9983,10 +8561,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -10015,12 +8590,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -10030,23 +8600,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -10055,32 +8617,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -10156,9 +8708,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type"
-                ],
+                "required": ["type"],
                 "type": "object"
               },
               {
@@ -10169,9 +8719,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type"
-                ],
+                "required": ["type"],
                 "type": "object"
               },
               {
@@ -10185,10 +8733,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "type",
-                  "url"
-                ],
+                "required": ["type", "url"],
                 "type": "object"
               }
             ]
@@ -10210,11 +8755,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -10236,10 +8777,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -10258,10 +8796,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -10275,10 +8810,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -10307,12 +8839,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -10322,23 +8849,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -10354,32 +8873,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -10405,9 +8914,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "text"
-        ],
+        "required": ["text"],
         "type": "object"
       }
     },
@@ -10451,10 +8958,7 @@
             "type": "string"
           },
           "Switch": {
-            "enum": [
-              "on",
-              "off"
-            ],
+            "enum": ["on", "off"],
             "type": "string"
           },
           "TextTarget": {
@@ -10474,11 +8978,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -10500,10 +9000,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -10522,10 +9019,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -10539,10 +9033,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -10571,12 +9062,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -10586,23 +9072,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -10611,32 +9089,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -10723,11 +9191,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -10749,10 +9213,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -10771,10 +9232,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -10788,10 +9246,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -10820,12 +9275,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -10835,23 +9285,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -10860,32 +9302,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -10911,9 +9343,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "url"
-        ],
+        "required": ["url"],
         "type": "object"
       }
     },
@@ -10973,11 +9403,7 @@
                 "$ref": "#/$defs/TextZone"
               }
             },
-            "required": [
-              "zone",
-              "from",
-              "to"
-            ],
+            "required": ["zone", "from", "to"],
             "type": "object"
           },
           "TextZone": {
@@ -10999,10 +9425,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -11021,10 +9444,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "path"
-                ],
+                "required": ["kind", "path"],
                 "type": "object"
               },
               {
@@ -11038,10 +9458,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "field"
-                ],
+                "required": ["kind", "field"],
                 "type": "object"
               },
               {
@@ -11070,12 +9487,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "kind",
-                  "collection",
-                  "id",
-                  "field"
-                ],
+                "required": ["kind", "collection", "id", "field"],
                 "type": "object"
               }
             ]
@@ -11085,23 +9497,15 @@
         "oneOf": [
           {
             "not": {
-              "required": [
-                "selector"
-              ]
+              "required": ["selector"]
             },
-            "required": [
-              "target"
-            ]
+            "required": ["target"]
           },
           {
             "not": {
-              "required": [
-                "target"
-              ]
+              "required": ["target"]
             },
-            "required": [
-              "selector"
-            ]
+            "required": ["selector"]
           }
         ],
         "properties": {
@@ -11110,32 +9514,22 @@
             "oneOf": [
               {
                 "not": {
-                  "required": [
-                    "block"
-                  ]
+                  "required": ["block"]
                 },
-                "required": [
-                  "select"
-                ]
+                "required": ["select"]
               },
               {
                 "not": {
                   "anyOf": [
                     {
-                      "required": [
-                        "select"
-                      ]
+                      "required": ["select"]
                     },
                     {
-                      "required": [
-                        "occurrence"
-                      ]
+                      "required": ["occurrence"]
                     }
                   ]
                 },
-                "required": [
-                  "block"
-                ]
+                "required": ["block"]
               }
             ],
             "properties": {
@@ -11173,16 +9567,10 @@
             "additionalProperties": false,
             "properties": {
               "creator": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": ["string", "null"]
               },
               "description": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": ["string", "null"]
               },
               "name": {
                 "type": "string"
@@ -11195,9 +9583,7 @@
                 "type": "array"
               }
             },
-            "required": [
-              "name"
-            ],
+            "required": ["name"],
             "type": "object"
           },
           "VersionAction": {
@@ -11213,10 +9599,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "details"
-                ],
+                "required": ["kind", "details"],
                 "type": "object"
               },
               {
@@ -11233,11 +9616,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "id",
-                  "details"
-                ],
+                "required": ["kind", "id", "details"],
                 "type": "object"
               },
               {
@@ -11251,10 +9630,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "kind",
-                  "id"
-                ],
+                "required": ["kind", "id"],
                 "type": "object"
               }
             ]
@@ -11271,10 +9647,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "history",
-          "action"
-        ],
+        "required": ["history", "action"],
         "title": "VersionChange",
         "type": "object"
       }
@@ -11304,9 +9677,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "type": "object"
       }
     }

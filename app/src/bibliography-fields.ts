@@ -36,8 +36,8 @@ export function diagnosticText(code: string) {
   return tr(
     code === 'incomplete'
       ? 'Un champ conseillé est manquant.'
-      : code === 'genre_mapping'
-        ? 'Vérifier le genre de cette notice.'
+      : code === 'type_mapping'
+        ? 'Vérifier le type de cette notice.'
         : code === 'conversion_review'
           ? 'Vérifier les champs convertis.'
           : ['conversion_loss', 'unsupported_field'].includes(code)

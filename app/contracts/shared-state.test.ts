@@ -165,7 +165,7 @@ function seed(type: 'courrier' | 'article') {
     settings.metadata.fields.references = [
       {
         id: 'main',
-        genre: 'book',
+
         key: 'test2026',
         provenance: [],
         entry: { type: 'book', title: 'Un ouvrage', author: 'Martin, Camille', date: 2026 },

@@ -110,9 +110,9 @@ fn library_rejects_duplicate_ids_or_keys_and_projects_only_native_data() {
 
 #[test]
 fn genre_descriptors_are_common_native_paths_not_type_specific_requirements() {
-    for descriptor in genres() {
-        let entry = descriptor.genre.empty_entry("new");
-        let record = Record::new(id("new"), descriptor.genre, entry).unwrap();
+    for descriptor in profiles() {
+        let entry = descriptor.profile.empty_entry("new");
+        let record = Record::new(id("new"), entry).unwrap();
         assert!(!completeness(&record).is_empty());
         for field in descriptor.fields {
             assert!(field.path.starts_with('/'));
@@ -120,7 +120,7 @@ fn genre_descriptors_are_common_native_paths_not_type_specific_requirements() {
         assert!(Library::new(vec![record]).is_ok());
     }
     let repository = hayagriva::Entry::new("repo", hayagriva::types::EntryType::Repository);
-    assert_eq!(Genre::infer(&repository), Genre::Other);
+    assert_eq!(Profile::infer(&repository), Profile::Software);
 }
 
 #[test]
@@ -158,7 +158,7 @@ fn key_suggestions_avoid_existing_names_without_renaming_or_inventing_identity()
     assert_eq!(suggest_key(one.entry(), &occupied), "durand_une_2025_2");
     assert_eq!(one.key(), "stable-key");
     assert_eq!(
-        suggest_key(&Genre::Other.empty_entry("pending"), &Default::default()),
+        suggest_key(&Profile::Other.empty_entry("pending"), &Default::default()),
         "anonymous_untitled_nd"
     );
 }
