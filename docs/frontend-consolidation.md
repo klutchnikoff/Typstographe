@@ -66,3 +66,8 @@ production build/type checking and the module-size guard passed. The targeted
 native-backed suite passed 58 journeys across Chromium/WebKit; the deliberately
 late usage-response case passed separately in both engines (60 total). The
 pre-push hook additionally checks the immutable commit before publication.
+
+The broader pre-push run exposed an existing asynchronous setup race in the
+palette recipe: Tiptap `focus()` schedules an animation frame. The recipe now
+awaits actual editor focus before opening the palette and uses the platform
+modifier. Both palette journeys passed ten repetitions per browser (40 runs).

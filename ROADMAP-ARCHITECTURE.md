@@ -128,8 +128,9 @@ de l’export déplacé dans un environnement sans cache de paquets.
 consignés. C.1 (renvois) et le premier périmètre de C.2 (mathématiques) sont
 implémentés et vérifiés localement, comme C.3 (gestionnaire complet, profils
 natifs Hayagriva et **CAS 16**). La CI et la recette utilisateur restent requises
-avant fusion. Le lot suivant est la consolidation frontend / E.1, puis C.4
-(bibliothèque personnelle), avant les extensions lourdes de D, F et J. Préciser ensemble les paramètres,
+avant fusion. La consolidation frontend / E.1 est également livrée localement ;
+le prochain lot est C.4 (bibliothèque personnelle), avant les extensions lourdes
+de D, F et J. Préciser ensemble les paramètres,
 commandes/cibles et maquettes avant chaque implémentation ;
 la livraison de tous les types de B n’est pas un prérequis.
 
