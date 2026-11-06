@@ -14,13 +14,37 @@ pub enum ImportFormat {
 }
 
 /// An immutable original, separate from the active native records.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(try_from = "SourceData")]
 pub struct ImportSource {
     id: RecordId,
     name: String,
     format: ImportFormat,
     contents: String,
     digest: Fingerprint,
+}
+
+#[derive(Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct SourceData {
+    id: RecordId,
+    name: String,
+    format: ImportFormat,
+    contents: String,
+    digest: Fingerprint,
+}
+impl TryFrom<SourceData> for ImportSource {
+    type Error = Error;
+    fn try_from(data: SourceData) -> Result<Self> {
+        let source = Self::new(data.id, &data.name, data.format, data.contents)?;
+        if source.digest != data.digest {
+            return Err(Error::new(
+                Code::InvalidField,
+                "Import source digest mismatch",
+            ));
+        }
+        Ok(source)
+    }
 }
 
 impl ImportSource {

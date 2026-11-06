@@ -123,3 +123,20 @@ fn malformed_sources_and_duplicate_allocations_publish_no_partial_import() {
         Code::LimitExceeded
     );
 }
+
+#[test]
+fn immutable_source_transport_refuses_changed_bytes_or_digest() {
+    let prepared = import(
+        "key: {type: book, title: A book}\r\n",
+        ImportFormat::Hayagriva,
+    );
+    let encoded = serde_json::to_value(&prepared.source).unwrap();
+    let restored: ImportSource = serde_json::from_value(encoded.clone()).unwrap();
+    assert_eq!(restored, prepared.source);
+    let mut changed = encoded.clone();
+    changed["contents"] = json!("key: {type: book, title: Changed}");
+    assert!(serde_json::from_value::<ImportSource>(changed).is_err());
+    let mut changed = encoded;
+    changed["digest"] = json!("0".repeat(64));
+    assert!(serde_json::from_value::<ImportSource>(changed).is_err());
+}

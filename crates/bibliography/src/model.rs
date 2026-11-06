@@ -211,7 +211,8 @@ pub(crate) fn canonical_entry(entry: &Entry) -> Value {
     crate::native::canonical_entry(entry)
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct FieldPatch {
     pub path: String,
     /// None removes the field. Present values are validated by Hayagriva.
@@ -237,6 +238,11 @@ impl Record {
     }
     pub fn key(&self) -> &str {
         self.entry.key()
+    }
+    /// Change only the form intent; native fields and container structure are preserved.
+    pub fn with_genre(mut self, genre: Genre) -> Self {
+        self.genre = genre;
+        self
     }
     pub fn genre(&self) -> Genre {
         self.genre
