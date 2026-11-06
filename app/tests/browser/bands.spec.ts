@@ -1,4 +1,5 @@
 import { expectPreviewReady } from './preview-assertions'
+import { paragraphTexts } from './paragraph-assertions'
 import { expect, test, type Page } from '@playwright/test'
 
 async function contents(page: Page) {
@@ -68,7 +69,10 @@ test('insertion des widgets au curseur sans absorber le texte, citation sans par
     const widget = page.locator(id === 'block.quote' ? '.widget-quote' : '.widget-bulletList')
     await expect(widget).toBeVisible()
     await expect(widget.locator('p')).toHaveText('')
-    await expect(page.locator('.tiptap > p')).toHaveText(['Avant', '', 'Après', ''])
+    await expect
+      .poll(() => paragraphTexts(page.locator('.tiptap > p')))
+      .toEqual(['Avant', '', 'Après', ''])
+    await expect(page.locator('.tiptap > p .paragraph-marker')).toHaveText('¶')
     await expect(page.locator('.tiptap')).toBeFocused()
     await page.keyboard.type('Contenu')
     await expect(widget.locator('p')).toHaveText('Contenu')
