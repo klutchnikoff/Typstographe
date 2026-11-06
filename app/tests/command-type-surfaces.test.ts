@@ -102,4 +102,11 @@ it('derives all surfaces and child actions from capabilities, across arbitrary t
   refreshCommands(registry)
   expect(labels()).toContain('Preferences')
   expect(labels()).not.toContain('Row')
+  // The shell observes these attributes to schedule interface refreshes. A
+  // stable refresh must not feed its own observer and keep requesting frames.
+  const observer = new MutationObserver(() => {})
+  observer.observe(bar, { subtree: true, attributes: true, attributeFilter: ['hidden', 'open'] })
+  refreshCommands(registry)
+  expect(observer.takeRecords()).toHaveLength(0)
+  observer.disconnect()
 })

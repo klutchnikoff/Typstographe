@@ -234,15 +234,21 @@ export function refreshCommands(registry: Registry) {
       refreshCommandButton(el, command)
       // Only editorial toolbar entries are hidden here; application menus keep
       // their own layout. Availability still guards every trigger and shortcut.
-      if (el.closest('[data-command-toolbar]')) el.hidden = !commandVisible(command)
+      if (el.closest('[data-command-toolbar]')) {
+        const hidden = !commandVisible(command)
+        if (el.hidden !== hidden) el.hidden = hidden
+      }
     }
     if (command?.active) el.setAttribute('aria-pressed', String(command.active()))
   }
   for (const menu of document.querySelectorAll<HTMLDetailsElement>('[data-command-group]')) {
-    menu.hidden = ![...menu.querySelectorAll<HTMLButtonElement>('button[data-command]')].some(
+    const hidden = ![...menu.querySelectorAll<HTMLButtonElement>('button[data-command]')].some(
       (button) => !button.hidden,
     )
-    if (menu.hidden) menu.open = false
+    // The shell observes hidden/open. Rewriting an unchanged attribute would
+    // schedule another interface refresh, indefinitely, for unsupported tools.
+    if (menu.hidden !== hidden) menu.hidden = hidden
+    if (hidden && menu.open) menu.open = false
   }
   document.dispatchEvent(new Event('commands:availability'))
 }
