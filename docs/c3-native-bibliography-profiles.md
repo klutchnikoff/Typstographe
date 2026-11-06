@@ -50,3 +50,46 @@ composés, la provenance, les modifications non validées, les refus concurrents
 les garde-fous de schéma, la récupération, le CAS et le rendu CSL/Typst effectif.
 Le format documentaire peut évoluer dans cette phase ; préserver les fichiers
 locaux et fournir un nouvel exemple plutôt que les convertir implicitement.
+
+## Livraison et qualification
+
+Implémenté sur `feat/c3-bibliography-core`. `Record` ne contient plus de genre
+indépendant ; `Profile::infer` lit la structure native. Les contrôles et les
+recommandations utilisent les chemins réels des champs, y compris volume/numéro
+hérités d’une publication. Les variantes importées ne sont pas normalisées lors
+d’une simple consultation. Un enrichissement ne copie pas un parent incompatible
+avec le type existant dans son graphe actif ; il en conserve les données à part.
+
+`bibliography.profiles` décrit les profils disponibles. `bibliography.form` et
+`bibliography.prepare_form` retournent le profil calculé ; le second peut préparer
+un changement natif avec `profile`. Le formulaire conserve une notice de travail
+privée et valide toutes ses transitions en un `bibliography.apply` de type
+`replace`, gardé par l’empreinte initiale. Cette opération exige la même identité
+et la même provenance. Les scripts peuvent aussi demander un changement natif
+par `edit.profile`. Un `replace` porte une notice complète préparée/lue : ne pas
+construire un objet partiel qui omettrait les données natives conservées.
+
+Le CAS 16 contrôle l’état complet, la projection active et les données conservées.
+Aucun lecteur des anciens formats n’est ajouté. La fixture de tests a été
+régénérée depuis son contenu Git ; les recettes natives utilisent désormais
+cette fixture plutôt qu’un document d’exemple potentiellement modifié localement.
+[`article-bibliography-profiles.typsto`](../examples/article-bibliography-profiles.typsto)
+est le nouvel exemple, reproductible par sa
+[recette CLI](../examples/cli/article-bibliography.json). Les exemples locaux
+`article-working.typsto` et `article-mathematics.typsto` restent intacts.
+
+Vérifications locales :
+
+- 56 tests dans la crate bibliographique, dont les transitions, les variantes,
+  les champs hérités et un véritable traitement CSL qui distingue revue/livre/actes ;
+- suites communes Rust, dont les 295 tests du cœur, et 131 tests natifs Tauri
+  réussis (un diagnostic préexistant ignoré) ; préparation privée, gardes,
+  annulation/rétablissement, CAS, export et provenance vérifiés ;
+- 483 tests web, 10 tests des scripts natifs web et 31 tests de contrat Yjs/Yrs ;
+- parcours bibliographiques Chromium/WebKit : changements de type, champs
+  masqués, publications distinctes, édition atomique, citations stables,
+  concurrence, refus d’une date invalide et reprise d’un formulaire transformé ;
+- Clippy du workspace, toutes cibles avec `recipe-driver`, formats Rust/Prettier,
+  limite des lignes de production et frontière des dépendances du cœur.
+
+Aucune capture ni mesure de couverture ou de latence n’est produite.

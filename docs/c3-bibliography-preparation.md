@@ -7,8 +7,8 @@ projet Article ouvert et ne publient aucune édition.
 
 | Requête | Paramètres | Résultat |
 | --- | --- | --- |
-| `bibliography.genres` | Aucun | Genres, champs et structures de création communs |
-| `bibliography.prepare_record` | `id`, `genre`, `entry` natif facultatif, `key` facultative | Notice proposée, diagnostics de complétude, empreinte |
+| `bibliography.profiles` | Aucun | Profils calculés, champs et structures de création communs |
+| `bibliography.prepare_record` | `id`, `profile`, `entry` natif facultatif, `key` facultative | Notice proposée, diagnostics de complétude, empreinte |
 | `bibliography.prepare_import` | `id` de source, `name` d'affichage, `format` (`hayagriva` ou `biblatex`), `contents` UTF-8 | Notices proposées, diagnostics de conversion, résumé de source et empreinte |
 
 Les paramètres et résultats possèdent des schémas JSON accessibles par la
@@ -23,12 +23,12 @@ Exemple CLI, depuis la racine après compilation du binaire CLI :
 
 ```sh
 target/debug/typstographe-cli --json query bibliography.prepare_record article.typsto \
-  --params '{"id":"proposed-book","genre":"book","entry":{"title":"Un ouvrage","author":"Martin, Camille"}}'
+  --params '{"id":"proposed-book","profile":"book","entry":{"title":"Un ouvrage","author":"Martin, Camille"}}'
 ```
 
 Sans `key`, la préparation suggère un nom disponible dans la bibliothèque
 actuelle. Une clé explicitement occupée est refusée. `entry` décrit des champs
-natifs superposés à la structure initiale du genre ; cette requête prépare une
+natifs superposés à la structure initiale du profil ; cette requête prépare une
 création, pas une modification partielle d'une notice existante.
 
 Les deux préparations renvoient `active: false`. Elles ne changent ni les

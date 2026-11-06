@@ -16,10 +16,11 @@ le focus dans la recherche ; Entrée rejoint le formulaire sélectionné.
 notice, publication, puis identifiants/URL/clé dans une section dépliable.
 Les personnes utilisent la poignée commune, à la souris ou au clavier
 (Espace, flèches, Entrée/Échap). La complétude reste un conseil, jamais une
-condition de publication. Les dix genres sont proposés à la création ; le genre
-d’une notice existante est affiché en lecture seule dans ce premier gestionnaire.
-Le changement explicite de genre ou la conversion de sa structure native reste
-à traiter séparément, sans coercition des notices importées.
+condition de publication. Les profils sont déduits du type et des parents Hayagriva. Le sélecteur
+« Type de notice » est modifiable à la création et à l’édition : il prépare une
+classification native sans publier la saisie, conserve les champs masqués et
+restaure les publications parentes correspondantes. Une revue n’est jamais
+réutilisée comme titre d’actes. Voir le [contrat natif](c3-native-bibliography-profiles.md).
 
 Valider produit une édition annulable, sans enregistrer le fichier. Une fermeture
 ou un changement de notice avec une saisie modifiée propose Abandonner,
@@ -54,6 +55,7 @@ Les requêtes communes, également découvertes par CLI/MCP, sont :
 
 | Requête | Résultat privé, sans publication |
 | --- | --- |
+| `bibliography.profiles` | Profils de formulaire calculables et champs natifs |
 | `bibliography.form` | Contrôles simples d’une notice native figée |
 | `bibliography.prepare_form` | Notice proposée, patches et diagnostics ; clé disponible suggérée pour une nouvelle notice |
 | `bibliography.browse` | Résultats compacts, sans la limite de 80 suggestions du sélecteur de citations |
@@ -61,9 +63,11 @@ Les requêtes communes, également découvertes par CLI/MCP, sont :
 | `bibliography.review_import` | Plan recalculé avec décisions explicites et empreinte de bibliothèque figée |
 
 La publication reste exclusivement `bibliography.apply`, éventuellement en lot
-avec `inline.replace`. Une édition peut modifier les champs et la clé sous la
-même garde de notice. Le genre, le code Typst et la mise en page bibliographique
-ne sont pas réinventés dans les contrôles web.
+avec `inline.replace`. Une édition peut modifier les champs, la classification native et la clé sous
+la même garde de notice. Le formulaire publie son résultat natif complet via
+`replace`, qui conserve identité et provenance. Le profil ne constitue aucun
+champ de classification enregistré ; le code Typst et la présentation CSL ne
+sont pas réinventés dans les contrôles web.
 
 L’import BibTeX/Hayagriva affiche candidats, champs complétés, valeurs conservées,
 avertissements de conversion et original en lecture seule. Les choix sont
@@ -86,7 +90,7 @@ création avec citation groupée et liste de 92 notices avec titres longs,
 recherche Unicode et défilements indépendants. Les assertions de géométrie ne
 remplacent pas une recette visuelle humaine ; aucune capture n’est créée.
 
-Vérifications locales : 416 réussites dans les packages Rust communs, 131 tests
+Bilan du premier raccordement (voir aussi la [qualification des profils natifs](c3-native-bibliography-profiles.md#livraison-et-qualification)) : 416 réussites dans les packages Rust communs, 131 tests
 natifs Tauri réussis (un diagnostic préexistant ignoré), 483 tests web et 10 tests
 des scripts natifs web, 31 tests de contrat Yjs/Yrs, 24 parcours Chromium/WebKit
 et 20 tests Python. Clippy du workspace avec toutes les cibles et

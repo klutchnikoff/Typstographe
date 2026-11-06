@@ -351,8 +351,10 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    commun, avec création/citation atomique, gardes concurrentes et navigation
    clavier. Les codecs préservent parents, valeurs composées et champs non
    exposés ; les requêtes de formulaire, revue, parcours et usages sont communes
-   à Tauri, CLI et MCP. Le genre est choisi à la création et reste en lecture
-   seule sur une notice existante dans ce premier gestionnaire.
+   à Tauri, CLI et MCP. Les profils sont maintenant déduits de Hayagriva : le
+   changement de type reste privé jusqu’à Valider, conserve champs masqués et
+   conteneurs inactifs, puis se publie en une édition annulable. Le CAS 16 et
+   l’export gardent ces données hors de la bibliothèque active.
    **Classification native — décision du 6 novembre 2026 :**
    [supprimer le genre indépendant](docs/c3-native-bibliography-profiles.md).
    Déduire les profils de formulaire du type et des parents Hayagriva ; changer

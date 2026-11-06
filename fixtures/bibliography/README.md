@@ -142,3 +142,11 @@ Les contrôles documentaires ci-dessus restent le bilan de la préparation du
 corpus. Les résultats de l'implémentation et les raccordements encore nécessaires
 sont précisés dans le [bilan C.3](../../docs/c3-bibliography-foundation.md) ; les
 matrices d'intégration et C.4 ne sont pas annoncées toutes exécutées.
+
+## Classification native
+
+Les notices des scénarios n’ont plus de genre applicatif : leur profil est déduit
+du type/parents Hayagriva. Les prépublications utilisent ici `manuscript` et les
+logiciels `repository`, conformément à leur classification native. Les attentes
+d’identité et contradictions du corpus restent les mêmes ; aucun faux champ
+Hayagriva n’est ajouté pour conserver une seconde taxonomie.

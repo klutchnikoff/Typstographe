@@ -1,15 +1,16 @@
-# C.3 — Notices documentaires, citations par identité et CAS 15
+# C.3 — Notices documentaires, citations par identité et CAS 16
 
 Lot du 6 novembre 2026, après les [préparations communes](c3-bibliography-preparation.md).
 Le même état et les mêmes éditions sont utilisés par Tauri, CLI et MCP. Le
-[gestionnaire complet validé](c3-bibliography-interface.md) reste le lot suivant.
+[gestionnaire complet](c3-bibliography-manager.md) est raccordé. La
+[classification native](c3-native-bibliography-profiles.md) remplace le genre indépendant.
 
 ## État et publication
 
 L’Article porte deux collections enregistrées, sans collection de fichiers actifs :
 
 - `references` (`bibliographic-records`) : notices natives complètes, identités,
-  genres, clés et provenance ;
+  parents inactifs conservés, clés et provenance ;
 - `reference_sources` (`bibliographic-sources`) : originaux UTF-8 immuables,
   nom d’origine, format et digest vérifié à la désérialisation.
 
@@ -17,7 +18,8 @@ Yjs/Yrs conserve une map par notice/source et un ordre distinct. Les éditions
 ne remplacent pas la collection entière ni les branches de texte ou d’auteurs.
 Les champs natifs restent des valeurs complètes : parents, personnes, chaînes
 formatées et identifiants non exposés par le futur formulaire sont conservés.
-Une modification de genre explicite ne déplace pas les données natives.
+Un changement de type prépare une structure native ; les conteneurs devenus
+inactifs restent conservés avec la notice, hors de la projection CSL active.
 
 Les opérations génériques `record.add/remove/move` et `metadata.set` ne peuvent
 pas contourner les éditions bibliographiques de ces collections.
@@ -31,9 +33,11 @@ pas contourner les éditions bibliographiques de ces collections.
 | `bibliography.apply` | Une édition gardée et annulable, sans sauvegarde immédiate |
 
 `bibliography.apply` exige `expected`, l’empreinte courante de bibliothèque.
-Son `change.kind` vaut `create`, `edit`, `rename`, `remove` ou `import`.
-`edit`, `rename` et `remove` exigent aussi l’empreinte de la notice ; `edit` porte
-les patches de champs natifs et éventuellement le genre. La création manuelle
+Son `change.kind` vaut `create`, `edit`, `replace`, `rename`, `remove` ou `import`.
+`edit`, `replace`, `rename` et `remove` exigent aussi l’empreinte de la notice ; `edit` porte
+les patches de champs natifs et éventuellement un profil demandé, qui modifie
+la classification native. `replace` publie la notice complète préparée par le
+formulaire en préservant son identité et sa provenance. La création manuelle
 ne peut pas attribuer une provenance d’import : elle vient du plan d’import.
 
 Un import fournit la source explicite, `preparation` (empreinte du rapport relu)
@@ -66,17 +70,18 @@ pendant le chargement de l’index.
 
 ## Ressources autonomes
 
-Le conteneur passe à **CAS 15**, générateur de source **5**, sans lecteur des
+Le conteneur passe à **CAS 16**, générateur de source **5**, sans lecteur des
 anciens formats de développement. Chaque état vérifie la cohérence entre
 métadonnées, checkpoint partagé, sources dérivées et ressources bibliographiques.
 
 ```text
 bibliography/references.yaml            # seul Hayagriva actif, dérivé des notices
+bibliography/retained.json              # conteneurs inactifs, hors du rendu
 bibliography/sources/<source-id>.bib    # original BibLaTeX exact
 bibliography/sources/<source-id>.yaml   # original Hayagriva exact
 ```
 
-Les identités, genres et provenance applicatifs restent dans les métadonnées,
+Les identités, conteneurs inactifs et liens de provenance restent dans les métadonnées,
 jamais dans de faux champs Hayagriva. Le modèle reçoit seulement le chemin du
 Hayagriva consolidé. L’export Typst garde les originaux à part et fonctionne
 sans bibliothèque personnelle ou fichier externe. Récupération, versions,
@@ -87,7 +92,7 @@ contenu Git (sans snapshots dans ces entrées). Les fichiers locaux modifiés
 `examples/article-working.typsto` et `examples/article-mathematics.typsto` sont
 restés intacts, avec leur historique local ; ils ne sont pas convertis
 silencieusement. Le nouvel exemple ouvrable est
-[`examples/article-bibliography.typsto`](../examples/article-bibliography.typsto).
+[`examples/article-bibliography-profiles.typsto`](../examples/article-bibliography-profiles.typsto).
 
 ## Adaptateurs et vérification
 

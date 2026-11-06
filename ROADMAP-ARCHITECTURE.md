@@ -293,8 +293,9 @@ la livraison de tous les types de B n’est pas un prérequis.
   récupérables, création/citation atomique et garde de notice concurrente. Les
   requêtes communes projettent et préparent les formulaires, parcourent toute
   la bibliothèque, localisent les citations et revoient les imports sans
-  publication. La modification de genre d’une notice existante reste distincte
-  et n’est pas proposée par ce premier formulaire.
+  publication. Les profils sont déduits des types/parents natifs ; les
+  transitions conservent champs et conteneurs inactifs, avec remplacement de
+  notice gardé, annulation, récupération et projection autonome CAS 16.
   **Classification native :** [décision C.3](docs/c3-native-bibliography-profiles.md).
   Retirer le genre persistant ; déduire les profils du type/parents Hayagriva.
   Mutualiser transitions natives, conservation des conteneurs inactifs et

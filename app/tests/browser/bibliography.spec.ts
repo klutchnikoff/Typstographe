@@ -354,6 +354,10 @@ test('le formulaire bibliographique est récupéré sans publication automatique
   ).toBeEnabled()
   await manager(page).getByRole('button', { name: 'Créer une notice', exact: true }).click()
   await manager(page).getByLabel('Titre', { exact: true }).fill('Notice à reprendre')
+  await manager(page)
+    .getByLabel('Titre de la publication', { exact: true })
+    .fill('Revue du brouillon')
+  await changeType(page, 'book')
   await page.evaluate(() => window.__spike!.provider.privateRecovery!.force())
   await page.evaluate(() => window.__spike!.provider.transport.invoke('diagnostic_request_close'))
   const closing = page.locator('dialog.recovery-close-dialog')
@@ -375,6 +379,9 @@ test('le formulaire bibliographique est récupéré sans publication automatique
   await page.getByRole('button', { name: 'Reprendre la saisie', exact: true }).click()
   const title = manager(page).getByLabel('Titre', { exact: true })
   await expect(title).toHaveValue('Notice à reprendre')
+  await expect(
+    manager(page).getByRole('combobox', { name: 'Type de notice', exact: true }),
+  ).toHaveValue('book')
   await expect(page.locator('.bibliography-list-row')).toHaveCount(2)
   await title.press('ControlOrMeta+Enter')
   await expect(page.locator('.bibliography-list-row')).toHaveCount(3)
@@ -450,4 +457,127 @@ test('créer depuis une citation groupée conserve les références déjà chois
   expect(items[0].supplement).toBe('p. 23–25')
   await page.getByRole('button', { name: 'Annuler', exact: true }).click()
   await expect.poll(() => page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
+})
+
+async function changeType(page: Page, value: string) {
+  const select = manager(page).getByRole('combobox', { name: 'Type de notice', exact: true })
+  await select.selectOption(value)
+  await expect(select).toHaveValue(value)
+  await expect(manager(page).getByRole('button', { name: 'Valider', exact: true })).toBeEnabled()
+}
+
+test('changer de type conserve les champs et conteneurs, puis valide une seule édition', async ({
+  page,
+}) => {
+  await create(page)
+  await insert(page)
+  await manage(page)
+  const search = manager(page).getByRole('combobox', { name: 'Rechercher une référence' })
+  await search.fill('bourdieu')
+  await expect(page.locator('.bibliography-list-row')).toHaveCount(1)
+  await search.press('Enter')
+  await expect(manager(page).getByLabel('Titre', { exact: true })).toHaveValue('Le sens pratique')
+  await manager(page).getByLabel('Édition ou version', { exact: true }).fill('Deuxième')
+  await changeType(page, 'journal_article')
+  await expect(manager(page).getByLabel('Édition ou version', { exact: true })).toHaveCount(0)
+  await manager(page).getByLabel('Titre de la publication', { exact: true }).fill('Revue conservée')
+  await changeType(page, 'conference_paper')
+  await expect(manager(page).getByLabel('Titre de la publication', { exact: true })).toHaveValue('')
+  await manager(page).getByLabel('Titre de la publication', { exact: true }).fill('Actes conservés')
+  await changeType(page, 'journal_article')
+  await expect(manager(page).getByLabel('Titre de la publication', { exact: true })).toHaveValue(
+    'Revue conservée',
+  )
+  await changeType(page, 'book')
+  await expect(manager(page).getByLabel('Édition ou version', { exact: true })).toHaveValue(
+    'Deuxième',
+  )
+  await expect(manager(page).getByLabel('Éditeur', { exact: true })).toHaveValue('Minuit')
+  const records = () =>
+    page.evaluate(() =>
+      (window.__spike!.provider.doc.getMap('settings').get('collections') as any)
+        .get('references')
+        .toJSON(),
+    )
+  const before = await records()
+  await manager(page).getByRole('button', { name: 'Valider', exact: true }).click()
+  await expect(manager(page).getByRole('button', { name: 'Fermer', exact: true })).toBeEnabled()
+  await finishManager(page)
+  const after = await records(),
+    id = Object.keys(before).find((id) => before[id].key === 'bourdieu1980')!
+  expect(after[id].entry.type).toBe('book')
+  expect(after[id].entry.edition).toBe('Deuxième')
+  expect(after[id].retained_parents).toHaveLength(2)
+  expect(after[id]).not.toHaveProperty('genre')
+  expect(after[id]).not.toHaveProperty('profile')
+  await expect(body(page).locator('.citation-ref')).toContainText('Bourdieu, 1980')
+  await page.getByRole('button', { name: 'Annuler', exact: true }).click()
+  await expect.poll(records).toEqual(before)
+})
+
+test('un champ invalide refuse le changement de type en conservant le brouillon', async ({
+  page,
+}) => {
+  await create(page)
+  await manage(page)
+  await expect(
+    manager(page).getByRole('button', { name: 'Créer une notice', exact: true }),
+  ).toBeEnabled()
+  await manager(page).getByRole('button', { name: 'Créer une notice', exact: true }).click()
+  await manager(page).getByLabel('Titre', { exact: true }).fill('Mon brouillon')
+  const date = manager(page).getByLabel('Date de publication', { exact: true })
+  await date.fill('not-a-date')
+  const profile = manager(page).getByRole('combobox', { name: 'Type de notice', exact: true })
+  await profile.selectOption('book')
+  await expect(manager(page).getByRole('alert')).not.toBeEmpty()
+  await expect(profile).toHaveValue('journal_article')
+  await expect(date).toHaveValue('not-a-date')
+  await expect(manager(page).getByLabel('Titre', { exact: true })).toHaveValue('Mon brouillon')
+  await date.fill('2026')
+  await changeType(page, 'book')
+  await expect(page.locator('.bibliography-list-row')).toHaveCount(2)
+  await profile.press('Escape')
+  await page
+    .locator('#bibliography-leave')
+    .getByRole('button', { name: 'Abandonner', exact: true })
+    .click()
+  await expect(manager(page)).toBeHidden()
+})
+
+test('volume et numéro hérités restent visibles et modifiables après un changement de type', async ({
+  page,
+}) => {
+  await create(page)
+  await manage(page)
+  await setFiles(
+    page,
+    file(
+      'native.yaml',
+      'nativevolume: {type: article, title: Volume natif, parent: {type: periodical, title: Revue native, volume: 12, issue: 2}}',
+    ),
+  )
+  await manager(page).getByRole('button', { name: 'Importer', exact: true }).click()
+  await expect(manager(page).getByRole('button', { name: 'Importer…', exact: true })).toBeEnabled()
+  const search = manager(page).getByRole('combobox', { name: 'Rechercher une référence' })
+  await search.fill('Volume natif')
+  await expect(page.locator('.bibliography-list-row')).toHaveCount(1)
+  await search.press('Enter')
+  await expect(manager(page).getByLabel('Volume', { exact: true })).toHaveValue('12')
+  await expect(manager(page).getByLabel('Numéro', { exact: true })).toHaveValue('2')
+  await manager(page).getByLabel('Volume', { exact: true }).fill('13')
+  await changeType(page, 'book')
+  await changeType(page, 'journal_article')
+  await expect(manager(page).getByLabel('Volume', { exact: true })).toHaveValue('13')
+  await manager(page).getByRole('button', { name: 'Valider', exact: true }).click()
+  await finishManager(page)
+  const record = await page.evaluate(
+    () =>
+      Object.values(
+        (window.__spike!.provider.doc.getMap('settings').get('collections') as any)
+          .get('references')
+          .toJSON(),
+      ).find((r: any) => r.key === 'nativevolume') as any,
+  )
+  expect(record.entry).not.toHaveProperty('volume')
+  expect(record.entry.parent[0].volume).toBe(13)
 })

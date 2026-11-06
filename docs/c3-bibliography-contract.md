@@ -1,11 +1,10 @@
 # C.3 — Contrat de la bibliothèque bibliographique
 
-Décisions validées le **6 novembre 2026**, avant maquette et implémentation.
-Ce document définit le contrat cible ; le [contrat actuel](article-bibliography.md)
-reste exécutable jusqu'à son remplacement. Le [premier lot de crate](c3-bibliography-foundation.md)
-est implémenté ; le [raccordement documentaire et CAS 15](c3-bibliography-document-state.md)
-ajoute les commandes communes et les citations par identité. Le gestionnaire
-complet reste à raccorder. Les identifiants techniques sont anglais.
+Décisions du **6 novembre 2026**, complétées par les
+[profils natifs Hayagriva](c3-native-bibliography-profiles.md).
+Le [gestionnaire](c3-bibliography-manager.md) et les commandes documentaires
+sont raccordés ; le format actuel est CAS 16, générateur de source 5.
+Les identifiants techniques sont anglais.
 
 ## Frontière de la crate
 
@@ -16,7 +15,7 @@ que de reconstruire un format bibliographique réduit.
 
 | Responsabilité | Propriétaire |
 | --- | --- |
-| Notices, genres, identités, clés et provenance | Crate bibliographique |
+| Notices natives, profils calculés, identités, clés et provenance | Crate bibliographique |
 | Lecture BibLaTeX/Hayagriva, projection Hayagriva, diagnostics de conversion | Crate bibliographique |
 | Descripteurs des champs, complétude, recherche fuzzy titre/auteurs | Crate bibliographique |
 | Indices d'identité, rapprochement, plans d'import/enrichissement et décisions | Crate bibliographique |
@@ -41,8 +40,8 @@ Le moteur Python et le format de stockage BibTeX de Citekeep ne sont pas retenus
 
 - **`RecordId`** : identité opaque stable de la notice dans une bibliothèque,
   indépendante du titre, des auteurs, de sa clé et de sa position dans la liste.
-- **Notice** : `RecordId`, entrée native Hayagriva complète, genre de formulaire
-  et liens de provenance. La clé lisible est celle de l'entrée native ; ne pas
+- **Notice** : `RecordId`, entrée native Hayagriva complète, conteneurs parents
+  conservés hors de la projection active et liens de provenance. La clé lisible est celle de l'entrée native ; ne pas
   maintenir deux champs de clé modifiables indépendamment.
 - **`CitationKey`** : clé lisible unique dans la bibliothèque du projet. Proposée
   à la création, modifiable explicitement ; changer titre/date/auteurs ne la
@@ -62,9 +61,11 @@ L'état confirmé structuré est l'autorité documentaire. Il contient toutes le
 données nécessaires aux notices et aux liens. À la sauvegarde et à l'export,
 un **unique fichier Hayagriva actif** est matérialisé pour Typst, à partir de cet
 état, avec vérification de cohérence au chargement. Les métadonnées applicatives
-(identités, genre, provenance) ne deviennent pas de faux champs Hayagriva.
-Le chemin physique et la révision du format CAS seront fixés à l'implémentation ;
-la migration utilise le format CAS 15 et le générateur de source 5.
+(identités, conteneurs inactifs, provenance) ne deviennent pas de faux champs Hayagriva.
+Le format CAS 16 conserve la notice native complète et vérifie la bibliothèque
+active `bibliography/references.yaml`. Les conteneurs inactifs sont également
+matérialisés dans `bibliography/retained.json`, hors du rendu, pour conserver les
+données dans un export Typst. Le générateur de source reste à la version 5.
 
 Les fichiers importés sont conservés **intacts, en lecture seule, comme
 provenance**, jamais comme deuxième bibliothèque active. L'export conserve cette
@@ -103,21 +104,24 @@ champ concernés, des arguments structurés, la gravité et les indices utiles.
 Fluent produit les textes d'interface. Ne pas exposer seulement une erreur de
 parseur non contextualisée ; la conserver comme détail technique si nécessaire.
 
-Un descripteur de genre expose les chemins natifs des champs, leur genre de
+Un descripteur de profil expose les chemins natifs des champs, leur genre de
 valeur, leur cardinalité, les groupes d'édition et les recommandations. Une
 présentation localisée ne modifie ni la donnée ni les règles. Les relations
 bibliographiques à un parent ne réutilisent pas les affiliations des auteurs
 de l'article : ce sont des structures différentes.
 
-## Genres de formulaire et correspondances Hayagriva
+## Profils de formulaire et correspondances Hayagriva
 
-Le **genre de formulaire** facilite la saisie ; il n'est pas une nouvelle
-taxonomie à imposer à Typst. Un genre peut correspondre à plusieurs structures
-natives. Les entrées importées gardent leur structure compatible ; aucun passage
-par un formulaire ne doit réécrire arbitrairement leurs parents.
+Le **profil de formulaire** est déduit du type et des parents natifs actifs.
+Il organise les champs sans constituer une classification persistante. Les
+requêtes peuvent le retourner ; un choix de profil prépare une classification
+native. Les transitions gardent les champs masqués et les conteneurs devenus
+inactifs, puis restaurent ceux qui correspondent au profil demandé.
+Un profil déjà correspondant conserve exactement la variante native importée.
 
-| Genre public | Création Hayagriva | Champs mis en avant, en plus du titre/créateurs/date |
+| Profil calculé ou demandé | Création Hayagriva | Champs mis en avant, en plus du titre/créateurs/date |
 | --- | --- | --- |
+| `article` — Article générique | `article` sans publication spécialisée | Champs communs |
 | `journal_article` — Article de revue | `article`, parent `periodical` | Titre de revue, volume, numéro, pages, DOI |
 | `book` — Livre | `book` | Éditeur, lieu, édition, ISBN |
 | `book_chapter` — Chapitre/contribution | `chapter` + parent `book` ; conserver aussi `anthos` + `anthology` importé | Titre du livre, responsables éditoriaux, éditeur, pages |
@@ -131,9 +135,9 @@ par un formulaire ne doit réécrire arbitrairement leurs parents.
 
 Cette table fixe les correspondances visées. Les champs « diplôme », « version »,
 « conférence » sont des intentions de formulaire : vérifier leur représentation
-native exacte avant de fixer les contrôles et leurs chemins. Un changement de
-genre qui déplacerait/perdrait des champs exige une préparation et un accord,
-sans effacement implicite.
+native exacte avant de fixer les contrôles et leurs chemins. Un changement de type se prépare dans le formulaire sans publication et
+conserve tous les champs. La validation publie une seule édition annulable,
+sous la garde de notice initiale, sans modifier identité ni provenance.
 
 Deux points exigent une recette native avant livraison :
 
@@ -142,11 +146,12 @@ Deux points exigent une recette native avant livraison :
   de version ; soumettre leur rapprochement à décision explicite.
 - Hayagriva 0.10.1 rend `repository` comme CSL `software`, mais son importeur
   BibLaTeX transforme `@software` en `misc` (`@dataset` devient `repository`).
-  Ne pas inférer le genre uniquement depuis le type natif : conserver le genre
-  d'origine et préparer une correspondance explicite avec diagnostic. Vérifier
-  la composition Typst réelle, pas seulement la valeur de l'énumération.
+  Préparer la correspondance native `@software` → `repository` avec diagnostic,
+  puis déduire le profil de cette donnée native. Conserver l’original, sans genre
+  applicatif parallèle ; les conversions de jeux de données restent signalées.
+  Vérifier la composition CSL/Typst réelle, pas seulement une énumération.
 
-Un genre sans formulaire spécialisé reste importable si le parseur le permet.
+Un type natif sans formulaire spécialisé reste importable si le parseur le permet.
 Le premier gestionnaire ne promet pas l'édition exhaustive des types Hayagriva.
 
 ## Opérations de la crate et publication documentaire
@@ -156,7 +161,7 @@ ne constituent pas encore de nouvelles commandes publiques GUI/CLI/MCP.
 
 | Famille | Entrées et résultat attendus |
 | --- | --- |
-| Lire/décrire | Bibliothèque, identités, descripteurs des genres et diagnostics |
+| Lire/décrire | Bibliothèque, identités, descripteurs des profils et diagnostics |
 | Chercher | Bibliothèque + requête → notices classées, titres/auteurs, indices ; Unicode, sans modifier les notices |
 | Préparer un import | Octets + format + provenance → notices candidates, rapport de conversion ; aucune écriture |
 | Préparer un rapprochement | Bibliothèque + candidats → indices, contradictions, actions proposées et décisions manquantes |
@@ -227,7 +232,7 @@ règle de fusion automatique.
 1. **Présent lot documentaire** : contrat, correspondances, corpus et limites
    explicites. Pas de changement du format ou de la bibliothèque active.
 2. **Maquette à valider ensemble** : grande modale, liste/recherche/+ à gauche,
-   édition par genre à droite, complétude, import et arbitrages, brouillons et
+   édition par profil calculé à droite, complétude, import et arbitrages, brouillons et
    parcours clavier ; accès commun depuis l'en-tête et l'insertion de citation.
 3. **Implémentation de la crate** : convertir le corpus en tests exécutables,
    qualifier les mappings sur le parseur et le rendu Typst, puis raccorder le cœur.

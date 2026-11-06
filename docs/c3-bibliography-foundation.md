@@ -1,5 +1,7 @@
 # C.3 — Premier lot : crate bibliographique commune
 
+Bilan du premier lot, complété par la [classification native](c3-native-bibliography-profiles.md).
+
 Implémenté le **6 novembre 2026** sur `feat/c3-bibliography-core`.
 Le [contrat cible](c3-bibliography-contract.md) et la
 [présentation validée](c3-bibliography-interface.md) restent les références.
