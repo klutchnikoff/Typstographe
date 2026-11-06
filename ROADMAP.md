@@ -197,10 +197,11 @@ les primitives natives simples n’ont pas besoin d’un wrapper systématique.
 ### Lots validés le 3 novembre 2026 — après les contrats de B.1
 
 B.1 est clôturé. L’ordre de réalisation validé est désormais
-**C.1 → C.2 → C.3 → C.4**, à partir des contrats préparatoires consignés en B.1.
-C.1 et le premier périmètre de C.2 sont implémentés et vérifiés localement ;
-C.3 est en cours : notices, cibles par identité et CAS 15 sont raccordés ;
-le gestionnaire complet à liste compacte reste le prochain lot.
+**C.1 → C.2 → C.3 → consolidation frontend / E.1 → C.4**, à partir des contrats
+préparatoires consignés en B.1. C.1, le premier périmètre de C.2 et C.3 sont
+implémentés et vérifiés localement. C.3 comprend le gestionnaire compact complet,
+les profils natifs Hayagriva et le **CAS 16** ; sa fusion reste soumise à la CI
+et à la recette utilisateur. E.1 précède les extensions plus lourdes de D, F et J.
 Valider ensemble les choix détaillés et les interfaces avant de coder chaque
 lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C.
 
@@ -310,9 +311,9 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    sélecteur, `eq:` ou son raccourci `$` filtre les équations. Le badge reprend
    le libellé réellement composé par Typst, par exemple `(12)` ; le modèle
    conserve la maîtrise de la numérotation et de sa présentation.
-3. **C.3 — Bibliographie du projet.** Consolider les imports BibLaTeX et Hayagriva
-   dans un unique fichier Hayagriva interne au `.typsto` et à l’export. Remplacer
-   le contrat actuel de plusieurs fichiers originaux après évaluation des pertes
+3. **C.3 — Bibliographie du projet — livré localement (CAS 16).** Consolider les imports BibLaTeX et Hayagriva
+   dans un unique fichier Hayagriva interne au `.typsto` et à l’export. Le
+   contrat de plusieurs fichiers originaux a été remplacé après évaluation des pertes
    de conversion, des collisions et de la conservation des citations.
    Ajouter un gestionnaire dans une grande modale : à gauche, recherche fuzzy
    sur titres et auteurs, notices filtrées et bouton + ; à droite, formulaire
@@ -322,11 +323,11 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    l’insertion de citation avec « Créer et citer », en une opération annulable.
    **Contrat validé le 6 novembre 2026 :** créer la crate commune
    `typstographe-bibliography`, réutilisée ensuite en C.4. Elle porte les notices
-   natives Hayagriva, identités stables distinctes des clés, genres/descripteurs,
+   natives Hayagriva, identités stables distinctes des clés, profils/descripteurs natifs,
    import, recherche et plans de rapprochement ; le cœur garde les citations,
    l'annulation et la publication documentaire. Conserver les originaux importés
    comme provenance en lecture seule, sans deuxième bibliothèque active.
-   Ajouter Prépublication et Logiciel aux genres initiaux ; les champs manquants
+   Prépublication et Logiciel font partie des profils natifs ; les champs manquants
    donnent des avertissements de complétude, sans rendre les notices invalides.
    Hayagriva n'impose pas de champs bibliographiques par genre. Qualifier les
    correspondances natives et les pertes de conversion avant livraison.
@@ -339,11 +340,11 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    [premier lot de crate](docs/c3-bibliography-foundation.md) est implémenté,
    avec les 24 scénarios d'identité exécutés et le partage de lecture/recherche.
    Le [lot de préparation commune](docs/c3-bibliography-preparation.md) expose
-   genres, préparation de notices et rapports d'import dans la CLI et MCP, avec
+   profils natifs, préparation de notices et rapports d'import dans la CLI et MCP, avec
    schémas et diagnostics typés, sans publier d'édition ni changer le format.
    Le [raccordement documentaire](docs/c3-bibliography-document-state.md) ajoute
    `bibliography.apply`, les notices/sources partagées, les citations par identité,
-   l’annulation et le CAS 15 avec un Hayagriva actif unique.
+   l’annulation et un Hayagriva actif unique ; le format courant est le CAS 16.
    **Présentation validée :** [gestionnaire commun](docs/c3-bibliography-interface.md),
    liste compacte à deux lignes (auteur/année puis titre tronqué), défilement
    indépendant, détails et formulaire à droite. Le [gestionnaire implémenté](docs/c3-bibliography-manager.md)
@@ -380,6 +381,30 @@ autorisés, saisie, clavier et cibles MCP ; fonctions natives ou paquet externe.
 
 **Sortie :** insertion, édition, annulation, sauvegarde/réouverture et exports
 vérifiés, avec la même disponibilité dans les interfaces qui exposent la capacité.
+
+### Consolidation frontend et E.1 — 6 novembre 2026
+
+Avant C.4, séparer les responsabilités des contrôleurs existants : rendu et
+liaisons des champs d’en-tête, liste bibliographique et navigation, requêtes
+asynchrones liées à une génération documentaire, préparation pure des lots,
+puis orchestration des formulaires et de leur récupération. Réutiliser les
+composants de dialogue/champ/clavier ; ne pas introduire de framework ni de
+seconde logique métier bibliographique dans le frontend.
+
+Étendre le contrôle bloquant des **800 lignes** au TypeScript de production
+(`app/src/**/*.ts` et `.tsx`), hors tests, fixtures et code généré. Découper par
+responsabilité, sans déplacer artificiellement du code pour satisfaire le seuil.
+`provider.ts` conserve la coordination des révisions, de la composition et des
+contextes d’édition ; `main.ts` reste le point de composition des services.
+Leur taille seule ne justifie pas une extraction couplée à leurs états internes.
+
+E.1 utilise le catalogue commun pour exposer les capacités du type actif dans
+la barre d’outils et la palette, y compris les actions dérivées. Aucun nom de
+type dans ce filtrage : un futur type composé de capacités existantes hérite
+du comportement. Capacités absentes masquées, groupes vides masqués, commandes
+prises en charge mais indisponibles au curseur visibles et désactivées ;
+commandes générales conservées. Qualifier les changements de type, un type
+fictif, les brouillons, les réponses tardives et le clavier sans captures.
 
 ## D — Un vrai modèle par type, puis une bibliothèque
 
@@ -427,7 +452,7 @@ validé sur la recette représentative de chaque modèle livré.
 
 ## E — Peaufiner l’interface et les outils de rédaction
 
-- **À faire — barre d’outils et palette adaptées au type (30 octobre 2026) :** afficher
+- **E.1 — barre d’outils et palette adaptées au type — livré localement :** afficher
   uniquement les capacités du type de document actif, à partir du catalogue
   commun ; masquer les groupes devenus vides. Exemple : « Fin de lettre » et
   ses commandes P.-S./P.J. sont présents pour un courrier et absents pour un
@@ -649,7 +674,8 @@ un document utile et retrouve son travail, sans lire le dépôt ni installer Rus
   mesurer mémoire, démarrage et pertinence avant intégration.
 - Conversion entre types : correspondances explicites et bilan préalable,
   sans suppression silencieuse des contenus incompatibles.
-- Mathématiques en ligne/bloc, code, diagrammes et graphiques de données ;
+- Éditeur mathématique visuel, macros LaTeX et fonctions Typst personnalisées
+  (saisie mathématique en ligne/bloc livrée en C.2), code, diagrammes et graphiques de données ;
   glossaire, acronymes et index selon les besoins des types livrés.
 - Import de contenus externes et exports supplémentaires justifiés par les usages.
 
@@ -713,17 +739,15 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 ## Prochain lot proposé
 
-**C.3 — Raccordement documentaire de la crate bibliographique commune.**
+**C.4 — Bibliothèque bibliographique personnelle**, après qualification du lot
+frontend / E.1 et de C.3 (gestionnaire complet, profils natifs, CAS 16).
 
-1. Raccorder l'état structuré et les commandes/requêtes communes aux notices et
-   aux citations par identité : livré avec les notices et sources partagées,
-   les gardes et la publication annulable. Le CAS 15 et l’export consolidé sont raccordés.
-2. Raccorder le gestionnaire complet selon la présentation validée. Qualifier
-   les détails de conversion, les codecs de champs composés et leur rendu.
-3. Poursuivre avec C.4 ; macros LaTeX et fonctions Typst personnalisées restent
-   explicitement à traiter dans un lot ultérieur. L’assistance ACP conserve son
-   parcours de validation et de maquette dans F.
+1. Valider ensemble le stockage personnel, ses révisions, les échanges explicites
+   avec les projets et la maquette Projet/Bibliothèque personnelle.
+2. Réutiliser la crate, le corpus de rapprochement et le gestionnaire C.3 ;
+   aucune seconde implémentation des identités ou de la fusion des notices.
+3. Évaluer progressivement les modèles de D sur leur corpus, après E.1 ; les
+   chantiers F (ACP) et J (relecture) conservent leurs validations propres.
 
-Les vérifications locales de C.2 ne remplacent pas la qualification CI avant
-fusion ni la recette utilisateur. Aucun choix encore ouvert de C.3 n’est implémenté
-d’avance.
+Les tests locaux ne remplacent pas la qualification CI avant fusion ni la
+recette utilisateur. Aucun choix encore ouvert de C.4 n’est implémenté d’avance.
