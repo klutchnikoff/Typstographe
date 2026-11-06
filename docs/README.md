@@ -47,7 +47,8 @@ les composantes des renvois, leur composition Typst et les interactions communes
 ## Contrats préparatoires
 
 - [C.3 — Crate bibliographique, genres et rapprochement](c3-bibliography-contract.md) :
-  [premier lot implémenté](c3-bibliography-foundation.md) et
+  [premier lot implémenté](c3-bibliography-foundation.md),
+  [préparations communes CLI/MCP](c3-bibliography-preparation.md) et
   [présentation validée](c3-bibliography-interface.md), avant raccordement documentaire.
   Le [corpus de qualification inspiré de Citekeep](../fixtures/bibliography/README.md)
   contient 24 scénarios d'identité exécutés et les matrices d'intégration restantes.

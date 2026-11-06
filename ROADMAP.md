@@ -338,6 +338,9 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    [premier lot de crate](docs/c3-bibliography-foundation.md) est implémenté,
    avec les 24 scénarios d'identité exécutés et un raccordement de la lecture et
    de la recherche actuelles ; la migration documentaire reste à faire.
+   Le [lot de préparation commune](docs/c3-bibliography-preparation.md) expose
+   genres, préparation de notices et rapports d'import dans la CLI et MCP, avec
+   schémas et diagnostics typés, sans publier d'édition ni changer le format.
    **Présentation validée :** [gestionnaire commun](docs/c3-bibliography-interface.md),
    liste compacte à deux lignes (auteur/année puis titre tronqué), défilement
    indépendant, détails et formulaire à droite. Raccorder l'état documentaire,
@@ -697,7 +700,8 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 **C.3 — Raccordement documentaire de la crate bibliographique commune.**
 
 1. Raccorder l'état structuré et les commandes/requêtes communes aux notices et
-   aux citations par identité ; la crate et le corpus d'identité sont livrés.
+   aux citations par identité ; la crate, le corpus d'identité et les trois
+   requêtes de préparation sont livrés. La publication annulable reste à faire.
 2. Migrer le CAS et l'export vers un seul Hayagriva actif avec les originaux de
    provenance, puis le gestionnaire selon la présentation validée. Qualifier
    les détails de conversion, les codecs de champs composés et leur rendu.

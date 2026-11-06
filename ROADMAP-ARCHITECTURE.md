@@ -277,9 +277,15 @@ la livraison de tous les types de B n’est pas un prérequis.
   24 scénarios d'identité exécutables, ses tests complémentaires et le partage
   de lecture/synthèse/recherche avec le cœur. Le format et les cibles de citations
   actuellement utilisés ne changent pas dans ce premier raccordement.
+  Le [lot de préparation](docs/c3-bibliography-preparation.md) ajoute les requêtes
+  communes `bibliography.genres`, `bibliography.prepare_record` et
+  `bibliography.prepare_import`, découvertes et exécutées par CLI/MCP, avec
+  schémas de paramètres/résultats et erreurs typées présentées par Fluent.
+  Les préparations restent inactives et ne modifient ni révision ni historique ;
+  leurs empreintes ne valent pas autorisation de publication.
   La [présentation validée](docs/c3-bibliography-interface.md) utilise une liste
   compacte à deux lignes et les composants communs de dialogues, champs,
-  collections et navigation. Restent les commandes/requêtes de notices, la migration
+  collections et navigation. Restent l'état et les commandes de notices, la migration
   des cibles et du format, les codecs de formulaires et le gestionnaire ; les
   contrôles futurs doivent respecter les structures et valeurs importées.
 - **C.4 — Bibliothèque personnelle.** Recherche locale au projet avant recherche

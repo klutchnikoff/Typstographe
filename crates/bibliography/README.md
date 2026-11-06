@@ -22,7 +22,15 @@ compound formatted text, publisher and URL controls must preserve their metadata
 `Record::edited` preserves every field outside the supplied patches and refuses
 invalid paths, invalid native values and a changed base. Source imports report
 unsupported fields; strict record decoding refuses unknown native root/parent
-fields instead of dropping them.
+fields instead of dropping them. Shared checks also cover formatted text, people
+and publisher members. Import diagnostics use the same paths. This is not an
+exhaustive conversion-loss detector for every native composite.
+
+`Record::from_native` preserves typed validation errors. Public preparation values
+have JSON schemas; identities and fingerprints validate their advertised string
+formats at runtime. Literal formatted-text shorthand is normalized before native
+decoding to preserve casing and short titles with Hayagriva 0.10.1. Native
+serialization still owns the projected YAML; import originals are unchanged.
 
 Import identities must be fresh within the destination library and unique in a
 batch. They remain stable while the plan is reviewed. Reimporting the same source
@@ -53,6 +61,7 @@ cargo clippy --locked --offline -p typstographe-bibliography --all-targets -- -D
 ```
 
 The [contract](../../docs/c3-bibliography-contract.md),
+[read-only preparation queries](../../docs/c3-bibliography-preparation.md),
 [validated interface](../../docs/c3-bibliography-interface.md) and
 [Citekeep-derived corpus](../../fixtures/bibliography/README.md) explain the
 remaining integration work and attribution. The current document file format,
