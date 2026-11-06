@@ -75,6 +75,34 @@ fn all_document_types_bootstrap_and_roundtrip_without_an_interface() {
 }
 
 #[test]
+fn marked_runs_share_one_xml_text_on_each_side_of_an_inline_object() {
+    let mut expected = state(DocumentType::Courrier);
+    expected.document = serde_json::from_value(json!({"type":"doc","content":[
+        {"type":"paragraph","content":[
+            {"type":"text","text":"Un "},
+            {"type":"text","text":"é😀","marks":[{"type":"bold"}]},
+            {"type":"text","text":" mot"},
+            {"type":"footnote","attrs":{"text":"Une note."}},
+            {"type":"text","text":" puis","marks":[{"type":"italic"}]},
+            {"type":"text","text":" fin"}
+        ]}, {"type":"paragraph"}
+    ]}))
+    .unwrap();
+    let shared = SharedDocument::from_state(&expected).unwrap();
+    shared.verify(&expected).unwrap();
+    let tx = shared.doc.transact();
+    let body = tx.get_xml_fragment("default").unwrap();
+    let paragraph = body.get(&tx, 0).unwrap().into_xml_element().unwrap();
+    assert_eq!(paragraph.len(&tx), 3);
+    let before = paragraph.get(&tx, 0).unwrap().into_xml_text().unwrap();
+    let note = paragraph.get(&tx, 1).unwrap().into_xml_element().unwrap();
+    let after = paragraph.get(&tx, 2).unwrap().into_xml_text().unwrap();
+    assert_eq!(before.len(&tx), "Un é😀 mot".encode_utf16().count() as u32);
+    assert_eq!(note.tag().as_ref(), "footnote");
+    assert_eq!(after.len(&tx), " puis fin".encode_utf16().count() as u32);
+}
+
+#[test]
 fn shared_deltas_preserve_inactive_choices_but_cannot_edit_an_imposed_option() {
     use crate::document_types::model_options::{self, OptionId, Policy};
     let mut original = state(DocumentType::Courrier);

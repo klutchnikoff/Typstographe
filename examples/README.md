@@ -4,6 +4,8 @@
 au format CAS 14, avec le générateur Typst 4 (guillemets et apostrophes typographiques, manifeste du modèle embarqué),
 régénéré depuis le contenu versionné : auteurs et affiliations, résumés bilingues, sommaire, titres, citation
 en bloc, note de bas de page, liste, tableau et citations bibliographiques.
+Les ancres de blocs C.1 et l’état Yjs archivé sont concordants : l’ouverture ne
+nécessite aucune attribution d’identité susceptible de modifier l’instantané.
 
 Sa bibliothèque contient deux fichiers internes (BibLaTeX et Hayagriva), avec
 trois références fictives citées et une notice non citée. Les quatre citations

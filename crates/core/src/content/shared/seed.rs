@@ -26,15 +26,24 @@ pub(super) fn children(
     if depth > 16 && !nodes.is_empty() {
         return Err(Error::StateLimitExceeded);
     }
-    for (index, node) in nodes.iter().enumerate() {
+    let mut index = start;
+    let mut text_run: Option<yrs::XmlTextRef> = None;
+    for node in nodes {
         *count += 1;
         if *count > 20_000 {
             return Err(Error::StateLimitExceeded);
         }
         if node.kind == "text" {
             let text = node.text.as_deref().ok_or_else(|| invalid("text_absent"))?;
-            let value = parent.insert(tx, start + index as u32, XmlTextPrelim::new(text));
-            if !node.marks.is_empty() && !text.is_empty() {
+            // y-tiptap represents adjacent marked text runs in one XmlText.
+            // Separate XmlTexts roundtrip as JSON but break its position tracking
+            // when an inline object follows the runs.
+            let value = text_run.get_or_insert_with(|| {
+                let value = parent.insert(tx, index, XmlTextPrelim::new(""));
+                index += 1;
+                value
+            });
+            if !text.is_empty() {
                 let attrs = node
                     .marks
                     .iter()
@@ -45,14 +54,12 @@ pub(super) fn children(
                         ))
                     })
                     .collect::<Result<_, Error>>()?;
-                value.format(tx, 0, text.encode_utf16().count() as u32, attrs);
+                value.insert_with_attributes(tx, value.len(tx), text, attrs);
             }
         } else {
-            let value = parent.insert(
-                tx,
-                start + index as u32,
-                XmlElementPrelim::empty(node.kind.as_str()),
-            );
+            text_run = None;
+            let value = parent.insert(tx, index, XmlElementPrelim::empty(node.kind.as_str()));
+            index += 1;
             if let Some(attrs) = node.attrs.as_ref().and_then(Value::as_object) {
                 for (key, v) in attrs {
                     if !v.is_null() {
