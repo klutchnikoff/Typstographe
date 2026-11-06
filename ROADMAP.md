@@ -336,6 +336,10 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    édition annulable, sans écriture immédiate du fichier ; les conflits se
    résolvent avant publication du lot d'import. **Prochain jalon : la maquette**,
    avant l'implémentation de cette crate et le raccordement aux adaptateurs.
+   **Présentation validée :** [gestionnaire commun](docs/c3-bibliography-interface.md),
+   liste compacte à deux lignes (auteur/année puis titre tronqué), défilement
+   indépendant, détails et formulaire à droite. Commencer par la crate et son
+   corpus exécuté, puis raccorder le moteur et la modale sans doubler les règles.
 4. **C.4 — Bibliothèque bibliographique personnelle.** Recherche projet d’abord,
    bibliothèque personnelle ensuite ; copier la notice dans le projet lors de
    l’insertion. Échanges et corrections explicites, identités et clés stables,

@@ -274,6 +274,10 @@ la livraison de tous les types de B n’est pas un prérequis.
   pour les états de publication et versions de logiciels. Le corpus documentaire
   contient des entrées et assertions ; les tests exécutables et les chemins CAS
   restent à implémenter après validation de la maquette.
+  La [présentation validée](docs/c3-bibliography-interface.md) utilise une liste
+  compacte à deux lignes et les composants communs de dialogues, champs,
+  collections et navigation. Le premier lot implémente la crate pure et ses
+  garanties ; migration du format et gestionnaire restent des raccordements distincts.
 - **C.4 — Bibliothèque personnelle.** Recherche locale au projet avant recherche
   personnelle ; copie d’une notice lors de son utilisation, liens de provenance
   conservés et échanges de corrections explicites. Les deux stockages ont leurs
