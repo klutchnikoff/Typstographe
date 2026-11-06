@@ -2,6 +2,13 @@
 
 Décisions validées le 27 octobre 2026.
 
+**Contrat actuellement implémenté.** Le [contrat cible C.3](c3-bibliography-contract.md),
+validé le 6 novembre, prépare son remplacement par une bibliothèque Hayagriva
+consolidée et une crate commune. Il conserve les originaux comme provenance,
+sépare identité et clé et ajoute l'édition de notices. Aucune de ces évolutions
+n'est livrée par la seule rédaction du contrat ; les règles ci-dessous restent
+celles de l'application jusqu'au raccordement.
+
 - Bibliothèque locale au projet : copies internes de fichiers BibLaTeX `.bib` et
   Hayagriva `.yaml`/`.yml`. Le texte original reste la source de vérité ; l’index
   titre/auteurs/année est dérivé avec Hayagriva, déjà utilisé par Typst.

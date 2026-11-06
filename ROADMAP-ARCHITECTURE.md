@@ -1,6 +1,6 @@
 # Plan technique de développement
 
-Révisé le **4 novembre 2026**. Ce document accompagne la [roadmap produit](ROADMAP.md)
+Révisé le **6 novembre 2026**. Ce document accompagne la [roadmap produit](ROADMAP.md)
 et distingue le socle livré des décisions et travaux techniques restants.
 Les réalisations détaillées et les inventaires historiques sont
 dans les bilans de docs/ et l’historique Git.
@@ -241,27 +241,49 @@ la livraison de tous les types de B n’est pas un prérequis.
   Réutiliser la crate Hayagriva pour import et sérialisation ; évaluer la
   conversion BibLaTeX (champs, macros, relations, accents et contenu riche),
   signaler les pertes et arbitrer les collisions sans écrasement silencieux.
-  Décider la conservation éventuelle des sources importées comme provenance,
+  Conserver les sources importées intactes en lecture seule comme provenance,
   sans seconde autorité active. Préserver les identités/clés des notices et les
   liens des citations ; remplacer les cibles actuelles `file_id`/`key` par le
   contrat retenu, sans couche de compatibilité artificielle.
   Le gestionnaire utilise une grande modale commune : liste filtrée et recherche
   fuzzy titre/auteurs à gauche, formulaire par genre à droite, création par +.
   Les éditions restent des brouillons récupérables avant validation ; changement
-  de notice ou fermeture propose enregistrer, abandonner ou continuer.
+  de notice ou fermeture propose valider, abandonner ou continuer. Valider est
+  une édition annulable et ne sauvegarde pas immédiatement le fichier.
   « Créer et citer » valide la notice et l’insertion dans un seul lot annulable.
   La suppression d’une notice citée est protégée. UI, CLI et MCP partagent
   les validations et opérations ; aucun second formulaire pour l’insertion.
+  **Contrat du 6 novembre 2026 :** [crate bibliographique](docs/c3-bibliography-contract.md),
+  [corpus de qualification](fixtures/bibliography/README.md). Créer
+  `typstographe-bibliography`, dépendante de Hayagriva et indépendante du cœur,
+  des interfaces, du stockage et de Fluent. `core → bibliography → hayagriva` ;
+  les mutations documentaires restent dans le moteur commun. Modèle natif
+  intégral, `RecordId` opaque, clé lisible distincte, provenance et genre de
+  formulaire séparés ; les citations ciblent l'identité. État structuré confirmé
+  comme autorité, un seul Hayagriva dérivé actif pour Typst, originaux hors de la
+  compilation et conservés avec leurs références documentaires/historiques.
+  Descripteurs de genre et diagnostics typés communs : erreurs structurelles,
+  complétude non bloquante, pertes de conversion explicites. Hayagriva 0.10.1
+  n'exige pas titre/auteur/date par genre ; son parseur exige le type racine.
+  Inclure prépublications et logiciels ; qualifier les composites, `@software`
+  importé en `misc` et `repository` composé comme CSL logiciel, sans heuristique
+  de genre fondée sur le seul type natif.
+  Plans purs avec empreinte attendue et décisions ciblées avant publication
+  atomique ; pas de fusion par clé, score fuzzy ou transitivité des candidats.
+  Porter les garanties de Citekeep une seule fois, avec les adaptations explicites
+  pour les états de publication et versions de logiciels. Le corpus documentaire
+  contient des entrées et assertions ; les tests exécutables et les chemins CAS
+  restent à implémenter après validation de la maquette.
 - **C.4 — Bibliothèque personnelle.** Recherche locale au projet avant recherche
   personnelle ; copie d’une notice lors de son utilisation, liens de provenance
   conservés et échanges de corrections explicites. Les deux stockages ont leurs
   révisions et protections contre l’écrasement ; aucune transaction atomique entre
   eux n’est présumée. Aucune modification personnelle ne réécrit silencieusement
   un projet. Le gestionnaire de C.3 est réutilisé avec un choix de bibliothèque.
-  Les principes de citekeep (identités, clés locales stables, conflits explicites,
-  planification avant écriture) servent de référence ; son moteur Python et son
-  format BibTeX ne sont pas retenus implicitement. Évaluer leur réutilisation
-  séparément, ainsi que le stockage et le format personnels.
+  Réutiliser la crate et les tests C.3 pour les principes de Citekeep (identités,
+  clés locales stables, conflits explicites, planification avant écriture).
+  Son moteur Python et son stockage BibTeX ne sont pas retenus ; le stockage et
+  le format personnels restent à décider. Ne pas refaire le rapprochement en C.4.
 
 Les contrats actuels de bibliographie restent exécutables jusqu’à leur
 remplacement par C.3. Ces décisions décrivent le futur lot ; elles ne changent

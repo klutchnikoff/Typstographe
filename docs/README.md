@@ -44,6 +44,14 @@ reste indépendante. Les noms publics de capacités sont anglais ou latins.
 Le [contrat des ancres et renvois C.1](c1-cross-references.md) décrit les identités,
 les composantes des renvois, leur composition Typst et les interactions communes.
 
+## Contrats préparatoires
+
+- [C.3 — Crate bibliographique, genres et rapprochement](c3-bibliography-contract.md) :
+  décisions validées le 6 novembre 2026, avant maquette et implémentation.
+  Le [corpus de qualification inspiré de Citekeep](../fixtures/bibliography/README.md)
+  contient les entrées et attentes à porter en tests ; il n'est pas encore exécuté.
+  Le [contrat bibliographique actuel](article-bibliography.md) reste applicable.
+
 ## Bilans et références historiques
 
 B.1 clôturé : [bilan et critères vérifiés](b1-closure-results.md).

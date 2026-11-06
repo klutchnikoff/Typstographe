@@ -1,6 +1,6 @@
 # Feuille de route de typstOgraphe
 
-Révisée le **4 novembre 2026**. Objectif : transformer le prototype validé en une
+Révisée le **6 novembre 2026**. Objectif : transformer le prototype validé en une
 application de rédaction utilisable au quotidien, pour l’administration,
 l’enseignement et la recherche en sciences humaines et sociales.
 
@@ -316,19 +316,39 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    Ajouter un gestionnaire dans une grande modale : à gauche, recherche fuzzy
    sur titres et auteurs, notices filtrées et bouton + ; à droite, formulaire
    adapté au genre de la notice. Création, modification et suppression protégée
-   des notices citées ; brouillon local avec Annuler/Enregistrer et choix explicite
+   des notices citées ; brouillon local avec Annuler/Valider et choix explicite
    avant de quitter une notice modifiée. Réutiliser le formulaire depuis
    l’insertion de citation avec « Créer et citer », en une opération annulable.
+   **Contrat validé le 6 novembre 2026 :** créer la crate commune
+   `typstographe-bibliography`, réutilisée ensuite en C.4. Elle porte les notices
+   natives Hayagriva, identités stables distinctes des clés, genres/descripteurs,
+   import, recherche et plans de rapprochement ; le cœur garde les citations,
+   l'annulation et la publication documentaire. Conserver les originaux importés
+   comme provenance en lecture seule, sans deuxième bibliothèque active.
+   Ajouter Prépublication et Logiciel aux genres initiaux ; les champs manquants
+   donnent des avertissements de complétude, sans rendre les notices invalides.
+   Hayagriva n'impose pas de champs bibliographiques par genre. Qualifier les
+   correspondances natives et les pertes de conversion avant livraison.
+   Le [contrat C.3](docs/c3-bibliography-contract.md) et son
+   [corpus issu de Citekeep](fixtures/bibliography/README.md) distinguent
+   candidature, contradictions et décisions ; prépublication/publié et versions
+   de logiciel ne sont pas fusionnés silencieusement. Valider une notice est une
+   édition annulable, sans écriture immédiate du fichier ; les conflits se
+   résolvent avant publication du lot d'import. **Prochain jalon : la maquette**,
+   avant l'implémentation de cette crate et le raccordement aux adaptateurs.
 4. **C.4 — Bibliothèque bibliographique personnelle.** Recherche projet d’abord,
    bibliothèque personnelle ensuite ; copier la notice dans le projet lors de
    l’insertion. Échanges et corrections explicites, identités et clés stables,
    conflits soumis à décision, aucune mise à jour silencieuse des documents.
    Réutiliser le gestionnaire avec un choix Projet/Bibliothèque personnelle.
+   Réutiliser aussi la crate de C.3 et son corpus : ajouter le stockage personnel
+   et les échanges à révisions propres, sans second moteur de rapprochement.
 
-La séparation bibliothèque personnelle/projet et les garanties de citekeep
-servent de référence de conception ; son intégration comme moteur et le format
-de la bibliothèque personnelle ne sont pas décidés. Chaque projet reste autonome
-et utilisable hors ligne, indépendamment de cette bibliothèque.
+La séparation bibliothèque personnelle/projet et les garanties de Citekeep
+servent de référence de conception. Les règles seront portées une seule fois
+dans la crate Rust commune ; le moteur Python et son stockage BibTeX ne sont
+pas retenus. Le stockage personnel reste à décider en C.4. Chaque projet reste
+autonome et utilisable hors ligne, indépendamment de cette bibliothèque.
 
 **Choix à valider :** périmètre par capacité, paramètres, contenus et imbrications
 autorisés, saisie, clavier et cibles MCP ; fonctions natives ou paquet externe.
@@ -668,11 +688,12 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 ## Prochain lot proposé
 
-**C.3 — Notices bibliographiques du projet**, après qualification de C.2 et validation commune.
+**C.3 — Maquette du gestionnaire bibliographique**, à partir du contrat validé.
 
-1. Préciser la consolidation Hayagriva, les imports, les collisions de clés et
-   les liens des citations existantes, à partir des orientations C.3 validées.
-2. Valider le contrat commun et la maquette du gestionnaire avant de coder.
+1. Le contrat de crate, les correspondances de genres et le corpus de tests
+   sont consignés ; ils ne sont pas encore implémentés ni exécutés.
+2. Valider ensemble la maquette du gestionnaire, des imports/arbitrages et des
+   brouillons avant de coder, puis qualifier conversion et rendu sur le corpus.
 3. Poursuivre avec C.4 ; macros LaTeX et fonctions Typst personnalisées restent
    explicitement à traiter dans un lot ultérieur. L’assistance ACP conserve son
    parcours de validation et de maquette dans F.
