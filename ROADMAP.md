@@ -417,6 +417,15 @@ moissonnage/indexage de son catalogue restent hors du premier lot.
   obsolètes, conflits, récupération, sauvegarde/export et clavier à vérifier.
 - Commits locaux uniquement ; aucune poussée et aucun déclenchement de CI GitHub.
 
+**Implémenté et vérifié localement le 6 novembre 2026.** Les collecteurs sont
+isolés dans `typstographe-bibliography-sources`, avec un premier adaptateur Tauri.
+Le formulaire commun permet la correction avant ajout, le rapprochement explicite,
+l’ajout et la citation atomiques, ainsi que la récupération du brouillon. Les
+opérations documentaires CLI/MCP utilisent le même contrat de vérification ;
+aucune commande réseau CLI/MCP n’est ajoutée dans ce premier lot. Le CAS reste 16.
+Voir le [contrat, le parcours et la qualification](docs/c5-online-bibliography.md).
+La recette utilisateur reste à faire ; C.4 personnel demeure différé.
+
 ### Consolidation frontend et E.1 — 6 novembre 2026
 
 Consolidation livrée après C.3 : séparer les responsabilités des contrôleurs existants : rendu et
@@ -778,8 +787,9 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 ## Prochain lot engagé
 
-**C.5 — Recherche en ligne et acquisition vérifiée de notices.** Crossref,
-zbMATH et récupération ciblée Cairn, selon le périmètre ci-dessus. C.4 reste
+**C.5 — Recette utilisateur de l’acquisition vérifiée de notices.** Implémentation
+locale et vérifications automatisées terminées pour Crossref, zbMATH et la
+récupération ciblée Cairn ; valider le parcours dans l’application. C.4 reste
 différé. C.3/CAS 16 et E.1 fournissent le gestionnaire, le moteur et les garanties
 à réutiliser. Commits locaux uniquement tant que la CI GitHub est indisponible.
 
