@@ -7,6 +7,7 @@ use std::{
     collections::{BTreeMap, BTreeSet, VecDeque},
     sync::{Arc, Mutex, OnceLock},
 };
+pub use typstographe_bibliography::{Code as NoticeErrorCode, Error as NoticeError};
 use typstographe_bibliography::{ImportFormat, SearchQuery, parse_native, summarize};
 const MAX_FILES: usize = 32;
 

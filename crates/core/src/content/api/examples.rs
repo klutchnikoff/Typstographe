@@ -13,6 +13,24 @@ fn at() -> Value {
 }
 pub fn for_id(id: &str) -> Vec<Call> {
     let node = match id {
+        "bibliography.genres" => {
+            return vec![Call {
+                id: id.into(),
+                params: json!({}),
+            }];
+        }
+        "bibliography.prepare_record" => {
+            return vec![Call {
+                id: id.into(),
+                params: json!({"id":"notice-draft","genre":"book","entry":{"title":"A book","author":"Doe, Jane","date":2026}}),
+            }];
+        }
+        "bibliography.prepare_import" => {
+            return vec![Call {
+                id: id.into(),
+                params: json!({"id":"source-draft","name":"library.yaml","format":"hayagriva","contents":"example: {type: book, title: A book, author: 'Doe, Jane', date: 2026}"}),
+            }];
+        }
         "block.bullet" => {
             json!({"type":"bulletList","content":[{"type":"listItem","content":[paragraph("Item")]}]})
         }

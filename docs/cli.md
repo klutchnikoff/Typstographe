@@ -17,6 +17,9 @@ Resource data is base64 in `resource.add`; models use their pure Typst source in
 
 | ID | Family | Description |
 | --- | --- | --- |
+| `bibliography.genres` | query | Describe common bibliographic form genres and native field paths. Article-only; completeness recommendations are not mandatory bibliographic fields. |
+| `bibliography.prepare_import` | query | Prepare an in-memory BibLaTeX/Hayagriva import with stable proposal identities, source digest and conversion diagnostics. UTF-8 contents are supplied explicitly, never a disk path. Does not add active references, create a citation, publish, save or change undo history. Returned record IDs are proposals, not targets of current insert.citation. Inspect diagnostics; publication is a later C.3 integration. |
+| `bibliography.prepare_record` | query | Prepare a new native bibliographic notice with a proposed available key and nonblocking completeness diagnostics. Does not edit active project notices or create a citation. Native fields overlay the genre's starting structure; unexposed fields are retained. Explicit occupied keys and invalid fields are refused. Returned identity is not an active citation target. |
 | `bibliography.search` | query | Search the project bibliography by title and author. |
 | `block.heading_1` | edit | Level-one heading; final presentation belongs to the Typst model. |
 | `block.heading_2` | edit | Level-two heading. |

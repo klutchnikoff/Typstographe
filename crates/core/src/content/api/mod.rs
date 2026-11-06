@@ -1,5 +1,6 @@
 //! Shared headless contract. Adapters supply permissions, paths and presentation;
 //! all document edits, queries, contexts and persistence use the structured owner.
+mod bibliography;
 mod catalogue;
 mod examples;
 mod queries;
@@ -90,6 +91,9 @@ pub fn check_params(id: &str, params: &Value) -> Result<(), CommandError> {
         .validate(params)
         .map_err(|_| content_error(invalid(id)))
 }
+#[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
+mod bibliography_tests;
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod storage_tests;

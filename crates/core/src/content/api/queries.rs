@@ -364,6 +364,9 @@ pub fn run(
             }
             json!({"available":available,"language":language,"issues":issues})
         }
+        "bibliography.genres" | "bibliography.prepare_import" | "bibliography.prepare_record" => {
+            super::bibliography::run(state, id, p)?
+        }
         "bibliography.search" => {
             let crate::document_types::Metadata::Article(metadata) = &state.settings.metadata
             else {

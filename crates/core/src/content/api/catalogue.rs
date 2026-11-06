@@ -104,6 +104,18 @@ const QUERIES: &[(&str, &str)] = &[
         "Search the project bibliography by title and author.",
     ),
     (
+        "bibliography.genres",
+        "Describe common bibliographic form genres and native field paths. Article-only; completeness recommendations are not mandatory bibliographic fields.",
+    ),
+    (
+        "bibliography.prepare_import",
+        "Prepare an in-memory BibLaTeX/Hayagriva import with stable proposal identities, source digest and conversion diagnostics. UTF-8 contents are supplied explicitly, never a disk path. Does not add active references, create a citation, publish, save or change undo history. Returned record IDs are proposals, not targets of current insert.citation. Inspect diagnostics; publication is a later C.3 integration.",
+    ),
+    (
+        "bibliography.prepare_record",
+        "Prepare a new native bibliographic notice with a proposed available key and nonblocking completeness diagnostics. Does not edit active project notices or create a citation. Native fields overlay the genre's starting structure; unexposed fields are retained. Explicit occupied keys and invalid fields are refused. Returned identity is not an active citation target.",
+    ),
+    (
         "context.get",
         "Read this participant's private selection, typing styles, history and selection-level capability availability. Form parameters and adapter permissions still require execution validation.",
     ),
@@ -186,6 +198,9 @@ fn object(properties: Value, required: &[&str]) -> Value {
     json!({"type":"object","properties":properties,"required":required,"additionalProperties":false})
 }
 fn extra_schema(id: &str) -> Value {
+    if let Some(schema) = super::bibliography::parameter_schema(id) {
+        return schema;
+    }
     let string = json!({"type":"string"});
     let mut defs = commands::schema()["$defs"].clone();
     let mut s = match id {
@@ -300,6 +315,10 @@ pub fn describe(id: &str) -> Option<Value> {
         .cloned()
         .or_else(|| capabilities::describe(id))?;
     value["examples"] = json!(super::examples::for_id(id));
+    if let Some(schema) = super::bibliography::result_schema(id) {
+        value["result_schema"] = schema;
+        value["result_schema_scope"] = json!("query_outcome");
+    }
     if capabilities::find(id).is_some() {
         value["capability"] = json!(capabilities::find(id).unwrap());
         value["editor"] = capabilities::editor(id);
