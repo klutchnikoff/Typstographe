@@ -173,6 +173,18 @@ for (const panel of ['abstracts', 'titles'] as const) {
     if (panel === 'titles') await expect(extra).toHaveText('Conservation')
     else await expect(extra).toHaveValue('Conservation')
     expect(await values(page)).toEqual(initial)
+    // Reopening or cancelling is never validation and must retain the durable source.
+    await modal(page)
+      .locator('.dialog-form > .panel-actions')
+      .getByRole('button', { name: 'Annuler', exact: true })
+      .click()
+    await expect(modal(page)).toHaveCount(0)
+    expect(await values(page)).toEqual(initial)
+    await page.getByRole('button', { name: 'Reprendre la saisie', exact: true }).click()
+    await expect(modal(page)).toBeVisible()
+    await expect(text).toHaveText('Texte à reprendre après incident.')
+    if (panel === 'titles') await expect(extra).toHaveText('Conservation')
+    else await expect(extra).toHaveValue('Conservation')
     await confirm(page)
     expect(JSON.stringify(await values(page))).toContain('Texte à reprendre après incident.')
     await expect(page.locator('#side-content')).toContainText(

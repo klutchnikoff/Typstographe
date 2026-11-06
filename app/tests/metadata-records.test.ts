@@ -196,6 +196,35 @@ it('editing a private draft builds a typed plan without publishing any field', (
   provider.doc.destroy()
 })
 
+it.each(['rich', 'rich_inline'] as const)(
+  '%s drafts preserve native anchors and their confirmed recovery base without spurious edits',
+  (kind) => {
+    const definitions = structuredClone(schema)
+    const definition = definitions.collections[0]
+    definition.fields.find((field) => field.key === 'summary')!.kind = kind
+    const provider = setup()
+    const record = recordMap(provider, definition).get('a')!
+    const summary = {
+      type: 'doc',
+      content: [{ ...rich('Résumé').content[0], attrs: { anchor: 'native-summary' } }],
+    }
+    setRecordField(provider, record, 'summary', summary)
+    const before = snapshot(provider)
+    const edit = prepareRecordEdit(provider, definitions, definition, { id: 'a' })
+    expect(edit.value().summary).toEqual(summary)
+    expect(edit.base).toEqual(before.people[0])
+    expect(edit.plan().commands).toEqual([])
+    setRecordField(edit, edit.record, 'name', 'Camille relu')
+    expect(edit.plan().commands?.map((command) => command.id)).toEqual(['metadata.set'])
+    expect(snapshot(provider)).toEqual(before)
+    setRecordField(provider, record, 'summary', rich('Résumé modifié ailleurs'))
+    expect(edit.base).toEqual(before.people[0])
+    expect(edit.plan().error).toBe('changed')
+    edit.destroy()
+    provider.doc.destroy()
+  },
+)
+
 it.each(['change', 'delete', 'replace', 'document'])(
   'a concurrent %s cannot be overwritten by an edit draft',
   (action) => {

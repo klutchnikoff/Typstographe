@@ -89,12 +89,12 @@ export function richZoneExtensions(
     ContextBand,
     SoftBreak,
     SharedInlineMarks,
-    ...(policy.widgets
-      ? [
-          DocumentAnchors.configure({ updateDocument: binding?.kind === 'document' }),
-          ...(binding?.kind === 'document' ? [ReferenceIntegrity] : []),
-        ]
-      : []),
+    // All profiles preserve documentary identities, including native record fields.
+    // Only a document editor allocates identities while typing.
+    DocumentAnchors.configure({
+      updateDocument: policy.widgets && binding?.kind === 'document',
+    }),
+    ...(policy.widgets && binding?.kind === 'document' ? [ReferenceIntegrity] : []),
     SelectionEdits.configure({ singleLine: !policy.multiline }),
     TypstInlineInput,
     HorizontalSpace,

@@ -203,6 +203,7 @@ export function prepareRecordEdit(
   }
   return {
     ...draft,
+    base: before,
     plan() {
       const error = validate()
       if (error) return { error }
