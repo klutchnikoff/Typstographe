@@ -22,7 +22,7 @@ les décisions, mesures et limites des étapes livrées.
 | Architecture, adaptateurs et autorité | [Contrat général](interface-contract.md), [contrat structuré](structured-contract.md), [adaptateurs](structured-adapters.md) |
 | Commandes et paramètres exécutables | [Catalogue généré](commands.md), [schémas JSON](commands.json), `typstographe-cli commands describe ID` |
 | Cibles, texte, structures et contextes | [Commandes structurées](structured-commands.md), [contextes privés](structured-editing-contexts.md), [transformations](a2-transformations-inventory.md) |
-| Projet autonome et Versions | [Format CAS 14](a4-project-format.md), [comparateur et validation contextualisée](a4-comparison-contract.md) |
+| Projet autonome et Versions | [Format CAS 15](a4-project-format.md), [comparateur et validation contextualisée](a4-comparison-contract.md) |
 | Conservation et récupération | [Contrat de conservation](a3-conservation.md), [parcours de reprise](a3-recovery-interface.md) |
 | Éditeur et interactions | [Zones riches](rich-zones.md), [widgets/bandeaux](editor-widgets.md), [navigation clavier](keyboard-navigation.md), [dialogues](metadata-dialogs.md), [retours/jointures](paragraph-join.md) |
 | Catalogue des usages | [Groupes, types et fiches](document-type-catalogue.md) |
@@ -48,7 +48,8 @@ les composantes des renvois, leur composition Typst et les interactions communes
 
 - [C.3 — Crate bibliographique, genres et rapprochement](c3-bibliography-contract.md) :
   [premier lot implémenté](c3-bibliography-foundation.md),
-  [préparations communes CLI/MCP](c3-bibliography-preparation.md) et
+  [préparations communes CLI/MCP](c3-bibliography-preparation.md),
+  [état documentaire et CAS 15](c3-bibliography-document-state.md) et
   [présentation validée](c3-bibliography-interface.md), avant raccordement documentaire.
   Le [corpus de qualification inspiré de Citekeep](../fixtures/bibliography/README.md)
   contient 24 scénarios d'identité exécutés et les matrices d'intégration restantes.

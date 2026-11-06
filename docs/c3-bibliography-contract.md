@@ -3,8 +3,9 @@
 Décisions validées le **6 novembre 2026**, avant maquette et implémentation.
 Ce document définit le contrat cible ; le [contrat actuel](article-bibliography.md)
 reste exécutable jusqu'à son remplacement. Le [premier lot de crate](c3-bibliography-foundation.md)
-est implémenté ; nouvelles commandes, migration documentaire et gestionnaire
-restent à raccorder. Les identifiants techniques sont anglais.
+est implémenté ; le [raccordement documentaire et CAS 15](c3-bibliography-document-state.md)
+ajoute les commandes communes et les citations par identité. Le gestionnaire
+complet reste à raccorder. Les identifiants techniques sont anglais.
 
 ## Frontière de la crate
 
@@ -63,7 +64,7 @@ un **unique fichier Hayagriva actif** est matérialisé pour Typst, à partir de
 état, avec vérification de cohérence au chargement. Les métadonnées applicatives
 (identités, genre, provenance) ne deviennent pas de faux champs Hayagriva.
 Le chemin physique et la révision du format CAS seront fixés à l'implémentation ;
-ce lot ne change pas le format courant.
+la migration utilise le format CAS 15 et le générateur de source 5.
 
 Les fichiers importés sont conservés **intacts, en lecture seule, comme
 provenance**, jamais comme deuxième bibliothèque active. L'export conserve cette

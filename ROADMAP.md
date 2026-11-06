@@ -199,7 +199,8 @@ les primitives natives simples n’ont pas besoin d’un wrapper systématique.
 B.1 est clôturé. L’ordre de réalisation validé est désormais
 **C.1 → C.2 → C.3 → C.4**, à partir des contrats préparatoires consignés en B.1.
 C.1 et le premier périmètre de C.2 sont implémentés et vérifiés localement ;
-C.3 est le prochain lot à préciser.
+C.3 est en cours : notices, cibles par identité et CAS 15 sont raccordés ;
+le gestionnaire complet à liste compacte reste le prochain lot.
 Valider ensemble les choix détaillés et les interfaces avant de coder chaque
 lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C.
 
@@ -341,10 +342,13 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    Le [lot de préparation commune](docs/c3-bibliography-preparation.md) expose
    genres, préparation de notices et rapports d'import dans la CLI et MCP, avec
    schémas et diagnostics typés, sans publier d'édition ni changer le format.
+   Le [raccordement documentaire](docs/c3-bibliography-document-state.md) ajoute
+   `bibliography.apply`, les notices/sources partagées, les citations par identité,
+   l’annulation et le CAS 15 avec un Hayagriva actif unique.
    **Présentation validée :** [gestionnaire commun](docs/c3-bibliography-interface.md),
    liste compacte à deux lignes (auteur/année puis titre tronqué), défilement
-   indépendant, détails et formulaire à droite. Raccorder l'état documentaire,
-   les citations par identité, le CAS et la modale sans doubler les règles.
+   indépendant, détails et formulaire à droite. Raccorder la modale et ses
+   brouillons aux commandes communes, sans doubler les règles documentaires.
 4. **C.4 — Bibliothèque bibliographique personnelle.** Recherche projet d’abord,
    bibliothèque personnelle ensuite ; copier la notice dans le projet lors de
    l’insertion. Échanges et corrections explicites, identités et clés stables,
@@ -700,10 +704,9 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 **C.3 — Raccordement documentaire de la crate bibliographique commune.**
 
 1. Raccorder l'état structuré et les commandes/requêtes communes aux notices et
-   aux citations par identité ; la crate, le corpus d'identité et les trois
-   requêtes de préparation sont livrés. La publication annulable reste à faire.
-2. Migrer le CAS et l'export vers un seul Hayagriva actif avec les originaux de
-   provenance, puis le gestionnaire selon la présentation validée. Qualifier
+   aux citations par identité : livré avec les notices et sources partagées,
+   les gardes et la publication annulable. Le CAS 15 et l’export consolidé sont raccordés.
+2. Raccorder le gestionnaire complet selon la présentation validée. Qualifier
    les détails de conversion, les codecs de champs composés et leur rendu.
 3. Poursuivre avec C.4 ; macros LaTeX et fonctions Typst personnalisées restent
    explicitement à traiter dans un lot ultérieur. L’assistance ACP conserve son

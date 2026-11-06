@@ -1,6 +1,6 @@
 # C.3 — Préparation commune des notices et des imports
 
-Lot du 6 novembre 2026, après la [fondation bibliographique](c3-bibliography-foundation.md).
+Bilan historique du premier lot du 6 novembre 2026, après la [fondation bibliographique](c3-bibliography-foundation.md).
 Les trois requêtes suivantes utilisent le même contrat dans le cœur, la CLI et
 MCP, en session autonome ou rattachée à l'application. Elles nécessitent un
 projet Article ouvert et ne publient aucune édition.
@@ -92,3 +92,7 @@ publication annulables, les citations par `RecordId`, le Hayagriva actif unique
 dans le CAS et l'export, puis le [gestionnaire validé](c3-bibliography-interface.md).
 Le format CAS et les cibles actuelles des citations sont inchangés dans ce lot.
 Les fichiers `.typsto` locaux sont conservés intacts ; aucun exemple n'est régénéré.
+
+Le [lot documentaire suivant](c3-bibliography-document-state.md) ajoute la publication
+annulable, les citations par identité et le CAS 15 ; ses états et commandes
+remplacent les limites historiques décrites ci-dessus.

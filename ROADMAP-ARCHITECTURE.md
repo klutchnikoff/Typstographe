@@ -285,8 +285,10 @@ la livraison de tous les types de B n’est pas un prérequis.
   leurs empreintes ne valent pas autorisation de publication.
   La [présentation validée](docs/c3-bibliography-interface.md) utilise une liste
   compacte à deux lignes et les composants communs de dialogues, champs,
-  collections et navigation. Restent l'état et les commandes de notices, la migration
-  des cibles et du format, les codecs de formulaires et le gestionnaire ; les
+  collections et navigation. Le [raccordement documentaire](docs/c3-bibliography-document-state.md)
+  livre l’état partagé par notice/source, `bibliography.apply`, les gardes, les
+  citations par identité et le CAS 15 avec contrôle de la projection Hayagriva.
+  Restent les codecs de formulaires et le gestionnaire complet ; les
   contrôles futurs doivent respecter les structures et valeurs importées.
 - **C.4 — Bibliothèque personnelle.** Recherche locale au projet avant recherche
   personnelle ; copie d’une notice lors de son utilisation, liens de provenance

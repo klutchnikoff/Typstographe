@@ -3,16 +3,19 @@
 **Statut : stockage CAS, adaptateurs, Versions et comparateur commun avec reprise complète implémentés le 31 octobre 2026.**
 Le **CAS est retenu** après [évaluation](a4-snapshot-storage-evaluation.md).
 L’organisation ci-dessous est implémentée par `content::project::Project`.
-Tauri, CLI et MCP lisent et écrivent ce même format 14 ; les lecteurs de formats
+Tauri, CLI et MCP lisent et écrivent ce même format 15 ; les lecteurs de formats
 antérieurs ont été retirés.
-La version 14 est retenue pour cette rupture, sans lecteur de compatibilité
+La version 15 est retenue pour cette rupture, sans lecteur de compatibilité
 préventif ni conversion silencieuse des anciens projets de développement.
 L’exemple Article a été régénéré explicitement depuis son contenu versionné.
 La version 12 embarque le manifeste du modèle dans chaque état CAS ; le source
 `main.typ` utilise les options effectives, tandis que les métadonnées conservent
 les choix de l’auteur. La version 13 ajoute les dates structurées explicites et leurs arguments Typst
 natifs (`none`, `datetime`, chaîne). La version 14 raccorde la signature au champ
-commun `sender.signature` ; le générateur de sources reste en version 4.
+commun `sender.signature`. La version 15 ajoute les notices natives à identités
+stables, les sources originales immuables et leur projection Hayagriva unique ;
+le générateur de sources passe à 5 pour résoudre les clés depuis `record_id`.
+Le [bilan C.3](c3-bibliography-document-state.md) précise les ressources et contrôles.
 
 ## Conteneur et organisation
 
