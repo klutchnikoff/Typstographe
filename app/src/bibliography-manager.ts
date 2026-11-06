@@ -1,3 +1,7 @@
+import { onlineBibliography, onlineProvenance } from './bibliography-online'
+import type { OnlineCandidate } from './bibliography-online-types'
+import { prepareAcquisition, AcquisitionReview } from './bibliography-acquisition'
+import { acquisitionReviewDialog } from './bibliography-review-dialog'
 import type { Editor } from '@tiptap/core'
 import type { Provider, Transport } from './provider'
 import { stableJSON } from './provider'
@@ -24,6 +28,8 @@ import { errorText } from './command-error'
 import { prepareBibliographyPublication, type CitationDraft } from './bibliography-publication'
 interface Options {
   create?: boolean
+  online?: boolean
+  query?: string
   cite?: CitationDraft
   done?: () => void
   recovered?: RecoveredItem
@@ -62,6 +68,8 @@ export function openBibliography(
     baseline = '',
     recovered = options.recovered,
     cite = options.cite
+  let online: ReturnType<typeof onlineBibliography> | undefined
+  let reviewing: ReturnType<typeof acquisitionReviewDialog> | undefined
   let cleanupFields = () => {}
   let lastLibrary = stableJSON(referenceRecords(provider))
   const requests = bibliographyRequests(provider, editor, transport)
@@ -108,15 +116,19 @@ export function openBibliography(
       imported
         ? 'Importer'
         : cite
-          ? draft?.creating
-            ? 'Créer et citer'
-            : 'Valider et citer'
-          : 'Valider',
+          ? draft?.acquisition
+            ? 'Ajouter et citer'
+            : draft?.creating
+              ? 'Créer et citer'
+              : 'Valider et citer'
+          : draft?.acquisition
+            ? 'Ajouter'
+            : 'Valider',
     )
     cancel.disabled = close.disabled = busy
     cancel.hidden = !dirty()
     close.hidden = dirty()
-    load.disabled = add.disabled = busy || browsing
+    browser.online.disabled = load.disabled = add.disabled = busy || browsing
     form.element.querySelector<HTMLButtonElement>('.panel-title button')!.disabled = busy
   }
   function track() {
@@ -147,6 +159,8 @@ export function openBibliography(
     editor.off('destroy', onEditorDestroy)
     if (!alive) return
     alive = false
+    online?.destroy()
+    reviewing?.destroy()
     cleanupFields()
     requests.destroy()
     provider.doc.getMap('settings').unobserveDeep(observe)
@@ -238,6 +252,12 @@ export function openBibliography(
       return
     }
     const selected = draft
+    if (draft.acquisition) {
+      const origin = document.createElement('p')
+      origin.className = 'bibliography-online-notice'
+      origin.textContent = `${tr('Source')} : ${onlineProvenance(draft.acquisition.origin)}`
+      right.append(origin)
+    }
     const header = document.createElement('div'),
       profile = document.createElement('select')
     header.className = 'bibliography-notice-heading'
@@ -322,6 +342,44 @@ export function openBibliography(
       if (focus && current()) right.querySelector<HTMLInputElement>('input')?.focus()
     }
   }
+  function openOnline() {
+    if (online) {
+      online.focus()
+      return
+    }
+    online = onlineBibliography({
+      transport,
+      current,
+      query: options.query || search.value,
+      choose: (candidate) => leave(() => void acquire(candidate)),
+      closed: () => {
+        online = undefined
+      },
+    })
+  }
+  async function acquire(candidate: OnlineCandidate) {
+    if (busy || !current()) return
+    busy = true
+    right.inert = true
+    refreshActions()
+    try {
+      const prepared = await prepareAcquisition(api, candidate)
+      if (!current()) return
+      clear()
+      draft = prepared
+      show()
+      baseline = ''
+      track()
+    } catch (error) {
+      message(error)
+    } finally {
+      busy = false
+      right.inert = false
+      refreshActions()
+      if (current())
+        right.querySelector<HTMLInputElement>('input[data-initial-focus], input')?.focus()
+    }
+  }
   async function create(profile = 'journal_article') {
     if (busy) return
     busy = true
@@ -370,6 +428,7 @@ export function openBibliography(
     try {
       const prepared = await api<Form>('bibliography.prepare_form', {
         record: selected.working,
+        ...(selected.acquisition ? { scope: 'import' } : {}),
         values: selected.values,
         key: selected.key || null,
         profile,
@@ -439,17 +498,34 @@ export function openBibliography(
         editor.view.focus()
       } else if (finish) {
         await browse()
-        if (id) await select(id, false)
+        if (id && !selected?.acquisition) await select(id, false)
       }
       return true
     } catch (error) {
-      message(error)
+      if (error instanceof AcquisitionReview && selected && current() && draft === selected) {
+        selected.acquisition = error.review
+        changed()
+        reviewing?.destroy()
+        reviewing = acquisitionReviewDialog({
+          review: error.review,
+          api,
+          existing: referenceRecords(provider),
+          current: () => current() && draft === selected,
+          changed,
+          closed: () => {
+            reviewing = undefined
+          },
+          confirm: () => {
+            void publish(finish)
+          },
+        })
+      } else message(error)
       return false
     } finally {
       busy = false
       right.inert = false
       refreshActions()
-      if (current() && focused?.isConnected) focused.focus({ preventScroll: true })
+      if (current() && !reviewing && focused?.isConnected) focused.focus({ preventScroll: true })
     }
   }
   async function removeNotice() {
@@ -627,6 +703,7 @@ export function openBibliography(
     void browse()
     if (imported) void resolve()
   }
+  browser.online.onclick = openOnline
   add.onclick = () => leave(() => void create())
   load.onclick = () => {
     file.click()
@@ -641,6 +718,10 @@ export function openBibliography(
   form.open()
   refreshActions()
   if (recovered) resume(recovered)
+  else if (options.online)
+    void browse().then(() => {
+      if (current()) openOnline()
+    })
   else if (options.create) void create().then(() => browse())
   else void browse()
 }

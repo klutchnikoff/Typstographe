@@ -8,6 +8,7 @@ export interface ImportDraft {
   report: Report
   decisions: Decision[]
   ready: string
+  reviewed?: Notice[]
 }
 export function refreshImportPlan(root: HTMLElement, plan: Report['plan']) {
   for (const section of root.querySelectorAll<HTMLElement>('[data-incoming]')) {
@@ -34,6 +35,7 @@ export function importReview(
   draft: ImportDraft,
   existing: Notice[],
   changed: () => void,
+  allowSkip = true,
 ) {
   const heading = document.createElement('h3')
   heading.textContent = draft.source.name
@@ -69,7 +71,7 @@ export function importReview(
     select.add(new Option(tr('Selon le rapprochement'), 'auto'))
     select.add(new Option(tr('Conserver séparément'), 'distinct'))
     select.add(new Option(tr('Même référence que…'), 'same'))
-    select.add(new Option(tr('Ignorer cette notice'), 'skip'))
+    if (allowSkip) select.add(new Option(tr('Ignorer cette notice'), 'skip'))
     select.value = decision?.kind || 'auto'
     const key = document.createElement('input')
     key.setAttribute('aria-label', `${tr('Clé de citation')} · ${record.key}`)
@@ -135,6 +137,7 @@ export async function reviewImport(provider: Provider, transport: Transport, dra
       source: draft.source,
       expected: draft.report.library_fingerprint,
       decisions: draft.decisions,
+      ...(draft.reviewed ? { reviewed: draft.reviewed } : {}),
     },
   )
 }
