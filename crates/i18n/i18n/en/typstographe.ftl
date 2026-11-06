@@ -1263,3 +1263,5 @@ web-bibliography-conversion-loss = A value is retained only in the original sour
 web-bibliography-genre-review = Review this record’s genre.
 content-bibliography-cited-missing = A citation targets a missing record. Remove it or select another record.
 web-bibliography-import-review = Review import
+web-bibliography-incomplete = A recommended field is missing.
+web-bibliography-review-record = Review this record.

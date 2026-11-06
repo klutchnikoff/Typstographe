@@ -148,7 +148,17 @@ export function bibliographyPanel(
       const report = document.createElement('ul')
       for (const diagnostic of prepared.diagnostics) {
         const row = document.createElement('li')
-        row.textContent = `${diagnostic.key} · ${diagnostic.code}${diagnostic.field ? ` · ${diagnostic.field}` : ''} · ${tr(diagnostic.code === 'conversion_review' ? 'Vérifier les champs convertis.' : diagnostic.code === 'genre_mapping' ? 'Vérifier le genre de cette notice.' : 'Une valeur reste uniquement dans la source originale.')}`
+        const message =
+          diagnostic.code === 'incomplete'
+            ? 'Un champ conseillé est manquant.'
+            : diagnostic.code === 'conversion_review'
+              ? 'Vérifier les champs convertis.'
+              : diagnostic.code === 'genre_mapping'
+                ? 'Vérifier le genre de cette notice.'
+                : ['conversion_loss', 'unsupported_field'].includes(diagnostic.code)
+                  ? 'Une valeur reste uniquement dans la source originale.'
+                  : 'Vérifier cette notice.'
+        row.textContent = `${diagnostic.key}${diagnostic.field ? ` · ${diagnostic.field}` : ''} · ${tr(message)}`
         report.append(row)
       }
       panel.body.replaceChildren(summary, report)

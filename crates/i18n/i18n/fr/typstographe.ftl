@@ -1265,3 +1265,5 @@ web-bibliography-conversion-loss = Une valeur reste uniquement dans la source or
 web-bibliography-genre-review = Vérifier le genre de cette notice.
 content-bibliography-cited-missing = Une citation vise une notice absente. Retirez-la ou choisissez une autre notice.
 web-bibliography-import-review = Vérifier l’import
+web-bibliography-incomplete = Un champ conseillé est manquant.
+web-bibliography-review-record = Vérifier cette notice.

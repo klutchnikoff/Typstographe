@@ -117,7 +117,9 @@ Vérifications locales :
 Les tests couvrent création avec citation atomique, renommage sans perte de cible,
 conflits et rapports périmés, originaux immuables, champs composés conservés,
 réimport, suppression protégée, annulation/rétablissement, CAS, reprise et export.
-Les tests MCP couvrent une publication native jusqu’à la compilation. Les tests
+La recette distingue aussi avertissement de complétude et perte de conversion :
+une notice incomplète reste importable après revue. Les tests MCP couvrent une
+publication native jusqu’à la compilation. Les tests
 Yjs/Yrs couvrent également l’acceptation d’une proposition dans l’Article.
 Aucune capture, mesure de couverture ou mesure de latence n’est produite.
 La cible standard WASM n’est pas installée localement ; sa compilation n’est

@@ -166,6 +166,16 @@ test('imports natifs idempotents, conflits explicites et suppression protégée'
   await confirmation.press('Escape')
   await expect(page.locator('.bibliography-file-row')).toHaveCount(2)
   await expect(body(peer).locator('.citation-ref')).toContainText('Bourdieu, 1980')
+  await files(page).setInputFiles(
+    file('incomplete.yaml', 'draft: {type: book, title: An incomplete record}'),
+  )
+  await expect(confirmation).toContainText('Un champ conseillé est manquant.')
+  await expect(confirmation).not.toContainText(
+    'Une valeur reste uniquement dans la source originale.',
+  )
+  await confirmation.getByRole('button', { name: 'Valider', exact: true }).click()
+  await expect(confirmation).toBeHidden()
+  await expect(page.locator('.bibliography-file-row')).toHaveCount(3)
   await peer.close()
 })
 

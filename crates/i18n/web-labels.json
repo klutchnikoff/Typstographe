@@ -507,5 +507,7 @@
   "Vérifier les champs convertis.": "web-bibliography-conversion-review",
   "Une valeur reste uniquement dans la source originale.": "web-bibliography-conversion-loss",
   "Vérifier le genre de cette notice.": "web-bibliography-genre-review",
-  "Vérifier l’import": "web-bibliography-import-review"
+  "Vérifier l’import": "web-bibliography-import-review",
+  "Un champ conseillé est manquant.": "web-bibliography-incomplete",
+  "Vérifier cette notice.": "web-bibliography-review-record"
 }
