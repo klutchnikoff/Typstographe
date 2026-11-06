@@ -69,7 +69,7 @@ class CIPlanTests(unittest.TestCase):
             result = subprocess.check_output(
                 ["python3", str(SCRIPT), "--base", base], cwd=root, env=env)
             self.assertTrue(json.loads(result)["code"])
-            self.assertEqual(output.read_text(), "code=true\ndependencies=false\nrecipes=\n")
+            self.assertEqual(output.read_text(), "code=true\ndependencies=false\nrust=false\nrecipes=\n")
 
     def test_pull_requests_run_recipes_of_the_edited_areas_only(self):
         root = SCRIPT.parents[2]

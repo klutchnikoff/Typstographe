@@ -33,8 +33,8 @@ def plan(paths):
 
 RECIPES = Path("app/tests/browser")
 
-# Graphical recipes a pull request runs beyond @smoke, by edited area. A source
-# missing here only runs @smoke on the PR; the full suite runs after merging.
+# Targeted graphical recipes used by the local pre-push check. Full graphical
+# verification is explicit; neither routine PR nor main checks launch browsers.
 BROWSER_AREAS = (
     (("app/src/mathematics.ts", "app/src/cross-reference-index.ts", "crates/core/src/content/mathematics*",
       "crates/core/templates/capabilities/mathematics.typ", "crates/core/templates/packages/mitex-*/**"), ("mathematics",)),
@@ -150,6 +150,9 @@ def main():
     args = parser.parse_args()
     paths = None if args.force else changed_paths(args.base)
     result = plan(paths)
+    result["rust"] = paths is None or any(
+        name.endswith((".rs", "Cargo.toml", "Cargo.lock"))
+        or name.startswith((".cargo/", ".github/")) for name in paths)
     recipes = " ".join(browser_recipes(paths))
     if output := os.environ.get("GITHUB_OUTPUT"):
         with open(output, "a", encoding="utf-8") as stream:
