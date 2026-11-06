@@ -98,7 +98,7 @@ class CIPlanTests(unittest.TestCase):
 
     def test_shared_bibliography_engine_selects_the_bibliography_recipe(self):
         for source in ["crates/bibliography/src/import.rs", "crates/bibliography/src/search.rs",
-                       "crates/core/src/bibliography.rs"]:
+                       "crates/core/src/bibliography.rs", "crates/core/src/content/api/bibliography.rs"]:
             self.assertEqual(planner.browser_recipes([source]),
                              ["tests/browser/bibliography.spec.ts"])
 

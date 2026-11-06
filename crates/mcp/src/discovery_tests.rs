@@ -7,6 +7,35 @@ use typstographe_core::{
 };
 
 #[test]
+fn bibliographic_preparation_is_read_only_and_describes_results_in_both_modes() {
+    for attached in [false, true] {
+        for id in [
+            "bibliography.genres",
+            "bibliography.prepare_import",
+            "bibliography.prepare_record",
+        ] {
+            let tool = crate::tools(attached)
+                .into_iter()
+                .find(|t| t.name == id)
+                .unwrap();
+            assert_eq!(tool.annotations.unwrap().read_only_hint, Some(true));
+            let details = describe(id, attached).unwrap();
+            assert_eq!(details["execution"]["direct_tool"], true);
+            assert_eq!(details["execution"]["proposal_step"], false);
+            assert_eq!(details["result_schema_scope"], "query_outcome");
+            jsonschema::validator_for(&details["result_schema"]).unwrap();
+            assert!(!details["examples"].as_array().unwrap().is_empty());
+            if id != "bibliography.genres" {
+                assert_eq!(
+                    details["result_schema"]["properties"]["active"]["const"],
+                    false
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn type_indexes_lead_to_exact_metadata_and_capability_details_without_eager_schemas() {
     let listing = types();
     for profile in &profiles::catalogue().types {
