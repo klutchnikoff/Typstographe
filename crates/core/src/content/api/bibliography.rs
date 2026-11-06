@@ -4,26 +4,12 @@ use crate::content::contract::{Error, State, UnavailableReason};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
-use sha2::{Digest, Sha256};
+
 use typstographe_bibliography::{
-    self as bibliography, Diagnostic, Fingerprint, Genre, ImportFormat, ImportSource, Record,
-    RecordId,
+    self as bibliography, Diagnostic, Fingerprint, Genre, ImportFormat, Record, RecordId,
 };
 
-#[derive(Clone, Debug, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub(super) struct ImportInput {
-    pub id: RecordId,
-    #[schemars(
-        length(min = 1, max = 256),
-        regex(pattern = r"^[^/\\\u0000-\u001f\u007f-\u009f]+$")
-    )]
-    pub name: String,
-    pub format: ImportFormat,
-    /// Original UTF-8 input, bounded before parsing. Never a filesystem path.
-    #[schemars(extend("x-max-utf8-bytes"=2097152))]
-    pub contents: String,
-}
+use crate::bibliography::editions::SourceInput as ImportInput;
 
 #[derive(Clone, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -38,6 +24,11 @@ pub(super) struct RecordInput {
     pub entry: Map<String, Value>,
 }
 
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct RecordIdentity {
+    id: RecordId,
+}
 #[derive(Serialize, JsonSchema)]
 struct SourceSummary {
     id: RecordId,
@@ -51,6 +42,8 @@ struct ImportResult {
     /// False: preparation never inserts references, publishes edits or saves a project.
     #[schemars(extend("const"=false))]
     active: bool,
+    library_fingerprint: Fingerprint,
+    plan: Value,
     source: SourceSummary,
     records: Vec<Record>,
     diagnostics: Vec<Diagnostic>,
@@ -73,6 +66,7 @@ struct GenresResult {
 
 pub(super) fn parameter_schema(id: &str) -> Option<Value> {
     Some(match id {
+        "bibliography.record" => json!(schemars::schema_for!(RecordIdentity)),
         "bibliography.prepare_import" => json!(schemars::schema_for!(ImportInput)),
         "bibliography.prepare_record" => json!(schemars::schema_for!(RecordInput)),
         _ => return None,
@@ -102,32 +96,33 @@ fn occupied(state: &State, command: &str) -> Result<std::collections::BTreeSet<S
 pub(super) fn run(state: &State, command: &str, params: &Value) -> Result<Value, Error> {
     let occupied = occupied(state, command)?;
     Ok(match command {
+        "bibliography.record" => {
+            let identity: RecordIdentity = serde_json::from_value(params.clone())
+                .map_err(|_| invalid("bibliography_record"))?;
+            let library = crate::bibliography::editions::library(state, command)?;
+            let record = library.get(&identity.id).ok_or_else(|| {
+                Error::bibliography(bibliography::Error {
+                    code: bibliography::Code::MissingRecord,
+                    key: None,
+                    field: None,
+                    detail: "Record not found".into(),
+                })
+            })?;
+            json!({"record":record,"fingerprint":record.fingerprint(),"diagnostics":bibliography::completeness(record)})
+        }
         "bibliography.genres" => json!(GenresResult {
             genres: bibliography::genres()
         }),
         "bibliography.prepare_import" => {
             let input: ImportInput = serde_json::from_value(params.clone())
                 .map_err(|_| invalid("bibliography_import"))?;
-            let source = ImportSource::new(input.id, &input.name, input.format, input.contents)
-                .map_err(Error::bibliography)?;
-            // Allocation belongs to the caller of the pure crate. Stable only for this input:
-            // naming seeds allocate proposals; they are never matching evidence.
-            let namespace = json!([source.id(), source.digest()]).to_string();
-            let prepared = bibliography::prepare_import(source, |key| {
-                let bytes = serde_json::to_vec(&(namespace.as_str(), key)).expect("identity seed");
-                let digest = Sha256::digest(bytes);
-                let name = format!(
-                    "ref-{}",
-                    digest
-                        .iter()
-                        .map(|b| format!("{b:02x}"))
-                        .collect::<String>()
-                );
-                RecordId::new(name).expect("bounded ASCII proposal identity")
-            })
-            .map_err(Error::bibliography)?;
+            let prepared = crate::bibliography::editions::prepare(input)?;
+            let library = crate::bibliography::editions::library(state, command)?;
+            let plan = crate::bibliography::editions::plan(&library, &prepared)?;
             json!(ImportResult {
                 active: false,
+                library_fingerprint: library.fingerprint(),
+                plan: json!({"blocked":plan.blocked(),"items":plan.items()}),
                 source: SourceSummary {
                     id: prepared.source.id().clone(),
                     name: prepared.source.name().into(),

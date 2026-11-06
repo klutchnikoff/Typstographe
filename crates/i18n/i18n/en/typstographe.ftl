@@ -1255,3 +1255,11 @@ cmd-math-block = Insert a block equation
 web-math-inline = Inline formula
 content-equation-alias-invalid = The equation label is invalid. Use a name without whitespace, colons or dollar signs.
 content-equation-alias-duplicate = Another equation already uses this label.
+
+web-bibliography-review-required = This import requires a reconciliation decision.
+web-bibliography-cited-missing = A citation targets a missing record. Remove it or select another record.
+web-bibliography-conversion-review = Review converted fields.
+web-bibliography-conversion-loss = A value is retained only in the original source.
+web-bibliography-genre-review = Review this record’s genre.
+content-bibliography-cited-missing = A citation targets a missing record. Remove it or select another record.
+web-bibliography-import-review = Review import

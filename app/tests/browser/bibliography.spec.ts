@@ -32,8 +32,16 @@ async function create(page: Page) {
   await confirmRecordDialog(page)
   await tab(page, 'bibliography')
   await files(page).setInputFiles(file('livres.bib', bib))
+  await page
+    .locator('#bibliography-confirmation')
+    .getByRole('button', { name: 'Valider', exact: true })
+    .click()
   await expect(page.locator('.bibliography-file-row')).toHaveCount(1)
   await files(page).setInputFiles(file('articles.yaml', yaml))
+  await page
+    .locator('#bibliography-confirmation')
+    .getByRole('button', { name: 'Valider', exact: true })
+    .click()
   await expect(page.locator('.bibliography-file-row')).toHaveCount(2)
   await expect(error(page)).toBeEmpty()
 }
@@ -128,7 +136,7 @@ test('bibliothèque multi-format, recherche fuzzy, badge, clavier et rendu natif
   await expect(page.locator('#message')).toContainText('sources Typst exportés')
 })
 
-test('imports et remplacements atomiques refusent collisions et références devenues absentes', async ({
+test('imports natifs idempotents, conflits explicites et suppression protégée', async ({
   page,
   context,
 }) => {
@@ -138,35 +146,26 @@ test('imports et remplacements atomiques refusent collisions et références dev
   await ready(peer, `bibliography-peer-${Date.now()}`)
   await expect(body(peer).locator('.citation-ref')).toContainText('Bourdieu, 1980')
   await files(page).setInputFiles(file('doublon.bib', bib))
-  await expect(error(page)).toContainText('dupliquée')
+  const confirmation = page.locator('#bibliography-confirmation')
+  await confirmation.getByRole('button', { name: 'Valider', exact: true }).click()
+  await expect(confirmation).toBeHidden()
   await expect(page.locator('.bibliography-file-row')).toHaveCount(2)
-  await page.getByRole('button', { name: 'Remplacer · livres.bib', exact: true }).click()
   await files(page).setInputFiles(
-    file('nouveau.bib', '@book{autre,author={Autre, Anne},title={Un autre ouvrage},year={2024}}'),
+    file(
+      'collision.bib',
+      '@book{bourdieu1980,author={Other, Alex},title={A different book},year={1990}}',
+    ),
   )
-  await expect(error(page)).toContainText('Référence citée absente')
-  await expect(page.locator('.bibliography-file-row')).toContainText([
-    'livres.bib',
-    'articles.yaml',
-  ])
-  await page.getByRole('button', { name: 'Remplacer · livres.bib', exact: true }).click()
-  await files(page).setInputFiles(file('livres-corriges.bib', bib.replace('1980},', '1981},')))
-  await expect(page.locator('.bibliography-file-row')).toContainText([
-    'livres-corriges.bib',
-    'articles.yaml',
-  ])
-  await expect(body(peer).locator('.citation-ref')).toContainText('Bourdieu, 1981')
-  await page.getByRole('button', { name: 'Retirer · livres-corriges.bib', exact: true }).click()
-  await page
-    .locator('#remove-bibliography-file')
-    .getByRole('button', { name: 'Retirer', exact: true })
-    .click()
-  await expect(page.locator('#remove-bibliography-file [role=alert]')).toContainText(
-    'Référence citée absente',
+  await expect(confirmation.locator('[role=alert]')).toContainText('décision de rapprochement')
+  await confirmation.press('Escape')
+  await page.getByRole('button', { name: 'Retirer · bourdieu1980', exact: true }).click()
+  await confirmation.getByRole('button', { name: 'Valider', exact: true }).click()
+  await expect(confirmation.locator('[role=alert]')).toContainText(
+    'Une citation vise une notice absente',
   )
-  await page.locator('#remove-bibliography-file').press('Escape')
-  await expect(page.locator('#metadata-content')).toBeVisible()
+  await confirmation.press('Escape')
   await expect(page.locator('.bibliography-file-row')).toHaveCount(2)
+  await expect(body(peer).locator('.citation-ref')).toContainText('Bourdieu, 1980')
   await peer.close()
 })
 

@@ -81,3 +81,22 @@ fn mcp_language_and_read_only_policy_are_explicit() {
         c.cancel().await.unwrap();
     });
 }
+
+#[test]
+fn mcp_imports_native_notices_with_the_same_library_guards_and_identity_citations() {
+    runtime().block_on(async {
+        let d=tempfile::tempdir().unwrap();let c=start(d.path(),ProtocolVersion::default(),&[]).await;
+        let opened=call(&c,"document.new",json!({"type":"article"})).await;
+        let source=json!({"id":"source","name":"books.yaml","format":"hayagriva","contents":"example: {type: book, title: A book, author: 'Doe, Jane', date: 2026}"});
+        let mut params=source.clone();params["document"]=opened["document"].clone();
+        let prepared=call(&c,"bibliography.prepare_import",params).await;
+        let report=&prepared["outcome"];
+        let imported=call(&c,"bibliography.apply",json!({"document":prepared["document"],"expected":report["library_fingerprint"],"change":{"kind":"import","source":source,"preparation":report["fingerprint"],"decisions":[]}})).await;
+        let inspected=call(&c,"bibliography.inspect",json!({"document":imported["document"]})).await;
+        assert_eq!(inspected["outcome"]["records"][0]["id"],report["records"][0]["id"]);
+        let cited=call(&c,"inline.replace",json!({"document":inspected["document"],"target":{"zone":{"kind":"body","path":[0]},"from":0,"to":0},"node":{"type":"citation","attrs":{"items":[{"record_id":report["records"][0]["id"]}],"form":"normal"}}})).await;
+        let rendered=call(&c,"render.compile",json!({"document":cited["document"]})).await;
+        assert!(!rendered["outcome"].is_null());
+        c.cancel().await.unwrap();
+    });
+}

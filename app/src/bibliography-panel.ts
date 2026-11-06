@@ -1,19 +1,18 @@
 import { metadataCommands } from './metadata-commands'
-import type { StructuredCommand } from './structured-commands'
 import { modelOptionControl } from './model-option-control'
-import { documentContent } from './shared-inline-marks'
 import type { Editor } from '@tiptap/core'
 import type { Provider, Transport } from './provider'
 import type { DocumentType, ModelPolicy } from './shell'
 import { settingsFor } from './state'
-import { referenceFiles, type ReferenceFile } from './citation-index'
+import { referenceRecords, type BibliographicRecord } from './citation-index'
+import { bibliographyQuery } from './bibliography-query'
 import { contextPanel } from './context-panel'
 import { actionRow } from './keyboard-navigation'
 import { icon } from './icons'
 import { tr } from './i18n'
-import { draftGuard } from './snapshot-operation'
 import { errorText } from './command-error'
 
+/** Transitional header adapter; the approved full notice manager is the following C.3 lot. */
 export function bibliographyPanel(
   parent: HTMLElement,
   provider: Provider,
@@ -22,16 +21,12 @@ export function bibliographyPanel(
   kind: DocumentType,
   policy: () => ModelPolicy | undefined,
 ) {
-  const commands = metadataCommands(editor, provider)
-  const schema = kind.structured!,
-    descriptor = schema.bibliography!
-  const definition = schema.collections.find(
-    (collection) => collection.parameter === descriptor.files,
-  )!
+  const commands = metadataCommands(editor, provider),
+    descriptor = kind.structured!.bibliography!
   const root = document.createElement('div')
   root.className = 'bibliography-settings'
   parent.append(root)
-  const styleBinding = modelOptionControl(
+  const style = modelOptionControl(
     root,
     'citation-style',
     tr('Style bibliographique'),
@@ -47,220 +42,196 @@ export function bibliographyPanel(
   )
   const rows = document.createElement('div'),
     actions = actionRow(),
-    status = document.createElement('p')
+    status = document.createElement('p'),
+    input = document.createElement('input'),
+    add = document.createElement('button')
   rows.className = 'bibliography-files'
   status.role = 'alert'
-  const input = document.createElement('input')
   input.type = 'file'
   input.accept = '.bib,.yaml,.yml'
   input.hidden = true
   input.setAttribute('aria-label', tr('Fichiers bibliographiques'))
-  const add = document.createElement('button')
   add.type = 'button'
   add.textContent = tr('Ajouter des fichiers')
-  actions.append(add)
-  let replacing: ReferenceFile | undefined,
-    alive = true,
-    busy = false
-  const choose = (file?: ReferenceFile) => {
-    replacing = file
-    input.multiple = !file
+  add.onclick = () => {
     input.value = ''
     input.click()
   }
-  add.onclick = () => choose()
-  const confirm = contextPanel({
-    id: 'remove-bibliography-file',
+  actions.append(add)
+  let alive = true,
+    busy = false
+  type Inspection = { fingerprint: string; records: BibliographicRecord[] }
+  type Prepared = {
+    fingerprint: string
+    library_fingerprint: string
+    records: BibliographicRecord[]
+    diagnostics: { code: string; key: string; field: string | null; detail: string }[]
+    plan: { blocked: boolean; items: unknown[] }
+  }
+  type Pending = { expected: string; change: Record<string, unknown>; blocked: boolean }
+  let pending: Pending | undefined
+  const close = () => {
+    if (busy) return
+    pending = undefined
+    panel.element.hidden = true
+    add.focus()
+  }
+  const panel = contextPanel({
+    id: 'bibliography-confirmation',
     closeLabel: tr('Annuler'),
-    close: () => {
-      confirm.discardRecovery()
-      confirm.element.hidden = true
-      add.focus()
-    },
-    canConfirm: () => !busy,
+    close,
+    canConfirm: () => !!pending && !pending.blocked && !busy,
   })
-  confirm.title.textContent = tr('Retirer le fichier bibliographique')
-  let removing: ReferenceFile | undefined
-  confirm.action({
-    label: tr('Annuler'),
-    run: () => {
-      confirm.discardRecovery()
-      confirm.element.hidden = true
-      add.focus()
+  panel.action({ label: tr('Annuler'), run: close })
+  panel.action({
+    label: tr('Valider'),
+    primary: true,
+    run: async () => {
+      const chosen = pending
+      if (!chosen || chosen.blocked || busy) return
+      busy = true
+      refresh()
+      panel.error.textContent = ''
+      try {
+        await commands.run(
+          [
+            {
+              id: 'bibliography.apply',
+              params: { expected: chosen.expected, change: chosen.change },
+            },
+          ],
+          () => alive && pending === chosen,
+        )
+        busy = false
+        close()
+        refresh()
+      } catch (error) {
+        if (alive) panel.error.textContent = errorText(error)
+      } finally {
+        busy = false
+        if (alive) refresh()
+      }
     },
   })
-  const publish = async (
-    next: ReferenceFile[],
-    batch: StructuredCommand[],
-    active = () => true,
-  ) => {
-    if (busy) return false
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file || busy) return
     busy = true
     refresh()
     status.textContent = ''
-    confirm.error.textContent = ''
-    const before = JSON.stringify(referenceFiles(provider)),
-      current = settingsFor(provider),
-      document = documentContent(editor.getJSON())
-    current.metadata.fields[descriptor.files] = next
     try {
-      const check = await draftGuard(
-        provider,
-        () =>
-          before === JSON.stringify(referenceFiles(provider)) &&
-          editor.state.doc.eq(editor.schema.nodeFromJSON(document)),
-      )
-      if (!alive || !active()) return false
-      await transport.invoke('validate_bibliography', { document, metadata: current.metadata })
-      if (!alive || !active()) return false
-      check()
-      await commands.run(
-        batch,
-        () =>
-          alive &&
-          active() &&
-          before === JSON.stringify(referenceFiles(provider)) &&
-          editor.state.doc.eq(editor.schema.nodeFromJSON(document)),
-      )
-      confirm.discardRecovery()
-      confirm.element.hidden = true
-      refresh()
-      return true
-    } catch (error) {
-      if (alive) {
-        status.textContent = errorText(error)
-        confirm.error.textContent = errorText(error)
+      if (file.size > 2 * 1024 * 1024)
+        throw new Error(tr('Fichier trop volumineux (2 Mio maximum).'))
+      const source = {
+        id: crypto.randomUUID(),
+        name: file.name,
+        format: file.name.toLowerCase().endsWith('.bib') ? 'biblatex' : 'hayagriva',
+        contents: new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(
+          await file.arrayBuffer(),
+        ),
       }
-      return false
+      const prepared = await bibliographyQuery<Prepared>(
+        provider,
+        transport,
+        'bibliography.prepare_import',
+        source,
+      )
+      if (!alive) return
+      pending = {
+        expected: prepared.library_fingerprint,
+        blocked: prepared.plan.blocked,
+        change: { kind: 'import', source, preparation: prepared.fingerprint, decisions: [] },
+      }
+      panel.title.textContent = tr('Vérifier l’import')
+      const summary = document.createElement('p')
+      summary.textContent = `${file.name} · ${prepared.records.length}`
+      const report = document.createElement('ul')
+      for (const diagnostic of prepared.diagnostics) {
+        const row = document.createElement('li')
+        row.textContent = `${diagnostic.key} · ${diagnostic.code}${diagnostic.field ? ` · ${diagnostic.field}` : ''} · ${tr(diagnostic.code === 'conversion_review' ? 'Vérifier les champs convertis.' : diagnostic.code === 'genre_mapping' ? 'Vérifier le genre de cette notice.' : 'Une valeur reste uniquement dans la source originale.')}`
+        report.append(row)
+      }
+      panel.body.replaceChildren(summary, report)
+      panel.error.textContent = prepared.plan.blocked
+        ? tr('Cet import nécessite une décision de rapprochement.')
+        : ''
+      panel.element.hidden = false
+      panel.focus()
+    } catch (error) {
+      if (alive) status.textContent = errorText(error)
     } finally {
       busy = false
       if (alive) refresh()
     }
   }
-  confirm.action({
-    label: tr('Retirer'),
-    danger: true,
-    primary: true,
-    run: () => {
-      const file = removing
-      if (!file) return
-      if (
-        JSON.stringify(referenceFiles(provider).find((current) => current.id === file.id)) !==
-        JSON.stringify(file)
-      ) {
-        confirm.error.textContent = tr('Le document a changé. Réessayez.')
-        return
-      }
-      void publish(
-        referenceFiles(provider).filter((f) => f.id !== file.id),
-        [{ id: 'record.remove', params: { collection: definition.parameter, id: file.id } }],
-        () => removing === file && !confirm.element.hidden,
-      ).then((ok) => {
-        if (ok) add.focus()
-      })
-    },
-  })
-  input.onchange = async () => {
-    const chosen = [...(input.files || [])],
-      previous = replacing
-    if (!chosen.length) return
-    if (chosen.some((file) => file.size > 2 * 1024 * 1024)) {
-      status.textContent = tr('Fichier trop volumineux (2 Mio maximum).')
-      return
-    }
+  async function remove(record: BibliographicRecord) {
+    if (busy) return
+    busy = true
+    refresh()
     try {
-      const files = await Promise.all(
-        chosen.map(async (file) => ({
-          id: previous?.id || crypto.randomUUID(),
-          name: file.name,
-          contents: new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(
-            await file.arrayBuffer(),
-          ),
-        })),
+      const library = await bibliographyQuery<Inspection>(
+        provider,
+        transport,
+        'bibliography.inspect',
       )
       if (!alive) return
-      if (
-        previous &&
-        JSON.stringify(referenceFiles(provider).find((file) => file.id === previous.id)) !==
-          JSON.stringify(previous)
+      const current = library.records.find((r) => r.id === record.id)
+      // Obtain the record guard from the common preparation-independent fingerprint query.
+      const info = await bibliographyQuery<{ record: BibliographicRecord; fingerprint: string }>(
+        provider,
+        transport,
+        'bibliography.record',
+        { id: record.id },
       )
-        throw new Error(tr('Le document a changé. Réessayez.'))
-      const next = previous
-        ? referenceFiles(provider).map((file) => (file.id === previous.id ? files[0] : file))
-        : [...referenceFiles(provider), ...files]
-      const batch: StructuredCommand[] = previous
-        ? ['name', 'contents'].map((field) => ({
-            id: 'metadata.set',
-            params: {
-              target: { kind: 'record', collection: definition.parameter, id: previous.id, field },
-              value: files[0][field as 'name' | 'contents'],
-            },
-          }))
-        : files.map(({ id, ...values }) => ({
-            id: 'record.add',
-            params: { collection: definition.parameter, id, values },
-          }))
-      await publish(next, batch)
+      if (!alive || !current) return
+      pending = {
+        expected: library.fingerprint,
+        change: { kind: 'remove', id: record.id, expected: info.fingerprint },
+        blocked: false,
+      }
+      panel.title.textContent = tr('Retirer')
+      panel.body.textContent = record.key
+      panel.error.textContent = ''
+      panel.element.hidden = false
+      panel.focus()
     } catch (error) {
       if (alive) status.textContent = errorText(error)
+    } finally {
+      busy = false
+      if (alive) refresh()
     }
   }
-  root.append(rows, actions, input, confirm.element, status)
+  root.append(rows, actions, input, panel.element, status)
   function refresh() {
     add.disabled = busy
-    styleBinding.refresh()
-    styleBinding.select.disabled ||= busy
-    const files = referenceFiles(provider)
-    for (const child of [...rows.children])
-      if (!files.some((file) => file.id === (child as HTMLElement).dataset.fileId)) child.remove()
-    for (const file of files) {
-      let row = rows.querySelector<HTMLElement>(`[data-file-id="${file.id}"]`)
-      if (!row) {
-        row = document.createElement('div')
-        row.className = 'bibliography-file-row'
-        row.dataset.fileId = file.id
-        row.append(document.createElement('span'), actionRow())
-        rows.append(row)
-      }
-      row.querySelector('span')!.textContent = file.name
-      const actions = row.querySelector<HTMLElement>('.panel-actions')!
-      for (const [index, [name, glyph, run]] of (
-        [
-          [tr('Remplacer'), 'redo-2', () => choose(file)],
-          [
-            tr('Retirer'),
-            'trash-2',
-            () => {
-              removing = file
-              confirm.body.textContent = file.name
-              confirm.error.textContent = ''
-              confirm.element.hidden = false
-              confirm.trackRecovery(provider, { kind: 'bibliography-removal', file: file.id })
-              confirm.focus()
-            },
-          ],
-        ] as const
-      ).entries()) {
-        const button =
-          (actions.children[index] as HTMLButtonElement | undefined) ||
-          document.createElement('button')
-        button.type = 'button'
-        button.innerHTML = icon(glyph)
-        button.title = `${name} · ${file.name}`
-        button.setAttribute('aria-label', button.title)
-        button.onclick = run
-        button.disabled = busy
-        if (!button.isConnected) actions.append(button)
-      }
+    style.refresh()
+    style.select.disabled ||= busy
+    rows.replaceChildren()
+    for (const record of referenceRecords(provider)) {
+      const row = document.createElement('div'),
+        label = document.createElement('span'),
+        buttons = actionRow(),
+        removeButton = document.createElement('button')
+      row.className = 'bibliography-file-row'
+      row.dataset.recordId = record.id
+      label.textContent = record.key
+      removeButton.type = 'button'
+      removeButton.innerHTML = icon('trash-2')
+      removeButton.title = tr('Retirer')
+      removeButton.setAttribute('aria-label', `${tr('Retirer')} · ${record.key}`)
+      removeButton.disabled = busy
+      removeButton.onclick = () => void remove(record)
+      buttons.append(removeButton)
+      row.append(label, buttons)
+      rows.append(row)
     }
   }
   refresh()
   return {
     refresh,
     destroy() {
-      confirm.detachRecovery()
       alive = false
-      styleBinding.destroy()
+      style.destroy()
       root.remove()
     },
   }

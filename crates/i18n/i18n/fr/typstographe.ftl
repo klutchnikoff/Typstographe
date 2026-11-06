@@ -1257,3 +1257,11 @@ cmd-math-block = Insérer une équation
 web-math-inline = Formule en ligne
 content-equation-alias-invalid = Le label de l’équation est invalide. Utilisez un nom sans espace, deux-points ni dollar.
 content-equation-alias-duplicate = Ce label est déjà utilisé par une autre équation.
+
+web-bibliography-review-required = Cet import nécessite une décision de rapprochement.
+web-bibliography-cited-missing = Une citation vise une notice absente. Retirez-la ou choisissez une autre notice.
+web-bibliography-conversion-review = Vérifier les champs convertis.
+web-bibliography-conversion-loss = Une valeur reste uniquement dans la source originale.
+web-bibliography-genre-review = Vérifier le genre de cette notice.
+content-bibliography-cited-missing = Une citation vise une notice absente. Retirez-la ou choisissez une autre notice.
+web-bibliography-import-review = Vérifier l’import

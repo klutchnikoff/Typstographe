@@ -1,5 +1,5 @@
 //! Values shared by native and headless adapters. No UI or transport types.
-use super::{Node, source};
+use super::Node;
 use crate::{
     assets::Assets,
     document_types::{DocumentType, Metadata},
@@ -169,7 +169,8 @@ impl State {
                 reason: format!("missing_resource: {error:?}"),
             },
         )?;
-        source(&self.document, assets).map_err(|reason| Error::InvalidDocument { reason })
+        super::source_with_metadata(&self.document, assets, &self.settings.metadata)
+            .map_err(|reason| Error::InvalidDocument { reason })
     }
 }
 

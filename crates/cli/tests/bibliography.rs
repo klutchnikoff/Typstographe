@@ -69,3 +69,61 @@ fn cli_reports_invalid_native_field_data_without_publishing_or_losing_its_path()
     assert!(text.contains("/unknown"));
     assert_eq!(std::fs::read(path).unwrap(), original);
 }
+
+#[test]
+fn cli_renames_a_cited_notice_under_guards_and_reopens_the_same_record_identity() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("article.typsto");
+    let mut owner = Session::new();
+    owner
+        .execute("document.new", json!({"type":"article"}))
+        .unwrap();
+    let prepared = owner
+        .query(
+            "bibliography.prepare_record",
+            json!({"id":"book","genre":"book","key":"before","entry":{"title":"An example"}}),
+        )
+        .unwrap();
+    let library = owner.query("bibliography.inspect", json!({})).unwrap();
+    owner.batch(&[
+        typstographe_core::content::api::Call{id:"bibliography.apply".into(),params:json!({"expected":library["fingerprint"],"change":{"kind":"create","record":prepared["record"]}})},
+        typstographe_core::content::api::Call{id:"inline.replace".into(),params:json!({"target":target(0,0),"node":{"type":"citation","attrs":{"items":[{"record_id":"book"}],"form":"normal"}}})},
+    ],None).unwrap();
+    owner.save_as(&path).unwrap();
+    let before = owner.archive().unwrap();
+    let library = owner.query("bibliography.inspect", json!({})).unwrap();
+    let record = owner
+        .query("bibliography.record", json!({"id":"book"}))
+        .unwrap();
+    drop(owner);
+    let params = json!({"expected":library["fingerprint"],"change":{"kind":"rename","id":"book","expected":record["fingerprint"],"key":"after"}});
+    response(
+        cli().args(["run", "bibliography.apply"]).arg(&path).args([
+            "--params",
+            &params.to_string(),
+            "--save",
+        ]),
+        0,
+    );
+    let mut reopened = writer(&path);
+    let after = reopened.archive().unwrap();
+    assert_eq!(after.document, before.document);
+    assert!(after.validate().unwrap().contains("label(\"after\")"));
+    assert_eq!(
+        reopened
+            .query("bibliography.record", json!({"id":"book"}))
+            .unwrap()["record"]["key"],
+        "after"
+    );
+    let bytes = std::fs::read(&path).unwrap();
+    drop(reopened);
+    response(
+        cli().args(["run", "bibliography.apply"]).arg(&path).args([
+            "--params",
+            &params.to_string(),
+            "--save",
+        ]),
+        1,
+    );
+    assert_eq!(std::fs::read(&path).unwrap(), bytes);
+}

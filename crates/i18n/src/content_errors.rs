@@ -81,6 +81,9 @@ pub fn content_error_with(loader: &FluentLanguageLoader, error: &Error) -> Strin
         Error::InvalidDocument { reason } if reason == "duplicate_equation_alias" => {
             "content-equation-alias-duplicate"
         }
+        Error::InvalidDocument { reason } if reason.starts_with("bibliography_record_missing:") => {
+            "content-bibliography-cited-missing"
+        }
         Error::InvalidDocument { .. } => "content-document-invalid",
         Error::InvalidSettings { reason } => match reason.as_str() {
             "template_too_large" => "model-too-large",

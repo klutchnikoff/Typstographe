@@ -89,8 +89,18 @@ fn genres_and_new_notices_have_the_same_machine_readable_types_as_the_crate() {
 fn preparation_preserves_compound_fields_and_uses_available_names_without_renaming_existing_entries()
  {
     let mut session = article();
-    session.execute("record.add",json!({"collection":"references","id":"source","values":{
-        "name":"existing.yaml","contents":"durand_une_2025: {type: article, title: Existing work}"}})).unwrap();
+    let record = crate::bibliography::test_record(
+        "source",
+        "existing.yaml",
+        "durand_une_2025: {type: article, title: Existing work}",
+    );
+    let library = session.query("bibliography.inspect", json!({})).unwrap();
+    session
+        .execute(
+            "bibliography.apply",
+            json!({"expected":library["fingerprint"],"change":{"kind":"create","record":record}}),
+        )
+        .unwrap();
     let before = session.archive().unwrap().yjs;
     let params = json!({"id":"proposal","genre":"journal_article","entry":{
         "title":{"value":"Une étude","short":"Étude","verbatim":true},

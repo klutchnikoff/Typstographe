@@ -161,13 +161,12 @@ fn schema_pruning_keeps_recursive_transitive_definitions_and_input_validation() 
     ] {
         assert_eq!(before.is_valid(&input), after.is_valid(&input));
     }
-    let mut reduced = 0;
     for entry in api::catalogue()["entries"].as_array().unwrap() {
         let original = &entry["params_schema"];
         let mut compact = original.clone();
         prune_schema(&mut compact);
-        reduced += serde_json::to_vec(original).unwrap().len()
-            - serde_json::to_vec(&compact).unwrap().len();
+        // The common catalogue is already compact; repeated adapter pruning is idempotent.
+        assert_eq!(&compact, original);
         let before = jsonschema::validator_for(original).unwrap();
         let after = jsonschema::validator_for(&compact).unwrap();
         for example in api::describe(entry["id"].as_str().unwrap()).unwrap()["examples"]
@@ -185,7 +184,6 @@ fn schema_pruning_keeps_recursive_transitive_definitions_and_input_validation() 
             assert_eq!(before.is_valid(&input), after.is_valid(&input));
         }
     }
-    assert!(reduced > 100_000);
 }
 
 #[test]

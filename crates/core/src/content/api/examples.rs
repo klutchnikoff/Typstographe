@@ -13,6 +13,18 @@ fn at() -> Value {
 }
 pub fn for_id(id: &str) -> Vec<Call> {
     let node = match id {
+        "bibliography.apply" => {
+            return vec![Call {
+                id: id.into(),
+                params: json!({"expected":typstographe_bibliography::Library::default().fingerprint(),"change":{"kind":"create","record":{"id":"example-record","genre":"book","key":"example2026","entry":{"type":"book","title":"An example"},"provenance":[]}}}),
+            }];
+        }
+        "bibliography.inspect" => {
+            return vec![Call {
+                id: id.into(),
+                params: json!({}),
+            }];
+        }
         "bibliography.genres" => {
             return vec![Call {
                 id: id.into(),
@@ -60,7 +72,7 @@ pub fn for_id(id: &str) -> Vec<Call> {
         }
         "insert.footnote" => json!({"type":"footnote","attrs":{"text":"A plain-text note."}}),
         "insert.citation" => {
-            json!({"type":"citation","attrs":{"items":[{"file_id":"main","key":"example2026"}],"form":"normal"}})
+            json!({"type":"citation","attrs":{"items":[{"record_id":"example-record"}],"form":"normal"}})
         }
         "insert.image" => {
             json!({"type":"figure","attrs":{"src":"images/example.svg","alt":"Describe the image"},"content":[{"type":"text","text":"Optional caption"}]})
