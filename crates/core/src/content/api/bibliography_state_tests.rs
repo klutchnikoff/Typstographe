@@ -232,3 +232,92 @@ fn imports_publish_only_after_all_conflicts_have_explicit_decisions() {
             .any(|r| r["key"] == "martin2026_imported")
     );
 }
+
+#[test]
+fn acquisition_form_corrections_publish_once_and_keep_the_original_import_snapshot() {
+    let mut s = article();
+    let input = source("online-snapshot");
+    let prepared = s
+        .query("bibliography.prepare_import", input.clone())
+        .unwrap();
+    let mut reviewed = prepared["records"].clone();
+    reviewed[0]["entry"]["title"] = json!("Verified title");
+    let base = library(&mut s);
+    let initial = s.archive().unwrap();
+    let before = initial.yjs.clone();
+    let plan = s.query("bibliography.review_import", json!({"source":input,"expected":base["fingerprint"],"decisions":[],"reviewed":reviewed})).unwrap();
+    assert_eq!(plan["plan"]["blocked"], false);
+    assert_eq!(s.archive().unwrap().yjs, before);
+    let id = reviewed[0]["id"].clone();
+    s.batch(&[
+        Call { id:"bibliography.apply".into(), params:json!({"expected":base["fingerprint"],"change":{"kind":"import","source":input,"preparation":prepared["fingerprint"],"decisions":[],"reviewed":reviewed}}) },
+        Call { id:"inline.replace".into(), params:json!({"target":{"zone":{"kind":"body","path":[0]},"from":0,"to":0},"node":{"type":"citation","attrs":{"items":[{"record_id":id,"supplement":""}],"form":"normal"}}}) },
+    ],None).unwrap();
+    assert!(
+        library(&mut s)["records"][0]["entry"]["title"]
+            .to_string()
+            .contains("Verified title")
+    );
+    let archive = s.archive().unwrap();
+    let metadata = serde_json::to_value(&archive.metadata).unwrap();
+    assert!(
+        metadata.to_string().contains("An {API} study"),
+        "original source survives alongside the edited record"
+    );
+    s.execute("edit.undo", json!({})).unwrap();
+    assert_eq!(s.archive().unwrap().document, initial.document);
+    assert_eq!(s.archive().unwrap().metadata, initial.metadata);
+    s.execute("edit.redo", json!({})).unwrap();
+    assert_eq!(s.archive().unwrap().document, archive.document);
+}
+#[test]
+fn acquisition_review_cannot_change_import_identities_provenance_or_preparation() {
+    let mut s = article();
+    let input = source("online-snapshot");
+    let prepared = s
+        .query("bibliography.prepare_import", input.clone())
+        .unwrap();
+    let before = s.archive().unwrap().yjs;
+    for alteration in ["identity", "provenance", "missing", "repeated"] {
+        let mut reviewed = prepared["records"].clone();
+        match alteration {
+            "identity" => reviewed[0]["id"] = json!("foreign-id"),
+            "provenance" => reviewed[0]["provenance"] = json!([]),
+            "missing" => reviewed = json!([]),
+            "repeated" => reviewed = json!([reviewed[0].clone(), reviewed[0].clone()]),
+            _ => unreachable!(),
+        }
+        assert!(change(&mut s,json!({"kind":"import","source":input,"preparation":prepared["fingerprint"],"decisions":[],"reviewed":reviewed})).is_err(),"{alteration}");
+        assert_eq!(s.archive().unwrap().yjs, before);
+    }
+    let mut altered = input.clone();
+    altered["contents"] = json!("@book{x,title={tampered}} ");
+    assert!(change(&mut s,json!({"kind":"import","source":altered,"preparation":prepared["fingerprint"],"decisions":[],"reviewed":prepared["records"]})).is_err());
+    assert_eq!(s.archive().unwrap().yjs, before);
+}
+
+#[test]
+fn acquisition_forms_defer_key_collisions_to_the_guarded_import_plan() {
+    let mut s = article();
+    let existing = s.query("bibliography.prepare_record", json!({"id":"existing", "profile":"book", "key":"martin2026", "entry":{"title":"Another work"}})).unwrap();
+    change(
+        &mut s,
+        json!({"kind":"create", "record":existing["record"]}),
+    )
+    .unwrap();
+    let input = source("online");
+    let prepared = s
+        .query("bibliography.prepare_import", input.clone())
+        .unwrap();
+    let before = s.archive().unwrap().yjs;
+    let form = json!({"record":prepared["records"][0], "key":"martin2026", "values":{}});
+    assert!(s.query("bibliography.prepare_form", form.clone()).is_err());
+    let mut private_form = form;
+    private_form["scope"] = json!("import");
+    let reviewed = s.query("bibliography.prepare_form", private_form).unwrap();
+    assert_eq!(reviewed["record"]["key"], "martin2026");
+    let library = library(&mut s);
+    let review = s.query("bibliography.review_import", json!({"source":input,"expected":library["fingerprint"],"decisions":[],"reviewed":[reviewed["record"]]})).unwrap();
+    assert_eq!(review["plan"]["blocked"], true);
+    assert_eq!(s.archive().unwrap().yjs, before);
+}

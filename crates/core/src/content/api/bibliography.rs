@@ -199,9 +199,19 @@ pub(super) fn run(state: &State, command: &str, params: &Value) -> Result<Value,
     })
 }
 
+#[derive(Default, Clone, Copy, PartialEq, Eq, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+enum FormScope {
+    #[default]
+    Project,
+    /// Private import review: key collisions belong to the import plan, not form decoding.
+    Import,
+}
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct FormInput {
+    #[serde(default)]
+    scope: FormScope,
     record: Record,
     #[serde(default)]
     values: std::collections::BTreeMap<String, Value>,
@@ -215,6 +225,8 @@ struct ReviewInput {
     source: crate::bibliography::editions::SourceInput,
     expected: Fingerprint,
     decisions: Vec<bibliography::Decision>,
+    #[serde(default)]
+    reviewed: Option<Vec<Record>>,
 }
 pub(super) fn manager(state: &State, command: &str, params: &Value) -> Result<Value, Error> {
     let library = crate::bibliography::editions::library(state, command)?;
@@ -231,6 +243,8 @@ pub(super) fn manager(state: &State, command: &str, params: &Value) -> Result<Va
                 }));
             }
             let prepared = crate::bibliography::editions::prepare(input.source)?;
+            let prepared =
+                crate::bibliography::editions::reviewed(prepared, input.reviewed.as_deref())?;
             let plan = crate::bibliography::editions::plan(&library, &prepared)?
                 .resolve(&input.decisions)
                 .map_err(Error::bibliography)?;
@@ -257,13 +271,13 @@ pub(super) fn manager(state: &State, command: &str, params: &Value) -> Result<Va
                 .map(|r| r.key().to_string())
                 .collect();
             let key = input.key.unwrap_or_else(|| {
-                if library.get(record.id()).is_some() {
+                if input.scope == FormScope::Import || library.get(record.id()).is_some() {
                     record.key().into()
                 } else {
                     bibliography::suggest_key(record.entry(), &keys)
                 }
             });
-            if keys.contains(&key) {
+            if input.scope == FormScope::Project && keys.contains(&key) {
                 return Err(Error::bibliography(bibliography::Error {
                     code: bibliography::Code::DuplicateKey,
                     key: Some(key),
