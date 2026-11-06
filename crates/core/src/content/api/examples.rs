@@ -13,6 +13,30 @@ fn at() -> Value {
 }
 pub fn for_id(id: &str) -> Vec<Call> {
     let node = match id {
+        "bibliography.browse" => {
+            return vec![Call {
+                id: id.into(),
+                params: json!({"query":"Doe"}),
+            }];
+        }
+        "bibliography.form" | "bibliography.prepare_form" => {
+            return vec![Call {
+                id: id.into(),
+                params: json!({"record":{"id":"notice-draft","genre":"book","key":"draft","entry":{"type":"book","title":"A book"},"provenance":[]},"values":{"/title":"A revised book"}}),
+            }];
+        }
+        "bibliography.review_import" => {
+            return vec![Call {
+                id: id.into(),
+                params: json!({"source":{"id":"source-draft","name":"library.yaml","format":"hayagriva","contents":"example: {type: book, title: A book}"},"expected":typstographe_bibliography::Library::default().fingerprint(),"decisions":[]}),
+            }];
+        }
+        "bibliography.usage" => {
+            return vec![Call {
+                id: id.into(),
+                params: json!({"id":"example-record"}),
+            }];
+        }
         "bibliography.apply" => {
             return vec![Call {
                 id: id.into(),

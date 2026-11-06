@@ -295,6 +295,11 @@ fn dispatch(
         "bibliography_query" => bibliography::bibliography_query(
             serde_json::from_value(args["metadata"].clone())?,
             args["operation"].as_str().unwrap_or("").into(),
+            serde_json::from_value(
+                args.get("document")
+                    .cloned()
+                    .unwrap_or(serde_json::Value::Null),
+            )?,
             args.get("params")
                 .cloned()
                 .unwrap_or_else(|| serde_json::json!({})),

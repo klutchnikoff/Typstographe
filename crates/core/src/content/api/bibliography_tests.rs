@@ -228,3 +228,111 @@ fn bibliography_preparation_does_not_grant_unsupported_types_a_new_capability() 
     assert_eq!(error["code"], "command_unavailable");
     assert_eq!(error["reason"], "unsupported_document_type");
 }
+
+#[test]
+fn manager_form_preparation_is_private_and_edit_with_key_is_one_guarded_operation() {
+    let mut s = article();
+    let seed = s.query("bibliography.prepare_record", json!({"id":"r","genre":"journal_article","key":"old","entry":{"title":{"value":"A title","short":"Short"},"note":"Keep this"}})).unwrap();
+    let before = s.archive().unwrap().yjs;
+    let form = s
+        .query("bibliography.form", json!({"record":seed["record"]}))
+        .unwrap();
+    assert!(
+        form["fields"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|f| f["path"] == "/title")
+    );
+    let prepared = s.query("bibliography.prepare_form", json!({"record":seed["record"],"values":{"/title":"Edited title","/parent/0/title":"Journal"},"key":"new"})).unwrap();
+    assert_eq!(s.archive().unwrap().yjs, before);
+    assert_eq!(prepared["record"]["key"], "new");
+    assert_eq!(prepared["record"]["entry"]["title"]["short"], "Short");
+    let base = s.query("bibliography.inspect", json!({})).unwrap();
+    s.execute(
+        "bibliography.apply",
+        json!({"expected":base["fingerprint"],"change":{"kind":"create","record":seed["record"]}}),
+    )
+    .unwrap();
+    let original = s.archive().unwrap();
+    let current = s.query("bibliography.inspect", json!({})).unwrap();
+    let edit = json!({"kind":"edit","id":"r","expected":seed["fingerprint"],"patches":prepared["patches"],"key":"new"});
+    s.execute(
+        "bibliography.apply",
+        json!({"expected":current["fingerprint"],"change":edit}),
+    )
+    .unwrap();
+    let result = s.query("bibliography.record", json!({"id":"r"})).unwrap();
+    assert_eq!(result["record"]["key"], "new");
+    assert_eq!(result["record"]["entry"]["note"], "Keep this");
+    let after = s.archive().unwrap().yjs;
+    let current = s.query("bibliography.inspect", json!({})).unwrap();
+    assert!(
+        s.execute(
+            "bibliography.apply",
+            json!({"expected":current["fingerprint"],"change":edit})
+        )
+        .is_err()
+    );
+    assert_eq!(s.archive().unwrap().yjs, after);
+    s.execute("edit.undo", json!({})).unwrap();
+    assert_eq!(s.archive().unwrap().metadata, original.metadata);
+}
+
+#[test]
+fn import_review_is_private_and_refuses_a_changed_library() {
+    let mut s = article();
+    let source =
+        json!({"id":"s","name":"in.bib","format":"biblatex","contents":"@book{a,title={Example}}"});
+    let prepared = s
+        .query("bibliography.prepare_import", source.clone())
+        .unwrap();
+    let before = s.archive().unwrap().yjs;
+    let input = json!({"source":source,"expected":prepared["library_fingerprint"],"decisions":[]});
+    let review = s
+        .query("bibliography.review_import", input.clone())
+        .unwrap();
+    assert_eq!(review["plan"], prepared["plan"]);
+    assert_eq!(s.archive().unwrap().yjs, before);
+    let record = s
+        .query(
+            "bibliography.prepare_record",
+            json!({"id":"r","genre":"book"}),
+        )
+        .unwrap();
+    s.execute("bibliography.apply",json!({"expected":prepared["library_fingerprint"],"change":{"kind":"create","record":record["record"]}})).unwrap();
+    let before = s.archive().unwrap().yjs;
+    let error = error_value(&s.query("bibliography.review_import", input).unwrap_err());
+    assert_eq!(error["error"]["code"], "stale_base");
+    assert_eq!(s.archive().unwrap().yjs, before);
+}
+
+#[test]
+fn bibliography_usage_finds_objects_inside_widgets_without_changing_editor_context() {
+    let mut s = article();
+    let record = s
+        .query(
+            "bibliography.prepare_record",
+            json!({"id":"r","genre":"book","entry":{"title":"Example"}}),
+        )
+        .unwrap();
+    let base = s.query("bibliography.inspect", json!({})).unwrap();
+    s.batch(&[
+        super::Call{id:"bibliography.apply".into(),params:json!({"expected":base["fingerprint"],"change":{"kind":"create","record":record["record"]}})},
+        super::Call{id:"block.insert".into(),params:json!({"parent":{"root":{"kind":"body"}},"index":0,"node":{"type":"quote","content":[{"type":"paragraph","content":[{"type":"citation","attrs":{"form":"normal","items":[{"record_id":"r"}]}}]},{"type":"quoteAttribution"}]}})},
+    ],None).unwrap();
+    let before = s.archive().unwrap().yjs;
+    let context = s.query("context.get", json!({})).unwrap();
+    let usage = s.query("bibliography.usage", json!({"id":"r"})).unwrap();
+    assert_eq!(
+        usage["targets"],
+        json!([{"root":{"kind":"body"},"path":[0,0,0]}])
+    );
+    let browse = s
+        .query("bibliography.browse", json!({"query":"example"}))
+        .unwrap();
+    assert_eq!(browse["total"], 1);
+    assert_eq!(browse["entries"][0]["id"], "r");
+    assert_eq!(s.archive().unwrap().yjs, before);
+    assert_eq!(s.query("context.get", json!({})).unwrap(), context);
+}

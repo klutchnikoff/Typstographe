@@ -17,7 +17,7 @@ pub fn valid_path(path: &str) -> bool {
             .and_then(|s| s.strip_suffix(".bib").or_else(|| s.strip_suffix(".yaml")))
             .is_some_and(|id| RecordId::new(id).is_ok())
 }
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Entry {
     pub record_id: RecordId,
     pub key: String,

@@ -33,6 +33,7 @@ pub fn model_policy(
 pub fn bibliography_query(
     metadata: Metadata,
     operation: String,
+    document: Option<Node>,
     params: serde_json::Value,
 ) -> Result<serde_json::Value, CommandError> {
     use typstographe_core::content::{
@@ -48,8 +49,12 @@ pub fn bibliography_query(
     metadata.validate()?;
     let kind = metadata.document_type();
     let state = State::new(
-        serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph"}]}))
-            .unwrap(),
+        document.unwrap_or_else(|| {
+            serde_json::from_value(
+                serde_json::json!({"type":"doc","content":[{"type":"paragraph"}]}),
+            )
+            .unwrap()
+        }),
         Settings {
             metadata,
             template: kind.default_model(),

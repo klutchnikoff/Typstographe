@@ -24,6 +24,26 @@ pub fn types() -> Value {
 }
 const QUERIES: &[(&str, &str)] = &[
     (
+        "bibliography.review_import",
+        "Resolve explicit decisions against the frozen library fingerprint; return the reviewed plan without publication. No silent rebase of import decisions.",
+    ),
+    (
+        "bibliography.form",
+        "Project native record fields into simple editable controls, preserving unexposed metadata. The supplied record is a frozen draft base, never a write instruction.",
+    ),
+    (
+        "bibliography.prepare_form",
+        "Validate changed form controls against a frozen native record. Returns root-field patches and a proposed record; does not publish. Use bibliography.apply with the original record fingerprint for edits, or create for new notices.",
+    ),
+    (
+        "bibliography.browse",
+        "Search all project notices by title/authors with compact summaries, genre and completeness. No 80-item suggestion limit.",
+    ),
+    (
+        "bibliography.usage",
+        "Return typed tree targets of a notice’s citations in the document body, including widget text. Header profiles currently exclude citation objects.",
+    ),
+    (
         "bibliography.record",
         "Read one native record by stable id, its content fingerprint and completeness diagnostics. Use its fingerprint as the record guard for edit, rename or remove within bibliography.apply.",
     ),

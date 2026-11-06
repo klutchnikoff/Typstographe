@@ -77,6 +77,13 @@
                   "id": {
                     "$ref": "#/$defs/RecordId"
                   },
+                  "key": {
+                    "default": null,
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
                   "kind": {
                     "const": "edit",
                     "type": "string"
@@ -349,6 +356,131 @@
     },
     {
       "batch_step": false,
+      "description": "Search all project notices by title/authors with compact summaries, genre and completeness. No 80-item suggestion limit.",
+      "family": "query",
+      "id": "bibliography.browse",
+      "params_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "batch_step": false,
+      "description": "Project native record fields into simple editable controls, preserving unexposed metadata. The supplied record is a frozen draft base, never a write instruction.",
+      "family": "query",
+      "id": "bibliography.form",
+      "params_schema": {
+        "$defs": {
+          "BibliographicRecord": {
+            "additionalProperties": false,
+            "properties": {
+              "entry": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "genre": {
+                "$ref": "#/$defs/Genre"
+              },
+              "id": {
+                "$ref": "#/$defs/RecordId"
+              },
+              "key": {
+                "type": "string"
+              },
+              "provenance": {
+                "default": [],
+                "items": {
+                  "$ref": "#/$defs/Provenance"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "id",
+              "genre",
+              "key",
+              "entry"
+            ],
+            "type": "object"
+          },
+          "Fingerprint": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "Genre": {
+            "description": "Form intent is separate from Hayagriva's native type and its container types.",
+            "enum": [
+              "journal_article",
+              "book",
+              "book_chapter",
+              "conference_paper",
+              "report",
+              "thesis",
+              "web_resource",
+              "preprint",
+              "software",
+              "other"
+            ],
+            "type": "string"
+          },
+          "Provenance": {
+            "additionalProperties": false,
+            "description": "Opaque origin link. Source bytes live in the import artifact, not in every record.",
+            "properties": {
+              "original_key": {
+                "type": "string"
+              },
+              "source_digest": {
+                "$ref": "#/$defs/Fingerprint"
+              },
+              "source_id": {
+                "$ref": "#/$defs/RecordId"
+              }
+            },
+            "required": [
+              "source_id",
+              "source_digest",
+              "original_key"
+            ],
+            "type": "object"
+          },
+          "RecordId": {
+            "pattern": "^[A-Za-z0-9_-]{1,128}$",
+            "type": "string"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "record": {
+            "$ref": "#/$defs/BibliographicRecord"
+          },
+          "values": {
+            "additionalProperties": true,
+            "default": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "record"
+        ],
+        "title": "FormInput",
+        "type": "object"
+      }
+    },
+    {
+      "batch_step": false,
       "description": "Describe common bibliographic form genres and native field paths. Article-only; completeness recommendations are not mandatory bibliographic fields.",
       "family": "query",
       "id": "bibliography.genres",
@@ -368,6 +500,116 @@
         "additionalProperties": false,
         "properties": {},
         "required": [],
+        "type": "object"
+      }
+    },
+    {
+      "batch_step": false,
+      "description": "Validate changed form controls against a frozen native record. Returns root-field patches and a proposed record; does not publish. Use bibliography.apply with the original record fingerprint for edits, or create for new notices.",
+      "family": "query",
+      "id": "bibliography.prepare_form",
+      "params_schema": {
+        "$defs": {
+          "BibliographicRecord": {
+            "additionalProperties": false,
+            "properties": {
+              "entry": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "genre": {
+                "$ref": "#/$defs/Genre"
+              },
+              "id": {
+                "$ref": "#/$defs/RecordId"
+              },
+              "key": {
+                "type": "string"
+              },
+              "provenance": {
+                "default": [],
+                "items": {
+                  "$ref": "#/$defs/Provenance"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "id",
+              "genre",
+              "key",
+              "entry"
+            ],
+            "type": "object"
+          },
+          "Fingerprint": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "Genre": {
+            "description": "Form intent is separate from Hayagriva's native type and its container types.",
+            "enum": [
+              "journal_article",
+              "book",
+              "book_chapter",
+              "conference_paper",
+              "report",
+              "thesis",
+              "web_resource",
+              "preprint",
+              "software",
+              "other"
+            ],
+            "type": "string"
+          },
+          "Provenance": {
+            "additionalProperties": false,
+            "description": "Opaque origin link. Source bytes live in the import artifact, not in every record.",
+            "properties": {
+              "original_key": {
+                "type": "string"
+              },
+              "source_digest": {
+                "$ref": "#/$defs/Fingerprint"
+              },
+              "source_id": {
+                "$ref": "#/$defs/RecordId"
+              }
+            },
+            "required": [
+              "source_id",
+              "source_digest",
+              "original_key"
+            ],
+            "type": "object"
+          },
+          "RecordId": {
+            "pattern": "^[A-Za-z0-9_-]{1,128}$",
+            "type": "string"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "record": {
+            "$ref": "#/$defs/BibliographicRecord"
+          },
+          "values": {
+            "additionalProperties": true,
+            "default": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "record"
+        ],
+        "title": "FormInput",
         "type": "object"
       }
     },
@@ -508,6 +750,145 @@
     },
     {
       "batch_step": false,
+      "description": "Resolve explicit decisions against the frozen library fingerprint; return the reviewed plan without publication. No silent rebase of import decisions.",
+      "family": "query",
+      "id": "bibliography.review_import",
+      "params_schema": {
+        "$defs": {
+          "Decision": {
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "incoming": {
+                    "$ref": "#/$defs/RecordId"
+                  },
+                  "kind": {
+                    "const": "same",
+                    "type": "string"
+                  },
+                  "target": {
+                    "$ref": "#/$defs/RecordId"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "incoming",
+                  "target"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "incoming": {
+                    "$ref": "#/$defs/RecordId"
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "const": "distinct",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "incoming",
+                  "key"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "incoming": {
+                    "$ref": "#/$defs/RecordId"
+                  },
+                  "kind": {
+                    "const": "skip",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "incoming"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          "Fingerprint": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "ImportFormat": {
+            "enum": [
+              "hayagriva",
+              "biblatex"
+            ],
+            "type": "string"
+          },
+          "RecordId": {
+            "pattern": "^[A-Za-z0-9_-]{1,128}$",
+            "type": "string"
+          },
+          "SourceInput": {
+            "additionalProperties": false,
+            "properties": {
+              "contents": {
+                "type": "string",
+                "x-max-utf8-bytes": 2097152
+              },
+              "format": {
+                "$ref": "#/$defs/ImportFormat"
+              },
+              "id": {
+                "$ref": "#/$defs/RecordId"
+              },
+              "name": {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[^/\\\\\\u0000-\\u001f\\u007f-\\u009f]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "format",
+              "contents"
+            ],
+            "type": "object"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "decisions": {
+            "items": {
+              "$ref": "#/$defs/Decision"
+            },
+            "type": "array"
+          },
+          "expected": {
+            "$ref": "#/$defs/Fingerprint"
+          },
+          "source": {
+            "$ref": "#/$defs/SourceInput"
+          }
+        },
+        "required": [
+          "source",
+          "expected",
+          "decisions"
+        ],
+        "title": "ReviewInput",
+        "type": "object"
+      }
+    },
+    {
+      "batch_step": false,
       "description": "Search the project bibliography by title and author.",
       "family": "query",
       "id": "bibliography.search",
@@ -521,6 +902,32 @@
         "required": [
           "query"
         ],
+        "type": "object"
+      }
+    },
+    {
+      "batch_step": false,
+      "description": "Return typed tree targets of a notice’s citations in the document body, including widget text. Header profiles currently exclude citation objects.",
+      "family": "query",
+      "id": "bibliography.usage",
+      "params_schema": {
+        "$defs": {
+          "RecordId": {
+            "pattern": "^[A-Za-z0-9_-]{1,128}$",
+            "type": "string"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/RecordId"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "RecordIdentity",
         "type": "object"
       }
     },
@@ -2204,6 +2611,13 @@
                   "id": {
                     "$ref": "#/$defs/RecordId"
                   },
+                  "key": {
+                    "default": null,
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
                   "kind": {
                     "const": "edit",
                     "type": "string"
@@ -2961,6 +3375,13 @@
                       },
                       "id": {
                         "$ref": "#/$defs/RecordId"
+                      },
+                      "key": {
+                        "default": null,
+                        "type": [
+                          "string",
+                          "null"
+                        ]
                       },
                       "kind": {
                         "const": "edit",

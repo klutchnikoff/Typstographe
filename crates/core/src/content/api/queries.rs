@@ -364,6 +364,11 @@ pub fn run(
             }
             json!({"available":available,"language":language,"issues":issues})
         }
+        "bibliography.review_import"
+        | "bibliography.form"
+        | "bibliography.prepare_form"
+        | "bibliography.browse"
+        | "bibliography.usage" => super::bibliography::manager(state, id, p)?,
         "bibliography.inspect" => {
             let meta = crate::bibliography::editions::metadata(state, id)?;
             let library = crate::bibliography::editions::library(state, id)?;

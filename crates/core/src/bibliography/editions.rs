@@ -32,6 +32,8 @@ pub enum Change {
         expected: Fingerprint,
         patches: Vec<FieldPatch>,
         genre: Option<Genre>,
+        #[serde(default)]
+        key: Option<String>,
     },
     Rename {
         id: RecordId,
@@ -185,6 +187,7 @@ pub fn apply(
             expected,
             patches,
             genre,
+            key,
         } => {
             let current = records
                 .iter_mut()
@@ -195,6 +198,11 @@ pub fn apply(
                 .map_err(Error::bibliography)?;
             if let Some(genre) = genre {
                 edited = edited.with_genre(*genre);
+            }
+            if let Some(key) = key {
+                edited = edited
+                    .renamed(&edited.fingerprint(), key)
+                    .map_err(Error::bibliography)?;
             }
             *current = edited;
         }
