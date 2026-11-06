@@ -129,8 +129,9 @@ consignés. C.1 (renvois) et le premier périmètre de C.2 (mathématiques) sont
 implémentés et vérifiés localement, comme C.3 (gestionnaire complet, profils
 natifs Hayagriva et **CAS 16**). La CI et la recette utilisateur restent requises
 avant fusion. La consolidation frontend / E.1 est également livrée localement ;
-le prochain lot est C.4 (bibliothèque personnelle), avant les extensions lourdes
-de D, F et J. Préciser ensemble les paramètres,
+**C.4 est différé par décision du 6 novembre 2026**. Conserver la bibliothèque
+locale au projet ; aucune dépendance au stockage personnel n’est introduite
+pour les prochains lots de C/E, D ou F. Choisir ensemble la suite et préciser les paramètres,
 commandes/cibles et maquettes avant chaque implémentation ;
 la livraison de tous les types de B n’est pas un prérequis.
 
@@ -303,16 +304,20 @@ la livraison de tous les types de B n’est pas un prérequis.
   Retirer le genre persistant ; déduire les profils du type/parents Hayagriva.
   Mutualiser transitions natives, conservation des conteneurs inactifs et
   publication gardée dans la crate commune ; qualifier CAS, reprise et rendu.
-- **C.4 — Bibliothèque personnelle.** Recherche locale au projet avant recherche
-  personnelle ; copie d’une notice lors de son utilisation, liens de provenance
-  conservés et échanges de corrections explicites. Les deux stockages ont leurs
-  révisions et protections contre l’écrasement ; aucune transaction atomique entre
-  eux n’est présumée. Aucune modification personnelle ne réécrit silencieusement
-  un projet. Le gestionnaire de C.3 est réutilisé avec un choix de bibliothèque.
-  Réutiliser la crate et les tests C.3 pour les principes de Citekeep (identités,
-  clés locales stables, conflits explicites, planification avant écriture).
-  Son moteur Python et son stockage BibTeX ne sont pas retenus ; le stockage et
-  le format personnels restent à décider. Ne pas refaire le rapprochement en C.4.
+- **C.4 — Gestion bibliographique personnelle et échanges — différé, P3.**
+  Réexaminer uniquement avec un besoin identifié de véritable gestionnaire
+  personnel intégré à typstOgraphe. Pour l’instant, seule la bibliothèque locale
+  au projet est utilisée ; C.3 reste suffisant et le `.typsto` reste autonome.
+  Le futur lot couvrira catalogue personnel, recherche/édition, conservation et
+  échanges explicites, en réutilisant la crate, les formulaires et le corpus C.3.
+  Citekeep reste la référence de conception pour rapprochement, clés stables et
+  décisions avant écriture ; ne pas dupliquer son moteur en Python.
+  Le choix SQLite, le contrat de stockage, les révisions et états de référence,
+  les règles d’autorité, les différences locales et les conflits en collaboration
+  restent ouverts. Ni vue matérialisée ni synchronisation bidirectionnelle ne
+  sont validées. Préserver les frontières actuelles, sans créer de stockage,
+  d’API personnelle, de dépendance supplémentaire ou de couche de synchronisation
+  anticipant ce lot. Valider contrat et maquette ensemble lors de sa réouverture.
 
 Le contrat bibliographique C.3 et le CAS 16 sont courants ; les anciens lots
 de raccordement restent des bilans datés. Recherche en ligne et gestion de PDF
@@ -323,7 +328,7 @@ fichier ; absence de logique spécifique dupliquée dans les déclencheurs.
 
 ### Consolidation frontend et E.1 — 6 novembre 2026
 
-Avant C.4, séparer les responsabilités des contrôleurs existants : rendu et
+Consolidation livrée après C.3 : séparer les responsabilités des contrôleurs existants : rendu et
 liaisons des champs d’en-tête, liste bibliographique et navigation, requêtes
 asynchrones liées à une génération documentaire, préparation pure des lots,
 puis orchestration des formulaires et de leur récupération. Réutiliser les

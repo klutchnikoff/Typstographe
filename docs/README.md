@@ -59,8 +59,11 @@ Le [corpus inspiré de Citekeep](../fixtures/bibliography/README.md) conserve le
 
 Le [lot frontend / E.1](frontend-consolidation.md) sépare rendu, requêtes et
 publication, et expose les commandes selon les capacités du type actif.
-C.4 reste préparatoire : bibliothèque personnelle, stockage et échanges à
-valider ensemble. Qualification CI et recette utilisateur requises avant fusion.
+C.4 est **différé** : conserver la seule bibliothèque locale au projet. Le
+catalogue personnel, son stockage et ses échanges seront réexaminés avec un
+besoin réel de gestion bibliographique personnelle intégrée ; aucun choix de
+stockage ou de synchronisation n’est validé. Qualification CI et recette
+utilisateur requises avant fusion des lots livrés.
 
 ## Bilans et références historiques
 

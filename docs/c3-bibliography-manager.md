@@ -99,6 +99,8 @@ frontière de dépendances du cœur sont vérifiés. Le build web de production
 réussit ; son avertissement préexistant sur la taille des chunks reste présent.
 Aucune mesure de couverture ou de latence n’est annoncée pour ce lot.
 
-C.4 ajoutera le stockage personnel et les échanges explicites, en réutilisant
-ce gestionnaire et cette crate. Pas de résolution DOI en ligne, d’import PDF ou
-de réécriture des notices depuis un service distant dans ce lot.
+**Décision du 6 novembre 2026 : C.4 est différé.** Ce gestionnaire reste
+centré sur la bibliothèque du projet. Un éventuel outil personnel réutilisera
+ce gestionnaire et cette crate après validation de son besoin, de son stockage
+et de ses échanges. Pas de résolution DOI en ligne, d’import PDF ou de
+réécriture des notices depuis un service distant dans ce lot.

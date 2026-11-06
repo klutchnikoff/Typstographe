@@ -197,8 +197,10 @@ les primitives natives simples n’ont pas besoin d’un wrapper systématique.
 ### Lots validés le 3 novembre 2026 — après les contrats de B.1
 
 B.1 est clôturé. L’ordre de réalisation validé est désormais
-**C.1 → C.2 → C.3 → consolidation frontend / E.1 → C.4**, à partir des contrats
-préparatoires consignés en B.1. C.1, le premier périmètre de C.2 et C.3 sont
+**C.1 → C.2 → C.3 → consolidation frontend / E.1**, à partir des contrats
+préparatoires consignés en B.1. **Décision du 6 novembre 2026 : C.4 est différé**
+et retiré de l’ordre de réalisation immédiat. La bibliothèque du projet couvre
+le besoin actuel ; la bibliothèque personnelle n’est pas un préalable à la suite. C.1, le premier périmètre de C.2 et C.3 sont
 implémentés et vérifiés localement. C.3 comprend le gestionnaire compact complet,
 les profils natifs Hayagriva et le **CAS 16** ; sa fusion reste soumise à la CI
 et à la recette utilisateur. E.1 précède les extensions plus lourdes de D, F et J.
@@ -362,19 +364,26 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    de type sans perdre champs, conteneurs inactifs, provenance ou citations.
    Publier une édition gardée et annulable, avec les mêmes règles dans les
    adaptateurs et les exports.
-4. **C.4 — Bibliothèque bibliographique personnelle.** Recherche projet d’abord,
-   bibliothèque personnelle ensuite ; copier la notice dans le projet lors de
-   l’insertion. Échanges et corrections explicites, identités et clés stables,
-   conflits soumis à décision, aucune mise à jour silencieuse des documents.
-   Réutiliser le gestionnaire avec un choix Projet/Bibliothèque personnelle.
-   Réutiliser aussi la crate de C.3 et son corpus : ajouter le stockage personnel
-   et les échanges à révisions propres, sans second moteur de rapprochement.
+4. **C.4 — Gestion bibliographique personnelle et échanges avec les projets — différé, P3.**
+   **Décision du 6 novembre 2026 :** conserver pour l’instant la seule bibliothèque
+   locale au projet, autonome dans le `.typsto`. Aucun stockage central ni
+   mécanisme de synchronisation personnelle n’est ajouté.
+   Réexaminer ce lot lorsqu’un véritable outil de gestion bibliographique
+   personnelle dans typstOgraphe répondra à un besoin d’usage identifié.
+   Son périmètre comprendra alors le catalogue personnel, la recherche et
+   l’édition des notices, la conservation et les échanges avec les projets.
+   Réutiliser la crate, le gestionnaire et le corpus C.3 ; Citekeep reste une
+   référence pour les règles de rapprochement et les parcours, sans second moteur.
+   **Choix restant ouverts :** stockage (SQLite n’est qu’une proposition),
+   identités et révisions d’échange, conservation/sauvegarde, autorité des notices,
+   différences locales et conflits entre bibliothèques de collaborateurs.
+   Le statut de « vue matérialisée » et la synchronisation bidirectionnelle
+   n’ont pas été validés ; reprendre ces décisions ensemble avant toute implémentation.
 
-La séparation bibliothèque personnelle/projet et les garanties de Citekeep
-servent de référence de conception. Les règles seront portées une seule fois
-dans la crate Rust commune ; le moteur Python et son stockage BibTeX ne sont
-pas retenus. Le stockage personnel reste à décider en C.4. Chaque projet reste
-autonome et utilisable hors ligne, indépendamment de cette bibliothèque.
+Les garanties de rapprochement inspirées de Citekeep sont déjà portées dans la
+crate Rust commune. Le moteur Python et son stockage BibTeX ne sont pas retenus.
+Chaque projet conserve sa bibliothèque, son gestionnaire et ses exports autonomes,
+utilisables hors ligne, indépendamment d’une future bibliothèque personnelle.
 
 **Choix à valider :** périmètre par capacité, paramètres, contenus et imbrications
 autorisés, saisie, clavier et cibles MCP ; fonctions natives ou paquet externe.
@@ -384,7 +393,7 @@ vérifiés, avec la même disponibilité dans les interfaces qui exposent la cap
 
 ### Consolidation frontend et E.1 — 6 novembre 2026
 
-Avant C.4, séparer les responsabilités des contrôleurs existants : rendu et
+Consolidation livrée après C.3 : séparer les responsabilités des contrôleurs existants : rendu et
 liaisons des champs d’en-tête, liste bibliographique et navigation, requêtes
 asynchrones liées à une génération documentaire, préparation pure des lots,
 puis orchestration des formulaires et de leur récupération. Réutiliser les
@@ -669,6 +678,10 @@ un document utile et retrouve son travail, sans lire le dépôt ni installer Rus
 
 ## I — Extensions à réexaminer après les premiers usages
 
+- **C.4 — Gestion bibliographique personnelle : différée.** Réexaminer avec un
+  besoin réel de catalogue personnel et de réutilisation entre projets, selon le
+  périmètre et les choix encore ouverts consignés dans C.4.
+
 - Correction grammaticale locale : orientation LanguageTool avec runtime Java
   embarqué, processus persistant et API HTTP officielle sur la boucle locale ;
   mesurer mémoire, démarrage et pertinence avant intégration.
@@ -737,17 +750,16 @@ droits en collaboration, parcours de saisie sur maquette avec de vrais relecteur
 **Sortie :** un article relu par deux personnes et un agent, suggestions
 acceptées ou refusées, aperçu corrigé compilé, sans modification directe du texte.
 
-## Prochain lot proposé
+## Prochain lot à choisir ensemble
 
-**C.4 — Bibliothèque bibliographique personnelle**, après qualification du lot
-frontend / E.1 et de C.3 (gestionnaire complet, profils natifs, CAS 16).
+C.3 (gestionnaire du projet, profils natifs, CAS 16) et la consolidation frontend /
+E.1 sont livrés localement. C.4 est différé : aucune implémentation personnelle
+n’est engagée et les bibliothèques restent locales aux projets.
 
-1. Valider ensemble le stockage personnel, ses révisions, les échanges explicites
-   avec les projets et la maquette Projet/Bibliothèque personnelle.
-2. Réutiliser la crate, le corpus de rapprochement et le gestionnaire C.3 ;
-   aucune seconde implémentation des identités ou de la fusion des notices.
-3. Évaluer progressivement les modèles de D sur leur corpus, après E.1 ; les
-   chantiers F (ACP) et J (relecture) conservent leurs validations propres.
+Choisir ensemble la suite : évaluation des modèles de D sur leur corpus,
+autres besoins de rédaction dans C/E ou reprise de la maquette ACP dans F.
+Le stockage personnel et la synchronisation bibliographique ne bloquent aucun
+de ces chantiers.
 
 Les tests locaux ne remplacent pas la qualification CI avant fusion ni la
-recette utilisateur. Aucun choix encore ouvert de C.4 n’est implémenté d’avance.
+recette utilisateur. Valider les choix et les maquettes du prochain lot avant de coder.
