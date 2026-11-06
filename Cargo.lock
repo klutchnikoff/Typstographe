@@ -6714,6 +6714,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "typstographe-bibliography"
+version = "0.1.0"
+dependencies = [
+ "biblatex",
+ "hayagriva",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "strsim",
+ "thiserror 2.0.21",
+ "unicode-normalization",
+ "yaml_serde",
+]
+
+[[package]]
 name = "typstographe-cli"
 version = "0.1.0"
 dependencies = [
