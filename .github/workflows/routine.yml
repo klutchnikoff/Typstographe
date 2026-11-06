@@ -37,7 +37,7 @@ jobs:
         if: inputs.level == 'main' || inputs.rust
         run: >-
           sudo apt-get update && sudo apt-get install -y
-          build-essential pkg-config libwebkit2gtk-4.1-dev libxdo-dev
+          build-essential pkg-config libssl-dev libwebkit2gtk-4.1-dev libxdo-dev
           libayatana-appindicator3-dev librsvg2-dev patchelf
       - name: Rust toolchain
         if: inputs.level == 'main' || inputs.rust
