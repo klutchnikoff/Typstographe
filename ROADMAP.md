@@ -353,6 +353,12 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    exposés ; les requêtes de formulaire, revue, parcours et usages sont communes
    à Tauri, CLI et MCP. Le genre est choisi à la création et reste en lecture
    seule sur une notice existante dans ce premier gestionnaire.
+   **Classification native — décision du 6 novembre 2026 :**
+   [supprimer le genre indépendant](docs/c3-native-bibliography-profiles.md).
+   Déduire les profils de formulaire du type et des parents Hayagriva ; changer
+   de type sans perdre champs, conteneurs inactifs, provenance ou citations.
+   Publier une édition gardée et annulable, avec les mêmes règles dans les
+   adaptateurs et les exports.
 4. **C.4 — Bibliothèque bibliographique personnelle.** Recherche projet d’abord,
    bibliothèque personnelle ensuite ; copier la notice dans le projet lors de
    l’insertion. Échanges et corrections explicites, identités et clés stables,

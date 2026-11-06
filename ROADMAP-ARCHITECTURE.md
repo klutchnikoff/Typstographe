@@ -295,6 +295,10 @@ la livraison de tous les types de B n’est pas un prérequis.
   la bibliothèque, localisent les citations et revoient les imports sans
   publication. La modification de genre d’une notice existante reste distincte
   et n’est pas proposée par ce premier formulaire.
+  **Classification native :** [décision C.3](docs/c3-native-bibliography-profiles.md).
+  Retirer le genre persistant ; déduire les profils du type/parents Hayagriva.
+  Mutualiser transitions natives, conservation des conteneurs inactifs et
+  publication gardée dans la crate commune ; qualifier CAS, reprise et rendu.
 - **C.4 — Bibliothèque personnelle.** Recherche locale au projet avant recherche
   personnelle ; copie d’une notice lors de son utilisation, liens de provenance
   conservés et échanges de corrections explicites. Les deux stockages ont leurs
