@@ -44,6 +44,14 @@
       "entrypoint": "capabilities/cross-references.typ",
       "signature": "cross-reference(target: label, include-label: bool, include-page: bool) -> content; reference-style(label: auto, page: auto, combine: auto) -> content",
       "packages": []
+    },
+    {
+      "id": "mathematics",
+      "entrypoint": "capabilities/mathematics.typ",
+      "signature": "math-formula(source: str, language: \"typst\" | \"latex\", block: bool, alt: str) -> content",
+      "packages": [
+        "mitex"
+      ]
     }
   ],
   "packages": [
@@ -67,6 +75,16 @@
       "license": "MIT AND Unicode-3.0",
       "archive": "https://packages.typst.org/preview/datify-core-2.1.0.tar.gz",
       "sha256": "5a3621f82e88098e8924f811f86b2733e8eeed3a6f08ac8e42507888ef0c29e6",
+      "dependencies": []
+    },
+    {
+      "name": "mitex",
+      "version": "0.2.7",
+      "root": "packages/mitex-0.2.7",
+      "entrypoint": "lib.typ",
+      "license": "Apache-2.0",
+      "archive": "https://packages.typst.org/preview/mitex-0.2.7.tar.gz",
+      "sha256": "0159e214845e49cbdc332d9d572da112dae5ad248072e0a7680d38c8307c2e15",
       "dependencies": []
     }
   ]

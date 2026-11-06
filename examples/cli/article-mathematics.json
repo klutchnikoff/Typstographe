@@ -1,0 +1,239 @@
+{
+  "version": 1,
+  "document": {
+    "kind": "new",
+    "type": "article",
+    "params": {
+      "metadata": {
+        "fields": {
+          "affiliations": [],
+          "authors": [
+            {
+              "id": "camille",
+              "name": "Camille Martin",
+              "email": "",
+              "orcid": "",
+              "corresponding": false,
+              "affiliation-ids": []
+            }
+          ],
+          "citation_style": null,
+          "localizations": [
+            {
+              "abstract": {
+                "content": [
+                  {
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "doc"
+              },
+              "id": "localization-fr",
+              "keywords": [],
+              "language": "fr",
+              "short-title": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Mathématiques structurées"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "subtitle": {
+                "content": [
+                  {
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "doc"
+              },
+              "title": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Formules, équations et renvois"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "options": {
+            "bullet_marker": null,
+            "landscape": null,
+            "language": "fr",
+            "paper": null,
+            "spelling_ignored": {}
+          },
+          "references": [],
+          "show_outline": null
+        },
+        "type": "article"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "block.splice",
+      "params": {
+        "parent": {
+          "root": {
+            "kind": "body"
+          }
+        },
+        "index": 0,
+        "delete_count": 1,
+        "nodes": [
+          {
+            "type": "heading",
+            "attrs": {
+              "level": 1
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Formules en ligne"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "La fonction "
+              },
+              {
+                "type": "mathInline",
+                "attrs": {
+                  "language": "typst",
+                  "alt": "Identité de sommation"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "cos(x)"
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": " est saisie en Typst ; son équivalent "
+              },
+              {
+                "type": "mathInline",
+                "attrs": {
+                  "language": "latex",
+                  "alt": "Intégrale de x au carré entre zéro et un"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\\cos(x)"
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": " est saisi en LaTeX. Le source reste visible dans l’éditeur."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "level": 1
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Équations en bloc"
+              }
+            ]
+          },
+          {
+            "type": "mathBlock",
+            "attrs": {
+              "language": "typst",
+              "alt": "Identité de sommation",
+              "alias": "sum",
+              "anchor": "equation-sum"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "sum_(k=1)^n k = (n(n+1))/2"
+              }
+            ]
+          },
+          {
+            "type": "mathBlock",
+            "attrs": {
+              "language": "latex",
+              "alt": "Intégrale de x au carré entre zéro et un",
+              "alias": "integral",
+              "anchor": "equation-integral"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "\\int_0^1 x^2\\,dx = \\frac{1}{3}"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Les relations "
+              },
+              {
+                "type": "crossReference",
+                "attrs": {
+                  "target": "equation-sum",
+                  "include_label": true,
+                  "include_page": false
+                }
+              },
+              {
+                "type": "text",
+                "text": " et "
+              },
+              {
+                "type": "crossReference",
+                "attrs": {
+                  "target": "equation-integral",
+                  "include_label": true,
+                  "include_page": false
+                }
+              },
+              {
+                "type": "text",
+                "text": " utilisent la numérotation du modèle. Les labels personnels eq:sum et eq:integral servent uniquement à les retrouver."
+              }
+            ]
+          },
+          {
+            "type": "paragraph"
+          }
+        ]
+      }
+    }
+  ],
+  "save": {
+    "kind": "as",
+    "path": "../article-mathematics.typsto"
+  }
+}

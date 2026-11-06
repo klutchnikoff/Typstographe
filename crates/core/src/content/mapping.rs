@@ -6,18 +6,50 @@ struct Entry {
     position: usize,
     value: String,
     atom: bool,
+    width: usize,
 }
 pub(super) fn literal(value: &str) -> String {
-    crate::document::escape_markup(value)
-        .replace('.', "\\.")
-        .replace(['\n', '\r'], " ")
-        .replace('\u{a0}', "~")
+    let mut output = String::with_capacity(value.len());
+    for ch in value.chars() {
+        let (ch, escape) = literal_character(ch);
+        if escape {
+            output.push('\\');
+        }
+        output.push(ch);
+    }
+    output
+}
+// Share the exact encoding rules between projection and byte-width calculation.
+// In particular, a nonbreaking space generates an unescaped Typst tilde.
+fn literal_character(ch: char) -> (char, bool) {
+    match ch {
+        '\n' | '\r' => (' ', false),
+        '\u{a0}' => ('~', false),
+        ch => (ch, ch == '.' || crate::document::needs_markup_escape(ch)),
+    }
+}
+fn literal_width(ch: char) -> usize {
+    let (ch, escape) = literal_character(ch);
+    ch.len_utf8() + usize::from(escape)
 }
 pub fn source_mapped(document: &Node, assets: &Assets) -> Result<(String, SourceMap), String> {
     let mut marked = document.clone();
     let mut entries = vec![];
     fn visit(node: &mut Node, position: usize, entries: &mut Vec<Entry>) -> Result<usize, String> {
         super::attributes::validate(node, false)?;
+        if super::mathematics::is_math(&node.kind) {
+            let size = 2 + super::mathematics::text(node).encode_utf16().count();
+            let id = entries.len();
+            entries.push(Entry {
+                position,
+                value: String::new(),
+                atom: true,
+                width: size,
+            });
+            node.attrs.get_or_insert_with(|| serde_json::json!({}))["_mapping"] =
+                serde_json::json!(id);
+            return Ok(size);
+        }
         if matches!(
             node.kind.as_str(),
             "text" | "footnote" | "citation" | "crossReference"
@@ -43,6 +75,7 @@ pub fn source_mapped(document: &Node, assets: &Assets) -> Result<(String, Source
                 position,
                 value,
                 atom,
+                width: 1,
             });
             let attrs = node.attrs.get_or_insert_with(|| serde_json::json!({}));
             attrs["_mapping"] = serde_json::json!(id);
@@ -81,7 +114,9 @@ pub fn source_mapped(document: &Node, assets: &Assets) -> Result<(String, Source
             let width: usize = width.parse().map_err(|_| "Étendue interne invalide.")?;
             let tail = &after[end + 2..];
             let body = tail.get(..width).ok_or("Étendue interne invalide.")?;
-            characters[entry.position] = start..start + width;
+            for value in characters.iter_mut().skip(entry.position).take(entry.width) {
+                *value = start..start + width;
+            }
             output.push_str(body);
             remaining = &tail[width..];
             continue;
@@ -89,7 +124,7 @@ pub fn source_mapped(document: &Node, assets: &Assets) -> Result<(String, Source
         let mut byte = start;
         let mut position = entry.position;
         for ch in entry.value.chars() {
-            let width = literal(&ch.to_string()).len();
+            let width = literal_width(ch);
             if !entry.atom {
                 for _ in 0..ch.len_utf16() {
                     characters[position] = byte..byte + width;
@@ -130,6 +165,53 @@ pub fn source_mapped(document: &Node, assets: &Assets) -> Result<(String, Source
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
+    #[test]
+    fn literal_encoding_and_byte_widths_match_the_original_rules_for_every_unicode_scalar() {
+        let all: String = (0..=0x10ffff).filter_map(char::from_u32).collect();
+        let expected = crate::document::escape_markup(&all)
+            .replace('.', "\\.")
+            .replace(['\n', '\r'], " ")
+            .replace('\u{a0}', "~");
+        assert_eq!(literal(&all), expected);
+        let mut offset = 0;
+        for ch in all.chars() {
+            let width = literal_width(ch);
+            let fragment = &expected[offset..offset + width];
+            let (visible, escaped) = literal_character(ch);
+            assert_eq!(fragment.starts_with('\\') && fragment.len() > 1, escaped);
+            assert!(fragment.ends_with(visible));
+            offset += width;
+        }
+        assert_eq!(offset, expected.len());
+    }
+
+    #[test]
+    fn escaped_and_multibyte_text_after_an_atom_keeps_every_utf16_range() {
+        let text = "é😀e\u{301}\u{a0} .#*_[]$`<>@=+-/~{}:\\\n\r\t\"'";
+        let node = serde_json::from_value(serde_json::json!({"type":"doc","content":[
+            {"type":"paragraph","content":[
+                {"type":"footnote","attrs":{"text":"Note #é 😀"}},
+                {"type":"text","text":text,"marks":[{"type":"italic"}]}
+            ]}
+        ]}))
+        .unwrap();
+        let (source, map) = source_mapped(&node, &Assets::default()).unwrap();
+        assert_eq!(
+            source,
+            super::super::source(&node, &Assets::default()).unwrap()
+        );
+        let mut position = 2;
+        for ch in text.chars() {
+            let expected = crate::document::escape_markup(&ch.to_string())
+                .replace('.', "\\.")
+                .replace(['\n', '\r'], " ")
+                .replace('\u{a0}', "~");
+            for _ in 0..ch.len_utf16() {
+                assert_eq!(&source[map.characters[position].clone()], expected);
+                position += 1;
+            }
+        }
+    }
     #[test]
     fn nonbreaking_space_exports_as_typst_tilde_without_confusing_a_literal_tilde_or_offsets() {
         let node=serde_json::from_value(serde_json::json!({"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"A😀\u{a0}B~C"}]}]})).unwrap();

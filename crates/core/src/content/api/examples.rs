@@ -37,6 +37,9 @@ pub fn for_id(id: &str) -> Vec<Call> {
                 },
             ];
         }
+        "math.inline" | "math.block" => {
+            json!({"type":if id == "math.inline" {"mathInline"} else {"mathBlock"},"attrs":{"language":"typst","alt":"Sum of squares"},"content":[{"type":"text","text":"a^2 + b^2"}]})
+        }
         "insert.footnote" => json!({"type":"footnote","attrs":{"text":"A plain-text note."}}),
         "insert.citation" => {
             json!({"type":"citation","attrs":{"items":[{"file_id":"main","key":"example2026"}],"form":"normal"}})
@@ -118,7 +121,7 @@ pub fn for_id(id: &str) -> Vec<Call> {
         }
         _ => return vec![],
     };
-    let inline = matches!(id, "insert.footnote" | "insert.citation");
+    let inline = matches!(id, "insert.footnote" | "insert.citation" | "math.inline");
     vec![Call {
         id: if inline {
             "inline.replace"

@@ -19,6 +19,7 @@ function duplicates(text: string, previous: boolean) {
 export function normalizeSpaces(tr: Transaction) {
   const remove: number[] = []
   tr.doc.descendants((parent, pos) => {
+    if (parent.type.spec.code) return false
     if (!parent.isTextblock) return
     let previous = false
     parent.forEach((node, offset) => {
@@ -48,7 +49,8 @@ export function normalizeSharedSpaces(parent: Y.XmlFragment) {
       for (const index of result.remove.reverse()) child.delete(index, 1)
     } else {
       previous = false
-      if (child instanceof Y.XmlElement) normalizeSharedSpaces(child)
+      if (child instanceof Y.XmlElement && !['mathInline', 'mathBlock'].includes(child.nodeName))
+        normalizeSharedSpaces(child)
     }
   }
 }
@@ -57,6 +59,7 @@ const spaceKey = new PluginKey<DecorationSet>('nonbreaking-spaces')
 function spaceDecorations(doc: PMNode) {
   const decorations: Decoration[] = []
   doc.descendants((node, pos) => {
+    if (node.type.spec.code) return false
     if (!node.isText || !node.text?.includes(nonbreakingSpace)) return
     for (let i = 0; i < node.text.length; i++)
       if (node.text[i] === nonbreakingSpace)
@@ -81,7 +84,8 @@ export const HorizontalSpace = Extension.create({
             if (view.composing || !space(text)) return false
             const $from = view.state.doc.resolve(from),
               $to = view.state.doc.resolve(to)
-            if (!$from.sameParent($to) || !$from.parent.isTextblock) return false
+            if (!$from.sameParent($to) || !$from.parent.isTextblock || $from.parent.type.spec.code)
+              return false
             const before = $from.parent.textBetween(0, $from.parentOffset, '', '\ufffc')
             const after = $to.parent.textBetween(
               $to.parentOffset,

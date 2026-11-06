@@ -78,8 +78,8 @@ export function shellDocuments(
     document.dispatchEvent(new Event('commands:refresh'))
   }
   /** Asks what to do with unsaved work, records the answer, then runs `next`. */
-  function confirmDiscard(next: () => void, quitting = false) {
-    ctx.guarded(async () => {
+  async function confirmDiscard(next: () => void | Promise<unknown>, quitting = false) {
+    try {
       const choice = await decideClose({
         dirty: state.active && (state.dirty || metadata.editor.dirty()),
         pending: state.active ? pendingInputs(provider) : 0,
@@ -92,11 +92,15 @@ export function shellDocuments(
         },
         discard: async () => {},
       })
-      if (!choice) return
+      if (!choice) return false
       state.disposition = choice
       if (choice !== 'discard') await state.recovery?.force()
-      next()
-    })
+      await next()
+      return true
+    } catch (error) {
+      ctx.reportError(error)
+      return false
+    }
   }
   async function saveFile(as = false) {
     await state.recovery?.flush()
@@ -233,7 +237,9 @@ export function shellDocuments(
       },
       () => (state.active ? editor.view.dom : byId('create-document')),
     )
-  const openChosen = () => confirmDiscard(() => ctx.guarded(() => open()))
+  const requestOpen = (file?: string) =>
+    file && state.path === file ? Promise.resolve(false) : confirmDiscard(() => open(file))
+  const openChosen = () => void requestOpen()
   const createChosen = () => confirmDiscard(create)
 
   /** Records a save made elsewhere (version, native editing) as the persisted revision. */
@@ -392,6 +398,7 @@ export function shellDocuments(
     setActive,
     confirmDiscard,
     open,
+    requestOpen,
     register,
     observeChanges,
     /** Welcome screen buttons share the File menu commands. */

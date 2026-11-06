@@ -160,7 +160,25 @@ pub const ALL: &[Capability] = &[
         "insert",
         Some("crossReference"),
         None,
-        "Cross-reference to a stable heading, image or table anchor. Discover targets through references.list. Include the full model-defined label, its page, or both; never invent numbers or use a bibliography key."
+        "Cross-reference to a stable heading, image, table or block equation anchor. Discover targets through references.list. Include the full model-defined label, its page, or both; never invent numbers or use a bibliography key."
+    ),
+    capability!(
+        "math.inline",
+        "cmd-math-inline",
+        "sigma",
+        "math",
+        Some("mathInline"),
+        None,
+        "Editable inline mathematical source. language is typst or latex (MiTeX), no dollar delimiters in stored content. Use text.insert on the nested text zone. Custom macros/functions are deferred."
+    ),
+    capability!(
+        "math.block",
+        "cmd-math-block",
+        "square-function",
+        "math",
+        Some("mathBlock"),
+        None,
+        "Editable block mathematical source, optionally addressed by an eq: alias. The alias stores only the suffix and remains independent of its stable anchor. The model owns numbering; references.list discovers targets. Custom macros/functions are deferred."
     ),
     capability!(
         "insert.footnote",
@@ -251,6 +269,13 @@ pub fn parameters(id: &str) -> Value {
                     json!({"placement":"panel","label_key":label});
             }
             schema
+        }
+        "math.inline" | "math.block" => {
+            let mut properties = json!({"language":{"type":"string","enum":["typst","latex"],"default":"typst","x-editor":{"placement":"creation","storage":"attribute","label_key":"web-math-language"}},"alt":{"type":"string","default":"","x-editor":{"placement":"panel","label_key":"web-math-alt"}}});
+            if id == "math.block" {
+                properties["alias"] = json!({"type":"string","default":"","maxLength":128,"pattern":"^[^\\s:$]*$","x-editor":{"placement":"panel","prefix":"eq:","label_key":"web-math-alias"}});
+            }
+            json!({"type":"object","properties":properties,"additionalProperties":false})
         }
         "insert.footnote" => {
             json!({"type":"object","properties":{"text":{"type":"string","default":"","x-editor":{"label_key":"web-footnote-text","multiline":true,"label_visibility":"accessible"}}},"additionalProperties":false})

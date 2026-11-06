@@ -175,6 +175,57 @@ fn references(template: &str) -> Vec<String> {
     visit(typst_syntax::Source::detached(template).root(), &mut paths);
     paths
 }
+/// Resolve libraries imported by derived body source as well as those already
+/// selected by a model. Reuse the inventory resolver; never depend on a vendor cache.
+pub fn including_source(files: &Dependencies, source: &str) -> Dependencies {
+    let paths = references(source);
+    let (required, additions) = select(paths.iter().map(String::as_str));
+    if additions
+        .keys()
+        .filter(|p| p.as_str() != INVENTORY)
+        .all(|p| files.contains_key(p))
+    {
+        return files.clone();
+    }
+    let mut inventory = if files.is_empty() {
+        Catalog {
+            version: 1,
+            capabilities: vec![],
+            packages: vec![],
+        }
+    } else if let Some(value) = files
+        .get(INVENTORY)
+        .and_then(|b| serde_json::from_slice::<Catalog>(b).ok())
+    {
+        value
+    } else {
+        return files.clone();
+    }; // Preserve invalid input for the existing diagnostic path.
+    for capability in required.capabilities {
+        if !inventory.capabilities.iter().any(|c| c.id == capability.id) {
+            inventory.capabilities.push(capability);
+        }
+    }
+    for package in required.packages {
+        if !inventory.packages.iter().any(|p| p.name == package.name) {
+            inventory.packages.push(package);
+        }
+    }
+    let mut merged = files.as_ref().clone();
+    for (path, bytes) in additions.iter() {
+        if path != INVENTORY {
+            merged.entry(path.clone()).or_insert_with(|| bytes.clone());
+        }
+    }
+    merged.insert(
+        INVENTORY.into(),
+        serde_json::to_vec_pretty(&inventory)
+            .expect("inventory serialization")
+            .into(),
+    );
+    Arc::new(merged)
+}
+
 pub fn for_template(template: &str) -> Dependencies {
     select(references(template).iter().map(String::as_str)).1
 }

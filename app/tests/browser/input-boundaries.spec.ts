@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { paragraphTexts } from './paragraph-assertions'
 
 const lastItem = 'Un rendu stable facilite la relecture et la transmission du document.'
 const nextParagraph = 'Le tableau suivant rassemble les éléments de la démonstration.'
@@ -71,7 +72,8 @@ for (const input of ['keyboard', 'native'] as const) {
       .poll(() => page.evaluate(() => window.__spike!.editor.state.selection.$from.depth))
       .toBe(1)
     const emptyLine = body.locator(':scope > p').nth(1)
-    await expect(emptyLine).toBeEmpty()
+    await expect.poll(() => paragraphTexts(emptyLine)).toEqual([''])
+    await expect(emptyLine.locator('.paragraph-marker')).toHaveText('¶')
     const confirmed = await page.evaluate(async () => {
       await window.__spike!.provider.flush()
       return window.__spike!.editor.getJSON()

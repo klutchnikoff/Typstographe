@@ -53,7 +53,9 @@ fn spaces(parent: &XmlFragmentRef, tx: &mut yrs::TransactionMut) {
             }
         } else {
             previous = false;
-            if let XmlOut::Element(element) = child {
+            if let XmlOut::Element(element) = child
+                && !crate::content::mathematics::is_math(element.tag().as_ref())
+            {
                 spaces(&fragment(&element), tx);
             }
         }
@@ -146,8 +148,9 @@ fn normalize(doc: &Doc, root: XmlFragmentRef, trailing: bool) -> Result<(), Erro
             .get(&tx, root.len(&tx).saturating_sub(1))
             .is_none_or(|c| !empty(&c, &tx, false) && !ending_break(&c, &tx))
     {
-        let paragraph: Node =
+        let mut paragraph: Node =
             serde_json::from_value(serde_json::json!({"type":"paragraph"})).unwrap();
+        crate::content::references::assign(&mut paragraph);
         let index = root.len(&tx);
         seed::children(root, &mut tx, &[paragraph], index, 1, &mut 0)?;
     }

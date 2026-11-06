@@ -42,6 +42,15 @@ que la création interactive. `richFieldProfile` traduit les genres de champs
 `rich` et `rich_inline` du contrat documentaire ; aucun type particulier ne
 redéfinit ces comportements.
 
+Tous les profils conservent les ancres documentaires déjà attribuées par le
+moteur, y compris dans les champs riches des collections d’en-tête. Seul le
+profil `document`, lié comme éditeur documentaire, en alloue pendant la frappe.
+Un formulaire privé ne doit pas perdre les identités d’un titre ou d’un résumé,
+ni produire une édition de ces champs lorsque seul un autre champ a changé.
+La base de récupération est l’état confirmé lu à l’ouverture du formulaire ;
+elle ne vient pas de sa copie éditable. Une modification concurrente réelle
+continue à faire refuser la reprise ou la validation.
+
 ```ts
 const zone = createRichZone({
   profile: richFieldProfile(field.kind),

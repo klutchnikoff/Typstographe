@@ -178,7 +178,7 @@ export function browserDriver(root: string): Plugin {
             broadcast('recovery:end-transition', input.args.id)
           if (input.command === 'awareness' && result === true)
             broadcast('web-editor:awareness', { from: input.peer, ...input.args })
-          if (input.command === 'preview_frame') {
+          if (input.command === 'preview_frame' || input.command === 'preview_delta') {
             response.setHeader('Content-Type', 'application/octet-stream')
             response.end(Buffer.from((result as { binary: string }).binary, 'base64'))
           } else {

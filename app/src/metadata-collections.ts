@@ -673,7 +673,7 @@ export function metadataCollections(
       collection: definition.parameter,
       record: editing || null,
       after: after || null,
-      base: resumed?.payload.context?.base || draft.value(),
+      base: resumed?.payload.context?.base || draft.base || draft.value(),
     })
     form.action({ label: tr('Annuler'), run: () => discard() })
     let pending = false

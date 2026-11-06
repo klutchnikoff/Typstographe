@@ -14,8 +14,10 @@ mod launch;
 mod menus;
 mod model_thumbnails;
 mod native_locales;
+mod native_open;
 mod owner;
 mod preferences;
+mod preview_pipeline;
 mod project;
 mod proofing;
 mod recovery;
@@ -40,6 +42,7 @@ use std::{
 };
 use tauri::{Emitter, Manager, State, WebviewWindow};
 
+#[derive(Clone)]
 struct Bridge {
     session: Arc<Mutex<Session>>,
     renderer: Arc<Renderer>,
@@ -122,6 +125,7 @@ fn join(
 ) -> Result<Bootstrap, CommandError> {
     let (bootstrap, status) = {
         let mut session = state.session()?;
+        state.renderer.2.lock()?.detach(window.label());
         (session.join(window.label()), session.synchronization())
     };
     publish_synchronization(&app, status)?;
@@ -526,16 +530,21 @@ fn main() {
         driver::run(bridge);
         return;
     }
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default().manage(native_open::Requests::default());
+    if global_session {
+        builder = builder.plugin(tauri_plugin_single_instance::init(
+            native_open::second_instance,
+        ));
+    }
+    builder
         .plugin(tauri_plugin_dialog::init())
         .setup(move |app| {
             if global_session {
                 let root = app.path().app_local_data_dir()?.join("recovery");
-                *app.state::<Bridge>().session()? = {
-                    let mut session = Session::managed(root)?;
-                    session.initial_path = initial_path;
-                    session
-                };
+                *app.state::<Bridge>().session()? = Session::managed(root)?;
+                if let Some(path) = initial_path {
+                    native_open::enqueue(app.handle(), PathBuf::from(path));
+                }
             }
             menus::install(app.handle())?;
             Ok(())
@@ -543,6 +552,9 @@ fn main() {
         .on_window_event(|window, event| {
             if matches!(event, tauri::WindowEvent::Destroyed) {
                 let state = window.state::<Bridge>();
+                if let Ok(mut views) = state.renderer.2.lock() {
+                    views.detach(window.label());
+                }
                 if let Ok(mut session) = state.session.lock() {
                     session.leave(window.label());
                     let _ = window
@@ -565,6 +577,7 @@ fn main() {
         })
         .manage(bridge)
         .invoke_handler(tauri::generate_handler![
+            native_open::next_open_request,
             comparisons::comparison_open,
             comparisons::comparison_read,
             comparisons::comparison_preview,
@@ -636,6 +649,10 @@ fn main() {
             awareness,
             preview,
             preview_frame,
+            preview_pipeline::preview_bind,
+            preview_pipeline::preview_invalidate,
+            preview_pipeline::preview_delta,
+            preview_pipeline::preview_sync,
             save,
             export_document,
             prepare_image,
@@ -653,8 +670,18 @@ fn main() {
             #[cfg(feature = "recipe-driver")]
             diagnostics::diagnostic_finish
         ])
-        .run(tauri::generate_context!())
-        .expect("Erreur de l’application typstOgraphe");
+        .build(tauri::generate_context!())
+        .expect("Erreur de l’application typstOgraphe")
+        .run(|_app, _event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Opened { urls } = _event {
+                for url in urls {
+                    if let Ok(path) = url.to_file_path() {
+                        native_open::enqueue(_app, path);
+                    }
+                }
+            }
+        });
 }
 
 #[cfg(test)]

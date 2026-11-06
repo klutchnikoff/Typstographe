@@ -30,6 +30,7 @@ impl Node {
     /// Text offsets use UTF-16; an inline object or a line break occupies one unit.
     pub(crate) fn inline_len(&self) -> usize {
         match self.kind.as_str() {
+            "mathInline" => 2 + self.content.iter().map(Self::inline_len).sum::<usize>(),
             "text" => self.text.as_deref().unwrap_or("").encode_utf16().count(),
             "softBreak" | "hardBreak" | "footnote" | "citation" | "crossReference" => 1,
             _ => self.content.iter().map(Self::inline_len).sum(),
@@ -61,6 +62,7 @@ pub(super) fn generate(document: &Node, assets: &Assets, mapped: bool) -> Result
     let mut count = 0;
     limits(document, 0, &mut count, mapped)?;
     super::references::validate(document)?;
+    super::mathematics::validate(document)?;
     let mut result = blocks(&document.content, assets, mapped)?;
     fn notes(node: &Node) -> bool {
         matches!(node.kind.as_str(), "postscript" | "attachment") || node.content.iter().any(notes)
@@ -77,6 +79,12 @@ pub(super) fn generate(document: &Node, assets: &Assets, mapped: bool) -> Result
     if cross_references(document) {
         result =
             format!("#import \"capabilities/cross-references.typ\": cross-reference\n\n{result}");
+    }
+    fn math(node: &Node) -> bool {
+        super::mathematics::is_math(&node.kind) || node.content.iter().any(math)
+    }
+    if math(document) {
+        result = format!("#import \"capabilities/mathematics.typ\": math-formula\n\n{result}");
     }
     if notes(document) {
         result = format!(
@@ -108,7 +116,13 @@ fn limits(node: &Node, depth: usize, count: &mut usize, mapped: bool) -> Result<
     }
     if !matches!(
         node.kind.as_str(),
-        "text" | "softBreak" | "hardBreak" | "footnote" | "citation" | "crossReference"
+        "text"
+            | "softBreak"
+            | "hardBreak"
+            | "footnote"
+            | "citation"
+            | "crossReference"
+            | "mathInline"
     ) && !node.marks.is_empty()
     {
         return Err("Style hors d'un contenu en ligne.".into());
@@ -127,6 +141,7 @@ fn blocks(nodes: &[Node], assets: &Assets, mapped: bool) -> Result<String, Strin
 }
 fn block(node: &Node, assets: &Assets, mapped: bool) -> Result<String, String> {
     let result = match node.kind.as_str() {
+        "mathBlock" => mapped_math(node, mapped)?,
         "paragraph" => format!("#par[{}]", inline(&node.content, mapped)?),
         "heading" => {
             let level = node.integer("level", 1);
@@ -326,6 +341,7 @@ pub(super) fn inline(nodes: &[Node], mapped: bool) -> Result<String, String> {
                         value
                     }
                 }
+                "mathInline" => mapped_math(node, mapped)?,
                 "hardBreak" if node.content.is_empty() => "#linebreak()".into(),
                 "softBreak" if node.content.is_empty() => " ".into(),
                 "citation" if node.content.is_empty() => {
@@ -423,6 +439,19 @@ pub(super) fn inline(nodes: &[Node], mapped: bool) -> Result<String, String> {
         })
         .collect::<Result<Vec<_>, String>>()
         .map(|items| items.concat())
+}
+
+fn mapped_math(node: &Node, mapped: bool) -> Result<String, String> {
+    let expression = super::mathematics::source(node)?;
+    Ok(if mapped {
+        format!(
+            "/*@typstographe:{}:{}*/{expression}",
+            node.integer("_mapping", 0),
+            expression.len()
+        )
+    } else {
+        expression
+    })
 }
 
 #[cfg(test)]

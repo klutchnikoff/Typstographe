@@ -15,6 +15,7 @@ pub const ANCHOR_KINDS: &[&str] = &[
     "descriptionList",
     "postscript",
     "attachment",
+    "mathBlock",
 ];
 pub fn anchor(node: &Node) -> Option<&str> {
     node.attrs.as_ref()?.get("anchor")?.as_str()
@@ -108,15 +109,22 @@ fn title(node: &Node) -> String {
 }
 pub fn targets(document: &Node) -> Vec<Target> {
     fn walk(node: &Node, path: &mut Vec<usize>, out: &mut Vec<Target>) {
-        if matches!(node.kind.as_str(), "heading" | "figure" | "tableFigure")
-            && let Some(id) = anchor(node)
+        if matches!(
+            node.kind.as_str(),
+            "heading" | "figure" | "tableFigure" | "mathBlock"
+        ) && let Some(id) = anchor(node)
         {
             let content = if node.kind == "tableFigure" {
                 node.content.last().unwrap_or(node)
             } else {
                 node
             };
-            let mut text = title(content);
+            let mut text = if node.kind == "mathBlock" {
+                let code = super::mathematics::text(node);
+                super::mathematics::alias(node).map_or(code.clone(), |a| format!("eq:{a} · {code}"))
+            } else {
+                title(content)
+            };
             if text.trim().is_empty() && node.kind == "figure" {
                 text = node
                     .attrs
@@ -159,7 +167,10 @@ pub fn validate(document: &Node) -> Result<(), String> {
             if !ANCHOR_KINDS.contains(&node.kind.as_str()) || !ids.insert(id.into()) {
                 return Err("duplicate_or_invalid_document_anchor".into());
             }
-            if matches!(node.kind.as_str(), "heading" | "figure" | "tableFigure") {
+            if matches!(
+                node.kind.as_str(),
+                "heading" | "figure" | "tableFigure" | "mathBlock"
+            ) {
                 target_ids.insert(id.into());
             }
         }
@@ -212,6 +223,9 @@ pub fn prepare(nodes: &[Node], occupied: &BTreeSet<String>) -> Vec<Node> {
                 .or_insert_with(|| uuid::Uuid::new_v4().to_string())
                 .clone();
             node.attrs.as_mut().unwrap()["anchor"] = json!(next);
+            if node.kind == "mathBlock" {
+                node.attrs.as_mut().unwrap()["alias"] = json!("");
+            }
         }
         node.content
             .iter_mut()
@@ -268,7 +282,9 @@ pub(super) fn dependent_changes(before: &Node, after: &Node) -> bool {
                 .is_some_and(|id| changed.iter().any(|s| s.as_str() == id)))
             || node.content.iter().any(|n| uses(n, changed))
     }
-    uses(before, &changed) || uses(after, &changed)
+    uses(before, &changed)
+        || uses(after, &changed)
+        || super::mathematics::dependent_aliases(before, after)
 }
 
 #[cfg(test)]

@@ -157,12 +157,17 @@ jobs:
                 dpkg-deb --info "$file"
                 dpkg-deb --contents "$file" > /tmp/typstographe-package-contents
                 grep 'usr/bin/typstographe' /tmp/typstographe-package-contents
+                grep 'usr/share/mime/packages/typstographe.xml' /tmp/typstographe-package-contents
+                grep 'mimetypes/application-x-typstographe.svg' /tmp/typstographe-package-contents
+                dpkg-deb --fsys-tarfile "$file" | tar -xOf - --wildcards './usr/share/applications/*.desktop' | grep -E '^Exec=.* %f$'
               done
               for file in "$bundle"/appimage/*.AppImage; do
                 work=$(mktemp -d)
                 (cd "$work" && "$GITHUB_WORKSPACE/$file" --appimage-extract > /dev/null)
                 test -x "$work/squashfs-root/AppRun"
                 test -x "$work/squashfs-root/usr/bin/typstographe"
+                test -s "$work/squashfs-root/usr/share/mime/packages/typstographe.xml"
+                test -s "$work/squashfs-root/usr/share/icons/hicolor/scalable/mimetypes/application-x-typstographe.svg"
                 rm -rf "$work"
               done
               ;;
@@ -170,6 +175,9 @@ jobs:
               app="$bundle/macos/typstOgraphe.app"
               test -x "$app/Contents/MacOS/typstographe"
               plutil -lint "$app/Contents/Info.plist"
+              test -s "$app/Contents/Resources/document.icns"
+              test "$(plutil -extract CFBundleDocumentTypes.0.CFBundleTypeIconFile raw -o - "$app/Contents/Info.plist")" = document.icns
+              test "$(plutil -extract UTExportedTypeDeclarations.0.UTTypeIdentifier raw -o - "$app/Contents/Info.plist")" = org.typstographe.project
               lipo -verify_arch x86_64 arm64 "$app/Contents/MacOS/typstographe"
               for file in "$bundle"/dmg/*.dmg; do hdiutil verify "$file"; done
               ;;

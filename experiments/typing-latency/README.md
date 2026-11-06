@@ -1,0 +1,94 @@
+# Continuous native editing responsiveness
+
+[Measured baseline and current validation status](BASELINE.md).
+
+[Completed before/after results and remaining limitations](RESULTS.md).
+
+This measures the production Tauri/WebKit pipeline (full or differential RGBA,
+according to the archived application commit), with preview
+updates enabled/paused. Both cases retain the same visible last preview, window
+layout, editor, Unicode counters, document confirmation and preservation rules.
+No experimental renderer is substituted.
+
+An independent Web Worker schedules 24 characters at 100 ms intervals and then
+24 at 250 ms intervals. Main-thread delivery uses WebKit's native
+`document.execCommand('insertText')` editing path, including native input events,
+DOM observation and ProseMirror updates. Record worker jitter, main-thread queue
+delay, native edit call time and the next one/two animation-frame opportunities.
+This is **not physical OS keyboard latency**: keydown/IME/device delivery and
+physical GPU presentation are not measured. The worker clock prevents a blocked
+main thread from quietly slowing the stimulus and hiding queue delay.
+
+The same fixed 10/50/200-formula Articles (2/7/24 pages) are used. Two fresh
+processes per size/mode/variant; reverse mode order on the second pass. Exclude
+the first two characters from each phase's input percentiles (44 samples/cell).
+Keep all synchronous-span and frame-gap observations, including warm-up, and
+report generator jitter. Spans are inclusive/nested; do not sum them.
+
+Probe real editor dispatch, UI refresh, preview snapshot, canvas uploads and
+atomic page publication. IPC is timed separately and does not imply blocking of
+the JavaScript thread. Final text/selection/source/pixels/navigation must match
+between modes and variants. Every character must survive native editing and
+document confirmation; each report verifies compiled core and frontend stamps.
+The final pixel check pauses the render queue after confirmation, outside all
+timed input phases. A same-revision refresh must not retire canvases midway
+through the asynchronous hashing loop. This validation-only correction leaves
+the input-phase probes unchanged.
+
+Prepare uses a disposable Git archive and a recipe-only CSP permission for the
+worker clock (`worker-src blob:`). It never opens a personal project, captures
+images/video or records a browser profiler trace. Scalar raw JSON is gzipped.
+Visible native windows are required; hidden/suspended sessions are rejected.
+On macOS a Swift/AppKit preflight also rejects the lock screen: DOM visibility
+alone can still read `visible` there while all animation frames are suspended.
+It reads application metadata without capturing the screen or changing focus.
+Swift from the usual Apple Command Line Tools is required for this preflight.
+
+```sh
+python3 experiments/typing-latency/prepare.py before dae6c9c
+sh experiments/typing-latency/build.sh before
+caffeinate -di node experiments/typing-latency/run.mjs before --smoke
+caffeinate -di node experiments/typing-latency/run.mjs before
+node experiments/typing-latency/summarize.mjs --baseline
+# After committing the production correction:
+python3 experiments/typing-latency/prepare.py after 4d4af70
+sh experiments/typing-latency/build.sh after
+caffeinate -di node experiments/typing-latency/run.mjs after
+node experiments/typing-latency/summarize.mjs
+```
+
+Do not run builds/tests alongside the timed sessions. The build helper cleans
+only the local release core (not third-party dependencies), avoiding shared
+Cargo-target reuse of archived local sources. It cleans instrumented core
+artifacts on exit; statically linked measurement executables remain usable.
+
+Independent measurement series preserve previous reports and use distinct
+executables/output directories. For the production cancellation/differential
+change, set `TOG_TYPING_SERIES=preview-delta` for **all** prepare/build/run/summary
+commands. Results then go to `results/preview-delta/`. The baseline is `64b6e41`
+(the same pre-delta rendering path as `3a70d17`, with the concurrent branding and
+file-association work), and the differential implementation is `43c96bc`.
+Binary response sizes include full and differential commands; native response
+latency is not interpreted as time blocking the JavaScript thread. The DOM probe
+also records `preview.insert` when a differential publication retains nodes,
+rather than replacing the whole container. These per-node timings are not a
+replacement for a total publication-span metric.
+
+The `editor-priority` series adds an intermediate `dom` variant to separate page
+reconciliation from deferred UI work. Set
+`TOG_TYPING_VARIANTS=before,dom,after` when summarizing this series. Its protocol 2
+records publication events directly: revision, confirmed inserted-character count,
+DOM publication time and the following animation-frame opportunity. Each input
+matches the first publication containing at least that many inserted characters.
+The preview-enabled phase drains through the last pending publication before
+closing these observations, so its last inputs are not silently omitted. The
+paused control has no preview-delay metric during typing. `inputToFrameMs`
+starts at worker delivery (`sent`), excluding timer-generation jitter;
+`inputToPreviewDomMs` and `inputToPreviewFrameMs` include confirmation, compilation,
+transfer and publication. Neither frame metric proves physical GPU presentation.
+Protocol 2 also stamps the recipe/probe sources and verifies this identity in
+addition to the compiled application frontend/core. Use the same probe in every
+variant; do not combine protocol 1 and 2 timing sessions as a single comparison.
+
+[Completed editor-priority comparison](../editor-priority/RESULTS.md): three
+variants, 36 native sessions, direct typing and complete preview-frame delays.

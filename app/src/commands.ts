@@ -1,3 +1,4 @@
+import { mathContent } from './mathematics'
 import { navigationGroup } from './keyboard-navigation'
 import { tr } from './i18n'
 import { runFormatting, type Formatting } from './formatting'
@@ -86,6 +87,12 @@ export function createRegistry(
     'insert.table': table,
     'insert.citation': citation,
     'insert.reference': reference,
+    'math.block': () => {
+      insertBlock(target(), mathContent(true))
+    },
+    'math.inline': () => {
+      void insertInlineObject(target(), mathContent(false))
+    },
     'insert.footnote': () =>
       insertInlineWithSettings(target(), { type: 'footnote', attrs: { text: '' } }, properties),
     'letter.insert_postscript': () => {
@@ -192,6 +199,7 @@ export function toolbar(element: HTMLElement, registry: Registry, capabilities: 
   group('lists', tr('Listes'), 'list')
   for (const capability of capabilities.filter((c) => c.group === 'insert'))
     element.append(button(registry.get(capability.id)!))
+  if (capabilities.some((c) => c.group === 'math')) group('math', tr('Mathématiques'), 'sigma')
   group('letter', tr('Fin de lettre'), 'paperclip')
   const spacer = document.createElement('span')
   spacer.className = 'toolbar-spacer'

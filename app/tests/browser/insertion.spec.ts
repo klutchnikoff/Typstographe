@@ -1,4 +1,5 @@
 import { expectPreviewReady } from './preview-assertions'
+import { paragraphTexts } from './paragraph-assertions'
 import { expect, test, type Page } from '@playwright/test'
 
 async function roots(page: Page) {
@@ -128,9 +129,12 @@ test('insertion commune : tableau au début, milieu, fin ou après un retour, et
           }),
         )
         .toBe(true)
-    const line = page.locator('.tiptap > p').filter({ hasText: /^$/ })
-    await expect(line).toHaveCount(pos === 11 ? 1 : 2)
-    await line.first().click()
+    const paragraphs = page.locator('.tiptap > p')
+    await expect
+      .poll(async () => (await paragraphTexts(paragraphs)).filter((text) => !text).length)
+      .toBe(pos === 11 ? 1 : 2)
+    const firstEmpty = (await paragraphTexts(paragraphs)).findIndex((text) => !text)
+    await paragraphs.nth(firstEmpty).click()
     await expect
       .poll(() => page.evaluate(() => window.__spike!.editor.state.selection.$from.depth))
       .toBe(1)

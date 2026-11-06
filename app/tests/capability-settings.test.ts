@@ -236,3 +236,27 @@ it('les réglages dérivés des cellules ne créent pas un second état sur le t
     editor.destroy()
   }
 })
+
+it('local header confirmation synchronizes a pristine settings control without replacing another draft', () => {
+  const settings = settingsForNode('custom', [
+    capability('custom', {
+      properties: {
+        alias: { type: 'string', default: '', title: 'Alias' },
+        alt: { type: 'string', default: '', title: 'Description' },
+      },
+    }),
+  ])
+  const root = document.createElement('div'),
+    fields = new ParameterFields(root, () => {})
+  const drafts = { alias: 'old', alt: 'description' }
+  fields.render(settings.fields, drafts)
+  fields.synchronize('alias', 'old', 'new')
+  expect(root.querySelector<HTMLInputElement>('[aria-label="Alias"]')!.value).toBe('new')
+  expect(drafts.alt).toBe('description')
+  const alias = root.querySelector<HTMLInputElement>('[aria-label="Alias"]')!
+  alias.value = 'local-draft'
+  alias.dispatchEvent(new Event('input'))
+  fields.synchronize('alias', 'new', 'other-confirmed')
+  expect(alias.value).toBe('local-draft')
+  expect(fields.read().attrs?.alias).toBe('local-draft')
+})

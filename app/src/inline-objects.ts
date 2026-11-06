@@ -8,6 +8,15 @@ const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
 export function isInlineObject(node?: PMNode | null): node is PMNode {
   return !!node?.isInline && node.isAtom && NodeSelection.isSelectable(node)
 }
+/** Editable inline containers share contextual properties without behaving like badges. */
+export function inlineContentTarget(editor: Editor) {
+  const selection = editor.state.selection
+  if (selection instanceof NodeSelection && selection.node.isInline && selection.node.inlineContent)
+    return { pos: selection.from, node: selection.node }
+  const { $from, $to } = selection
+  if ($from.parent.isInline && $from.parent.inlineContent && $from.sameParent($to))
+    return { pos: $from.before(), node: $from.parent }
+}
 export function inlineObjectTarget(editor: Editor, side?: 'before' | 'after') {
   const { selection } = editor.state
   if (selection instanceof NodeSelection)

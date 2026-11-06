@@ -20,7 +20,7 @@ fn inline(node: &Node) -> String {
         .map(|n| match n.kind.as_str() {
             "text" => n.text.clone().unwrap_or_default(),
             "softBreak" | "hardBreak" => "\n".into(),
-            _ => "\u{fffc}".into(),
+            _ => "\u{fffc}".repeat(n.inline_len()),
         })
         .collect()
 }
@@ -36,6 +36,8 @@ fn walk(node: &Node, path: &mut Vec<usize>, root: &TreeRoot, out: &mut Vec<Zone>
             | "tableCaption"
             | "postscript"
             | "attachment"
+            | "mathInline"
+            | "mathBlock"
     ) {
         let text = inline(node);
         let zone = match root {
@@ -55,7 +57,7 @@ fn walk(node: &Node, path: &mut Vec<usize>, root: &TreeRoot, out: &mut Vec<Zone>
             zone,
             length: text.encode_utf16().count() as u32,
             text,
-            supports_styles: true,
+            supports_styles: !crate::content::mathematics::is_math(&node.kind),
         });
     }
     if node.kind == "footnote" {
@@ -324,6 +326,10 @@ pub fn run(
             let mut issues = vec![];
             let mut available = true;
             for zone in zones(state) {
+                if matches!(&zone.zone, TextZone::Body { path } if path.iter().try_fold(&state.document, |n,i|n.content.get(*i)).is_some_and(|n| crate::content::mathematics::is_math(&n.kind)))
+                {
+                    continue;
+                }
                 let language = zone_language(state, &zone.zone);
                 if !crate::spelling::supported(language) {
                     available = false;

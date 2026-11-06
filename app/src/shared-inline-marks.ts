@@ -29,7 +29,7 @@ export const SharedInlineMarks = Extension.create({
   addGlobalAttributes() {
     return [
       {
-        types: ['footnote', 'citation', 'crossReference', 'softBreak', 'hardBreak'],
+        types: ['footnote', 'citation', 'crossReference', 'mathInline', 'softBreak', 'hardBreak'],
         attributes: { [attribute]: { default: null, rendered: false } },
       },
     ]

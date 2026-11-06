@@ -1960,3 +1960,87 @@ it('cross-references keep exact documentary identities between Yrs and Yjs, thro
   const undone = await probe({ action: 'inspect', update: bytes(local), expected: state(local) })
   expect(undone.state.document).toEqual(inserted.state.document)
 })
+
+it('mathematical source round-trips exactly through Yrs/Yjs and remains a plain typed zone', async () => {
+  const original = seed('article'),
+    native = doc(bytes(original))
+  const guard = { document: 'math-contract', revision: 0 }
+  const inserted = await probe({
+    action: 'commands',
+    update: bytes(native),
+    guard,
+    expected: guard,
+    commands: [
+      {
+        id: 'inline.replace',
+        params: {
+          target: { zone: { kind: 'body', path: [1] }, from: 0, to: 0 },
+          node: {
+            type: 'mathInline',
+            attrs: { language: 'latex', alt: '' },
+            content: [{ type: 'text', text: '\\frac{a}{b}' }],
+          },
+        },
+      },
+      {
+        id: 'block.insert',
+        params: {
+          parent: { root: { kind: 'body' } },
+          index: 1,
+          node: {
+            type: 'mathBlock',
+            attrs: {
+              language: 'typst',
+              alt: 'Identity',
+              alias: 'identity',
+              anchor: 'equation-contract',
+            },
+            content: [{ type: 'text', text: 'a^2  + b^2\n  = c^2' }],
+          },
+        },
+      },
+    ],
+  })
+  Y.applyUpdate(native, new Uint8Array(inserted.update))
+  const local = doc(bytes(native))
+  const editor = createRichZone({
+    profile: 'document',
+    label: 'Math contract',
+    binding: { kind: 'document', document: local },
+  })
+  editors.push(editor)
+  if (!editor.isInitialized)
+    await new Promise<void>((resolve) => editor.once('create', () => resolve()))
+  expect(documentContent(editor.getJSON())).toEqual(
+    documentContent(schema.nodeFromJSON(inserted.state.document).toJSON()),
+  )
+  let codePos = 0
+  editor.state.doc.descendants((node, pos) => {
+    if (node.type.name === 'mathInline') codePos = pos
+  })
+  editor.commands.setTextSelection(codePos + 1)
+  editor.commands.insertContent('2 + ')
+  const published = await probe({
+    action: 'publish',
+    update: bytes(native),
+    guard: inserted.guard,
+    expected: inserted.guard,
+    updates: [[...Y.encodeStateAsUpdate(local, Y.encodeStateVector(native))]],
+  })
+  Y.applyUpdate(native, new Uint8Array(published.update))
+  expect(state(native)).toEqual(state(local))
+  expect((state(native).document as any).content[1].content[0].text).toBe('a^2  + b^2\n  = c^2')
+  const zones = await probe({
+    action: 'commands',
+    update: bytes(native),
+    guard: published.guard,
+    expected: published.guard,
+    commands: [
+      {
+        id: 'text.insert',
+        params: { target: { zone: { kind: 'body', path: [2, 0] }, from: 0, to: 0 }, text: '3 + ' },
+      },
+    ],
+  })
+  expect(zones.state.document.content[2].content[0].content[0].text).toBe('3 + 2 + \\frac{a}{b}')
+})

@@ -20,6 +20,7 @@ export interface ShellOptions {
   commands: Registry
   save: (includeDocumentEdits?: boolean) => Promise<void>
   schedule: () => void
+  refresh?: () => void
   message: (s: string, error?: boolean) => void
   isTauri: boolean
   hasRecovery?: boolean

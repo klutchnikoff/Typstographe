@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { afterEach, expect, it, vi } from 'vitest'
 import { getSchema, type Editor } from '@tiptap/core'
+import { documentContent } from '../src/shared-inline-marks'
 import { prosemirrorJSONToYXmlFragment, yUndoPluginKey } from '@tiptap/y-tiptap'
 import * as Y from 'yjs'
 import {
@@ -385,7 +386,7 @@ it.each(['rich-text', 'inline-text'] as const)(
       }),
     )
     expect(submit).toHaveBeenCalledOnce()
-    expect(editor.getJSON()).toEqual(rich('Texte'))
+    expect(documentContent(editor.getJSON())).toEqual(rich('Texte'))
   },
 )
 

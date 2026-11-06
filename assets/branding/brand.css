@@ -1,0 +1,11 @@
+.brand-scene {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.brand-scene .brand-letters {
+  fill: var(--brand-ink, #285c77);
+}
+.brand-scene .brand-ligature {
+  fill: var(--brand-rust, #ad542f);
+}

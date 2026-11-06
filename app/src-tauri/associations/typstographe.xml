@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-typstographe">
+    <comment>typstOgraphe project</comment>
+    <comment xml:lang="fr">Projet typstOgraphe</comment>
+    <glob pattern="*.typsto"/>
+    <icon name="application-x-typstographe"/>
+  </mime-type>
+</mime-info>

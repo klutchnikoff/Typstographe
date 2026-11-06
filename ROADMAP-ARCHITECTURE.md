@@ -125,10 +125,10 @@ de l’export déplacé dans un environnement sans cache de paquets.
 ### C.1–C.4 — Ordre et périmètres validés le 3 novembre 2026
 
 **Dépendance satisfaite :** B.1 est clôturé et ses contrats préparatoires sont
-consignés. C.1 (renvois) est implémenté et vérifié localement ; le prochain lot
-est C.2 (mathématiques), avant C.3 (bibliographie du projet) et C.4 (bibliothèque
-personnelle). Préciser ensemble les paramètres, commandes/cibles et maquettes
-avant chaque implémentation ;
+consignés. C.1 (renvois) et le premier périmètre de C.2 (mathématiques) sont
+implémentés et vérifiés localement ; le prochain lot est C.3 (bibliographie du
+projet), avant C.4 (bibliothèque personnelle). Préciser ensemble les paramètres,
+commandes/cibles et maquettes avant chaque implémentation ;
 la livraison de tous les types de B n’est pas un prérequis.
 
 - **C.1 — Cibles et renvois — livré localement.** Le [contrat](docs/c1-cross-references.md)
@@ -136,18 +136,106 @@ la livraison de tous les types de B n’est pas un prérequis.
   composantes libellé/page, les callbacks de présentation Typst et l’extraction
   des libellés pendant la compilation existante. Sélecteur, badges, formulaires
   récupérables et commandes réutilisent les mécanismes communs Tauri/CLI/MCP.
-  Le sélecteur vise les titres, images et tableaux du corps ; équations et
-  théorèmes étendront ce contrat. Reste différé le mode explicite « Choisir dans
+  Le sélecteur vise les titres, images et tableaux du corps ; C.2 l’étend aux
+  équations. Les théorèmes reprendront ce contrat. Reste différé le mode explicite « Choisir dans
   l’aperçu », réutilisant la correspondance backward sans sélection arbitraire
   d’une cible voisine. Qualification CI et recette utilisateur avant fusion.
-- **C.2 — Mathématiques.** Un contrat de formule avec source, langage Typst ou
+- **C.2 — Mathématiques — livré localement.** Le [contrat](docs/c2-mathematics.md)
+  décrit les nœuds `mathInline`/`mathBlock`, leurs zones de code partagées,
+  l’adaptateur Typst/MiTeX et les imports dérivés conservés dans les projets.
+  Le [benchmark MiTeX natif/WASM](experiments/mitex-comparison/RESULTS.md)
+  ne montre pas de gain robuste à chaud ; le chemin WASM est conservé.
+  Le [profilage détaillé](experiments/preview-profiling/RESULTS.md) confirme la
+  réutilisation des sources et des caches. Les mises à jour différentielles des
+  pixels et des canvas sont la priorité proposée. L’[évaluation native RGBA / Reflexo](experiments/preview-renderers/RESULTS.md)
+  est terminée sur les trois articles : 18 sessions, pixels RGBA identiques,
+  reconstructions complètes et synchronisations vérifiées. Sur 24 pages,
+  édition de formule : 270 ms en RGBA complet, 102 ms pour les deux candidats
+  différentiels ; premier rendu : 713 ms en RGBA différentiel et 455 ms pour
+  Reflexo. La [contre-épreuve VS Code/Tinymist et parcours commun](experiments/tinymist-pipeline/RESULTS.md)
+  affine l’arbitrage : sur 24 pages, deux frames après une édition de formule,
+  47 ms p50 dans Tinymist avec rendu partiel, 123 ms dans notre candidat RGBA ;
+  p95 respectifs 168 et 126 ms. Les premières mutations SVG précèdent parfois
+  le post-traitement : ne pas les comparer à notre callback de publication.
+  Les 24 sessions vérifient 792 états de source identiques ; six comparaisons
+  natives de synchronisation et les reconstructions/erreurs passent.
+  [Déduplication de l’interface implémentée et mesurée](experiments/ui-refresh/RESULTS.md) :
+  microtâche commune sans attente de frame, disponibilité rafraîchie une fois,
+  comptages selon texte/sélection/langue et index de références selon
+  génération/valeurs. Sur 24 pages, édition de formule : commande 22 → 7 ms,
+  publication RGBA complet 271 → 254 ms, candidat différentiel 102 → 87 ms ;
+  p95 complet encore variable, 296 → 307 ms. Les 24 sessions vérifient
+  396 états avant/après identiques en source, pixels et navigation ; badges,
+  commandes, sélection et synchronisation sont vérifiés aussi dans les tests.
+  [Cartes de source et synchronisation optimisées](experiments/source-sync/RESULTS.md) :
+  règles d’échappement communes sans chaîne temporaire par caractère, index des
+  balises numérotées par parcours syntaxique linéaire dans chaque compilation.
+  Aucun cache de plages entre révisions ni coût différé au clic.
+  Sur 24 pages : carte 11,93 → 2,01 ms, construction RenderSync hors empreinte
+  12,81 → 4,82 ms (mesure dérivée), publication 258 → 244 ms RGBA complet et
+  93 → 76 ms candidat différentiel. Les 24 contrôles d’identité du cœur compilé
+  et 396 comparaisons de cartes UTF-16/ancres complètes passent, ainsi que les
+  pixels, reconstructions et synchronisations. Un pilote au cache Cargo invalide
+  est exclu ; reconstruction ciblée et empreinte du cœur font partie du protocole.
+  [Latence de saisie continue](experiments/typing-latency/RESULTS.md) : comparaison
+  native avec/sans actualisation acquise. Les uploads de pages consécutifs
+  bloquent le fil de l’interface ; préparation fractionnée, annulation et
+  libération des canvas sont implémentées, avec publication atomique conservée.
+  459 tests, 14 parcours navigateur et 24 sessions natives passent ; 1 152
+  entrées conservées, états finaux texte/source/pixels/navigation identiques.
+  Sur 24 pages à 250 ms/caractère : attente d’entrée p95 25 → 3 ms, prochain
+  créneau d’affichage p95 40 → 21 ms, intervalle maximal entre frames 123 → 67 ms.
+  Les publications restent actives (44 contre 46). Les pointes à cadence 100 ms
+  sans upload restent à isoler : la correction ne garantit pas toutes les frames.
+  Garder la fluidité de saisie comme critère pour réévaluer les renderers WebKit.
+  Préserver UTF-16, échappements, zones et gardes ; mesurer chaque gain avant
+  l’arbitrage final RGBA / SVG partiel, idéalement dans le même hôte WebKit.
+  Le contrôle automatisé source→aperçu dans VS Code reste non concluant ;
+  les retours par Cmd-clic et les parcours natifs passent. Le premier chargement
+  VS Code est exploratoire et non monotone ; aucun classement sur ce point.
+  RGBA différentiel et Reflexo restent des candidats évalués ; le format
+  Rust/WASM doit être assorti et ses adaptations à Typst officiel, notamment
+  les PDF importés, demandent une qualification de production.
+  À valider avant intégration : protocole et cache par document/génération,
+  options et flux/epoch de vue, contrôle de la base réellement publiée,
+  réinitialisation, publication atomique, refus des résultats périmés et cartes
+  complètes de synchronisation à chaque révision. Ajouter les garanties
+  multi-vues, remplacement de document, erreurs et révisions sans changement
+  de pixels. Les candidats restent isolés ; aucune dépendance ni politique
+  CSP de l’application n’a changé.
+  Un contrat de formule avec source, langage Typst ou
   LaTeX, description accessible et présentation en ligne/en bloc. Les blocs
   peuvent être ciblés par C.1 ; les modèles règlent numérotation et présentation.
-  Saisie de code et aperçu en premier, éditeur visuel ensuite, sans conversion
-  bidirectionnelle implicite. MiTeX passe par un adaptateur Typst public stable ;
+  Saisie directe du source en premier, éditeur visuel ensuite, sans conversion
+  bidirectionnelle implicite. Aucun aperçu mathématique supplémentaire dans
+  l’éditeur : réutiliser le rendu temps réel de la colonne droite.
+  MiTeX passe par un adaptateur Typst public stable ;
   inventorier et embarquer sa version et ses dépendances pour les fichiers et
-  exports hors ligne. Définir le périmètre du code accepté et les diagnostics
-  avant de relier la saisie au compilateur.
+  exports hors ligne. Les diagnostics proviennent du moteur concerné, sans
+  liste de formules autorisées propre à typstOgraphe ; conserver les limites
+  réelles du support Typst/MiTeX explicites. Le source représente une formule,
+  éventuellement complexe ou multiligne, et non un document LaTeX complet.
+  **Déclencheurs validés :** `$` seul sur une ligne puis Entrée crée le widget
+  Typst ; `$$` seuls puis Entrée créent le widget LaTeX. Dans une ligne de texte,
+  `$cos(x)$` est Typst et `$$\cos(x)$$` est LaTeX. Les doubles dollars désignent
+  le langage, pas une mise en bloc implicite. Ces conventions appartiennent
+  à la saisie ; conserver séparément langage, source et présentation.
+  **Différé explicitement :** macros LaTeX et fonctions Typst personnalisées.
+  Préciser ultérieurement leur définition, leur portée, leur disponibilité au
+  rendu et leur conservation autonome dans le projet et les exports.
+  **Ajustement du 5 novembre 2026 :** `language` est un paramètre de création
+  stocké comme attribut, exclu des propriétés et des écritures `node.set_attrs`.
+  Le champ de label dans l’en-tête réutilise schéma, attribut et commande du
+  panneau ; le contrôle générique conserve validation et concurrence, sans
+  écraser les autres brouillons. Le texte alternatif rejoint le `alt` natif de
+  `math.equation` ; le cœur vérifie les exports PDF/UA-1 des deux langages avec
+  et sans description, sans modifier la politique d’export de l’application.
+  **Labels validés :** séparer l’ancre stable automatique de l’alias humain
+  facultatif des équations en bloc. Le champ affiche un préfixe `eq:` grisé,
+  non éditable ; suffixe vide signifie absence d’alias. Une modification du
+  suffixe préserve les renvois par identité. Le sélecteur reconnaît `eq:` et
+  `$` comme filtres d’équations ; le badge utilise le contenu composé par
+  Typst, par exemple `(12)`, sans reconstruire son numéro dans l’adaptateur.
 - **C.3 — Notices du projet.** Remplacer les multiples fichiers originaux par
   une bibliothèque Hayagriva unique, matérialisée dans le `.typsto` et l’export.
   Réutiliser la crate Hayagriva pour import et sérialisation ; évaluer la
@@ -254,6 +342,35 @@ mesurer saisie, validation, compilation, transport, affichage et mémoire sépar
 Préserver la dernière page valide pendant un rendu, refuser les résultats périmés
 et éviter une file de compilations obsolètes. Définir ensemble les budgets sur
 documents courts, longs, illustrés et avec plusieurs participants.
+
+**Flux desktop (5 novembre 2026) :** le [contrat de rendu différentiel](docs/preview-stream.md)
+annule les travaux périmés aux frontières coûteuses et ne transporte que les
+pages dont les pixels changent. Base explicite par fenêtre/génération/époque,
+acquittée uniquement après publication ; un rendu retourné mais abandonné ne
+remplace pas la base affichée. Les cartes immuables sont renouvelées à chaque
+révision et adressées par identifiant du rendu affiché. Repli complet après perte
+de base, publication atomique et réemploi des canvas inchangés. Les exports et
+le format documentaire restent indépendants de ce protocole interne. Mesurer la
+saisie sur les trois articles avec/sans aperçu, sans confondre réduction du
+transfert et disparition de toutes les pointes de latence. La
+[recette native complétée](experiments/preview-delta/INPUT-RESULTS.md) conserve
+24 sessions, 1 152 entrées et les états finaux identiques. Sur 24 pages à
+100 ms/caractère : deuxième RAF p95 80 → 34 ms, intervalle maximal 69 → 44 ms.
+Le rapport distingue les gains, les métriques dégradées et le témoin sans aperçu ;
+il n’isole pas le bénéfice de l’annulation, non sollicitée dans ces phases après.
+
+**Priorité à la frappe (5 novembre 2026) :** ne déplacer dans le DOM que les
+pages remplacées/retirées, conserver les autres en place et éviter les écritures
+sur des surlignages vides. Les événements des surfaces de commandes et le
+rafraîchissement général partagent une mise à jour secondaire après une
+possibilité de rendu du texte (callback de frame puis nouvelle tâche, avec repli
+borné pour fenêtre masquée). La disponibilité est toujours contrôlée à
+l’invocation ; la présentation différée n’accorde aucun droit supplémentaire.
+La [recette en trois variantes](experiments/editor-priority/RESULTS.md) conserve
+36 sessions et des états finaux identiques. Elle mesure directement entrée →
+frame du texte et entrée → publication/frame du nouvel aperçu, sans les
+confondre avec l’aller-retour IPC ni prétendre mesurer la présentation physique.
+Sur 24 pages à 250 ms/caractère, frappe p95 25 → 16 ms ; aperçu 90 → 80 ms.
 
 **Budget relatif :** exprimer la cible comme un facteur (1,5 à 2, en p95) de la
 compilation incrémentale de Typst seul sur le même document, avec une référence

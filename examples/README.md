@@ -34,3 +34,10 @@ ou les deux. Les cibles ont des identités stables ; modifier leur intitulé ne
 casse pas les renvois. L’exemple et ses dépendances sont autonomes hors ligne.
 La [recette CLI](cli/article-cross-references.json) le reconstruit vers une
 destination libre ; modifier son chemin de sortie pour conserver l’exemple fourni.
+
+## Mathématiques
+
+[article-mathematics.typsto](article-mathematics.typsto) montre les formules Typst
+et LaTeX en ligne, deux équations numérotées et leurs renvois.
+[La recette CLI](cli/article-mathematics.json) reconstruit cet exemple vers une
+destination libre. Les exports PDF et Typst restent autonomes hors ligne.

@@ -51,6 +51,7 @@ export function interactionAvailability(editor: Editor, policy: InteractionPolic
   const editing = editingAvailability(editor)
   if (!editing.enabled) return editing
   const s = editor.state.selection
+  if (s.$from.parent.type.spec.code || s.$to.parent.type.spec.code) return refused('text_required')
   const body = editor.view.dom.dataset.richZoneProfile === 'document'
   const text =
     s instanceof AllSelection ||

@@ -43,6 +43,8 @@ fn ranges(state: &State) -> Vec<(TextZone, usize, usize)> {
                 | "quoteAttribution"
                 | "postscript"
                 | "attachment"
+                | "mathBlock"
+                | "mathInline"
         ) {
             out.push((TextZone::Body { path: path.clone() }, start, at));
         }

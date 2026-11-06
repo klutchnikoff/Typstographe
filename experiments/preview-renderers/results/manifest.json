@@ -1,0 +1,12 @@
+{
+  "application_commit": "719438b930ac5bb48419b2a36408ea3ceb220482",
+  "scope": "Native renderer comparison with original structured editor, compiler, and RenderSync",
+  "reflexo_commit": "e1974e566ba63dcf8ecdd6730cff25de26c7dbd2",
+  "renderer_version": "0.8.0-rc3",
+  "typst": "0.15.1",
+  "variants": [
+    "rgba-full",
+    "rgba-delta",
+    "reflexo"
+  ]
+}

@@ -1,6 +1,7 @@
 fn main() {
     // Cargo and the Tauri CLI must declare exactly the same Fluent languages.
     println!("cargo:rerun-if-changed=../scripts/native-locales.mjs");
+    println!("cargo:rerun-if-changed=tauri.conf.json");
     println!("cargo:rerun-if-changed=../../crates/i18n/i18n.toml");
     println!("cargo:rerun-if-changed=../../crates/i18n/i18n");
     let status = std::process::Command::new("node")

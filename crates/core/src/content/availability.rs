@@ -29,7 +29,9 @@ pub fn policy(id: &str) -> Policy {
             Policy::Heading
         }
         "block.bullet" | "block.numbered" | "block.description" => Policy::List,
-        "insert.footnote" | "insert.citation" | "insert.reference" => Policy::Inline,
+        "insert.footnote" | "insert.citation" | "insert.reference" | "math.inline" => {
+            Policy::Inline
+        }
         "insert.table" => Policy::Table,
         _ => Policy::Block,
     }

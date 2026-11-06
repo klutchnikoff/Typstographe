@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { createRichZone } from '../src/rich-zone'
-import { createRegistry } from '../src/commands'
+import { createRegistry, refreshCommands } from '../src/commands'
 import { mountCommandSurfaces } from '../src/command-surfaces'
 import { commandAvailability } from '../src/public-commands'
 import type { Editor } from '@tiptap/core'
@@ -13,7 +13,7 @@ afterEach(() => {
   editor?.destroy()
   document.body.replaceChildren()
 })
-async function mount(native?: Transport) {
+async function mount(native?: Transport, requestRefresh?: () => void) {
   const element = document.createElement('div')
   document.body.append(element)
   editor = createRichZone({
@@ -35,6 +35,7 @@ async function mount(native?: Transport) {
     requiresDocument: new Set(),
     active: () => active,
     native,
+    requestRefresh,
     onError: (error) => {
       throw error
     },
@@ -166,4 +167,25 @@ it('regaining foreground during an outstanding native reply still refreshes the 
   window.dispatchEvent(new Event('focus'))
   release()
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(2))
+})
+
+it('routes transaction and focus refreshes through the shared scheduler while command guards remain immediate', async () => {
+  const requested = vi.fn(),
+    invoke = vi.fn(async () => undefined)
+  const { commands, run } = await mount({ invoke } as unknown as Transport, requested)
+  surfaces.refresh()
+  editor.commands.setTextSelection(2)
+  expect(requested).toHaveBeenCalled()
+  expect(invoke).not.toHaveBeenCalled()
+  const input = document.createElement('input')
+  document.body.append(input)
+  input.focus()
+  commands.get('text.clear')!.run()
+  expect(run).not.toHaveBeenCalled()
+  expect(commandAvailability(commands.get('text.clear')!).reason).toBe('text_required')
+  refreshCommands(commands) // The common scheduler eventually publishes current state.
+  expect(invoke).toHaveBeenCalledWith(
+    'set_menu_availability',
+    expect.objectContaining({ states: expect.objectContaining({ 'text.clear': false }) }),
+  )
 })

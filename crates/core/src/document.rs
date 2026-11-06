@@ -2,6 +2,7 @@
 mod markup;
 mod options;
 mod source_map;
+pub(crate) use markup::needs_markup_escape;
 pub use markup::{escape_markup, typst_string};
 pub use options::*;
 pub use source_map::SourceMap;

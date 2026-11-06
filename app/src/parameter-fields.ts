@@ -92,8 +92,35 @@ export class ParameterFields {
       label.htmlFor = input.id
       label.textContent = field.label
       label.hidden = field.schema['x-editor']?.label_visibility === 'accessible'
-      this.root.append(label, input)
+      this.root.append(label)
+      const prefix = field.schema['x-editor']?.prefix
+      if (prefix) {
+        const group = document.createElement('div')
+        group.className = 'prefixed-parameter'
+        const fixed = document.createElement('span')
+        fixed.textContent = prefix
+        fixed.setAttribute('aria-hidden', 'true')
+        group.append(fixed, input)
+        this.root.append(group)
+      } else this.root.append(input)
       this.controls.set(field, input)
+    }
+  }
+  /** Rebase a pristine panel field after another local control confirms it.
+   * A draft already edited in this form keeps priority until explicit validation.
+   */
+  synchronize(attribute: string, before: Scalar | undefined, value: Scalar | undefined) {
+    for (const [field, input] of this.controls) {
+      if (field.attribute !== attribute || this.drafts[field.name] !== before) continue
+      this.drafts[field.name] = value
+      if (input instanceof HTMLInputElement && input.type === 'checkbox') input.checked = !!value
+      else
+        input.value =
+          input instanceof HTMLSelectElement
+            ? value === undefined
+              ? ''
+              : JSON.stringify(value)
+            : String(value ?? '')
     }
   }
   read() {

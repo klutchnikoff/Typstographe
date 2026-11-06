@@ -102,7 +102,9 @@ export async function insertInlineObject(
   if (!node.isInline) return false
   const { from, to } = editor.state.selection
   const transaction = editor.state.tr.replaceWith(from, to, node)
-  transaction.setSelection(TextSelection.create(transaction.doc, from + node.nodeSize))
+  transaction.setSelection(
+    TextSelection.create(transaction.doc, from + (node.inlineContent ? 1 : node.nodeSize)),
+  )
   const commands = editingProvider(editor)
     ? [
         {

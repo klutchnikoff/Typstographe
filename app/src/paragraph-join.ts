@@ -1,8 +1,8 @@
 import type { Editor } from '@tiptap/core'
-import { TextSelection } from '@tiptap/pm/state'
+import { Selection, TextSelection } from '@tiptap/pm/state'
 import { dispatchImmediateEdit } from './immediate-edit'
 import { lineBreak } from './document-whitespace'
-import { ParagraphSelection } from './paragraph-selection'
+import { ParagraphSelection, emptyWidgetParagraph } from './paragraph-selection'
 
 const prose = (kind: string) => kind === 'paragraph' || kind === 'heading'
 const containers = new Set(['doc', 'quote', 'listItem', 'tableCell', 'tableHeader'])
@@ -30,6 +30,14 @@ export function joinParagraphs(editor: Editor, backwards: boolean, trailingParag
     return false
   if (!prose($from.parent.type.name) || !containers.has($from.node($from.depth - 1).type.name))
     return true
+  const start = $from.before()
+  if (emptyWidgetParagraph(editor.state.doc.resolve(start))) {
+    // The final continuation slot must always remain available for writing.
+    if (trailingParagraph && $from.after() === editor.state.doc.content.size) return true
+    const tr = editor.state.tr.delete(start, $from.after())
+    tr.setSelection(Selection.near(tr.doc.resolve(start), backwards ? -1 : 1))
+    return dispatchImmediateEdit(editor, tr)
+  }
   const parent = $from.node($from.depth - 1)
   const index = $from.index($from.depth - 1) - (backwards ? 1 : 0)
   if (index < 0 || index + 1 >= parent.childCount) return true

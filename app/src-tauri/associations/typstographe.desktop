@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name={{name}}
+Exec={{exec}} %f
+Icon={{icon}}
+Terminal=false
+Categories={{categories}}
+MimeType=application/x-typstographe;
+StartupWMClass=typstographe

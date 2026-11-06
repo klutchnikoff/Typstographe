@@ -198,7 +198,8 @@ les primitives natives simples n’ont pas besoin d’un wrapper systématique.
 
 B.1 est clôturé. L’ordre de réalisation validé est désormais
 **C.1 → C.2 → C.3 → C.4**, à partir des contrats préparatoires consignés en B.1.
-C.1 est implémenté et vérifié localement ; C.2 est le prochain lot à préciser.
+C.1 et le premier périmètre de C.2 sont implémentés et vérifiés localement ;
+C.3 est le prochain lot à préciser.
 Valider ensemble les choix détaillés et les interfaces avant de coder chaque
 lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C.
 
@@ -208,11 +209,106 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    [contrat et la recette](docs/c1-cross-references.md) précisent les garanties.
    La sélection par clic dans l’aperçu est une amélioration différée, avec un
    mode explicite et une résolution des ambiguïtés ; elle ne bloque pas C.2.
-2. **C.2 — Formules mathématiques.** Saisie de code Typst ou LaTeX via MiTeX,
+2. **C.2 — Formules mathématiques — livré localement.** Saisie de code Typst ou LaTeX via MiTeX,
    dans le texte ou en bloc ; conserver le langage et la source, prévoir la
    description accessible et les références aux blocs. L’éditeur visuel viendra
    ensuite sur le même objet, sans promettre une conversion réversible des
    syntaxes.
+   [Comparaison native/WASM réalisée](experiments/mitex-comparison/RESULTS.md) :
+   WASM conservé, aucun gain robuste de latence à chaud sur les trois articles.
+   Le [profilage de l’aperçu long](experiments/preview-profiling/RESULTS.md) confirme
+   les caches Typst et identifie les pixels transférés et les canvas recréés pour
+   les pages inchangées comme priorité. L’[évaluation RGBA différentiel / Reflexo](experiments/preview-renderers/RESULTS.md)
+   est terminée : 18 sessions natives, synchronisations conservées, 270 → 102 ms
+   pour une édition de formule sur 24 pages. Reflexo atteint aussi 102 ms et
+   accélère le premier rendu complet (455 ms contre 713 ms), avec un transfert
+   plus petit mais des adaptations et une qualification supplémentaires.
+   La [contre-épreuve dans VS Code/Tinymist](experiments/tinymist-pipeline/RESULTS.md)
+   complète cette conclusion : sur 24 pages, deux frames après une édition de
+   formule, p50 de 47 ms dans Tinymist avec rendu partiel, contre 123 ms dans
+   notre candidat RGBA (p95 respectifs 168 et 126 ms). La première étude ne
+   comparait que les renderers dans notre parcours commun.
+   [Optimisation de l’interface mesurée](experiments/ui-refresh/RESULTS.md) :
+   rafraîchissements regroupés sans délai de frappe, disponibilité actualisée
+   une fois, comptages inchangés et transactions de références dédupliqués.
+   Sur 24 pages, une édition de formule rend la main en 7 ms contre 22 ms ;
+   publication 271 → 254 ms en RGBA complet et 102 → 87 ms dans le candidat
+   différentiel. Le p95 du RGBA complet reste variable (296 → 307 ms).
+   Les 24 sessions préservent 396 états de source, pixels et navigation identiques.
+   [Cartes optimisées et mesures vérifiées](experiments/source-sync/RESULTS.md) :
+   largeurs échappées sans allocation par caractère et index syntaxique construit
+   une fois par compilation, sans réutiliser de plages entre révisions.
+   Sur 24 pages, carte de source 11,93 → 2,01 ms ; construction RenderSync
+   hors vérification 12,81 → 4,82 ms (mesure dérivée). Publication de formule
+   258 → 244 ms en RGBA complet, 93 → 76 ms dans le candidat différentiel.
+   Les 24 sessions vérifient le cœur réellement compilé et 396 états identiques
+   en source, pixels, cartes UTF-16 complètes et ancres transformées.
+   [Saisie continue mesurée avant/après](experiments/typing-latency/RESULTS.md) :
+   les uploads successifs de toutes les pages peuvent bloquer l’éditeur.
+   Préparation désormais fractionnée en tâches courtes, annulation des états
+   périmés et libération des canvas ; publication toujours atomique.
+   459 tests, 14 parcours navigateur et 24 sessions natives passent, avec
+   1 152 entrées conservées et des états finaux identiques. Sur 24 pages à
+   250 ms/caractère : file d’entrée p95 25 → 3 ms, prochain créneau d’affichage
+   p95 40 → 21 ms, intervalle maximal entre frames 123 → 67 ms. L’aperçu reste
+   actif (44 publications contre 46). Des pointes subsistent à 100 ms/caractère,
+   sans uploads pendant la frappe ; ne pas annoncer leur élimination générale.
+   **Suite (5 novembre 2026) :** [flux RGBA différentiel de production](docs/preview-stream.md)
+   désormais raccordé : annulation après compilation, entre pages et avant le
+   paquet ; cache par fenêtre/document/génération/époque ; base acquittée seulement
+   après affichage ; transfert et canvas réservés aux pages visuellement modifiées.
+   Chaque révision reconstruit ses cartes de synchronisation, y compris sans
+   changement de pixels. Repli complet en cas de base absente, publication
+   atomique et parcours erreurs/rechargement/multi-fenêtres testés. Réévaluation
+   native de la saisie dans une série isolée `preview-delta`, sans remplacer les
+   mesures précédentes. [Vérification des trois articles](experiments/preview-delta/README.md) :
+   pixels/cartes identiques ; sur 24 pages, une page modifiée transporte
+   8,13 Mo contre 192,65 Mo. [Mesure native de saisie complétée](experiments/preview-delta/INPUT-RESULTS.md) :
+   24 sessions et 1 152 entrées conservées, états finaux identiques. Sur 24 pages
+   à 100 ms/caractère, deuxième créneau d’affichage p95 80 → 34 ms et intervalle
+   maximal entre frames 69 → 44 ms ; l’aperçu suit désormais la frappe rapide.
+   Les premiers créneaux p95 à 250 ms se dégradent légèrement (24 pages :
+   20 → 30 ms) ; conserver les contrôles sans aperçu et les pointes restantes,
+   sans promettre une amélioration uniforme ni attribuer le gain à l’annulation
+   seule, qui n’a pas été sollicitée dans les phases chronométrées après.
+   **Priorité à l’éditeur :** [comparaison en trois étapes](experiments/editor-priority/RESULTS.md)
+   après suppression des déplacements de pages inchangées puis regroupement des
+   mises à jour secondaires après une possibilité d’afficher le caractère.
+   Les rafraîchissements de commandes passent par le même ordonnanceur ; les
+   contrôles d’exécution restent immédiats. 479 tests frontend, 30 parcours
+   navigateur et 36 sessions natives valident 1 728 entrées et les états finaux.
+   Sur 24 pages : frappe p95 17 → 13 ms à 100 ms/caractère et 25 → 16 ms à
+   250 ms/caractère. Le premier créneau du nouvel aperçu, désormais mesuré
+   directement de bout en bout, passe respectivement de 70 à 60 ms et de 90 à
+   80 ms. Aucun délai de frappe ajouté. Les petits documents restent variables
+   (7 pages à 100 ms : 13 → 17 ms) ; conserver tous les cas et les pointes.
+   **Saisie validée :** `$` seul sur une ligne suivi d’Entrée crée un widget
+   Typst ; `$$` seuls suivis d’Entrée créent un widget LaTeX. Dans le texte,
+   `$cos(x)$` désigne une formule Typst et `$$\cos(x)$$` une formule LaTeX.
+   Ces délimiteurs choisissent le langage ; le double dollar n’impose pas
+   une présentation en bloc. On édite directement le source mathématique,
+   comme dans Typst ou LaTeX, sans liste de formules autorisées propre à
+   l’application. Le moteur concerné fournit les diagnostics dans les limites
+   de son support. Aucun aperçu supplémentaire dans l’éditeur : le rendu
+   temps réel de la colonne droite suffit. Le source est celui d’une formule,
+   éventuellement complexe ou multiligne, sans document LaTeX complet.
+   **À traiter ultérieurement :** macros LaTeX et fonctions Typst personnalisées,
+   leur définition, leur portée et leur conservation dans le projet et l’export.
+   Le [contrat C.2](docs/c2-mathematics.md) décrit les zones de code partagées,
+   l’adaptateur MiTeX autonome et les garanties de conservation.
+   **Widgets ajustés (5 novembre 2026) :** langage fixé à la création, sans
+   changement Typst/LaTeX dans les propriétés ; champ `eq:` dans l’en-tête,
+   synchronisé avec les propriétés via le même attribut et la même commande.
+   Description accessible transmise à `math.equation(alt: ...)` ; test réel
+   PDF/UA-1 avec et sans description dans les deux langages. Les brouillons
+   restent éditables sans description et les réglages d’export ne changent pas.
+   **Labels validés :** les équations en bloc conservent une identité automatique
+   stable et peuvent recevoir un alias lisible facultatif. L’interface présente
+   le préfixe `eq:` grisé et non éditable, suivi du nom libre ; un nom vide ne
+   crée aucun alias. Modifier cet alias ne casse pas les renvois. Dans le
+   sélecteur, `eq:` ou son raccourci `$` filtre les équations. Le badge reprend
+   le libellé réellement composé par Typst, par exemple `(12)` ; le modèle
+   conserve la maîtrise de la numérotation et de sa présentation.
 3. **C.3 — Bibliographie du projet.** Consolider les imports BibLaTeX et Hayagriva
    dans un unique fichier Hayagriva interne au `.typsto` et à l’export. Remplacer
    le contrat actuel de plusieurs fichiers originaux après évaluation des pertes
@@ -572,15 +668,15 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 ## Prochain lot proposé
 
-**C.2 — Formules mathématiques**, après qualification de C.1 et validation commune.
+**C.3 — Notices bibliographiques du projet**, après qualification de C.2 et validation commune.
 
-1. Préciser le contrat des formules en ligne/en bloc : source Typst ou LaTeX via
-   MiTeX, description accessible et ancre des blocs pour réutiliser les renvois C.1.
-2. Valider le code accepté, les diagnostics, les règles de numérotation laissées
-   au modèle et la maquette de saisie/aperçu avant de coder.
-3. Poursuivre avec C.3 et C.4 ; compléter les types/modèles selon leurs besoins.
-   L’assistance ACP conserve son parcours de validation et de maquette dans F.
+1. Préciser la consolidation Hayagriva, les imports, les collisions de clés et
+   les liens des citations existantes, à partir des orientations C.3 validées.
+2. Valider le contrat commun et la maquette du gestionnaire avant de coder.
+3. Poursuivre avec C.4 ; macros LaTeX et fonctions Typst personnalisées restent
+   explicitement à traiter dans un lot ultérieur. L’assistance ACP conserve son
+   parcours de validation et de maquette dans F.
 
-Les vérifications locales de C.1 ne remplacent pas la qualification CI avant
-fusion ni la recette utilisateur. Aucun choix encore ouvert de C.2 n’est implémenté
+Les vérifications locales de C.2 ne remplacent pas la qualification CI avant
+fusion ni la recette utilisateur. Aucun choix encore ouvert de C.3 n’est implémenté
 d’avance.

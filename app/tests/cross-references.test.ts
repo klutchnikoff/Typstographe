@@ -1,5 +1,7 @@
 import { bindEditorTarget } from '../src/editor-targets'
-import { afterEach, expect, it } from 'vitest'
+import * as history from '../src/editing-history'
+import type { Provider } from '../src/provider'
+import { afterEach, expect, it, vi } from 'vitest'
 import { Editor } from '@tiptap/core'
 import { Fragment, Slice } from '@tiptap/pm/model'
 import { richZoneExtensions } from '../src/rich-zone'
@@ -55,7 +57,7 @@ it('copies renew anchors and remap only references to targets included in the co
   expect(referenceOnly.content.child(0).lastChild!.attrs.target).toBe('heading-method')
   expect(editor.state.doc).toBe(doc)
 })
-it('badges use the actual rendered content only while its document is current', () => {
+it('badges retain the last confirmed label until the next successful preview', () => {
   const editor = fixture(),
     reference = { target: 'heading-method', include_label: true, include_page: false }
   expect(referenceLabel(editor, reference)).toBe('Renvoi · Méthode')
@@ -66,6 +68,13 @@ it('badges use the actual rendered content only while its document is current', 
     id: 'heading-method',
     title: 'MAutre éthode',
   })
+  expect(referenceLabel(editor, reference)).toBe('section 2')
+  setResolvedReferences(editor, [{ ...reference, display: 'section 3' }])
+  expect(referenceLabel(editor, reference)).toBe('section 3')
+  // A changed content choice has no confirmed rendering yet.
+  expect(referenceLabel(editor, { ...reference, include_page: true })).toContain('Renvoi · ')
+  // A successful response replaces the index, including an explicitly empty one.
+  setResolvedReferences(editor, [])
   expect(referenceLabel(editor, reference)).toContain('Renvoi · ')
 })
 it('referenced targets are protected before typing is published; removing the entire forest is valid', () => {
@@ -118,4 +127,104 @@ it('planned widget insertion splits an anchored paragraph without duplicating it
   expect(new Set(ids).size).toBe(ids.length)
   expect(ids).toContain('prose')
   expect(plan.doc.firstChild!.attrs.anchor).toBe('heading-method')
+})
+
+it('confirmed labels are scoped to the editor and never substitute a different target', () => {
+  const editor = fixture(),
+    other = fixture()
+  const reference = { target: 'heading-method', include_label: true, include_page: false }
+  setResolvedReferences(editor, [{ ...reference, display: 'section 2' }])
+  expect(referenceLabel(other, reference)).toBe('Renvoi · Méthode')
+  expect(referenceLabel(editor, { ...reference, target: 'missing-target' })).toBe('Renvoi')
+  const first = editor.state.doc.child(0),
+    second = editor.state.doc.child(1)
+  editor.view.dispatch(editor.state.tr.delete(0, first.nodeSize + second.nodeSize))
+  expect(referenceLabel(editor, reference)).toBe('Renvoi')
+})
+
+it('a reused editor cannot carry confirmed numbers into another document generation', () => {
+  const editor = fixture(),
+    provider = { generation: 'first' } as Provider
+  const lookup = vi.spyOn(history, 'editingProvider').mockReturnValue(provider)
+  const reference = { target: 'heading-method', include_label: true, include_page: false }
+  try {
+    setResolvedReferences(editor, [{ ...reference, display: 'section 2' }])
+    expect(referenceLabel(editor, reference)).toBe('section 2')
+    provider.generation = 'second'
+    expect(referenceLabel(editor, reference)).toBe('Renvoi · Méthode')
+    setResolvedReferences(editor, [{ ...reference, display: 'section 1' }])
+    expect(referenceLabel(editor, reference)).toBe('section 1')
+  } finally {
+    lookup.mockRestore()
+  }
+})
+
+it('unchanged reference values preserve editor state and the active selection without transactions', () => {
+  const editor = fixture()
+  const reference = { target: 'heading-method', include_label: true, include_page: false }
+  const transaction = vi.fn()
+  editor.on('transaction', transaction)
+  const initial = editor.state
+  expect(setResolvedReferences(editor, [])).toBe(false)
+  expect(setResolvedReferences(editor, [])).toBe(false)
+  expect(editor.state).toBe(initial)
+  expect(transaction).not.toHaveBeenCalled()
+
+  const entries = [{ ...reference, display: 'section 2' }]
+  expect(setResolvedReferences(editor, entries)).toBe(true)
+  editor.commands.setTextSelection({ from: 1, to: 4 })
+  const selected = editor.state
+  transaction.mockClear()
+  expect(
+    setResolvedReferences(
+      editor,
+      entries.map((entry) => ({ ...entry })),
+    ),
+  ).toBe(false)
+  expect(editor.state).toBe(selected)
+  expect(transaction).not.toHaveBeenCalled()
+  // A caller changing its own buffer does not change a confirmed badge.
+  entries[0].display = 'section 3'
+  expect(referenceLabel(editor, reference)).toBe('section 2')
+  expect(setResolvedReferences(editor, entries)).toBe(true)
+  expect(referenceLabel(editor, reference)).toBe('section 3')
+  expect(editor.state.selection.eq(selected.selection)).toBe(true)
+  expect(setResolvedReferences(editor, [])).toBe(true)
+  expect(referenceLabel(editor, reference)).toContain('Renvoi · ')
+  transaction.mockClear()
+  expect(setResolvedReferences(editor, [])).toBe(false)
+  expect(transaction).not.toHaveBeenCalled()
+})
+
+it('a new generation and each reference identity or content choice refresh the index', () => {
+  const editor = fixture()
+  const provider = { generation: 'first' } as Provider
+  const lookup = vi.spyOn(history, 'editingProvider').mockReturnValue(provider)
+  const entry = {
+    target: 'heading-method',
+    include_label: true,
+    include_page: false,
+    display: 'section 2',
+  }
+  const transaction = vi.fn()
+  editor.on('transaction', transaction)
+  try {
+    setResolvedReferences(editor, [entry])
+    transaction.mockClear()
+    provider.generation = 'second'
+    expect(setResolvedReferences(editor, [{ ...entry }])).toBe(true)
+    expect(transaction).toHaveBeenCalledTimes(1)
+    for (const changed of [
+      { ...entry, include_label: false },
+      { ...entry, include_page: true },
+      { ...entry, target: 'another-target' },
+    ]) {
+      setResolvedReferences(editor, [entry])
+      transaction.mockClear()
+      expect(setResolvedReferences(editor, [changed])).toBe(true)
+      expect(transaction).toHaveBeenCalledTimes(1)
+    }
+  } finally {
+    lookup.mockRestore()
+  }
 })

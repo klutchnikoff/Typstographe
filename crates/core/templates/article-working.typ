@@ -31,6 +31,7 @@
   )
   set par(justify: true, leading: 0.65em, spacing: 1.05em, first-line-indent: 0pt)
   set heading(numbering: none)
+  set math.equation(numbering: "(1)")
   show title: set text(size: if compact { 20pt } else { 23pt }, weight: "bold", hyphenate: false)
   show title: set block(above: 0pt, below: 0pt)
   show heading: set text(hyphenate: false)

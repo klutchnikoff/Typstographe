@@ -16,6 +16,7 @@ export function mountCommandSurfaces(options: {
   requiresDocument: Set<string>
   active: () => boolean
   native?: Transport
+  requestRefresh?: () => void
   onError: (error: unknown) => void
 }) {
   const { editor, commands, native } = options
@@ -54,7 +55,8 @@ export function mountCommandSurfaces(options: {
   const refresh = (event?: Event) => {
     if (event instanceof CustomEvent && event.detail === commandEditor(editor))
       nativeTextField = false
-    refreshCommands(commands)
+    if (options.requestRefresh) options.requestRefresh()
+    else refreshCommands(commands)
   }
   const focused = (event: FocusEvent) => {
     const target = event.target

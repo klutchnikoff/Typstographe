@@ -1,5 +1,11 @@
 # Latence de l’aperçu Typst — 26 octobre 2026
 
+**Complément du 4 novembre :** le [profilage des articles longs](../experiments/preview-profiling/RESULTS.md)
+compare MiTeX WASM aux sources natives Typst, vérifie la réutilisation des caches
+et ventile toute la chaîne jusqu’aux canvas. Il identifie la publication de
+toutes les pages comme priorité d’optimisation. Les corpus et le logiciel ont
+évolué : les deux études ne constituent pas une mesure directe de régression.
+
 La réactivité est un critère d’architecture de typstOgraphe. L’interface web doit
 être évaluée avec le vrai moteur Typst, le vrai transport Tauri et un affichage
 préparé avant publication. Un délai artificiel de développement ne doit pas
@@ -199,3 +205,39 @@ fonctionnels et la recette native restent utilisables sur les autres systèmes.
 | Attente de 180 ms relancée après chaque modification. | Demande immédiate et au plus une compilation active. | Réduire le délai et éviter une file de rendus obsolètes. |
 | Pixels → PNG → base64 → décodage d’image pour tout aperçu. | Pixels → IPC binaire → canvas préparé avant publication. | Éviter compression, sérialisation base64 et décodage PNG. |
 | Seul le compteur Rust permettait de discuter des performances. | Mesures natives par étape et après publication, avec comparaison de quatre transports. | Inclure le coût réellement ajouté par l’interface. |
+
+
+## Évaluation différentielle — 5 novembre 2026
+
+Le [benchmark isolé RGBA différentiel / Tinymist-Reflexo](../experiments/preview-renderers/RESULTS.md)
+compare les trois articles mathématiques sur le même moteur Typst officiel
+0.15.1, le même IPC natif et les mêmes cartes RenderSync. Sur 24 pages,
+une édition de formule passe de 270 ms à 102 ms avec le RGBA différentiel,
+qui ne rasterise, ne transfère et ne redessine que la page modifiée. Reflexo
+atteint également 102 ms ; il réduit davantage les octets et le premier rendu
+complet. Les reconstructions et les synchronisations passent les contrôles
+natifs. La proposition est d’intégrer le RGBA différentiel en premier, après
+validation du protocole de flux et de ses garanties multi-vues. Ce benchmark
+ne modifie pas le chemin de rendu décrit plus haut pour l’application.
+
+
+## Contre-épreuve VS Code/Tinymist et parcours commun — 5 novembre 2026
+
+Le [bilan complémentaire](../experiments/tinymist-pipeline/RESULTS.md) compare
+la véritable extension VS Code/Tinymist, avec SVG partiel ou complet, à nos
+deux candidats instrumentés : 24 sessions, 792 états de source vérifiés et
+géométrie identique. Sur 24 pages, deux frames après une édition de formule :
+47 ms p50 dans Tinymist avec rendu partiel, 123 ms en RGBA différentiel chez nous.
+Les p95 sont respectivement 168 et 126 ms ; le pic Tinymist est conservé.
+
+La première mutation SVG et notre callback après publication/références ne
+sont pas des événements de fin équivalents. L’attente de deux frames reste
+un indicateur de navigateur, sans datation de présentation GPU. Les hôtes et
+éditeurs diffèrent : cette mesure ne chiffre pas le seul apport de SVG.
+
+Les compteurs communs mesurent quatre rafraîchissements d’interface par édition
+(environ 21 ms cumulés), une publication de références avec transaction (8 ms),
+la carte source (11,6 ms) et RenderSync (12,3 ms). Les compteurs sont imbriqués :
+ne pas additionner ces chiffres. Réduire ce travail avant de figer le renderer,
+puis requalifier le SVG partiel, de préférence dans le même hôte WebKit.
+Aucune optimisation de production n’est encore appliquée.

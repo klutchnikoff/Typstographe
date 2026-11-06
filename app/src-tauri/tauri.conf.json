@@ -33,6 +33,25 @@
       "icons/linux/icon.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "typsto"
+        ],
+        "name": "typstOgraphe.Project",
+        "description": "typstOgraphe",
+        "role": "Editor",
+        "rank": "Owner",
+        "mimeType": "application/x-typstographe",
+        "exportedType": {
+          "identifier": "org.typstographe.project",
+          "conformsTo": [
+            "public.data",
+            "public.composite-content"
+          ]
+        }
+      }
     ]
   }
 }

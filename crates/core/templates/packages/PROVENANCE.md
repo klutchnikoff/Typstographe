@@ -36,3 +36,12 @@ actualiser l’inventaire et adapter `capabilities/dates.typ` en conservant sa
 signature et son comportement public. Les modèles gardent le même appel.
 Exécuter les tests du contrat, d’archivage, d’export et de compilation hors ligne.
 Un remplacement par un autre paquet suit exactement le même principe.
+
+## MiTeX 0.2.7
+
+Archive officielle : https://packages.typst.org/preview/mitex-0.2.7.tar.gz
+
+SHA-256 : `0159e214845e49cbdc332d9d572da112dae5ad248072e0a7680d38c8307c2e15`. Licence Apache-2.0.
+Sources, spécifications et module WebAssembly conservés ; seule une ligne vide
+finale de `specs/README.md` est retirée pour le contrôle de whitespace Git.
+Seul le wrapper `capabilities/mathematics.typ` importe ce paquet local.

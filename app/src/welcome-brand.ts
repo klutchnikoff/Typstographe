@@ -7,6 +7,6 @@ export function welcomeBrand() {
   element.dataset.state = 'settled'
   element.setAttribute('role', 'img')
   element.setAttribute('aria-label', 'typstOgraphe')
-  element.innerHTML = `<div class="camera">${ligature}</div><p class="wordmark">typst<span>O</span>graphe</p>`
+  element.innerHTML = ligature
   return { element, ...createLigatureAnimation(element) }
 }

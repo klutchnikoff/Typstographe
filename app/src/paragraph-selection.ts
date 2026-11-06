@@ -2,8 +2,22 @@ import { GapCursor } from '@tiptap/pm/gapcursor'
 import type { Node as PMNode, ResolvedPos } from '@tiptap/pm/model'
 import { Selection, type SelectionBookmark } from '@tiptap/pm/state'
 import type { Mappable } from '@tiptap/pm/transform'
+import { isWidgetKind } from './widget-frame'
 
 const flows = new Set(['doc', 'quote', 'tableCell', 'tableHeader'])
+/** A real empty writing line beside a widget, distinct from the view-only
+ * separator between two prose paragraphs. Widget contents stay isolated. */
+export function emptyWidgetParagraph($pos: ResolvedPos) {
+  const node = $pos.nodeAfter
+  return (
+    $pos.parent.type.name === 'doc' &&
+    node?.type.name === 'paragraph' &&
+    node.content.size === 0 &&
+    [$pos.nodeBefore, $pos.parent.maybeChild($pos.index() + 1)].some(
+      (neighbour) => neighbour && isWidgetKind(neighbour.type.name),
+    )
+  )
+}
 /** A paragraph separator is a view position, never an extra document node. */
 export function paragraphBoundary($pos: ResolvedPos) {
   return (

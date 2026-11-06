@@ -3,6 +3,16 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import { confirmNewDocument } from './document-lifecycle'
+async function restored(page: Page) {
+  await page.waitForFunction(
+    () => window.__spike?.ready || document.getElementById('message')?.classList.contains('error'),
+  )
+  const status = await page.locator('#message').evaluate((element) => ({
+    error: element.classList.contains('error'),
+    message: element.textContent || '',
+  }))
+  expect(status.error, status.message).toBe(false)
+}
 async function ready(page: Page) {
   await page.goto('/?client=main&welcome=1')
   await page.waitForFunction(() => window.__spike?.ready)
@@ -107,7 +117,7 @@ test('la note récupérée réutilise le bandeau et n’est publiée qu’à sa 
       .first()
       .click(),
   ])
-  await page.waitForFunction(() => window.__spike?.ready)
+  await restored(page)
   await page.getByRole('button', { name: 'Reprendre la saisie', exact: true }).click()
   const input = page.getByLabel('Texte de la note', { exact: true })
   await expect(input).toHaveValue('Une note à reprendre après fermeture.')
@@ -292,7 +302,7 @@ test('un brouillon JSON refusé reste isolé et consultable après import', asyn
         })
         .then(async (response) => expect((await response.json()).error).toBeUndefined()),
     ])
-    await page.waitForFunction(() => window.__spike?.ready)
+    await restored(page)
     expect(
       await page.evaluate(() => JSON.stringify(window.__spike!.editor.getJSON())),
     ).not.toContain('Texte refusé')

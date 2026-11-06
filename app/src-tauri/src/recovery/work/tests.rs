@@ -185,8 +185,18 @@ fn rejected_json_exports_open_as_isolated_input_without_publishing_their_invalid
     let path = dir.path().join("old-export.json");
     fs::write(&path,serde_json::to_vec(&json!({"format":"typstographe-rejected-draft-v1","content":{"document":{"type":"unknown","text":"Private rejected paragraph"}},"update":[255]})).unwrap()).unwrap();
     let record = read_work(&path).unwrap();
+    let anchor =
+        typstographe_core::content::references::anchor(&record.confirmed.document.content[0])
+            .expect("an imported private body has an anchored, valid confirmed fallback")
+            .to_owned();
     let mut s = setup(dir.path());
     s.restore_work_record("main", record).unwrap();
+    assert_eq!(
+        typstographe_core::content::references::anchor(
+            &s.ensure_owner().unwrap().state().document.content[0]
+        ),
+        Some(anchor.as_str())
+    );
     assert!(
         !serde_json::to_string(s.ensure_owner().unwrap().state())
             .unwrap()

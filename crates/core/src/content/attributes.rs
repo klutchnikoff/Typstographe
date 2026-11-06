@@ -26,10 +26,14 @@ pub(super) fn validate(node: &Node, internal_mapping: bool) -> Result<(), String
             if let Some(properties) = schema["properties"].as_object() {
                 for (name, field) in properties {
                     let hint = &field["x-editor"];
-                    let external = hint["storage"] == "structure"
-                        || matches!(hint["placement"].as_str(), Some("structure" | "creation"))
-                        || (hint["placement"] == "body"
-                            && !matches!(kind, "footnote" | "citation" | "crossReference"));
+                    let external = hint["storage"] != "attribute"
+                        && (hint["storage"] == "structure"
+                            || matches!(
+                                hint["placement"].as_str(),
+                                Some("structure" | "creation")
+                            )
+                            || (hint["placement"] == "body"
+                                && !matches!(kind, "footnote" | "citation" | "crossReference")));
                     if !external {
                         map.entry(kind)
                             .or_default()
@@ -64,7 +68,7 @@ pub(super) fn validate(node: &Node, internal_mapping: bool) -> Result<(), String
             && key == "_mapping"
             && matches!(
                 node.kind.as_str(),
-                "text" | "footnote" | "citation" | "crossReference"
+                "text" | "footnote" | "citation" | "crossReference" | "mathInline" | "mathBlock"
             )
         {
             continue;

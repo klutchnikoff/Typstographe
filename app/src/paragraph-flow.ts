@@ -1,7 +1,7 @@
 import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey, TextSelection, type Transaction } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
-import { ParagraphSelection, paragraphBoundary } from './paragraph-selection'
+import { ParagraphSelection, paragraphBoundary, emptyWidgetParagraph } from './paragraph-selection'
 import { joinParagraphs } from './paragraph-join'
 import { dispatchImmediateEdit } from './immediate-edit'
 import { lineBreak } from './document-whitespace'
@@ -128,8 +128,37 @@ export const ParagraphFlow = Extension.create({
           decorations(state) {
             const markers: Decoration[] = []
             state.doc.descendants((node, pos) => {
-              if (node.type.name !== 'paragraph' || !paragraphBoundary(state.doc.resolve(pos)))
-                return
+              if (node.type.name !== 'paragraph') return
+              if (
+                emptyWidgetParagraph(state.doc.resolve(pos)) &&
+                pos + node.nodeSize < state.doc.content.size
+              ) {
+                markers.push(
+                  Decoration.widget(
+                    pos + 1,
+                    (view, getPos) => {
+                      const marker = document.createElement('span')
+                      marker.className = 'paragraph-marker'
+                      marker.textContent = '¶'
+                      marker.setAttribute('aria-hidden', 'true')
+                      marker.onmousedown = (event) => {
+                        if (event.button !== 0) return
+                        event.preventDefault()
+                        const at = getPos()
+                        if (at === undefined) return
+                        view.dispatch(
+                          view.state.tr.setSelection(TextSelection.create(view.state.doc, at)),
+                        )
+                        view.focus()
+                      }
+                      return marker
+                    },
+                    { side: 1, key: 'widget-writing-line', ignoreSelection: true },
+                  ),
+                )
+                return false
+              }
+              if (!paragraphBoundary(state.doc.resolve(pos))) return
               const previous = state.doc.resolve(pos).nodeBefore!
               const active =
                 state.selection instanceof ParagraphSelection && state.selection.head === pos
