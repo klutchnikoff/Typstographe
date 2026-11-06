@@ -68,3 +68,11 @@ chemin interne ou `none`. La signature emploie directement `image` de Typst,
 sans wrapper supplémentaire ni nouveau paquet. Les ressources privées du profil
 sont copiées explicitement ; les fichiers nécessaires du modèle restent conservés
 par la résolution commune du projet.
+
+## Renvois documentaires
+
+`capabilities/cross-references.typ` expose `cross-reference` et `reference-style`.
+Ce wrapper utilise les primitives Typst, sans paquet supplémentaire. Il est
+embarqué dans les modèles fournis, les projets et les exports ; le modèle définit
+les libellés, la présentation des pages et la combinaison des deux composantes.
+Voir le [contrat C.1](c1-cross-references.md).

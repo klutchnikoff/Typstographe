@@ -1,6 +1,6 @@
 # Feuille de route de typstOgraphe
 
-Révisée le **3 novembre 2026**. Objectif : transformer le prototype validé en une
+Révisée le **4 novembre 2026**. Objectif : transformer le prototype validé en une
 application de rédaction utilisable au quotidien, pour l’administration,
 l’enseignement et la recherche en sciences humaines et sociales.
 
@@ -145,7 +145,7 @@ et le [contrat Article](docs/article-contract.md) servent de référence.
 ### Extensions des contrats — différées
 
 B.1 est clôturé. Les extensions suivantes restent à examiner selon les besoins,
-sans retarder le prochain lot C.1 :
+sans bloquer les capacités suivantes :
 
 - Types installables, codecs de données arbitraires et personnalisation des
   fragments partagés : les identités et comportements restent intégrés ;
@@ -198,13 +198,16 @@ les primitives natives simples n’ont pas besoin d’un wrapper systématique.
 
 B.1 est clôturé. L’ordre de réalisation validé est désormais
 **C.1 → C.2 → C.3 → C.4**, à partir des contrats préparatoires consignés en B.1.
+C.1 est implémenté et vérifié localement ; C.2 est le prochain lot à préciser.
 Valider ensemble les choix détaillés et les interfaces avant de coder chaque
 lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C.
 
-1. **C.1 — Labels et références croisées.** Cibles à identité stable pour titres,
-   images et tableaux, extensibles aux équations et théorèmes ; insertion depuis
-   un sélecteur, badge éditable et protection des cibles référencées. Typst et le
-   modèle composent les numéros et le texte des renvois.
+1. **C.1 — Labels et références croisées — livré localement.** Ancres stables
+   automatiques, sélecteur et badges communs, composantes libellé/page, rendu
+   Typst défini par le modèle et commandes partagées Tauri/CLI/MCP. Le
+   [contrat et la recette](docs/c1-cross-references.md) précisent les garanties.
+   La sélection par clic dans l’aperçu est une amélioration différée, avec un
+   mode explicite et une résolution des ambiguïtés ; elle ne bloque pas C.2.
 2. **C.2 — Formules mathématiques.** Saisie de code Typst ou LaTeX via MiTeX,
    dans le texte ou en bloc ; conserver le langage et la source, prévoir la
    description accessible et les références aux blocs. L’éditeur visuel viendra
@@ -569,17 +572,15 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 ## Prochain lot proposé
 
-**C.1 — Labels et références croisées**, après la clôture de B.1.
+**C.2 — Formules mathématiques**, après qualification de C.1 et validation commune.
 
-1. Valider ensemble les identités et labels lisibles, les formes de renvois,
-   les règles de copie/suppression des cibles utilisées et les paramètres
-   laissés aux modèles. Commencer par titres, images et tableaux.
-2. Maquetter le sélecteur et les badges avec les composants communs, préciser
-   clavier et cibles CLI/MCP, puis implémenter le lot après validation.
-3. Poursuivre dans l’ordre C.2, C.3, C.4 et compléter les types/modèles selon
-   leurs besoins. L’assistance ACP conserve son propre parcours de validation
-   et de maquette dans F ; elle n’attend pas tous les types SHS/enseignement.
+1. Préciser le contrat des formules en ligne/en bloc : source Typst ou LaTeX via
+   MiTeX, description accessible et ancre des blocs pour réutiliser les renvois C.1.
+2. Valider le code accepté, les diagnostics, les règles de numérotation laissées
+   au modèle et la maquette de saisie/aperçu avant de coder.
+3. Poursuivre avec C.3 et C.4 ; compléter les types/modèles selon leurs besoins.
+   L’assistance ACP conserve son parcours de validation et de maquette dans F.
 
-La qualification CI du candidat reste à consulter avant fusion. La clôture
-locale de B.1 ne vaut pas qualification multisystème ni autorisation d’implémenter
-les choix encore ouverts de C.1.
+Les vérifications locales de C.1 ne remplacent pas la qualification CI avant
+fusion ni la recette utilisateur. Aucun choix encore ouvert de C.2 n’est implémenté
+d’avance.

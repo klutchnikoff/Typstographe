@@ -54,6 +54,7 @@ export function createRegistry(
   available: () => string[] | undefined = () => undefined,
   citation: () => void = () => {},
   table: () => void = () => {},
+  reference: () => void = () => {},
 ): Registry {
   const registry: Registry = new CommandRegistry()
   bindCommandCapabilities(editor, capabilities, available)
@@ -84,6 +85,7 @@ export function createRegistry(
     'insert.image': image,
     'insert.table': table,
     'insert.citation': citation,
+    'insert.reference': reference,
     'insert.footnote': () =>
       insertInlineWithSettings(target(), { type: 'footnote', attrs: { text: '' } }, properties),
     'letter.insert_postscript': () => {

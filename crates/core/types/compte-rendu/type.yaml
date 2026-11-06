@@ -43,6 +43,7 @@ capabilities:
 - block.quote
 - insert.image
 - insert.table
+- insert.reference
 - insert.footnote
 bindings:
 - field: meeting.title

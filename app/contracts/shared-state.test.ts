@@ -1,3 +1,4 @@
+import { anchorKinds } from '../src/anchor-identity'
 import { documentContent } from '../src/shared-inline-marks'
 import { beforeAll, afterAll, afterEach, expect, it } from 'vitest'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
@@ -120,8 +121,38 @@ function fixture(article: boolean): JSONContent {
       ? { type: 'tableFigure', content: [node, { type: 'tableCaption' }] }
       : node,
   )
+  let next = 0
+  const identify = (node: JSONContent) => {
+    if (node.type && anchorKinds.includes(node.type))
+      node.attrs = { ...node.attrs, anchor: `fixture-${++next}` }
+    node.content?.forEach(identify)
+  }
+  identify(document)
   return document
 }
+
+/** Prose-plan parity compares content, not independently allocated UUID spellings.
+ * Binding identities and undo remain checked exactly by the surrounding recipes.
+ * Cross-reference recipes must use exact comparisons, including anchors/targets.
+ */
+function proseContent<T>(value: T): T {
+  const copy = structuredClone(value)
+  const visit = (v: any) => {
+    if (!v || typeof v !== 'object') return
+    if (v.type === 'crossReference')
+      throw new Error('Cross-references require exact identity assertions.')
+    if (v.attrs && 'anchor' in v.attrs) {
+      const id = v.attrs.anchor
+      if (id !== null) expect(id).toMatch(/^[a-zA-Z0-9-]{1,128}$/)
+      delete v.attrs.anchor
+      if (!Object.keys(v.attrs).length) delete v.attrs
+    }
+    Object.values(v).forEach(visit)
+  }
+  visit(copy)
+  return copy
+}
+
 function seed(type: 'courrier' | 'article') {
   const kind = catalogue.types.find((t) => t.id === type)!
   const settings = structuredClone({
@@ -1470,8 +1501,8 @@ it('the immediate prose join and typed native join agree on Unicode, badges, mar
       ],
     })
     Y.applyUpdate(native, new Uint8Array(outcome.update))
-    expect(state(native)).toEqual(state(local))
-    await probe({ action: 'inspect', update: bytes(local), expected: state(native) })
+    expect(proseContent(state(native))).toEqual(proseContent(state(local)))
+    await probe({ action: 'inspect', update: bytes(local), expected: state(local) })
   }
 })
 
@@ -1539,8 +1570,8 @@ it('native and local whitespace repair preserve Unicode, marks and NBSP in body 
     ],
   })
   Y.applyUpdate(native, new Uint8Array(result.update))
-  expect(state(native)).toEqual(state(local))
-  await probe({ action: 'inspect', update: bytes(local), expected: state(native) })
+  expect(proseContent(state(native))).toEqual(proseContent(state(local)))
+  await probe({ action: 'inspect', update: bytes(local), expected: state(local) })
 })
 
 it('header axes round-trip between native commands, Yjs and the editor without losing cell text', async () => {
@@ -1644,8 +1675,8 @@ it.each(['softBreak', 'hardBreak'])(
       })
       const undo = new Y.UndoManager(native.getXmlFragment('default'))
       Y.applyUpdate(native, new Uint8Array(result.update))
-      expect(state(native)).toEqual(state(local))
-      await probe({ action: 'inspect', update: bytes(local), expected: state(native) })
+      expect(proseContent(state(native))).toEqual(proseContent(state(local)))
+      await probe({ action: 'inspect', update: bytes(local), expected: state(local) })
       const confirmed = state(native)
       undo.undo()
       expect(state(native)).toEqual(state(original))
@@ -1739,8 +1770,8 @@ it('flat item plans and native operations agree on split, symmetric join, exit, 
       })
       const undo = new Y.UndoManager(native.getXmlFragment('default'))
       Y.applyUpdate(native, new Uint8Array(result.update))
-      expect(state(native), kind + ' ' + action).toEqual(state(local))
-      await probe({ action: 'inspect', update: bytes(local), expected: state(native) })
+      expect(proseContent(state(native)), kind + ' ' + action).toEqual(proseContent(state(local)))
+      await probe({ action: 'inspect', update: bytes(local), expected: state(local) })
       const confirmed = state(native)
       expect(undo.undoStack).toHaveLength(1)
       undo.undo()
@@ -1809,8 +1840,8 @@ it('protected multizone replacement plans match one native atomic lot without de
       })
       const undo = new Y.UndoManager(native.getXmlFragment('default'))
       Y.applyUpdate(native, new Uint8Array(result.update))
-      expect(state(native), first + ' / ' + last).toEqual(state(local))
-      await probe({ action: 'inspect', update: bytes(local), expected: state(native) })
+      expect(proseContent(state(native)), first + ' / ' + last).toEqual(proseContent(state(local)))
+      await probe({ action: 'inspect', update: bytes(local), expected: state(local) })
       expect(undo.undoStack).toHaveLength(1)
       undo.undo()
       expect(state(native)).toEqual(state(initial))
@@ -1860,6 +1891,72 @@ it('rectangular paste uses native cell-content splices without changing grid ide
     commands: plan.commands,
   })
   Y.applyUpdate(native, new Uint8Array(result.update))
+  expect(proseContent(state(native))).toEqual(proseContent(state(local)))
+  await probe({ action: 'inspect', update: bytes(local), expected: state(local) })
+})
+
+it('cross-references keep exact documentary identities between Yrs and Yjs, through rename and undo', async () => {
+  const original = seed('article'),
+    native = doc(bytes(original))
+  const guard = { document: 'cross-reference-contract', revision: 0 }
+  const inserted = await probe({
+    action: 'commands',
+    update: bytes(native),
+    guard,
+    expected: guard,
+    commands: [
+      {
+        id: 'inline.replace',
+        params: {
+          target: { zone: { kind: 'body', path: [1] }, from: 0, to: 0 },
+          node: {
+            type: 'crossReference',
+            attrs: { target: 'fixture-1', include_label: true, include_page: true },
+          },
+        },
+      },
+    ],
+  })
+  Y.applyUpdate(native, new Uint8Array(inserted.update))
+  expect(state(native)).toEqual({
+    ...inserted.state,
+    document: documentContent(schema.nodeFromJSON(inserted.state.document).toJSON()),
+  })
+  const local = doc(bytes(native))
+  const editor = createRichZone({
+    profile: 'document',
+    label: 'Reference contract',
+    binding: { kind: 'document', document: local },
+  })
+  editors.push(editor)
+  if (!editor.isInitialized)
+    await new Promise<void>((resolve) => editor.once('create', () => resolve()))
+  // Deliberately exact: this is one confirmed state, not two independent UUID allocations.
+  expect(documentContent(editor.getJSON())).toEqual(
+    documentContent(schema.nodeFromJSON(inserted.state.document).toJSON()),
+  )
+  editor.commands.insertContentAt(1, 'Autre ')
+  const afterRename = await probe({
+    action: 'publish',
+    update: bytes(native),
+    guard: inserted.guard,
+    expected: inserted.guard,
+    updates: [[...Y.encodeStateAsUpdate(local, Y.encodeStateVector(native))]],
+  })
+  Y.applyUpdate(native, new Uint8Array(afterRename.update))
   expect(state(native)).toEqual(state(local))
-  await probe({ action: 'inspect', update: bytes(local), expected: state(native) })
+  expect((state(native).document as any).content[0].attrs.anchor).toBe('fixture-1')
+  expect((state(native).document as any).content[1].content[0].attrs.target).toBe('fixture-1')
+  await expect(
+    probe({
+      action: 'commands',
+      update: bytes(native),
+      guard: afterRename.guard,
+      expected: afterRename.guard,
+      commands: [{ id: 'block.remove', params: { target: { root: { kind: 'body' }, path: [0] } } }],
+    }),
+  ).rejects.toMatchObject({ code: 'invalid_document', reason: 'cross_reference_target_missing' })
+  editor.commands.undo()
+  const undone = await probe({ action: 'inspect', update: bytes(local), expected: state(local) })
+  expect(undone.state.document).toEqual(inserted.state.document)
 })

@@ -1219,3 +1219,19 @@ web-date-pending = Renseignez la nouvelle date ou annulez.
 
 web-remove-resource-image = Supprimer l’image
 web-no-resource-image = Aucune image
+
+# Cross-references
+web-reference = Renvoi
+cmd-insert-reference = Insérer un renvoi
+web-reference-edit = Modifier le renvoi
+web-reference-search = Rechercher un titre ou une légende…
+web-reference-search-label = Rechercher une cible
+web-reference-targets = Cibles du document
+web-reference-components = Contenu du renvoi
+web-reference-full = Libellé complet
+web-reference-page = Page
+web-reference-empty = Sélectionnez le libellé, la page ou les deux.
+web-reference-no-results = Aucune cible ne correspond.
+web-reference-missing = Cible introuvable
+web-reference-untitled = Sans intitulé
+content-reference-target-missing = La cible est encore utilisée par un renvoi. Supprimez ou modifiez ses renvois avant de la retirer.

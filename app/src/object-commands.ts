@@ -5,6 +5,7 @@ import { normalizeWhitespace } from './document-whitespace'
 import { editingProvider } from './editing-history'
 import { editorRoot, nodePath, type TextTarget } from './editor-targets'
 import { applyPlannedEdit, type StructuredCommand } from './structured-commands'
+import { plannedAnchors } from './anchor-identity'
 
 export function treeTarget(editor: Editor, pos: number) {
   const root = editorRoot(editor)
@@ -29,6 +30,7 @@ export function inlineTarget(editor: Editor, from: number, to: number): TextTarg
  */
 export function widgetBatch(editor: Editor, transaction: Transaction): StructuredCommand[] {
   normalizeWhitespace(transaction)
+  plannedAnchors(transaction)
   const before = editor.state.doc.content.content,
     after = transaction.doc.content.content
   let start = 0,

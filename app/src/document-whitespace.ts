@@ -1,3 +1,4 @@
+import { newAnchor } from './anchor-identity'
 import * as Y from 'yjs'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { Extension } from '@tiptap/core'
@@ -148,8 +149,11 @@ function normalizeSharedWhitespace(
       )
     if (empty(last) && endingBreak(previous)) root.delete(root.length - 1, 1)
     const end = root.toArray().at(-1)
-    if (trailingParagraph && !empty(end) && !endingBreak(end))
-      root.insert(root.length, [new Y.XmlElement('paragraph')])
+    if (trailingParagraph && !empty(end) && !endingBreak(end)) {
+      const continuation = new Y.XmlElement('paragraph')
+      root.insert(root.length, [continuation])
+      continuation.setAttribute('anchor', newAnchor())
+    }
   }, origin)
 }
 

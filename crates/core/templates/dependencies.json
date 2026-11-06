@@ -38,6 +38,12 @@
       "entrypoint": "capabilities/tables.typ",
       "signature": "table-header-cell(body, scope: \"row\") -> content; external Typst CLI requires --features a11y-extras",
       "packages": []
+    },
+    {
+      "id": "cross-references",
+      "entrypoint": "capabilities/cross-references.typ",
+      "signature": "cross-reference(target: label, include-label: bool, include-page: bool) -> content; reference-style(label: auto, page: auto, combine: auto) -> content",
+      "packages": []
     }
   ],
   "packages": [

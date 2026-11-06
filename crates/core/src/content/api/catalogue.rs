@@ -24,6 +24,10 @@ pub fn types() -> Value {
 }
 const QUERIES: &[(&str, &str)] = &[
     (
+        "references.list",
+        "List cross-reference targets in document order with stable opaque IDs, kinds, titles and current paths. IDs survive title edits; paths are revision-scoped. Use inline.replace with a crossReference node (target, include_label, include_page). Labels and page formatting belong to the model; at least one component is required. Deleting a referenced target requires removing or retargeting its references in the same atomic batch.",
+    ),
+    (
         "versions.list",
         "List retained versions with their immutable IDs, creation dates and editable labels. Internal review references are excluded. Read history for index-guarded mutations.",
     ),
@@ -315,7 +319,7 @@ fn command_description(id: &str) -> String {
         "list.item.join" => "Join adjacent bullet/numbered items of the same list, concatenating the last left paragraph and first right paragraph without an added space or break. Keep the left item and prefix. An empty right item is removed. Refuse description term/definition boundaries and different lists.",
         "list.item.exit" => "Remove an entirely empty item and create/reuse a continuation paragraph after its list. Remove the whole list only when it was the last item. A badge is content: an item containing a note cannot be exited as empty.",
         "text.bold" | "text.italic" => "Apply or remove this style on a nonempty typed range (value on/off). Never changes future typing; use context.style for that.",
-        "inline.replace" => "Replace one typed rich range with a footnote, citation, softBreak (a Typst space) or hardBreak (forced line break). Breaks are unavailable in single-line header fields and plain fields. A break is one UTF-16 unit; paragraph separation uses block.split. No implicit CR/LF interpretation in text.insert. Discover objects via capabilities.describe.",
+        "inline.replace" => "Replace one typed rich range with a footnote, citation, crossReference, softBreak (a Typst space) or hardBreak (forced line break). Breaks are unavailable in single-line header fields and plain fields. A break is one UTF-16 unit; paragraph separation uses block.split. No implicit CR/LF interpretation in text.insert. Discover objects via capabilities.describe.",
         "block.insert" | "block.replace" | "block.splice" => "Edit a guarded tree with explicit nodes (quote, list, figure, postscript…). Discover examples via capabilities.describe.",
         "resource.add" => "Admit immutable image bytes (base64), validated before use; a batch may add the resource then insert its figure or signature.",
         "document.set_model" => "Set model_id, full pure Typst source and YAML manifest together. Every option regime and supported language is validated. Retained choices survive model switches; metadata.get reports effective values and substitutions.",

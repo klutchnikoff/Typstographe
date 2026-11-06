@@ -1,3 +1,5 @@
+import { crossReferencePanel } from './cross-reference-panel'
+import { setResolvedReferences } from './cross-reference-index'
 import { registerRecoveryOpener } from './form-recovery'
 import { refreshCommandButton } from './public-commands'
 import { draftRecovery } from './draft-recovery'
@@ -94,6 +96,7 @@ let editor: Editor
 let properties: ReturnType<typeof propertyPanel> | undefined
 let citations: ReturnType<typeof citationPanel> | undefined
 let tables: ReturnType<typeof tablePanel> | undefined
+let crossReferences: ReturnType<typeof crossReferencePanel> | undefined
 const rendering = renderQueue(render)
 let onPreview: ((revision: number) => void) | undefined
 let restoringError = false
@@ -119,6 +122,7 @@ function propertyTarget(): { pos: number; kind: string } | undefined {
 }
 function openProperties(pos: number, kind: string, remove = false) {
   if (kind === 'tableFigure' && !remove) tables?.open(pos)
+  else if (kind === 'crossReference' && !remove) crossReferences?.open(pos)
   else if (kind === 'citation' && !remove) citations?.open(pos)
   else properties?.open(pos, kind, remove)
 }
@@ -180,6 +184,7 @@ function refreshSynchronization() {
 function schedule() {
   if (stopping) return
   version++
+  if (editor && !editor.isDestroyed) setResolvedReferences(editor, [])
   preview?.invalidate()
   element('render-status').hidden = false
   if (!provider.online) {
@@ -198,6 +203,7 @@ async function render() {
     const { result } = await requestPreview(host.transport, snapshot())
     if (localVersion !== version) return
     if (!(await preview?.show(result, localVersion)) || localVersion !== version) return
+    setResolvedReferences(editor, result.references || [])
     const count = result.pages.length
     element('preview-heading').textContent = tr(
       count === 1 ? 'Aperçu ({count} page)' : 'Aperçu ({count} pages)',
@@ -406,6 +412,7 @@ async function start() {
     contentCatalogue.entries.find((c) => c.id === 'insert.table')!,
   )
   preview = previewController(editor, provider, host.transport, () => version)
+  crossReferences = crossReferencePanel(editor, bands)
   citations = citationPanel(editor, provider, host.transport, bands)
   let referenceKey = '',
     referenceTicket = 0
@@ -438,6 +445,7 @@ async function start() {
     () => documentType(provider).capabilities,
     () => citations?.open(),
     () => tables?.open(),
+    () => crossReferences?.open(),
   )
   tables.register(commands)
   commands.set('context.open', {
@@ -476,10 +484,13 @@ async function start() {
       return tables?.resume(pos, details) || false
     if (
       details?.new &&
-      (draft.form === 'citation-properties' || draft.form === 'table-properties')
+      (draft.form === 'citation-properties' ||
+        draft.form === 'cross-reference-properties' ||
+        draft.form === 'table-properties')
     ) {
       editor.commands.setTextSelection(pos)
       if (draft.form === 'citation-properties') citations?.open()
+      else if (draft.form === 'cross-reference-properties') crossReferences?.open()
       else tables?.open()
       return bands.isOpen
     }

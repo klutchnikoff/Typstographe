@@ -18,7 +18,10 @@ pub fn source_mapped(document: &Node, assets: &Assets) -> Result<(String, Source
     let mut entries = vec![];
     fn visit(node: &mut Node, position: usize, entries: &mut Vec<Entry>) -> Result<usize, String> {
         super::attributes::validate(node, false)?;
-        if matches!(node.kind.as_str(), "text" | "footnote" | "citation") {
+        if matches!(
+            node.kind.as_str(),
+            "text" | "footnote" | "citation" | "crossReference"
+        ) {
             let value = if node.kind == "text" {
                 node.text.clone().unwrap_or_default()
             } else {

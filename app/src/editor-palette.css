@@ -18,14 +18,24 @@
   --citation-surface-dark: #392b44;
   --citation-border-dark: #a27bb9;
 
+  --reference-ink-light: #176d70;
+  --reference-surface-light: #e8f5f3;
+  --reference-border-light: #7aa9a4;
+  --reference-ink-dark: #9ed9d5;
+  --reference-surface-dark: #233f40;
+  --reference-border-dark: #6caaa8;
+
   --rust: var(--editor-strong-light);
   --green: var(--editor-emphasis-light);
   --note-ink: var(--note-ink-light);
   --note-surface: var(--note-surface-light);
   --note-border: var(--note-border-light);
   --citation-ink: var(--citation-ink-light);
+  --reference-ink: var(--reference-ink-light);
   --citation-surface: var(--citation-surface-light);
+  --reference-surface: var(--reference-surface-light);
   --citation-border: var(--citation-border-light);
+  --reference-border: var(--reference-border-light);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-appearance='light']) {
@@ -35,8 +45,11 @@
     --note-surface: var(--note-surface-dark);
     --note-border: var(--note-border-dark);
     --citation-ink: var(--citation-ink-dark);
+    --reference-ink: var(--reference-ink-dark);
     --citation-surface: var(--citation-surface-dark);
+    --reference-surface: var(--reference-surface-dark);
     --citation-border: var(--citation-border-dark);
+    --reference-border: var(--reference-border-dark);
   }
 }
 :root[data-appearance='dark'] {
@@ -46,8 +59,11 @@
   --note-surface: var(--note-surface-dark);
   --note-border: var(--note-border-dark);
   --citation-ink: var(--citation-ink-dark);
+  --reference-ink: var(--reference-ink-dark);
   --citation-surface: var(--citation-surface-dark);
+  --reference-surface: var(--reference-surface-dark);
   --citation-border: var(--citation-border-dark);
+  --reference-border: var(--reference-border-dark);
 }
 /* A new badge can declare these four tokens; unknown kinds retain the shared
    accent fallback. All kinds keep the same caret, focus and active behavior. */
@@ -61,5 +77,12 @@
   --badge-ink: var(--citation-ink);
   --badge-surface: var(--citation-surface);
   --badge-border: var(--citation-border);
+  --badge-active-text: var(--panel);
+}
+
+.inline-object[data-kind='crossReference'] {
+  --badge-ink: var(--reference-ink);
+  --badge-surface: var(--reference-surface);
+  --badge-border: var(--reference-border);
   --badge-active-text: var(--panel);
 }

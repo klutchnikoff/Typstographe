@@ -1217,3 +1217,19 @@ web-date-pending = Enter the replacement date or cancel.
 
 web-remove-resource-image = Remove image
 web-no-resource-image = No image
+
+# Cross-references
+web-reference = Cross-reference
+cmd-insert-reference = Insert a cross-reference
+web-reference-edit = Edit cross-reference
+web-reference-search = Search headings or captions…
+web-reference-search-label = Search targets
+web-reference-targets = Document targets
+web-reference-components = Reference content
+web-reference-full = Full label
+web-reference-page = Page
+web-reference-empty = Select the label, the page, or both.
+web-reference-no-results = No matching target.
+web-reference-missing = Target not found
+web-reference-untitled = Untitled
+content-reference-target-missing = This target is still used by a cross-reference. Remove or retarget its references before deleting it.

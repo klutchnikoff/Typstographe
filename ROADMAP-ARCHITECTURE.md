@@ -1,6 +1,6 @@
 # Plan technique de développement
 
-Révisé le **3 novembre 2026**. Ce document accompagne la [roadmap produit](ROADMAP.md)
+Révisé le **4 novembre 2026**. Ce document accompagne la [roadmap produit](ROADMAP.md)
 et distingue le socle livré des décisions et travaux techniques restants.
 Les réalisations détaillées et les inventaires historiques sont
 dans les bilans de docs/ et l’historique Git.
@@ -125,17 +125,21 @@ de l’export déplacé dans un environnement sans cache de paquets.
 ### C.1–C.4 — Ordre et périmètres validés le 3 novembre 2026
 
 **Dépendance satisfaite :** B.1 est clôturé et ses contrats préparatoires sont
-consignés. Le prochain lot est C.1 (renvois), suivi de C.2 (mathématiques),
-C.3 (bibliographie du projet) et C.4 (bibliothèque personnelle). Préciser ensemble
-les paramètres, commandes/cibles et maquettes avant chaque implémentation ;
+consignés. C.1 (renvois) est implémenté et vérifié localement ; le prochain lot
+est C.2 (mathématiques), avant C.3 (bibliographie du projet) et C.4 (bibliothèque
+personnelle). Préciser ensemble les paramètres, commandes/cibles et maquettes
+avant chaque implémentation ;
 la livraison de tous les types de B n’est pas un prérequis.
 
-- **C.1 — Cibles et renvois.** Séparer identité documentaire stable, éventuel
-  label lisible et numéro composé par Typst. Référencer titres, images et tableaux,
-  puis étendre le même contrat aux équations et théorèmes. Sélection de cible,
-  badge et édition par le cadre commun ; préciser les collisions, copies et
-  suppressions de cibles utilisées. Garder des espaces de noms sûrs pour les
-  labels documentaires et les clés bibliographiques dans le Typst dérivé.
+- **C.1 — Cibles et renvois — livré localement.** Le [contrat](docs/c1-cross-references.md)
+  décrit les ancres automatiques, la copie et la protection des cibles, les
+  composantes libellé/page, les callbacks de présentation Typst et l’extraction
+  des libellés pendant la compilation existante. Sélecteur, badges, formulaires
+  récupérables et commandes réutilisent les mécanismes communs Tauri/CLI/MCP.
+  Le sélecteur vise les titres, images et tableaux du corps ; équations et
+  théorèmes étendront ce contrat. Reste différé le mode explicite « Choisir dans
+  l’aperçu », réutilisant la correspondance backward sans sélection arbitraire
+  d’une cible voisine. Qualification CI et recette utilisateur avant fusion.
 - **C.2 — Mathématiques.** Un contrat de formule avec source, langage Typst ou
   LaTeX, description accessible et présentation en ligne/en bloc. Les blocs
   peuvent être ciblés par C.1 ; les modèles règlent numérotation et présentation.

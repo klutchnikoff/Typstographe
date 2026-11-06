@@ -16,7 +16,9 @@ fn invalid(reason: &str) -> Error {
     }
 }
 fn paragraph() -> Node {
-    serde_json::from_value(serde_json::json!({"type":"paragraph"})).unwrap()
+    let mut node = serde_json::from_value(serde_json::json!({"type":"paragraph"})).unwrap();
+    crate::content::references::assign(&mut node);
+    node
 }
 fn block(kind: &str) -> bool {
     matches!(
@@ -56,11 +58,11 @@ fn shape(node: &Node, depth: usize, count: &mut usize) -> Result<(), Error> {
         | "attachment" => kinds.iter().all(|k| {
             matches!(
                 *k,
-                "text" | "softBreak" | "hardBreak" | "footnote" | "citation"
+                "text" | "softBreak" | "hardBreak" | "footnote" | "citation" | "crossReference"
             )
         }),
         "text" => kinds.is_empty() && node.text.as_ref().is_some_and(|t| !t.is_empty()),
-        "softBreak" | "hardBreak" | "footnote" | "citation" => kinds.is_empty(),
+        "softBreak" | "hardBreak" | "footnote" | "citation" | "crossReference" => kinds.is_empty(),
         "bulletList" | "orderedList" => !kinds.is_empty() && kinds.iter().all(|k| *k == "listItem"),
         "listItem" | "tableCell" | "tableHeader" => {
             !kinds.is_empty() && kinds.iter().all(|k| *k == "paragraph")
@@ -86,7 +88,7 @@ fn shape(node: &Node, depth: usize, count: &mut usize) -> Result<(), Error> {
         || (node.kind != "text" && node.text.is_some())
         || (!matches!(
             node.kind.as_str(),
-            "text" | "softBreak" | "hardBreak" | "footnote" | "citation"
+            "text" | "softBreak" | "hardBreak" | "footnote" | "citation" | "crossReference"
         ) && !node.marks.is_empty())
     {
         return Err(invalid("invalid_block_structure"));
@@ -250,6 +252,11 @@ fn insert(
     node: &Node,
 ) -> Result<(), Error> {
     new_subtree(node)?;
+    let prepared = crate::content::references::prepare(
+        std::slice::from_ref(node),
+        &crate::content::references::anchors(&state.document),
+    );
+    let node = &prepared[0];
     let root = container(doc, state, parent)?;
     let len = root.len(&doc.transact());
     if index > len {
@@ -280,6 +287,21 @@ fn replace(
     {
         return Ok(());
     }
+    let mut occupied = crate::content::references::anchors(&state.document);
+    for id in crate::content::references::anchors(&before) {
+        occupied.remove(&id);
+    }
+    let prepared = replacement.map(|n| {
+        let mut n = n.clone();
+        if crate::content::references::anchor(&n).is_none()
+            && crate::content::references::ANCHOR_KINDS.contains(&n.kind.as_str())
+            && let Some(id) = crate::content::references::anchor(&before)
+        {
+            n.attrs.get_or_insert_with(|| serde_json::json!({}))["anchor"] = serde_json::json!(id);
+        }
+        crate::content::references::prepare(std::slice::from_ref(&n), &occupied)
+    });
+    let replacement = prepared.as_ref().map(|n| &n[0]);
     {
         let mut tx = doc.transact_mut();
         parent.remove(&mut tx, index);
@@ -341,6 +363,14 @@ fn splice(
     {
         return Ok(());
     }
+    let mut occupied = crate::content::references::anchors(&state.document);
+    for old in &before[index as usize..(index + delete_count) as usize] {
+        for id in crate::content::references::anchors(old) {
+            occupied.remove(&id);
+        }
+    }
+    let prepared = crate::content::references::prepare(nodes, &occupied);
+    let nodes = prepared.as_slice();
     {
         let mut tx = doc.transact_mut();
         if delete_count > 0 {
@@ -390,7 +420,12 @@ fn convert(
         "paragraph"
     }
     .into();
+    let anchor = crate::content::references::anchor(&node).map(str::to_owned);
     node.attrs = level.map(|n| serde_json::json!({"level":n}));
+    if let Some(anchor) = anchor {
+        node.attrs.get_or_insert_with(|| serde_json::json!({}))["anchor"] =
+            serde_json::json!(anchor);
+    }
     replace(doc, state, target, Some(&node))
 }
 fn split(doc: &Doc, state: &State, target: &TextTarget) -> Result<(), Error> {
@@ -445,6 +480,7 @@ fn split(doc: &Doc, state: &State, target: &TextTarget) -> Result<(), Error> {
     }
     let mut after = paragraph();
     after.content = suffix;
+    crate::content::references::assign(&mut after);
     let mut tx = doc.transact_mut();
     super::commands::replace_rich(
         &element,

@@ -154,6 +154,15 @@ pub const ALL: &[Capability] = &[
         "Article-only bibliographic citation. Choose references from the published project metadata; items use file_id and key, with optional literal supplement. Rendering belongs to Typst and the model."
     ),
     capability!(
+        "insert.reference",
+        "cmd-insert-reference",
+        "corner-up-right",
+        "insert",
+        Some("crossReference"),
+        None,
+        "Cross-reference to a stable heading, image or table anchor. Discover targets through references.list. Include the full model-defined label, its page, or both; never invent numbers or use a bibliography key."
+    ),
+    capability!(
         "insert.footnote",
         "cmd-insert-footnote",
         "footprints",
@@ -228,6 +237,19 @@ pub fn parameters(id: &str) -> Value {
                 serde_json::to_value(schemars::schema_for!(crate::bibliography::Citation)).unwrap();
             schema["properties"]["items"]["x-editor"] = json!({"placement":"body"});
             schema["properties"]["form"] = json!({"type":"string","enum":["normal","prose"],"default":"normal","x-editor":{"label_key":"web-citation-form"}});
+            schema
+        }
+        "insert.reference" => {
+            let mut schema =
+                serde_json::to_value(schemars::schema_for!(super::references::Reference)).unwrap();
+            schema["properties"]["target"]["x-editor"] = json!({"placement":"body"});
+            for (key, label) in [
+                ("include_label", "web-reference-full"),
+                ("include_page", "web-reference-page"),
+            ] {
+                schema["properties"][key]["x-editor"] =
+                    json!({"placement":"panel","label_key":label});
+            }
             schema
         }
         "insert.footnote" => {

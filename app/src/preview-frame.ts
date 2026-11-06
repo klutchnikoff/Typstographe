@@ -9,6 +9,7 @@ export interface BinaryPage {
 }
 export interface Preview {
   revision: number
+  references?: import('./cross-reference-index').ResolvedReference[]
   source: string
   pages: (string | BinaryPage)[]
   elapsedMs: number

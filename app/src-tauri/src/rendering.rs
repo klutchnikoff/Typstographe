@@ -12,6 +12,7 @@ use typstographe_core::{
 #[serde(rename_all = "camelCase")]
 pub struct Preview {
     pub revision: u64,
+    pub references: Vec<typstographe_core::content::references::ResolvedReference>,
     pub source: String,
     pub pages: Vec<String>,
     pub elapsed_ms: f64,
@@ -253,6 +254,7 @@ impl Renderer {
                 ]
             })
             .collect();
+        let references = typstographe_core::content::references::resolved(&document);
         let sync_start = Instant::now();
         if let Some(map) = map {
             *self.1.lock()? = Some(typstographe_core::navigation::RenderSync::new(
@@ -266,6 +268,7 @@ impl Renderer {
         Ok(Output {
             preview: Preview {
                 revision,
+                references,
                 source,
                 pages,
                 elapsed_ms: milliseconds(start),

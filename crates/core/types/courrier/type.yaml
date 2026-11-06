@@ -70,6 +70,7 @@ capabilities:
 - block.quote
 - insert.image
 - insert.table
+- insert.reference
 - insert.footnote
 - letter.insert_postscript
 - letter.insert_attachment

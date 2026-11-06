@@ -40,6 +40,9 @@ restent écrits en Typst. Aucune deuxième source de vérité textuelle ne sert 
 solution de repli. L’interface est traduite par Fluent ; la langue du document
 reste indépendante. Les noms publics de capacités sont anglais ou latins.
 
+Le [contrat des ancres et renvois C.1](c1-cross-references.md) décrit les identités,
+les composantes des renvois, leur composition Typst et les interactions communes.
+
 ## Bilans et références historiques
 
 B.1 clôturé : [bilan et critères vérifiés](b1-closure-results.md).

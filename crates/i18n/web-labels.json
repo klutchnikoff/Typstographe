@@ -337,7 +337,7 @@
   "Fermer la version": "web-versions-10",
   "Affichage de la version": "web-versions-11",
   "Contenu": "web-versions-12",
-  "Page": "web-versions-14",
+  "Page": "web-reference-page",
   "Supprimer cette version": "web-versions-15",
   "Supprimer cette version ?": "web-versions-16",
   "Informations de la version": "web-versions-17",
@@ -479,5 +479,18 @@
   "Renseignez la nouvelle date ou annulez.": "web-date-pending",
   "Date": "field-date",
   "Supprimer l’image": "web-remove-resource-image",
-  "Aucune image": "web-no-resource-image"
+  "Aucune image": "web-no-resource-image",
+  "Renvoi": "web-reference",
+  "Insérer un renvoi": "cmd-insert-reference",
+  "Modifier le renvoi": "web-reference-edit",
+  "Rechercher un titre ou une légende…": "web-reference-search",
+  "Rechercher une cible": "web-reference-search-label",
+  "Cibles du document": "web-reference-targets",
+  "Contenu du renvoi": "web-reference-components",
+  "Libellé complet": "web-reference-full",
+  "Sélectionnez le libellé, la page ou les deux.": "web-reference-empty",
+  "Aucune cible ne correspond.": "web-reference-no-results",
+  "Cible introuvable": "web-reference-missing",
+  "Sans intitulé": "web-reference-untitled",
+  "La cible est encore utilisée par un renvoi. Supprimez ou modifiez ses renvois avant de la retirer.": "content-reference-target-missing"
 }

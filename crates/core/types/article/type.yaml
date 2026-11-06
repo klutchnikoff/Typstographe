@@ -94,6 +94,7 @@ capabilities:
 - insert.image
 - insert.table
 - insert.citation
+- insert.reference
 - insert.footnote
 bindings:
 - collection: localizations
