@@ -6,10 +6,12 @@ export function bibliographyQuery<T>(
   transport: Transport,
   operation: string,
   params: Record<string, unknown> = {},
+  document?: unknown,
 ) {
   return transport.invoke<T>('bibliography_query', {
     metadata: settingsFor(provider).metadata,
     operation,
     params,
+    document,
   })
 }

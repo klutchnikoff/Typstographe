@@ -1,3 +1,4 @@
+import { openBibliography } from './bibliography-manager'
 import { focusEditorSelection } from './editor-focus'
 import { editingAvailability } from './command-availability'
 import { editingProvider } from './editing-history'
@@ -159,6 +160,34 @@ export function citationPanel(
     if (opened && transaction.getMeta('bibliography-index')) void search()
   })
   input.oninput = () => void search()
+  panel.action({
+    label: tr('Créer une notice…'),
+    run: () => {
+      const state = opened,
+        target = bands.target
+      if (!state || !target || pending) return
+      openBibliography(editor, provider, transport, {
+        create: true,
+        cite: {
+          node: {
+            type: 'citation',
+            attrs: { items: structuredClone(state.items), form: state.form },
+            marks: state.node?.marks.map((mark) => mark.toJSON()),
+          },
+          target: inlineTarget(editor, target.from, target.to) as unknown as Record<
+            string,
+            unknown
+          >,
+          document: documentContent(editor.getJSON()),
+          position: target.from,
+        },
+        done: () => {
+          panel.committed()
+          bands.close(true, editor.state.selection.getBookmark())
+        },
+      })
+    },
+  })
   panel.action({
     label: tr('Annuler'),
     run: () => {
