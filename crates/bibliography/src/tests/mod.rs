@@ -22,5 +22,6 @@ fn import(text: &str, format: ImportFormat) -> PreparedImport {
 
 mod corpus;
 mod imports;
+mod native;
 mod plans;
 mod records;

@@ -9,6 +9,15 @@ use std::collections::BTreeSet;
 #[serde(try_from = "String", into = "String")]
 pub struct RecordId(String);
 
+impl schemars::JsonSchema for RecordId {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "RecordId".into()
+    }
+    fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::json_schema!({"type":"string","pattern":"^[A-Za-z0-9_-]{1,128}$"})
+    }
+}
+
 impl RecordId {
     pub fn new(value: impl Into<String>) -> Result<Self> {
         let value = value.into();
@@ -43,7 +52,38 @@ impl From<RecordId> for String {
 
 /// Content guard, not an identity. No clock or process-local hash is involved.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
 pub struct Fingerprint(String);
+
+impl TryFrom<String> for Fingerprint {
+    type Error = Error;
+    fn try_from(value: String) -> Result<Self> {
+        if value.len() != 64
+            || !value
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        {
+            return Err(Error::new(
+                Code::InvalidField,
+                "Fingerprint must be 64 lowercase hexadecimal digits",
+            ));
+        }
+        Ok(Self(value))
+    }
+}
+impl From<Fingerprint> for String {
+    fn from(value: Fingerprint) -> Self {
+        value.0
+    }
+}
+impl schemars::JsonSchema for Fingerprint {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Fingerprint".into()
+    }
+    fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::json_schema!({"type":"string","pattern":"^[0-9a-f]{64}$"})
+    }
+}
 
 pub(crate) fn digest(bytes: &[u8]) -> Fingerprint {
     Fingerprint(
@@ -73,7 +113,7 @@ pub(crate) fn fingerprint(value: &impl Serialize) -> Fingerprint {
 }
 
 /// Opaque origin link. Source bytes live in the import artifact, not in every record.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Provenance {
     pub source_id: RecordId,
@@ -90,12 +130,13 @@ pub struct Record {
     provenance: Vec<Provenance>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct RecordData {
     id: RecordId,
     genre: Genre,
     key: String,
+    #[schemars(with = "serde_json::Map<String, Value>")]
     entry: Value,
     #[serde(default)]
     provenance: Vec<Provenance>,
@@ -119,9 +160,18 @@ impl From<Record> for RecordData {
             id: record.id,
             genre: record.genre,
             key: record.entry.key().into(),
-            entry: serde_json::to_value(record.entry).unwrap(),
+            entry: crate::native::canonical_entry(&record.entry),
             provenance: record.provenance,
         }
+    }
+}
+
+impl schemars::JsonSchema for Record {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "BibliographicRecord".into()
+    }
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        RecordData::json_schema(generator)
     }
 }
 
@@ -136,33 +186,16 @@ pub(crate) fn valid_key(key: &str) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn entry_from_value(key: &str, value: Value) -> Result<Entry> {
+pub(crate) fn entry_from_value(key: &str, mut value: Value) -> Result<Entry> {
     valid_key(key)?;
-    fn fields(value: &Value, key: &str, path: &str) -> Result<()> {
-        if let Some(map) = value.as_object() {
-            for (field, child) in map {
-                let path = format!("{path}/{field}");
-                if !crate::import::native_field(field) {
-                    return Err(Error::new(
-                        Code::UnsupportedField,
-                        "Unknown native field would be discarded",
-                    )
-                    .at(key, Some(&path)));
-                }
-                if field == "parent" {
-                    if let Some(parents) = child.as_array() {
-                        for (i, parent) in parents.iter().enumerate() {
-                            fields(parent, key, &format!("{path}/{i}"))?;
-                        }
-                    } else {
-                        fields(child, key, &format!("{path}/0"))?;
-                    }
-                }
-            }
-        }
-        Ok(())
+    if let Some(path) = crate::native::unsupported_fields(&value).first() {
+        return Err(Error::new(
+            Code::UnsupportedField,
+            "Unknown native field would be discarded",
+        )
+        .at(key, Some(path)));
     }
-    fields(&value, key, "")?;
+    crate::native::normalize_entry(&mut value);
     let library: hayagriva::Library = serde_json::from_value(Value::Object(
         [(key.to_owned(), value)].into_iter().collect(),
     ))
@@ -175,19 +208,7 @@ pub(crate) fn entry_from_value(key: &str, value: Value) -> Result<Entry> {
 
 /// Canonical one-or-many representation, used for pointers without altering native values.
 pub(crate) fn canonical_entry(entry: &Entry) -> Value {
-    fn parents(value: &mut Value) {
-        if let Some(parent) = value.get_mut("parent") {
-            if parent.is_object() {
-                *parent = Value::Array(vec![parent.take()]);
-            }
-            if let Some(entries) = parent.as_array_mut() {
-                entries.iter_mut().for_each(parents);
-            }
-        }
-    }
-    let mut value = serde_json::to_value(entry).unwrap();
-    parents(&mut value);
-    value
+    crate::native::canonical_entry(entry)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -198,6 +219,10 @@ pub struct FieldPatch {
 }
 
 impl Record {
+    /// Validate native fields while retaining typed field diagnostics for callers.
+    pub fn from_native(id: RecordId, genre: Genre, key: &str, value: Value) -> Result<Self> {
+        Self::new(id, genre, entry_from_value(key, value)?)
+    }
     pub fn new(id: RecordId, genre: Genre, entry: Entry) -> Result<Self> {
         valid_key(entry.key())?;
         Ok(Self {

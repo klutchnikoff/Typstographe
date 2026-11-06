@@ -6,7 +6,7 @@ use biblatex::ChunksExt;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ImportFormat {
     Hayagriva,
@@ -70,6 +70,13 @@ pub struct PreparedImport {
     pub diagnostics: Vec<Diagnostic>,
 }
 
+impl PreparedImport {
+    /// Guard the complete preparation, including conversion diagnostics and source bytes.
+    pub fn fingerprint(&self) -> Fingerprint {
+        crate::model::fingerprint(self)
+    }
+}
+
 fn size(text: &str) -> Result<()> {
     if text.len() > MAX_SOURCE_BYTES {
         Err(Error::new(
@@ -84,9 +91,21 @@ fn size(text: &str) -> Result<()> {
 /// Parse only, for existing source-based callers. Prepared imports add provenance and diagnostics.
 pub fn parse_native(text: &str, format: ImportFormat) -> Result<hayagriva::Library> {
     size(text)?;
-    let library = match format {
-        ImportFormat::Hayagriva => hayagriva::io::from_yaml_str(text)
-            .map_err(|e| Error::new(Code::InvalidSyntax, e.to_string()))?,
+    let library: hayagriva::Library = match format {
+        ImportFormat::Hayagriva => {
+            // Validate raw YAML first, including duplicate keys, before any map conversion.
+            hayagriva::io::from_yaml_str(text)
+                .map_err(|e| Error::new(Code::InvalidSyntax, e.to_string()))?;
+            let mut value: Value = yaml_serde::from_str(text)
+                .map_err(|e| Error::new(Code::InvalidSyntax, e.to_string()))?;
+            if let Some(entries) = value.as_object_mut() {
+                entries
+                    .values_mut()
+                    .for_each(crate::native::normalize_entry);
+            }
+            serde_json::from_value(value)
+                .map_err(|e| Error::new(Code::InvalidSyntax, e.to_string()))?
+        }
         ImportFormat::Biblatex => {
             let bibliography = biblatex::Bibliography::parse(text)
                 .map_err(|e| Error::new(Code::InvalidSyntax, e.to_string()))?;
@@ -160,32 +179,6 @@ fn diagnostic(code: Code, key: &str, field: Option<&str>, detail: impl Into<Stri
     }
 }
 
-fn unknown_native(value: &Value, key: &str, prefix: &str, diagnostics: &mut Vec<Diagnostic>) {
-    let Some(map) = value.as_object() else {
-        return;
-    };
-    for (field, child) in map {
-        let path = format!("{prefix}/{field}");
-        if !native_field(field) {
-            diagnostics.push(diagnostic(
-                Code::UnsupportedField,
-                key,
-                Some(&path),
-                "Field is retained only in the original source",
-            ));
-        }
-        if field == "parent" {
-            if let Some(parents) = child.as_array() {
-                for (index, parent) in parents.iter().enumerate() {
-                    unknown_native(parent, key, &format!("{path}/{index}"), diagnostics);
-                }
-            } else {
-                unknown_native(child, key, &format!("{path}/0"), diagnostics);
-            }
-        }
-    }
-}
-
 /// No mutation: returns native values, immutable source and reviewable diagnostics.
 /// Identity allocation belongs to the caller; duplicate allocated identities are refused.
 pub fn prepare_import(
@@ -200,7 +193,14 @@ pub fn prepare_import(
             .map_err(|e| Error::new(Code::InvalidSyntax, e.to_string()))?;
         if let Some(map) = values.as_object() {
             for (key, value) in map {
-                unknown_native(value, key, "", &mut diagnostics);
+                for path in crate::native::unsupported_fields(value) {
+                    diagnostics.push(diagnostic(
+                        Code::UnsupportedField,
+                        key,
+                        Some(&path),
+                        "Field is retained only in the original source",
+                    ));
+                }
             }
         }
     } else {

@@ -2,7 +2,7 @@ use hayagriva::{Entry, types::EntryType};
 use serde::{Deserialize, Serialize};
 
 /// Form intent is separate from Hayagriva's native type and its container types.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Genre {
     JournalArticle,
@@ -17,7 +17,7 @@ pub enum Genre {
     Other,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum FieldKind {
     FormattedText,
@@ -29,7 +29,7 @@ pub enum FieldKind {
     Identifiers,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, schemars::JsonSchema)]
 pub struct FieldDescriptor {
     /// Canonical native JSON pointer; parents are always arrays in this API.
     pub path: String,
@@ -38,7 +38,7 @@ pub struct FieldDescriptor {
     pub recommended: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, schemars::JsonSchema)]
 pub struct GenreDescriptor {
     pub genre: Genre,
     pub fields: Vec<FieldDescriptor>,

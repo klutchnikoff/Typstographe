@@ -8,6 +8,7 @@ mod identity;
 mod import;
 mod keys;
 mod model;
+mod native;
 mod plan;
 mod search;
 

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Stable machine-readable codes; adapters provide localized messages.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Code {
     InvalidIdentity,
@@ -22,14 +22,14 @@ pub enum Code {
     InvalidDecision,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Severity {
     Information,
     Warning,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Diagnostic {
     pub code: Code,
     pub severity: Severity,
@@ -40,7 +40,9 @@ pub struct Diagnostic {
     pub detail: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error, Serialize, Deserialize)]
+#[derive(
+    Clone, Debug, PartialEq, Eq, thiserror::Error, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[error("{code:?}: {detail}")]
 pub struct Error {
     pub code: Code,
