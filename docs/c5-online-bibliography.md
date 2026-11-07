@@ -1,98 +1,125 @@
 # Recherche et acquisition bibliographiques en ligne — C.5
 
+Organisation révisée le **7 novembre 2026** : sources spécialisées d’abord,
+négociation DOI générique en repli, retrait du connecteur Crossref.
+
 ## Utilisation
 
 Dans un Article, ouvrir **Bibliographie → Gérer les références → Rechercher en
-ligne** (icône globe). La même action est disponible dans le bandeau d’insertion
-d’une citation. Saisir un titre, un auteur ou un DOI ; choisir les sources puis
-lancer explicitement la recherche. La frappe et la recherche locale du projet
-ne déclenchent aucun appel réseau.
+ligne** (globe). La même action est disponible dans le bandeau d’une citation.
+Choisir les sources spécialisées puis lancer explicitement la recherche :
 
-Les flèches parcourent les résultats en gardant le focus dans la recherche.
-Entrée, un clic ou **Vérifier la notice** ouvre le formulaire commun. Vérifier
-le type natif Hayagriva et les champs, corriger si nécessaire, puis choisir
-**Ajouter** ou **Ajouter et citer**. Annuler n’ajoute rien. Un rapprochement
-ambigu ouvre les mêmes choix que l’import de fichiers : conserver séparément
-avec une autre clé, ou désigner la notice correspondante. Les valeurs existantes
-ne sont pas écrasées par défaut.
+- **Auteur/titre ou requête zbMATH** : recherche dans zbMATH Open. Le mécanisme DOI
+  ne sait pas rechercher un texte sans identifiant.
+- **DOI** : récupération par les sources spécialisées appropriées et cochées
+  (Cairn OAI, zbMATH). Si aucune notice n’est obtenue, interrogation de `doi.org`
+  avec `Accept: application/vnd.citationstyles.csl+json`.
+- **Cairn** : DOI `10.3917/…`, identifiant OAI ou URL contenant un identifiant.
+  Pour une URL publique sans identifiant, lire uniquement les métadonnées
+  bibliographiques explicites pour retrouver son DOI. Si la page est inaccessible
+  ou ne fournit pas un DOI unique, demander le DOI ou l’identifiant Cairn.
 
-Cairn est une **récupération ciblée**, par DOI `10.3917/…`, identifiant OAI,
-URL d’article/chapitre portant un identifiant, ou URL moderne contenant un ISBN
-et un numéro de page. Pour cette dernière forme, la résolution doit retrouver
-exactement le chemin et la page dans Crossref. Une URL non résolue est signalée ;
-il n’y a ni recherche générale Cairn, ni lecture du texte intégral, ni contournement
-d’une page protégée.
+Le précédent détour par une recherche Crossref filtrée par ISBN est supprimé.
+Une URL moderne Cairn pouvait fonctionner par ce détour et nécessiter désormais
+son DOI si ses métadonnées publiques sont inaccessibles. Il n’y a ni index local
+du catalogue, ni recherche générale Cairn, ni contournement d’une protection.
 
-## Frontières techniques
+Les flèches parcourent les résultats sans déplacer le focus du champ de recherche.
+Entrée, un clic ou **Vérifier la notice** ouvre le formulaire commun. Vérifier le
+type natif Hayagriva et les champs, corriger, puis **Ajouter** ou **Ajouter et citer**.
+Les collisions utilisent les choix d’import existants : conserver séparément
+avec une autre clé ou désigner la notice correspondante. Annuler n’ajoute rien.
 
-- `typstographe-bibliography-sources` porte HTTP, XML et conversion des métadonnées.
-  La crate bibliographique et le cœur documentaire restent sans réseau/Tokio.
-- Le premier adaptateur réseau est Tauri (`bibliography_online`). La CLI et MCP
-  conservent leurs opérations documentaires ; aucune nouvelle commande réseau
-  n’est ajoutée à leur catalogue dans ce lot. Le client public de la crate est
-  réutilisable, avec un exemple de qualification volontaire `lookup`.
-- Client HTTPS partagé, validation des certificats et proxy du système ; aucune
-  URL utilisateur n’est directement téléchargée. Les hôtes et endpoints sont
-  fixés dans le collecteur ; les redirections sont refusées.
-- Requête limitée à 512 octets, 1–20 résultats par fournisseur (8 dans l’interface),
-  corps limité à 2 Mio, trois requêtes simultanées, intervalle Crossref de 400 ms.
-  Connexion limitée à 5 s, requête à 12 s, parcours d’un fournisseur à 30 s.
-  Aucune relance automatique ni clé d’accès demandée.
-- Un fournisseur indisponible n’efface pas les résultats des autres. Les erreurs
-  réseau, délais, limitations de débit, réponses invalides et absence de résultat
-  sont distingués. Une réponse devenue obsolète ne peut remplacer la recherche
-  courante, remplir un formulaire fermé ou modifier un autre document.
+## Contrat des collecteurs
 
-### Origine et vérification
+`typstographe-bibliography-sources` porte le réseau et la conversion des notices.
+La crate bibliographique pure et le cœur restent sans réseau/Tokio. L’adaptateur
+réseau livré est Tauri (`bibliography_online`) ; la CLI et MCP gardent leurs
+opérations documentaires, sans nouveau collecteur réseau exposé dans ce lot.
 
-Les résultats Crossref et Cairn restent distincts, même pour un DOI identique.
-Le résultat Cairn prend son titre, ses auteurs, sa date et ses pages dans l’OAI
-Cairn. Crossref peut fournir son type et les informations de publication
-contenante (ouvrage/revue, éditeurs, ISBN/ISSN). L’échec de cet enrichissement
-laisse un résultat Cairn incomplet et vérifiable avec un avertissement.
+- Les spécialistes sont interrogés avant le repli DOI. Une notice spécialisée
+  **partielle** est proposée avec avertissements ; elle n’est pas remplacée
+  automatiquement par une notice générique.
+- Le repli s’applique aussi après erreur ou réponse invalide d’un spécialiste.
+  Son résultat porte l’origine **DOI** ; les erreurs spécialisées restent visibles.
+- Crossref n’est plus un connecteur ni un choix d’interface. Il peut répondre
+  derrière `doi.org`, comme DataCite ou une autre agence compatible.
+- Les compléments de publication Cairn utilisent aussi la négociation DOI :
+  ouvrage/revue contenant puis, si nécessaire, structure de publication de la
+  notice. Ils ne remplacent jamais ses propres champs OAI (titre, auteurs, date,
+  pages). Le formulaire indique cet enrichissement via DOI.
+- Le DOI reçu doit correspondre au DOI demandé, chez les spécialistes comme
+  dans le repli. Une réponse erronée ne peut produire une citation d’un autre travail.
+- La frappe et la recherche locale du projet ne déclenchent aucun appel réseau.
+  Une réponse devenue obsolète ne remplace ni une nouvelle recherche ni une saisie.
 
-Le projet conserve un **instantané Hayagriva converti**, nommé selon le fournisseur,
-et sa provenance d’import. Ce n’est pas une archive brute de la réponse JSON/XML.
-Le formulaire corrige la notice native sans réécrire cet instantané. Les identités
-et la provenance du jeu préparé restent immuables ; `reviewed` transporte ses
-corrections dans `bibliography.review_import` et `bibliography.apply`. Le scope
-`import` de la préparation du formulaire diffère la décision sur les clés
-occupées au plan d’import ; le scope `project` reste strict. Le schéma
-exécuté est publié dans [le catalogue](commands.json).
+Le client partage les connexions HTTPS, les certificats et le proxy système.
+Bornes : 512 octets de requête, 1–20 résultats par source (8 dans l’interface),
+2 Mio par réponse, trois requêtes simultanées, intervalle DOI de 400 ms, cinq
+redirections au maximum, connexion limitée à 5 s et requête à 12 s. Chaque
+parcours de fournisseur est limité à 30 s ; la résolution préalable d’une URL
+et le repli ont chacun leur propre borne. Aucune relance automatique.
 
-La publication repasse par le rapprochement commun, les empreintes et le lot
-atomique. Une citation utilise l’identité issue du rapprochement, y compris
-quand la notice existe déjà. L’ajout et la citation s’annulent ensemble.
-Les brouillons privés, leurs corrections et décisions utilisent la récupération
-existante, sans nouvelle interrogation réseau à la reprise. Après ajout, le
-stockage CAS 16, la sauvegarde et les exports restent autonomes hors ligne ;
-aucun changement de format ni bibliothèque personnelle n’est introduit.
+Les redirections DOI n’atteignent que les services de métadonnées HTTPS reconnus.
+Une redirection vers une page éditeur ou un service non pris en charge est
+signalée, sans téléchargement de cette destination. Les réponses vides, DOI
+absents, formats non servis, erreurs, limitations de débit et délais sont distincts.
+Aucune URL arbitraire n’est téléchargée : seuls les endpoints des collecteurs
+et les URL Cairn validées sont utilisés.
 
-## Qualification — 6 novembre 2026
+## Vérification et publication
+
+La notice reçue reste un brouillon privé dans le formulaire commun. Le projet
+conserve un **instantané Hayagriva converti**, nommé selon la source, distinct
+de la notice vérifiée. Ce n’est pas une archive du JSON/XML brut.
+
+`bibliography.review_import` reçoit le jeu corrigé `reviewed`, puis
+`bibliography.apply` publie l’import gardé. Les identités et la provenance
+restent celles de la préparation originale. Le scope de formulaire `import`
+diffère les collisions de clés au rapprochement ; le scope `project` reste strict.
+Voir [le catalogue documentaire commun](commands.json).
+
+Une citation utilise l’identité issue du rapprochement, y compris pour une
+notice déjà présente. L’ajout et la citation forment un seul lot annulable.
+Les corrections non validées utilisent la récupération des formulaires, sans
+nouvelle requête en ligne à la reprise. Après ajout, CAS 16, sauvegarde et export
+restent autonomes hors ligne ; aucun changement de format ni bibliothèque
+personnelle n’est introduit.
+
+## Qualification locale — 7 novembre 2026
 
 Essais volontaires sur les services publics :
 
-| Entrée                                         | Fournisseur                      | Résultat                                                                |
-| ---------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------- |
-| `10.3917/dbu.jorro.2022.01.0155`               | Crossref                         | Titre déposé de l’ouvrage, avertissement titre chapitre = ouvrage       |
-| Même DOI                                       | Cairn OAI + publication Crossref | « Émancipation », Jérôme Eneau, 2022, p. 155–159                        |
-| URL moderne Cairn ISBN 9782807340534, page 155 | Cairn                            | Même chapitre, après résolution exacte de l’URL                         |
-| `10.2307/2118559`                              | zbMATH Open                      | Andrew Wiles, _Modular elliptic curves and Fermat’s Last Theorem_, 1995 |
+| Entrée                             | Parcours                    | Résultat                                                          |
+| ---------------------------------- | --------------------------- | ----------------------------------------------------------------- |
+| `10.3917/dbu.jorro.2022.01.0155`   | Cairn puis complément DOI   | « Émancipation », Jérôme Eneau, 2022, p. 155–159                  |
+| Même DOI, résolveur générique seul | DOI (agence Crossref)       | Titre de l’ouvrage déposé, avertissement titre chapitre = ouvrage |
+| `10.2307/2118559`                  | Spécialistes activés        | zbMATH, Andrew Wiles, 1995, sans repli générique                  |
+| `10.5284/1015681`                  | Spécialistes puis repli DOI | Rapport archéologique, agence DataCite                            |
 
-Les fixtures de [métadonnées publiques](../fixtures/bibliography/online/README.md)
-permettent les tests automatisés sans disponibilité des fournisseurs.
-Les tests couvrent les conversions natives, les bornes, les erreurs et délais,
-les identités erronées, les pannes partielles, la correction privée, les doublons,
-les décisions explicites, le clavier, les réponses obsolètes, la récupération et
-l’annulation atomique. Les recettes naviguent dans Chromium et WebKit avec le
-cœur Rust réel ; seul le transport des résultats en ligne est simulé. Aucune
+Bilan : 20 tests des collecteurs, 13 tests Fluent, 495 tests frontend et les
+10 tests de scripts natifs réussis ; Clippy et compilation validés. Les 40
+scénarios Chromium/WebKit ont été validés : une recette WebKit existante a
+expiré lors de la première passe, puis a réussi au rejeu isolé en 4,6 s, sans
+modification du produit ni augmentation du délai. Les nouveaux parcours sont
+passés dans les deux moteurs dès cette passe.
+
+Les [fixtures publiques](../fixtures/bibliography/online/README.md) rendent les
+tests indépendants des fournisseurs. Les tests du client couvrent la priorité,
+les pannes et absences, les notices partielles, les DOI erronés, les formats et
+redirections, les limites et délais. Les recettes Chromium/WebKit avec le cœur
+Rust couvrent formulaire, provenance, rapprochement, clavier, réponses obsolètes,
+récupération, annulation atomique, sauvegarde/réouverture et export hors ligne.
+Seul le transport des résultats en ligne est simulé dans ces recettes ; aucune
 capture, trace ou vidéo n’est produite.
 
 ```sh
 cargo test --locked --offline -p typstographe-bibliography-sources
-# Appel réseau explicite, absent de la suite automatisée :
-cargo run --locked --offline -p typstographe-bibliography-sources --example lookup -- '10.2307/2118559' zbmath
+# Qualifications volontaires avec accès réseau :
+cargo run --locked --offline -p typstographe-bibliography-sources --example lookup -- 'Wiles' all
+cargo run --locked --offline -p typstographe-bibliography-sources --example lookup -- '10.5284/1015681' doi
 ```
 
-Références : [Crossref REST API](https://www.crossref.org/documentation/retrieve-metadata/rest-api/),
+Références : [DOI Content Negotiation](https://citation.doi.org/docs.html),
+[DataCite](https://support.datacite.org/docs/datacite-content-resolver),
 [zbMATH Open API](https://api.zbmath.org/), [Cairn OAI](https://oai.cairn.info/).

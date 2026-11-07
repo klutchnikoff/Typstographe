@@ -364,8 +364,10 @@ D’autres connecteurs spécialisés pourront compléter cette chaîne.
   (Cairn) du titre d’ouvrage erroné fourni par le service DOI générique.
 - Commits locaux uniquement ; aucune poussée et aucun déclenchement de CI GitHub.
 
-La première acquisition vérifiée est livrée et qualifiée localement depuis le
-6 novembre ; cette révision des collecteurs est en cours. Les opérations de
+La révision est **implémentée et vérifiée localement le 7 novembre 2026** :
+20 tests des collecteurs, tests frontend et Fluent, recettes Chromium/WebKit,
+essais réels Cairn, zbMATH et repli vers DataCite. Le connecteur Crossref et
+la résolution de catalogue par ISBN sont retirés. Les opérations de
 publication CLI/MCP restent sur le contrat commun, sans nouveau collecteur réseau
 exposé par ces adaptateurs. Le CAS reste 16 ; C.4 personnel demeure différé.
 Voir le [contrat et la qualification](docs/c5-online-bibliography.md).
