@@ -391,40 +391,49 @@ autorisés, saisie, clavier et cibles MCP ; fonctions natives ou paquet externe.
 **Sortie :** insertion, édition, annulation, sauvegarde/réouverture et exports
 vérifiés, avec la même disponibilité dans les interfaces qui exposent la capacité.
 
-### C.5 — Recherche bibliographique en ligne — lot validé le 6 novembre 2026
+### C.5 — Recherche bibliographique en ligne — organisation révisée le 7 novembre 2026
 
-**Priorité P1, indépendante de C.4 différé.** Ajouter des notices à la seule
-bibliothèque du projet depuis Crossref, zbMATH Open et une récupération ciblée
-Cairn par DOI, URL ou identifiant. La recherche générale dans Cairn et le
-moissonnage/indexage de son catalogue restent hors du premier lot.
+**Priorité P1, indépendante de C.4 différé.** Recherche par auteur/titre via
+les sources spécialisées qui la proposent, d’abord zbMATH Open. Pour un DOI,
+interroger les sources spécialisées appropriées (Cairn OAI, zbMATH), puis utiliser
+la négociation de contenu de `doi.org` seulement si aucune notice n’est obtenue.
+D’autres connecteurs spécialisés pourront compléter cette chaîne.
 
-- Recherche locale conservée ; interrogation en ligne déclenchée explicitement.
-  Sources visibles, résultats bornés, erreurs partielles distinguées d’une
-  recherche sans résultat ; aucune attente réseau ne bloque la rédaction.
-- Une notice choisie reste un brouillon : formulaire commun modifiable avant
-  ajout, diagnostics et rapprochement existants, annulation sans édition.
-  « Ajouter » / « Ajouter et citer » publie un lot documentaire gardé et annulable.
-- Collecteurs HTTP/XML séparés de la crate bibliographique pure ; normalisation
-  vers Hayagriva, sans moteur Python, stockage central ni dépendance réseau
-  requise pour rouvrir, compiler ou exporter les notices déjà ajoutées.
-- Conserver une source d’import Hayagriva issue de la conversion et distincte
-  de la notice vérifiée ; elle ne prétend pas être le JSON/XML brut du fournisseur.
-  Les corrections de formulaire ne réécrivent pas cette source.
-- Cas de qualification : DOI `10.3917/dbu.jorro.2022.01.0155` : Crossref renvoie
-  le titre de l’ouvrage au lieu du chapitre ; Cairn OAI renvoie « Émancipation ».
-  Garder les réponses distinctes et demander une vérification, sans fusionner
-  silencieusement leurs valeurs. Fixtures hors ligne, erreurs/délais/réponses
-  obsolètes, conflits, récupération, sauvegarde/export et clavier à vérifier.
+- Retirer le connecteur Crossref et son choix dans l’interface. Crossref peut
+  répondre derrière le résolveur DOI, au même titre que DataCite ou une autre
+  agence compatible ; aucun endpoint Crossref de recherche n’est conservé.
+- Le repli DOI porte sur un identifiant connu, pas sur une recherche par texte.
+  Il intervient après absence, échec ou réponse invalide des sources spécialisées.
+  Une notice spécialisée partielle reste vérifiable sans remplacement automatique.
+  Les échecs partiels et l’origine des résultats restent visibles.
+- Cairn reste ciblé par DOI, identifiant ou URL exploitable. Une URL sans
+  identifiant nécessite un DOI dans ses métadonnées publiques ; à défaut,
+  demander le DOI ou l’identifiant Cairn. Aucun contournement d’une page protégée,
+  index local du catalogue, moissonnage ni recherche générale Cairn.
+- Les compléments de publication de Cairn passent aussi par le résolveur DOI.
+  Ils complètent le type/contenant, sans remplacer les champs propres de la
+  notice OAI. La provenance de cet enrichissement reste explicite.
+- Recherche locale conservée ; appels en ligne explicites, bornés et asynchrones.
+  Une réponse obsolète ne peut remplacer une nouvelle recherche ou un brouillon.
+- Collecteurs séparés de la crate bibliographique pure et du cœur documentaire.
+  Réutiliser les conversions et validations existantes vers Hayagriva ; conserver
+  la source d’import convertie, distincte de la notice corrigée, sans prétendre
+  archiver la réponse brute du fournisseur.
+- Formulaire commun avant ajout, diagnostics et rapprochement existants,
+  annulation sans édition. « Ajouter » / « Ajouter et citer » publie un lot
+  gardé, annulable et récupérable. Sauvegarde et export autonomes hors ligne.
+- Qualification : priorité spécialisée, absence de repli après succès partiel,
+  repli après absence/erreur, DOI erroné, redirections bornées, erreurs/délais,
+  recherche par auteur, provenance, clavier, conflits, récupération et export.
+  Le DOI Cairn `10.3917/dbu.jorro.2022.01.0155` distingue « Émancipation »
+  (Cairn) du titre d’ouvrage erroné fourni par le service DOI générique.
 - Commits locaux uniquement ; aucune poussée et aucun déclenchement de CI GitHub.
 
-**Implémenté et vérifié localement le 6 novembre 2026.** Les collecteurs sont
-isolés dans `typstographe-bibliography-sources`, avec un premier adaptateur Tauri.
-Le formulaire commun permet la correction avant ajout, le rapprochement explicite,
-l’ajout et la citation atomiques, ainsi que la récupération du brouillon. Les
-opérations documentaires CLI/MCP utilisent le même contrat de vérification ;
-aucune commande réseau CLI/MCP n’est ajoutée dans ce premier lot. Le CAS reste 16.
-Voir le [contrat, le parcours et la qualification](docs/c5-online-bibliography.md).
-La recette utilisateur reste à faire ; C.4 personnel demeure différé.
+La première acquisition vérifiée est livrée et qualifiée localement depuis le
+6 novembre ; cette révision des collecteurs est en cours. Les opérations de
+publication CLI/MCP restent sur le contrat commun, sans nouveau collecteur réseau
+exposé par ces adaptateurs. Le CAS reste 16 ; C.4 personnel demeure différé.
+Voir le [contrat et la qualification](docs/c5-online-bibliography.md).
 
 ### Consolidation frontend et E.1 — 6 novembre 2026
 
