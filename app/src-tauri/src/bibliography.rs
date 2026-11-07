@@ -66,7 +66,7 @@ pub fn bibliography_query(
         .map_err(|e| CommandError::from(api::content_error(e)))
 }
 
-/// Explicit network acquisition; no session lock or documentary publication.
+/// Explicit specialised acquisition with generic DOI fallback; no session lock or documentary publication.
 #[tauri::command]
 pub async fn bibliography_online(
     request: typstographe_bibliography_sources::Search,

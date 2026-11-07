@@ -25,9 +25,9 @@ async function search(page: Page) {
   await expect(query(page)).toBeFocused()
   await query(page).fill('https://doi.org/10.3917/dbu.jorro.2022.01.0155')
   await query(page).press('Enter')
-  await expect(online(page).locator('.bibliography-list-row')).toHaveCount(2)
+  await expect(online(page).locator('.bibliography-list-row')).toHaveCount(1)
 }
-async function choose(page: Page, provider = 'Crossref') {
+async function choose(page: Page, provider = 'Cairn.info') {
   await online(page)
     .getByRole('option', { name: new RegExp(` · ${provider}$`) })
     .click()
@@ -53,21 +53,37 @@ test.beforeEach(async ({ page, request }) => {
     else await route.continue()
   })
 })
-test('Crossref and Cairn remain distinct, correction is private until validation and source survives', async ({
+test('generic fallback remains editable and reconciles with a later specialised notice', async ({
   page,
 }) => {
+  let generic = true
+  const fallback = JSON.parse(
+    readFileSync(
+      new URL('../../../fixtures/bibliography/online/doi-results.json', import.meta.url),
+      'utf8',
+    ),
+  )
+  await page.route('**/__spike/invoke', async (route) => {
+    if (route.request().postDataJSON().command === 'bibliography_online')
+      await route.fulfill({ json: { result: generic ? fallback : response } })
+    else await route.fallback()
+  })
   await manage(page)
   await search(page)
+  await expect(online(page).getByRole('checkbox')).toHaveCount(2)
+  await expect(online(page).getByRole('checkbox', { name: 'Crossref', exact: true })).toHaveCount(0)
+  await expect(online(page)).toContainText('Repli DOI automatique')
   await expect(online(page)).toContainText('Le titre du chapitre est identique')
   await expect(manager(page).locator('.bibliography-list-row')).toHaveCount(0)
-  await choose(page)
+  await choose(page, 'DOI')
   await expect(title(page)).toHaveValue('Dictionnaire des concepts de la professionnalisation')
   await title(page).fill('Émancipation')
   await expect(manager(page).locator('.bibliography-list-row')).toHaveCount(0)
   await title(page).press('ControlOrMeta+Enter')
   await expect(manager(page).locator('.bibliography-list-row')).toHaveCount(1)
   await expect(title(page)).toHaveValue('Émancipation')
-  // The second provider's same work reuses the existing identity, rather than adding a duplicate.
+  // The specialised source later reuses the identity of the same DOI.
+  generic = false
   await search(page)
   await choose(page, 'Cairn.info')
   await manager(page).getByRole('button', { name: 'Ajouter', exact: true }).click()
@@ -94,7 +110,7 @@ test('online acquisition from a citation adds and cites in one undoable batch', 
   await expect(query(page)).toBeFocused()
   await query(page).fill('10.3917/dbu.jorro.2022.01.0155')
   await query(page).press('Enter')
-  await expect(online(page).locator('.bibliography-list-row')).toHaveCount(2)
+  await expect(online(page).locator('.bibliography-list-row')).toHaveCount(1)
   await query(page).press('ArrowDown')
   await query(page).press('Enter')
   await expect(title(page)).toHaveValue('Émancipation')
@@ -148,7 +164,9 @@ test('late results cannot replace a newer explicit search and typing stays offli
       await route.fulfill({
         json: {
           result: {
-            candidates: [response.candidates[1]],
+            candidates: [
+              { ...response.candidates[0], id: 'current-search', title: 'Newest result' },
+            ],
             issues: [{ provider: 'zbmath', code: 'unavailable', retry_after: null }],
           },
         },
@@ -167,7 +185,17 @@ test('late results cannot replace a newer explicit search and typing stays offli
   await expect(online(page)).toContainText(
     'zbMATH Open — Le service est temporairement indisponible.',
   )
+  const oldResponse = page.waitForResponse(
+    (r) =>
+      r.url().endsWith('/__spike/invoke') &&
+      r.request().postDataJSON()?.args?.request?.query === 'old search',
+  )
   release()
+  await (await oldResponse).finished()
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+  await expect(
+    online(page).getByRole('option', { name: 'Newest result · Cairn.info', exact: true }),
+  ).toBeVisible()
   await expect(query(page)).toBeFocused()
   await choose(page, 'Cairn.info')
   await expect(title(page)).toHaveValue('Émancipation')
@@ -263,7 +291,7 @@ test('a validated acquisition saves, reopens and exports without any provider re
     .click()
   await query(page).fill('10.3917/dbu.jorro.2022.01.0155')
   await query(page).press('Enter')
-  await expect(online(page).locator('.bibliography-list-row')).toHaveCount(2)
+  await expect(online(page).locator('.bibliography-list-row')).toHaveCount(1)
   await choose(page, 'Cairn.info')
   await manager(page).getByRole('button', { name: 'Ajouter et citer', exact: true }).click()
   await expect(manager(page)).toBeHidden()

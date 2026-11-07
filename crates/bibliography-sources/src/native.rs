@@ -52,17 +52,12 @@ pub(crate) fn candidate(
     })
 }
 pub(crate) fn text(value: &Value) -> String {
-    value
-        .as_str()
-        .or_else(|| {
-            value
-                .as_array()
-                .and_then(|a| a.first())
-                .and_then(Value::as_str)
-        })
-        .unwrap_or_default()
-        .trim()
-        .to_string()
+    match value {
+        Value::String(s) => s.trim().to_string(),
+        Value::Number(n) => n.to_string(),
+        Value::Array(a) => a.first().map(text).unwrap_or_default(),
+        _ => String::new(),
+    }
 }
 pub(crate) fn put(value: &mut Value, key: &str, content: String) {
     if !content.is_empty() {
@@ -78,7 +73,12 @@ pub(crate) fn people(value: &Value) -> Vec<Value> {
             let family = text(&person["family"]);
             let given = text(&person["given"]);
             let name = if family.is_empty() {
-                text(&person["name"])
+                let literal = text(&person["literal"]);
+                if literal.is_empty() {
+                    text(&person["name"])
+                } else {
+                    literal
+                }
             } else {
                 family
             };

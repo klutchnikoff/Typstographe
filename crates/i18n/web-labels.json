@@ -594,7 +594,6 @@
   "Résultats en ligne": "web-bibliography-online-4",
   "Sources": "web-bibliography-online-5",
   "Source": "web-bibliography-online-6",
-  "Cairn : récupération ciblée par DOI, URL d’article ou identifiant.": "web-bibliography-online-7",
   "Vérifier la notice": "web-bibliography-online-8",
   "Recherche en cours…": "web-bibliography-online-9",
   "Aucune notice trouvée.": "web-bibliography-online-10",
@@ -610,5 +609,8 @@
   "Le service est temporairement indisponible.": "web-bibliography-online-20",
   "La réponse du service est illisible ou ne correspond pas à la notice demandée.": "web-bibliography-online-21",
   "La réponse du service est trop volumineuse.": "web-bibliography-online-22",
-  "Informations de publication complétées via Crossref.": "web-bibliography-online-publication"
+  "Informations de publication complétées via DOI.": "web-bibliography-online-publication",
+  "Cairn : DOI, identifiant ou URL. Repli DOI automatique si nécessaire.": "web-bibliography-online-7",
+  "Ce DOI ne fournit pas de notice dans un format pris en charge.": "web-bibliography-doi-2",
+  "Les métadonnées de cette URL Cairn sont inaccessibles. Saisissez le DOI ou l’identifiant Cairn.": "web-bibliography-doi-3"
 }

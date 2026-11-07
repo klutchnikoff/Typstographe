@@ -28,7 +28,7 @@ export function onlineProvenance(candidate: OnlineCandidate) {
   return [
     providerLabel(candidate.provider),
     candidate.provider === 'cairn' && candidate.entry.parent
-      ? tr('Informations de publication complétées via Crossref.')
+      ? tr('Informations de publication complétées via DOI.')
       : '',
     ...candidate.warnings.map(onlineWarning),
   ]
@@ -48,6 +48,9 @@ function issueText(issue: OnlineIssue) {
         invalid_response:
           'La réponse du service est illisible ou ne correspond pas à la notice demandée.',
         too_large: 'La réponse du service est trop volumineuse.',
+        unsupported_response: 'Ce DOI ne fournit pas de notice dans un format pris en charge.',
+        identifier_required:
+          'Les métadonnées de cette URL Cairn sont inaccessibles. Saisissez le DOI ou l’identifiant Cairn.',
       } as Record<string, string>
     )[issue.code] || 'Connexion au service impossible.'
   return `${providerLabel(issue.provider)} — ${tr(label)}`
@@ -108,7 +111,7 @@ export function onlineBibliography(options: {
   legend.textContent = tr('Sources')
   sources.append(legend)
   const choices = new Map<OnlineProvider, HTMLInputElement>()
-  for (const provider of ['crossref', 'zbmath', 'cairn'] as const) {
+  for (const provider of ['zbmath', 'cairn'] as const) {
     const check = document.createElement('input'),
       label = document.createElement('label')
     check.type = 'checkbox'
@@ -120,7 +123,7 @@ export function onlineBibliography(options: {
     check.onchange = () => invalidate()
   }
   const hint = document.createElement('p')
-  hint.textContent = tr('Cairn : récupération ciblée par DOI, URL d’article ou identifiant.')
+  hint.textContent = tr('Cairn : DOI, identifiant ou URL. Repli DOI automatique si nécessaire.')
   hint.className = 'bibliography-completeness'
   const row = actionRow()
   row.append(search)

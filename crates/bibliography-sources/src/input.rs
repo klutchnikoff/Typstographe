@@ -87,21 +87,3 @@ pub(crate) fn cairn_host(url: &Url) -> bool {
         && url.password().is_none()
         && url.port().is_none()
 }
-/// Modern page URLs expose ISBN and pagination, not an OAI identifier.
-pub(crate) fn cairn_page(query: &str) -> Option<(String, String)> {
-    let url = Url::parse(query).ok()?;
-    if !cairn_host(&url) {
-        return None;
-    }
-    let (_, tail) = url.path().rsplit_once("--")?;
-    let (isbn, page) = tail.split_once("-page-")?;
-    if !matches!(isbn.len(), 10 | 13)
-        || !isbn.bytes().all(|c| c.is_ascii_digit())
-        || page.is_empty()
-        || page.len() > 6
-        || !page.bytes().all(|c| c.is_ascii_digit())
-    {
-        return None;
-    }
-    Some((isbn.to_owned(), page.to_owned()))
-}

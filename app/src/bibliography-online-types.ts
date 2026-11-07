@@ -1,4 +1,4 @@
-export type OnlineProvider = 'crossref' | 'zbmath' | 'cairn'
+export type OnlineProvider = 'doi' | 'zbmath' | 'cairn'
 export interface OnlineCandidate {
   id: string
   provider: OnlineProvider
@@ -21,4 +21,4 @@ export interface OnlineResults {
   issues: OnlineIssue[]
 }
 export const providerLabel = (provider: OnlineProvider) =>
-  ({ crossref: 'Crossref', zbmath: 'zbMATH Open', cairn: 'Cairn.info' })[provider]
+  ({ doi: 'DOI', zbmath: 'zbMATH Open', cairn: 'Cairn.info' })[provider]

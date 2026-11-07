@@ -7,14 +7,19 @@ pub(crate) fn entry(record: &Value) -> (Value, Vec<Warning>) {
     let mut warnings = vec![];
     let kind = text(&record["type"]);
     let (child, parent) = match kind.as_str() {
-        "journal-article" => ("article", Some("periodical")),
-        "book-chapter" | "reference-entry" | "book-section" => ("chapter", Some("book")),
-        "proceedings-article" => ("article", Some("proceedings")),
+        "article-journal" | "journal-article" | "article-magazine" | "article-newspaper" => {
+            ("article", Some("periodical"))
+        }
+        "chapter" | "entry-dictionary" | "entry-encyclopedia" | "book-chapter"
+        | "reference-entry" | "book-section" => ("chapter", Some("book")),
+        "paper-conference" | "proceedings-article" => ("article", Some("proceedings")),
         "book" | "monograph" | "edited-book" | "reference-book" => ("book", None),
-        "dissertation" => ("thesis", None),
+        "thesis" | "dissertation" => ("thesis", None),
         "report" => ("report", None),
-        "posted-content" => ("article", None),
-        "dataset" => ("repository", None),
+        "periodical" | "journal" | "journal-issue" => ("periodical", None),
+        "webpage" | "post-weblog" => ("web", None),
+        "article" | "posted-content" => ("article", None),
+        "dataset" | "software" => ("repository", None),
         _ => {
             warnings.push(Warning::UnsupportedType);
             ("misc", None)
@@ -43,16 +48,10 @@ pub(crate) fn entry(record: &Value) -> (Value, Vec<Warning>) {
     if let Some(date) = date(record) {
         value["date"] = json!(date);
     }
-    let url = text(&record["resource"]["primary"]["URL"]);
-    put(
-        &mut value,
-        "url",
-        if url.is_empty() {
-            text(&record["URL"])
-        } else {
-            url
-        },
-    );
+    put(&mut value, "url", text(&record["URL"]));
+    for key in ["language", "edition", "version"] {
+        put(&mut value, key, text(&record[key]));
+    }
     if let Some(parent_kind) = parent {
         let mut p = json!({"type":parent_kind});
         put(&mut p, "title", container);
@@ -69,7 +68,9 @@ pub(crate) fn entry(record: &Value) -> (Value, Vec<Warning>) {
 fn publication(value: &mut Value, record: &Value) {
     let publisher = text(&record["publisher"]);
     if !publisher.is_empty() {
-        value["publisher"] = json!({"name":publisher});
+        let mut p = json!({"name":publisher});
+        put(&mut p, "location", text(&record["publisher-place"]));
+        value["publisher"] = p;
     }
     for (native, remote) in [("volume", "volume"), ("issue", "issue")] {
         put(value, native, text(&record[remote]));
@@ -85,28 +86,31 @@ fn publication(value: &mut Value, record: &Value) {
         value["editor"] = json!(editors);
     }
 }
-pub(crate) fn parse(body: &str) -> Result<Vec<Candidate>> {
+/// Read the single CSL-JSON item returned by the DOI content-negotiation service.
+pub(crate) fn parse(body: &str, expected: &str) -> Result<Candidate> {
     let data: Value = serde_json::from_str(body)
-        .map_err(|_| Error::new(Provider::Crossref, ErrorCode::InvalidResponse))?;
-    if data["status"] != "ok" {
-        return Err(Error::new(Provider::Crossref, ErrorCode::InvalidResponse));
+        .map_err(|_| Error::new(Provider::Doi, ErrorCode::InvalidResponse))?;
+    let record = if let Some(items) = data.as_array() {
+        if items.len() != 1 {
+            return Err(Error::new(Provider::Doi, ErrorCode::InvalidResponse));
+        }
+        &items[0]
+    } else {
+        &data
+    };
+    let doi = crate::doi(&text(&record["DOI"]))
+        .or_else(|| crate::doi(&text(&record["id"])))
+        .filter(|doi| doi.eq_ignore_ascii_case(expected))
+        .ok_or_else(|| Error::new(Provider::Doi, ErrorCode::InvalidResponse))?;
+    if !record["type"].is_string() {
+        return Err(Error::new(Provider::Doi, ErrorCode::InvalidResponse));
     }
-    let records = data["message"]["items"]
-        .as_array()
-        .cloned()
-        .unwrap_or_else(|| vec![data["message"].clone()]);
-    records
-        .iter()
-        .map(|record| {
-            let doi = crate::doi(&text(&record["DOI"]))
-                .ok_or_else(|| Error::new(Provider::Crossref, ErrorCode::InvalidResponse))?;
-            let (entry, warnings) = entry(record);
-            candidate(
-                Provider::Crossref,
-                format!("https://doi.org/{doi}"),
-                entry,
-                warnings,
-            )
-        })
-        .collect()
+    let (mut entry, warnings) = entry(record);
+    entry["serial-number"]["doi"] = json!(doi);
+    candidate(
+        Provider::Doi,
+        format!("https://doi.org/{doi}"),
+        entry,
+        warnings,
+    )
 }

@@ -98,3 +98,33 @@ pub(crate) fn parse(body: &str, identifier: &str) -> Result<Option<Notice>> {
         source_url,
     }))
 }
+
+/// Only explicit bibliographic meta tags identify an article; never guess from page text.
+pub(crate) fn page_doi(html: &str) -> Option<String> {
+    let tags = Regex::new(r"(?is)<meta\s+[^>]{0,8192}>").unwrap();
+    let attrs = Regex::new(r#"(?i)([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')"#).unwrap();
+    let mut dois = std::collections::BTreeSet::new();
+    for tag in tags.find_iter(html) {
+        let values: std::collections::BTreeMap<_, _> = attrs
+            .captures_iter(tag.as_str())
+            .map(|a| {
+                (
+                    a[1].to_ascii_lowercase(),
+                    a.get(2).or_else(|| a.get(3)).unwrap().as_str().to_string(),
+                )
+            })
+            .collect();
+        let name = values.get("name").or_else(|| values.get("property"));
+        if name.is_some_and(|n| {
+            n.eq_ignore_ascii_case("citation_doi") || n.eq_ignore_ascii_case("dc.identifier")
+        }) && let Some(doi) = values.get("content").and_then(|v| crate::doi(v))
+        {
+            dois.insert(doi.to_ascii_lowercase());
+        }
+    }
+    if dois.len() == 1 {
+        dois.into_iter().next()
+    } else {
+        None
+    }
+}

@@ -7,14 +7,14 @@ use serde_json::Value;
 )]
 #[serde(rename_all = "snake_case")]
 pub enum Provider {
-    Crossref,
+    Doi,
     Zbmath,
     Cairn,
 }
 impl Provider {
     pub fn label(self) -> &'static str {
         match self {
-            Self::Crossref => "Crossref",
+            Self::Doi => "DOI",
             Self::Zbmath => "zbMATH Open",
             Self::Cairn => "Cairn.info",
         }
@@ -65,6 +65,8 @@ pub enum ErrorCode {
     Unavailable,
     InvalidResponse,
     TooLarge,
+    UnsupportedResponse,
+    IdentifierRequired,
 }
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error, Serialize, Deserialize, JsonSchema)]
 #[error("{provider:?}: {code:?}")]
