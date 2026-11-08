@@ -556,6 +556,30 @@ validé sur la recette représentative de chaque modèle livré.
   palette de commandes : ses propositions ne contiennent que les capacités du
   type actif, avec la même distinction entre absence du type et indisponibilité
   contextuelle. Les commandes générales de l’application restent accessibles.
+- **E.2 — simplification et fluidification des interactions — cadré le 8 novembre 2026 (prioritaire) :**
+  réduire le nombre de clics, les sauts de mise en page et l’empilement de
+  sous-fenêtres selon le [plan de simplification E.2](docs/interface-simplification.md),
+  à mener par lots courts validés sur maquette avant les extensions lourdes de D, F et J :
+  1. **Trois surfaces contextuelles distinctes** : remplacer les bandeaux interlignes
+     systématiques par un **menu contextuel d’objet** (popover flottant d’actions directes
+     pour orthographe, poignées de tableaux, conversions de listes et options de blocs),
+     un **pop-up de sélection/saisie** (recherche floue *fuzzy* et insertion en 1 geste
+     sur `Entrée`/clic pour citations, renvois internes et liens), et réserver le
+     **bandeau pleine largeur** à la rédaction longue (notes de bas de page).
+  2. **Politique de clic droit (`contextmenu`)** : conserver le menu natif WebKit/OS sur
+     la prose courante (*Copier/Coller, Dictionnaire, Traduire*) et ouvrir le popover
+     applicatif uniquement au clic droit sur les objets et annotations Typstographe
+     (`.spelling-error`, `.inline-object`, `.table-handle`, `.widget-bar`), ainsi qu’au
+     clic gauche sur les poignées et boutons `⋯`.
+  3. **Suppression directe annulable et nettoyage des blocs** : supprimer directement les
+     blocs au clic sur la corbeille (et les badges en ligne en deux temps `Backspace` × 2)
+     avec annulation par `Cmd/Ctrl+Z`, masquer les roues dentées désactivées en permanence
+     et retirer le doublon d’alias sur `mathBlock`.
+  4. **Désimbrication des modales et harmonisation de l’en-tête** : intégrer la recherche
+     bibliographique en ligne et la revue d’acquisition comme vues internes du gestionnaire
+     unique (sans `<dialog>` empilées), supprimer l’étape tremplin vide de l’onglet
+     *Bibliographie*, unifier le modèle d’édition des collections de métadonnées et
+     centrer la palette de commandes.
 - Revoir les parcours réels : accueil, création, en-tête, rédaction, recherche,
   sélection, correction, insertion, sauvegarde et export.
 - Achever l’harmonisation des widgets et bandeaux : même cadre et mêmes règles
