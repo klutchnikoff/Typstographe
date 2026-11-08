@@ -488,6 +488,42 @@ fictif, les brouillons, les réponses tardives et le clavier sans captures.
 - Vérifier les conventions typographiques et les langues sur des exemples réels ;
   garder leur composition dans Typst et les règles de modèles.
 
+### Modèles Typst à évaluer
+
+**Orientation retenue le 6 novembre 2026 :** réutiliser des modèles existants
+et les employer comme corpus pour éprouver nos types, structures d’en-tête et
+capacités. L’évaluation ne vaut pas sélection ni engagement à intégrer toutes
+leurs fonctionnalités.
+
+| Projet | Usage et points à examiner |
+| --- | --- |
+| [LaPreprint](https://github.com/myst-templates/lapreprint-typst) | Premier candidat pour Article : auteurs/affiliations, ORCID, résumés multiples, titre court, mots-clés et bibliographie ; examiner les besoins en DOI, dates éditoriales et informations marginales. |
+| [IEEE pour MyST](https://github.com/myst-templates/ieee-typst-template) | Article sous contraintes éditoriales : inspecter les signatures et la mise en page, puis qualifier les options imposées et le changement de modèle depuis un article de travail. |
+| [Plain Typst Book](https://github.com/myst-templates/plain_typst_book) | Référence pour Livre et Mémoire/thèse : couverture, préface, sommaire, chapitres et numérotation des figures/équations par chapitre. |
+| [Letterloom pour MyST](https://github.com/stefanv/myst-typst-letterloom), fondé sur [Letterloom](https://typst.app/universe/package/letterloom/) | Courrier de présentation anglaise ; comparer les champs expéditeur/destinataire, date, signature et pièces jointes. Examiner séparément les signatures multiples et l’incorporation de pièces, au-delà de nos mentions de P.J. actuelles. |
+| [Quire](https://typst.app/universe/package/quire), [sources](https://github.com/mariovagomarzal/quire) | Candidat prioritaire à évaluer pour les documents longs, également utilisable pour articles et rapports : parties/chapitres/sections, modes papier/écran, pages liminaires, résumés multilingues, annexes ; examiner les environnements scientifiques et le code via theorion/codly. |
+
+Commencer l’évaluation par LaPreprint pour Article, puis Letterloom et IEEE ;
+comparer Quire et Plain Typst Book pour préparer les types de documents longs.
+Pour chacun, distinguer présentation relevant du modèle, données nécessitant
+une structure du type et contenus nécessitant une capacité commune. Étendre
+ces contrats ensemble avant de développer les fonctions manquantes.
+
+L’auteur doit conserver des données et des fonctions stables lorsqu’il change
+de modèle au sein d’un même type. Le créateur du modèle prend en charge
+l’adaptation à la bibliothèque Typst sous-jacente. L’utilisation directe de ces
+conventions en Typst serait un bénéfice naturel de l’architecture de Typstographe,
+sans chantier autonome ni critère de livraison supplémentaire pour D.
+Préserver les primitives natives simples, sans wrappers inutiles.
+Une adaptation ne doit pas perdre silencieusement les informations du document.
+
+Examiner les fonctions Typst sous-jacentes et les adaptateurs MyST séparément,
+sans présumer que la chaîne MyST doit être intégrée. Qualifier compilation avec
+notre version épinglée de Typst, dépendances, polices, langues, licences et export
+hors ligne. Pour Quire, vérifier notamment l’ajout du français et la fourniture
+ou le remplacement des polices non embarquées ; réutiliser notre gestion des
+dates avec Datify. Épingler les versions retenues et conserver leur provenance.
+
 **Choix à valider :** format des paquets installables, extensions du manifeste
 `model.yaml` livré en B.1 et paramètres propres aux modèles,
 polices et licences d’incorporation, import, stockage et politique de mise à jour.

@@ -409,6 +409,34 @@ Ajouter validation/import, provenance, retrait, aperçu et remplacement explicit
 Pour chaque type livré : modèle neutre utile, corpus de test, export hors ligne
 et changement de modèle sans modification du contenu.
 
+**Corpus Typst à évaluer — décision du 6 novembre 2026 :** voir les
+[projets et leurs usages](ROADMAP.md#modèles-typst-à-évaluer) : LaPreprint,
+IEEE pour MyST, Plain Typst Book, Letterloom et Quire. Leur examen doit servir
+à la réutilisation des mises en page et à la qualification des contrats communs,
+sans promettre toutes les fonctionnalités de chaque paquet.
+
+- Établir pour chaque candidat la correspondance entre notre signature de type
+  et celle de la fonction Typst : auteurs/affiliations, localisations, ressources,
+  dates, bibliothèque bibliographique et capacités du corps. Les fonctions de
+  présentation restent dans le modèle ; toute donnée ou capacité nouvelle exige
+  un contrat explicite. Qualifier les pertes et incompatibilités avant adoption.
+- Préserver une interface éditoriale stable pour Typstographe. Sa réutilisation
+  directe en Typst serait un bonus issu de cette architecture, sans livraison
+  distincte ni critère de sortie supplémentaire pour D.
+  L’adaptation des signatures appartient au créateur du modèle. Éviter toute
+  duplication des données ou dépendance des documents aux signatures internes
+  de Quire, LaPreprint ou des autres bibliothèques ; conserver les primitives
+  Typst simples et les régimes libre/restreint/imposé du manifeste.
+- Séparer noyau Typst et adaptation MyST ; évaluer l’appel direct du noyau avant
+  toute intégration de la chaîne MyST. Épingler sources, paquets et ressources,
+  inventorier licences et polices, puis compiler sans accès réseau.
+- Tester les résumés multilingues et dates éditoriales de LaPreprint, les
+  contraintes du modèle IEEE, les conventions anglaises de Letterloom et les
+  structures de documents longs de Quire/Plain Typst Book. Pour Quire, qualifier
+  français, polices, dates via notre wrapper Datify et les éventuelles capacités
+  theorion/codly ; les signatures multiples ou pièces incorporées de Letterloom
+  restent des extensions à décider, distinctes de nos P.J. par mentions.
+
 **Accessibilité des exports (C/D) :** partager les diagnostics de description
 d’image entre les adaptateurs ; conserver et récupérer les brouillons incomplets,
 mais bloquer leur export accessible tant que la description manque. Activer les
