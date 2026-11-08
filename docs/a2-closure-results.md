@@ -143,7 +143,7 @@ fusionnées et listes imbriquées (C) restent hors de ce lot.
 
 ## Ajustement des recettes après la CI de la PR nº 3
 
-La [CI du 31 octobre](https://github.com/klutchnikoff/typstOgraphe/actions/runs/41147750004)
+La [CI du 31 octobre](https://github.com/klutchnikoff/Typstographe/actions/runs/41147750004)
 a validé Rust, les tests web, les contrats et les audits, puis relevé deux
 scénarios obsolètes dans les deux moteurs navigateur : l’ajout d’une ligne était
 encore cherché dans les paramètres du tableau ; le libellé du curseur distant

@@ -1,4 +1,4 @@
-# Développer typstOgraphe
+# Développer Typstographe
 
 Tauri héberge Tiptap/ProseMirror et Yjs ; Rust/Yrs possède l’état confirmé,
 valide les éditions et compile Typst. Les [contrats et bilans](../docs/README.md)

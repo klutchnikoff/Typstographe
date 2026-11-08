@@ -216,7 +216,7 @@ la livraison de tous les types de B n’est pas un prérequis.
   MiTeX passe par un adaptateur Typst public stable ;
   inventorier et embarquer sa version et ses dépendances pour les fichiers et
   exports hors ligne. Les diagnostics proviennent du moteur concerné, sans
-  liste de formules autorisées propre à typstOgraphe ; conserver les limites
+  liste de formules autorisées propre à Typstographe ; conserver les limites
   réelles du support Typst/MiTeX explicites. Le source représente une formule,
   éventuellement complexe ou multiligne, et non un document LaTeX complet.
   **Déclencheurs validés :** `$` seul sur une ligne puis Entrée crée le widget
@@ -306,7 +306,7 @@ la livraison de tous les types de B n’est pas un prérequis.
   publication gardée dans la crate commune ; qualifier CAS, reprise et rendu.
 - **C.4 — Gestion bibliographique personnelle et échanges — différé, P3.**
   Réexaminer uniquement avec un besoin identifié de véritable gestionnaire
-  personnel intégré à typstOgraphe. Pour l’instant, seule la bibliothèque locale
+  personnel intégré à Typstographe. Pour l’instant, seule la bibliothèque locale
   au projet est utilisée ; C.3 reste suffisant et le `.typsto` reste autonome.
   Le futur lot couvrira catalogue personnel, recherche/édition, conservation et
   échanges explicites, en réutilisant la crate, les formulaires et le corpus C.3.
@@ -319,9 +319,10 @@ la livraison de tous les types de B n’est pas un prérequis.
   d’API personnelle, de dépendance supplémentaire ou de couche de synchronisation
   anticipant ce lot. Valider contrat et maquette ensemble lors de sa réouverture.
 
-Le contrat bibliographique C.3 et le CAS 16 sont courants ; les anciens lots
-de raccordement restent des bilans datés. Recherche en ligne et gestion de PDF
-restent hors de ce premier parcours.
+Le contrat bibliographique C.3 reste courant avec le
+[CAS 17](docs/a4-project-format.md), qui lit aussi les projets CAS 16.
+Les anciens lots de raccordement restent des bilans datés. Recherche en ligne
+et gestion de PDF restent hors de ce premier parcours.
 
 **Sortie C :** contrat partagé GUI/CLI/MCP, recette clavier et aller-retour du
 fichier ; absence de logique spécifique dupliquée dans les déclencheurs.
@@ -369,7 +370,7 @@ La révision est **implémentée et vérifiée localement le 7 novembre 2026** :
 essais réels Cairn, zbMATH et repli vers DataCite. Le connecteur Crossref et
 la résolution de catalogue par ISBN sont retirés. Les opérations de
 publication CLI/MCP restent sur le contrat commun, sans nouveau collecteur réseau
-exposé par ces adaptateurs. Le CAS reste 16 ; C.4 personnel demeure différé.
+exposé par ces adaptateurs. Le schéma d’état CAS 16/17 est inchangé ; C.4 personnel demeure différé.
 Voir le [contrat et la qualification](docs/c5-online-bibliography.md).
 
 ### Consolidation frontend et E.1 — 6 novembre 2026
@@ -501,7 +502,7 @@ Sur 24 pages à 250 ms/caractère, frappe p95 25 → 16 ms ; aperçu 90 → 80 m
 compilation incrémentale de Typst seul sur le même document, avec une référence
 distincte pour le natif et pour le WebAssembly, un plancher absolu pour les petits
 documents et un suivi du surcoût par étape. La cible suit ainsi les évolutions de
-Typst et détecte les régressions propres à typstOgraphe.
+Typst et détecte les régressions propres à Typstographe.
 
 ## F. Assistance ACP
 

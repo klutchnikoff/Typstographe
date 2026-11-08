@@ -1,15 +1,15 @@
-# Interface typstOgraphe. Ne pas traduire les données des courriers.
+# Interface Typstographe. Ne pas traduire les données des courriers.
 
 save-dialog = Save document
-native-menu-about = About typstOgraphe
-native-menu-hide = Hide typstOgraphe
+native-menu-about = About Typstographe
+native-menu-hide = Hide Typstographe
 native-menu-hide-others = Hide Others
 native-menu-cut = Cut
 native-menu-copy = Copy
 native-menu-paste = Paste
 native-menu-select-all = Select All
 file-dialog-unavailable = The system could not open the file dialog. No file was opened or saved. Please try again.
-letter-filter = typstOgraphe document
+letter-filter = Typstographe document
 default-filename = Document.typsto
 replace-title = Replace the document?
 letter-opened = Document opened.
@@ -142,7 +142,7 @@ cli-usage-capture-search = Usage: --capture-search IMAGE.png QUERY
 cli-unknown-option = Unknown option: { $option }
 cli-capture-error = Screenshot: { $error }
 cli-help =
-    typstOgraphe
+    Typstographe
       cargo run
       cargo run -- LETTER.typsto
       cargo run -- --capture IMAGE.png
@@ -185,9 +185,9 @@ statistics-hint =
     Scope: authored text, headings, captions and attributions, excluding metadata and content added by the template.
 edit-menu = Edit
 view-menu = View
-cmd-quit = Quit typstOgraphe
+cmd-quit = Quit Typstographe
 mac-services = Services
-mac-hide = Hide typstOgraphe
+mac-hide = Hide Typstographe
 mac-hide-others = Hide Others
 mac-show-all = Show All
 native-menu-error = Could not update the menus: { $error }

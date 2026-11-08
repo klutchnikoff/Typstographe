@@ -234,7 +234,7 @@ output/reformulation/.venv/bin/python experiments/reformulation/report.py
 
 html = """<!doctype html><html lang='fr'><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>typstOgraphe — essais de reformulation locale</title>
+<title>Typstographe — essais de reformulation locale</title>
 <style>
 :root{color-scheme:light dark;--bg:#f5f6f8;--card:#fff;--text:#202936;--muted:#526174;--line:#d4dce5;--accent:#235f9b;--warn:#963d28}
 @media(prefers-color-scheme:dark){:root{--bg:#171c24;--card:#222a35;--text:#e7edf5;--muted:#b5c1d1;--line:#425165;--accent:#9cc6fa;--warn:#f1b39e}}
@@ -244,7 +244,7 @@ a{color:var(--accent)}p{max-width:100ch}small,.scores,.checks{color:var(--muted)
 .scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;background:var(--card);font-size:.92rem}th,td{padding:12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}td{white-space:nowrap}thead th{color:var(--muted)}
 .case{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;margin:24px 0}.source{border-left:3px solid var(--line);padding-left:16px}.source p,.output{white-space:pre-wrap;overflow-wrap:anywhere}.pair{display:grid;grid-template-columns:1fr 1fr;gap:24px}.result{border-top:2px solid var(--accent);padding-top:12px}.material{border-color:var(--warn)}.material strong{color:var(--warn)}.scores{font-size:.88rem}summary{cursor:pointer;color:var(--accent);padding:12px 0}pre{background:var(--card);border:1px solid var(--line);padding:18px;overflow:auto;font-size:.82rem}label{display:block;margin:20px 0;cursor:pointer}.hidden{display:none}nav a{margin-right:16px;display:inline-block}@media(max-width:760px){.pair{grid-template-columns:1fr}main{padding:20px 14px}.case{padding:16px}}@media print{body{background:white;color:black}details{display:block}label{display:none}.case{break-inside:avoid}}
 </style><main>
-<p><small>typstOgraphe · expérimentation du 21 octobre 2026 · génération entièrement locale</small></p>
+<p><small>Typstographe · expérimentation du 21 octobre 2026 · génération entièrement locale</small></p>
 <h1>Reformuler sans changer les faits</h1>
 <p class='lead'>CATIE french_paraphrase_flan-t5-base et Qwen2.5-Instruct (1,5B et 3B), sur Apple M1 Max avec 32 Gio de mémoire.</p>
 <nav><a href='#dernier-essai'>Dernier essai et décision</a><a href='#prompt-administratif'>Votre prompt administratif</a><a href='#qwen-plus-grand'>Qwen 1,5B / 3B</a><a href='#exemple-utilisateur'>Votre exemple fautif</a><a href='#mesures'>Mesures</a><a href='#qualite'>Qualité</a><a href='#passages'>20 passages</a><a href='#complement'>5 textes maladroits</a><a href='#integration'>Intégration Rust</a><a href='#protocole'>Protocole et reproduction</a></nav>

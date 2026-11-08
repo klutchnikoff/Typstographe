@@ -1,4 +1,4 @@
-//! Portable recovery context: a compressed format-11 archive, cached and shared in memory.
+//! Portable recovery context: a compressed CAS archive, cached and shared in memory.
 use super::{Error, MAX_ARCHIVE_BYTES, Project};
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};

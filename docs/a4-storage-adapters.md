@@ -25,7 +25,7 @@ leur interface ne sont pas ajoutés dans ce lot.
 La [clarification du contrat](typst-dependencies.md) remplace la règle initiale
 d’exécution des bibliothèques épinglées du projet. Aperçu, validation de modèle,
 politique de présentation, sauvegarde de l’état courant et export utilisent le
-catalogue de la version installée de typstOgraphe. Les copies historiques restent
+catalogue de la version installée de Typstographe. Les copies historiques restent
 des ressources de transport contrôlées par le stockage CAS. Le modèle et les
 ressources documentaires restent conservés, sans promesse d’identité du PDF entre
 versions de l’application. Les tests de cette clarification remplacent le wrapper

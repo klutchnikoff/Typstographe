@@ -100,7 +100,7 @@ Le contrat validé ensuite retire le registre des jeux de paquets et le jeton
 de copies transportées ; Tauri et la session commune CLI/MCP résolvent les
 bibliothèques dans le catalogue applicatif, y compris pour les anciennes versions.
 Les snapshots conservent leur état documentaire et leurs ressources sans promettre
-l’identité du PDF entre versions de typstOgraphe. La conversion explicite des
+l’identité du PDF entre versions de Typstographe. La conversion explicite des
 formats incompatibles reste un parcours futur, non implémenté.
 
 Contrôles locaux après cette simplification :

@@ -19,7 +19,7 @@ Les scénarios sont **adaptés**, et non annoncés comme des copies exécutées 
 tests Python. Citekeep écrit du BibTeX et préserve son texte ; C.3 conserve les
 originaux comme provenance et compose une projection Hayagriva. L'identité
 documentaire stable et les décisions explicites sur les états de publication
-sont propres à typstOgraphe. Les cas logiciels sont des extensions nouvelles.
+sont propres à Typstographe. Les cas logiciels sont des extensions nouvelles.
 
 ## Lecture du corpus d'identité
 
@@ -94,7 +94,7 @@ Préserver l'original ne dispense pas de signaler une donnée perdue par la conv
 | P05 | Refuser cible de décision inconnue, ambiguë ou invalide (`library::test_a_named_entry_that_does_not_match_is_refused`, `test_same_needs_to_say_which_when_several_entries_match`) |
 | P06 | Lien personnel explicite cassé : diagnostic, aucune nouvelle association silencieuse (`sync::test_a_broken_explicit_link_blocks_the_plan`) |
 | P07 | Projet avant personnel, alias local reconnu et pas de résultat personnel doublonné (`catalog::test_search_returns_local_before_master`, `test_a_local_alias_masks_the_master_work`) — moteur réutilisable, parcours C.4 |
-| P08 | Révision/empreinte modifiée après préparation : refus du plan et conservation des décisions/brouillons ; extension aux gardes documentaires de typstOgraphe |
+| P08 | Révision/empreinte modifiée après préparation : refus du plan et conservation des décisions/brouillons ; extension aux gardes documentaires de Typstographe |
 | P09 | Aucune correction de valeur connue sans choix de champ explicite (`sync::test_a_field_decision_can_keep_master_and_refresh_the_local_view`, `test_a_field_decision_can_promote_a_verified_local_value_to_master`) ; échanges personnels C.4 |
 
 ## Garanties d'intégration, distinctes des tests de crate

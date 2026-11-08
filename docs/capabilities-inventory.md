@@ -1,7 +1,7 @@
 # Inventaire des capacités documentaires
 
 Établi le **26 octobre 2026**, à partir de la liste comparative de Docs (DINUM)
-fournie par l'utilisateur, des besoins de typstOgraphe et d'un premier examen de
+fournie par l'utilisateur, des besoins de Typstographe et d'un premier examen de
 Typst et de Typst Universe.
 
 Cet inventaire est une référence pour le [chantier C de la feuille de route](../ROADMAP.md#c--compléter-les-capacités-à-partir-des-besoins-des-types).

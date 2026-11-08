@@ -99,7 +99,11 @@ impl Store {
             version: u32,
         }
         let header: Header = json(&manifest_bytes, "manifest.json")?;
-        if header.format != "typstOgraphe" || header.version != FORMAT_VERSION {
+        // CAS 17 renames the manifest marker. CAS 16 uses the same object schema.
+        if !matches!(
+            (header.format.as_str(), header.version),
+            (FORMAT_NAME, FORMAT_VERSION) | ("typstOgraphe", 16)
+        ) {
             return Err(StorageError::Unsupported.into());
         }
         let mut names = BTreeSet::new();

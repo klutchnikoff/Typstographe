@@ -56,7 +56,7 @@ const recipeBuild = import.meta.env.MODE === 'recipe' || import.meta.env.MODE ==
 const app = document.querySelector<HTMLDivElement>('#app')!
 installMenus()
 app.innerHTML = `
-  <header><div class="identity"><strong>typstOgraphe</strong></div>
+  <header><div class="identity"><strong>Typstographe</strong></div>
     <div class="session-tools"><button id="peer">Deuxième fenêtre</button><button id="connection" aria-pressed="true">Connecté</button><button id="save">Enregistrer</button><button id="export">Exporter</button></div></header>
   <main><section class="writing" aria-label="Éditeur du document">
     <nav id="toolbar" aria-label="Mise en forme"></nav>

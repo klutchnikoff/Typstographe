@@ -4,7 +4,7 @@
 > historique conservée dans Git, avant le [retrait d’egui](egui-retirement-results.md).
 > Ses outils ne sont plus des commandes de développement actives.
 
-Les décisions D1 à D20 de [ROADMAP-ARCHITECTURE.md](https://github.com/klutchnikoff/typstOgraphe/blob/7b0d6fd3e6ae25e5704ed43ce2f4efefa9c2fa0b/ROADMAP-ARCHITECTURE.md)
+Les décisions D1 à D20 de [ROADMAP-ARCHITECTURE.md](https://github.com/klutchnikoff/Typstographe/blob/7b0d6fd3e6ae25e5704ed43ce2f4efefa9c2fa0b/ROADMAP-ARCHITECTURE.md)
 sont validées. La phase 0 est terminée ; la phase 1 n’a pas commencé.
 Le tag annoté `pre-refactor-architecture` identifie le dépôt prêt à être restructuré.
 
@@ -23,7 +23,7 @@ arm64, Rust et Cargo 1.98.1 (Homebrew).
 | `python3 -m unittest discover -s scripts/tests -v` | 5 tests réussis sur le script de captures |
 | CI Rust macOS / Windows / Linux | Verte sur les trois systèmes |
 
-La [CI Rust sur `03f0536`](https://github.com/klutchnikoff/typstOgraphe/actions/runs/39685126935)
+La [CI Rust sur `03f0536`](https://github.com/klutchnikoff/Typstographe/actions/runs/39685126935)
 exécute formatage, tests et Clippy sur les trois systèmes. Le décompte varie selon
 la plateforme : 143 tests sur macOS, 142 sur Linux et Windows (test spécifique macOS).
 Ces exécutions de CI ne sont pas des essais manuels de l’interface.
@@ -41,7 +41,7 @@ Les journaux locaux sont conservés dans `output/architecture-phase-0/`
 ## Couverture
 
 La mesure de référence provient de la
-[CI Coverage sur `03f0536`](https://github.com/klutchnikoff/typstOgraphe/actions/runs/39685126985),
+[CI Coverage sur `03f0536`](https://github.com/klutchnikoff/Typstographe/actions/runs/39685126985),
 sous Linux avec `cargo +nightly llvm-cov --locked --workspace --no-report`.
 Les implémentations des tests et les dépendances sont exclues par la configuration
 existante ; aucun seuil bloquant n’est introduit.
@@ -61,7 +61,7 @@ ne dispose ni de rustup ni de cargo-llvm-cov.
 
 ## Captures de référence
 
-Le script [capture-baseline.sh](https://github.com/klutchnikoff/typstOgraphe/blob/b26f2df/scripts/capture-baseline.sh) utilise Python 3
+Le script [capture-baseline.sh](https://github.com/klutchnikoff/Typstographe/blob/b26f2df/scripts/capture-baseline.sh) utilise Python 3
 et sa bibliothèque standard, sans paquet supplémentaire. Depuis la phase 4, il
 compile les deux binaires avec `cargo build --locked --workspace --bins`. La CLI
 prépare le courrier de référence avec `new` et `export --format typst`, à partir

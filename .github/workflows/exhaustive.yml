@@ -137,6 +137,9 @@ jobs:
             Linux)
               for file in "$bundle"/deb/*.deb; do
                 dpkg-deb --info "$file"
+                test "$(dpkg-deb -f "$file" Package)" = typstographe
+                test "$(dpkg-deb -f "$file" Conflicts)" = typst-ographe
+                test "$(dpkg-deb -f "$file" Replaces)" = typst-ographe
                 dpkg-deb --contents "$file" > /tmp/typstographe-package-contents
                 grep 'usr/bin/typstographe' /tmp/typstographe-package-contents
                 grep 'usr/share/mime/packages/typstographe.xml' /tmp/typstographe-package-contents
@@ -154,9 +157,10 @@ jobs:
               done
               ;;
             macOS)
-              app="$bundle/macos/typstOgraphe.app"
+              app="$bundle/macos/Typstographe.app"
               test -x "$app/Contents/MacOS/typstographe"
               plutil -lint "$app/Contents/Info.plist"
+              test "$(plutil -extract CFBundleName raw -o - "$app/Contents/Info.plist")" = Typstographe
               test -s "$app/Contents/Resources/document.icns"
               test "$(plutil -extract CFBundleDocumentTypes.0.CFBundleTypeIconFile raw -o - "$app/Contents/Info.plist")" = document.icns
               test "$(plutil -extract UTExportedTypeDeclarations.0.UTTypeIdentifier raw -o - "$app/Contents/Info.plist")" = org.typstographe.project

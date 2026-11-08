@@ -1,22 +1,23 @@
 # Exemples
 
-## Bibliographie et profils natifs — format courant
+## Bibliographie et profils natifs — exemple compatible
 
 [article-bibliography-profiles.typsto](article-bibliography-profiles.typsto)
 est un article au format **CAS 16**, avec citations et bibliothèque native.
+Typstographe l’ouvre directement et écrit du **CAS 17** à la sauvegarde.
 Il reprend le contenu de l’exemple bibliographique versionné ; un livre conserve
 également une revue inactive de démonstration. Dans Bibliographie → Gérer les
 références, changer son type en Article de revue retrouve cette publication ;
 les autres champs restent conservés. Une validation constitue une seule édition
 annulable, sans sauvegarde automatique.
 
-La [recette CLI](cli/article-bibliography.json) le reconstruit vers une destination
-libre. Le fichier actif `bibliography/references.yaml` sert au rendu ;
+La [recette CLI](cli/article-bibliography.json) le reconstruit en CAS 17 vers une
+destination libre. Le fichier actif `bibliography/references.yaml` sert au rendu ;
 `bibliography/retained.json` conserve séparément les publications inactives dans
 le CAS et l’export Typst. Aucun document local existant n’est converti.
 
 Les exemples ci-dessous restent des références de lots antérieurs ; leurs anciens
-formats ne sont pas annoncés compatibles avec CAS 16.
+formats sont antérieurs à la compatibilité CAS 16 et 17.
 
 [article-working.typsto](article-working.typsto) est un article de démonstration
 au format CAS 14, avec le générateur Typst 4 (guillemets et apostrophes typographiques, manifeste du modèle embarqué),
@@ -30,8 +31,8 @@ trois références fictives citées et une notice non citée. Les quatre citatio
 illustrent les groupes de références, les compléments de pages ou de chapitre
 et la forme narrative. Le modèle compose la bibliographie finale automatiquement.
 
-Ouvrir le fichier dans typstOgraphe ; aucun fichier bibliographique externe
-n’est nécessaire. Les scripts JSON de la CLI sont dans [cli/](cli/).
+Les scripts JSON de la CLI pour recréer des projets ouvrables dans Typstographe
+sont dans [cli/](cli/).
 
 Le courrier utilise les cibles et nœuds du contrat structuré courant : paragraphes
 explicites, métadonnées, gras, P.-S. et mention de pièce jointe. Depuis la racine :

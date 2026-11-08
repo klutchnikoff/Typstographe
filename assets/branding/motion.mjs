@@ -14,7 +14,7 @@ export function createLigatureAnimation(root) {
   const clip = root.querySelector("clipPath");
   const reveal = root.querySelector("[data-brand-reveal]");
   if (!camera || !letters || !ligature || !clip || !reveal)
-    throw new Error("Incomplete typstOgraphe brand scene");
+    throw new Error("Incomplete Typstographe brand scene");
   clip.id = `typstographe-reveal-${++nextClip}`;
   ligature.setAttribute("clip-path", `url(#${clip.id})`);
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");

@@ -5,6 +5,8 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { platforms, releasePlan } from './release-plan.mjs'
 
+const productName = 'Typstographe'
+
 function validate(version, commit) {
   releasePlan({ versions: [version], ref: 'refs/heads/packages', commit })
 }
@@ -29,7 +31,7 @@ export function bundleDirectory(root, id) {
 }
 
 export function assetName(version, id, extension) {
-  return `typstOgraphe-${version}-${id}${extension}`
+  return `${productName}-${version}-${id}${extension}`
 }
 
 export async function cleanBundles(root, id) {
@@ -47,7 +49,7 @@ export async function collect(root, id, version, commit) {
   for (const [format, extension] of selected.files) {
     const source = join(bundleDirectory(root, id), format)
     const candidates = (await readdir(source)).filter(
-      (name) => name.includes(`_${version}_`) && name.endsWith(extension),
+      (name) => name.startsWith(`${productName}_${version}_`) && name.endsWith(extension),
     )
     if (candidates.length !== 1)
       throw new Error(`Expected one ${format} installer for ${version}, found ${candidates.length}`)
@@ -98,7 +100,7 @@ export async function assemble(root, version, commit) {
   await mkdir(directory, { recursive: true })
   const files = records.sort((a, b) => a.name.localeCompare(b.name))
   for (const file of files) await copyFile(file.path, join(directory, file.name))
-  const manifestName = `typstOgraphe-${version}-manifest.json`
+  const manifestName = `${productName}-${version}-manifest.json`
   await writeFile(
     join(directory, manifestName),
     `${JSON.stringify(

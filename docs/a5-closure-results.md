@@ -98,7 +98,7 @@ recettes A.3 et conserve ses rapports. Un **seul candidat complet sans packaging
 est à lancer après la poussée finale, sous les trois systèmes, avec la suite
 navigateur exhaustive, les audits et le contrôle WebAssembly. La réussite
 locale ne remplace pas cette qualification : consulter le workflow
-[Validation complète](https://github.com/klutchnikoff/typstOgraphe/actions/workflows/exhaustive.yml).
+[Validation complète](https://github.com/klutchnikoff/Typstographe/actions/workflows/exhaustive.yml).
 Aucune réussite Windows/Linux ni aucun audit réseau récent n’est déduit des essais locaux.
 
 ### Problème de recette identifié et corrigé
@@ -122,7 +122,7 @@ atomique : un binaire chargé n’est pas tronqué par une construction suivante
 ### Suivi de la qualification distante — 31 octobre 2026
 
 La CI courante de `main` et la couverture ont réussi après la fusion A.5. En
-revanche, le [candidat complet `6cea25d`](https://github.com/klutchnikoff/typstOgraphe/actions/runs/41241229655)
+revanche, le [candidat complet `6cea25d`](https://github.com/klutchnikoff/Typstographe/actions/runs/41241229655)
 a échoué dans la recette A.5 : reprise d’une version sous Linux et pour Article
 sous macOS, annulation du lot MCP pour Article sous Windows. Les recettes A.3 de
 récupération et de publication ont **réussi sur les trois systèmes**. Les tests

@@ -6,7 +6,7 @@ le contrat courant ; les bilans liés conservent l’historique de sa mise en œ
 
 ## Représentation et moteur partagé
 
-- Le contrat appartient à typstOgraphe et porte sa version. Il reste proche des
+- Le contrat appartient à Typstographe et porte sa version. Il reste proche des
   structures ProseMirror utiles, sans exposer ses objets ni ses positions globales.
 - Yjs reste dans l'éditeur ; **Yrs est retenu côté Rust**, après
   [évaluation sur les structures réelles](../experiments/yrs-evaluation/README.md).

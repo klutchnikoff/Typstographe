@@ -6,7 +6,7 @@ modifiable sans changer les badges qui citent la notice. Typst assure la
 composition des citations et de la bibliographie ; le style reste une option
 du modèle (Chicago auteur–date, APA ou IEEE dans le modèle fourni).
 
-À l’export et dans chaque état CAS 16, `bibliography/references.yaml` est la seule
+À l’export et dans chaque état CAS 16 ou 17, `bibliography/references.yaml` est la seule
 bibliothèque active. Les profils de formulaire sont déduits du type et des
 parents Hayagriva. Les conteneurs inactifs sont conservés à part dans
 `bibliography/retained.json` et ne participent pas au rendu. Les originaux importés restent intacts dans

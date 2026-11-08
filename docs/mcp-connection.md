@@ -1,4 +1,4 @@
-# Raccordement MCP fixe à typstOgraphe
+# Raccordement MCP fixe à Typstographe
 
 > Référence historique antérieure au contrat structuré Tauri. Pour l’application
 > courante, voir l’[index documentaire](README.md) et le [contrat structuré](structured-contract.md).
@@ -19,7 +19,7 @@ Dans le client MCP, enregistrer un serveur **STDIO** :
 - arguments : `mcp`, `--attach-active`.
 
 Dans le prototype, le programme est par exemple
-`/Users/nicolas/Documents/git/typstOgraphe/target/debug/typstographe-cli`.
+`/Users/nicolas/Documents/git/Typstographe/target/debug/typstographe-cli`.
 **Édition → Assistance par un agent… → Copier la configuration MCP** fournit le
 JSON correspondant. Le programme voisin de l’application est utilisé s’il existe ;
 sinon `typstographe-cli` doit être dans le `PATH` du client, ou remplacé une fois
@@ -35,11 +35,11 @@ répertoire absolu.
 
 ## À chaque séance
 
-1. Ouvrir le courrier dans typstOgraphe.
+1. Ouvrir le courrier dans Typstographe.
 2. Ouvrir **Édition → Assistance par un agent…**, choisir les éventuels droits de
    sauvegarde/export, puis créer l’invitation pour ce document.
 3. Démarrer ou **reconnecter** le serveur MCP dans le client, sans modifier sa configuration.
-4. Travailler avec l’agent et accepter/refuser les propositions dans typstOgraphe.
+4. Travailler avec l’agent et accepter/refuser les propositions dans Typstographe.
 
 Le client doit être lancé/reconnecté après création de l’invitation. S’il démarre
 avant, il reçoit un message explicite : aucune invitation disponible. Il ne reste

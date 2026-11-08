@@ -156,7 +156,7 @@ La lecture du dépôt local citekeep inspire la séparation bibliothèque/projet
 la recherche projet avant bibliothèque, la copie d’une notice avant son usage,
 les clés locales stables et la résolution explicite des conflits. Son principe
 de bibliothèque centrale faisant autorité ne doit pas provoquer la mise à jour
-automatique d’un projet typstOgraphe : chaque projet reste un état autonome.
+automatique d’un projet Typstographe : chaque projet reste un état autonome.
 
 Son code conserve et modifie le BibTeX original en Python ; il n’est pas
 directement substituable à une bibliothèque Hayagriva Rust. Réutiliser ses

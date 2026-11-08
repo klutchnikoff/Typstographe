@@ -6,7 +6,7 @@ et ventile toute la chaîne jusqu’aux canvas. Il identifie la publication de
 toutes les pages comme priorité d’optimisation. Les corpus et le logiciel ont
 évolué : les deux études ne constituent pas une mesure directe de régression.
 
-La réactivité est un critère d’architecture de typstOgraphe. L’interface web doit
+La réactivité est un critère d’architecture de Typstographe. L’interface web doit
 être évaluée avec le vrai moteur Typst, le vrai transport Tauri et un affichage
 préparé avant publication. Un délai artificiel de développement ne doit pas
 fausser cette évaluation. Une mesure côté Rust ne représente pas à elle seule

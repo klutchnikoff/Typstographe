@@ -51,7 +51,7 @@ export async function publish(ctx, files, gh, notes) {
       '--verify-tag',
       '--draft',
       '--title',
-      `typstOgraphe ${ctx.tag}`,
+      `Typstographe ${ctx.tag}`,
       '--notes-file',
       notes,
     ]

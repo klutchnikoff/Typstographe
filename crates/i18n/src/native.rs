@@ -34,8 +34,8 @@ mod tests {
             (
                 "fr",
                 [
-                    "À propos de typstOgraphe",
-                    "Masquer typstOgraphe",
+                    "À propos de Typstographe",
+                    "Masquer Typstographe",
                     "Masquer les autres",
                     "Couper",
                     "Copier",
@@ -46,8 +46,8 @@ mod tests {
             (
                 "en",
                 [
-                    "About typstOgraphe",
-                    "Hide typstOgraphe",
+                    "About Typstographe",
+                    "Hide Typstographe",
                     "Hide Others",
                     "Cut",
                     "Copy",
@@ -58,8 +58,8 @@ mod tests {
             (
                 "ja",
                 [
-                    "About typstOgraphe",
-                    "Hide typstOgraphe",
+                    "About Typstographe",
+                    "Hide Typstographe",
                     "Hide Others",
                     "Cut",
                     "Copy",

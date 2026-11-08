@@ -58,7 +58,7 @@ export function shellDocuments(
     const title = documentTitle(state.path, provider.recoveredName)
     if (options.isTauri)
       void transport.invoke('set_window_title', {
-        title: state.active ? `${title}${state.dirty ? ' *' : ''}` : 'typstOgraphe',
+        title: state.active ? `${title}${state.dirty ? ' *' : ''}` : 'Typstographe',
       })
     layout.header.dataset.document = title
   }

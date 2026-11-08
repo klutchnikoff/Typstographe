@@ -56,7 +56,7 @@ pub fn install(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
             true,
             Some("CmdOrCtrl+Q"),
         )?;
-        let application = SubmenuBuilder::new(app, "typstOgraphe")
+        let application = SubmenuBuilder::new(app, "Typstographe")
             .about_with_text(&native.about, None)
             .separator()
             .text("ui.preferences", label("Préférences…"))

@@ -30,10 +30,14 @@ async function installers(root) {
       const directory = join(bundleDirectory(root, p.id), format)
       await mkdir(directory, { recursive: true })
       await writeFile(
-        join(directory, `typstOgraphe_${version}_fixture${extension}`),
+        join(directory, `Typstographe_${version}_fixture${extension}`),
         `installer for ${p.id} / ${format}`,
       )
-      await writeFile(join(directory, `typstOgraphe_0.0.9_old${extension}`), 'old cached build')
+      await writeFile(join(directory, `Typstographe_0.0.9_old${extension}`), 'old cached version')
+      await writeFile(
+        join(directory, `typstOgraphe_${version}_old${extension}`),
+        'old product name',
+      )
     }
     await collect(root, p.id, version, commit)
     await cp(
@@ -116,13 +120,13 @@ test('Cargo, npm and Tauri versions are read from the real repository without co
   assert.doesNotThrow(() => releasePlan({ ...tagged, versions, ref: 'refs/heads/test' }))
 })
 
-test('collection ignores old versions and assembly verifies all four real file hashes', async (t) => {
+test('collection ignores old names and versions and assembly verifies the four hashes', async (t) => {
   const root = await temporary(t)
   await installers(root)
   const files = await assemble(root, version, commit)
   assert.equal(files.length, 6)
   const manifest = JSON.parse(
-    await readFile(join(root, 'output/release', `typstOgraphe-${version}-manifest.json`)),
+    await readFile(join(root, 'output/release', `Typstographe-${version}-manifest.json`)),
   )
   assert.equal(manifest.commit, commit)
   assert.equal(manifest.files.length, 4)
@@ -130,6 +134,7 @@ test('collection ignores old versions and assembly verifies all four real file h
     new Set(manifest.files.map((f) => f.platform)),
     new Set(platforms.map((p) => p.id)),
   )
+  for (const file of manifest.files) assert.ok(file.name.startsWith(`Typstographe-${version}-`))
   const sums = await readFile(join(root, 'output/release/SHA256SUMS'), 'utf8')
   for (const file of manifest.files) assert.ok(sums.includes(`${file.sha256}  ${file.name}\n`))
 })
@@ -140,11 +145,11 @@ test('missing, duplicate, empty and symlinked installers cannot be collected', a
   const directory = join(bundleDirectory(root, id), 'nsis')
   await mkdir(directory, { recursive: true })
   await assert.rejects(collect(root, id, version, commit), /Expected one/)
-  const file = join(directory, `typstOgraphe_${version}_x64-setup.exe`)
+  const file = join(directory, `Typstographe_${version}_x64-setup.exe`)
   await writeFile(file, '')
   await assert.rejects(collect(root, id, version, commit), /empty/)
   await writeFile(file, 'installer')
-  const duplicate = join(directory, `typstOgraphe_${version}_other-setup.exe`)
+  const duplicate = join(directory, `Typstographe_${version}_other-setup.exe`)
   await writeFile(duplicate, 'duplicate')
   await assert.rejects(collect(root, id, version, commit), /found 2/)
   await rm(duplicate)
@@ -210,7 +215,7 @@ test('a missing release creates a draft; retries keep its notes and only upload 
       '--verify-tag',
       '--draft',
       '--title',
-      `typstOgraphe ${ctx.tag}`,
+      `Typstographe ${ctx.tag}`,
       '--notes-file',
       'notes.md',
     ],

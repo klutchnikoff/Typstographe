@@ -201,13 +201,13 @@ badge de citation ou de note ne peut donc pas masquer les changements voisins.
 Les marques visuelles `del` / `ins` ne rejoignent ni Yjs ni le contenu enregistré.
 
 Les paquets appartiennent au catalogue figé de la version installée de
-typstOgraphe, pas à l’historique documentaire. La comparaison ignore les
+Typstographe, pas à l’historique documentaire. La comparaison ignore les
 différences de leurs copies transportées ; préparer une reprise résout les
 bibliothèques du modèle dans ce catalogue. Annuler/Rétablir ne change pas leurs
 versions et aucun jeton de paquet n’est ajouté à Yjs. Les deux aperçus emploient
 les mêmes bibliothèques applicatives avec leurs propres modèles et ressources.
 On garantit l’état documentaire, pas un PDF identique entre versions de
-typstOgraphe. Voir le [contrat des dépendances](typst-dependencies.md).
+Typstographe. Voir le [contrat des dépendances](typst-dependencies.md).
 
 Les comparaisons et leurs choix sont temporaires, hors `.typsto` et hors des
 snapshots. La récupération des choix de composition n’est pas ajoutée par ce lot.
