@@ -409,6 +409,34 @@ Ajouter validation/import, provenance, retrait, aperçu et remplacement explicit
 Pour chaque type livré : modèle neutre utile, corpus de test, export hors ligne
 et changement de modèle sans modification du contenu.
 
+**Corpus Typst à évaluer — décision du 6 novembre 2026 :** voir les
+[projets et leurs usages](ROADMAP.md#modèles-typst-à-évaluer) : LaPreprint,
+IEEE pour MyST, Plain Typst Book, Letterloom et Quire. Leur examen doit servir
+à la réutilisation des mises en page et à la qualification des contrats communs,
+sans promettre toutes les fonctionnalités de chaque paquet.
+
+- Établir pour chaque candidat la correspondance entre notre signature de type
+  et celle de la fonction Typst : auteurs/affiliations, localisations, ressources,
+  dates, bibliothèque bibliographique et capacités du corps. Les fonctions de
+  présentation restent dans le modèle ; toute donnée ou capacité nouvelle exige
+  un contrat explicite. Qualifier les pertes et incompatibilités avant adoption.
+- Préserver une interface éditoriale stable pour Typstographe. Sa réutilisation
+  directe en Typst serait un bonus issu de cette architecture, sans livraison
+  distincte ni critère de sortie supplémentaire pour D.
+  L’adaptation des signatures appartient au créateur du modèle. Éviter toute
+  duplication des données ou dépendance des documents aux signatures internes
+  de Quire, LaPreprint ou des autres bibliothèques ; conserver les primitives
+  Typst simples et les régimes libre/restreint/imposé du manifeste.
+- Séparer noyau Typst et adaptation MyST ; évaluer l’appel direct du noyau avant
+  toute intégration de la chaîne MyST. Épingler sources, paquets et ressources,
+  inventorier licences et polices, puis compiler sans accès réseau.
+- Tester les résumés multilingues et dates éditoriales de LaPreprint, les
+  contraintes du modèle IEEE, les conventions anglaises de Letterloom et les
+  structures de documents longs de Quire/Plain Typst Book. Pour Quire, qualifier
+  français, polices, dates via notre wrapper Datify et les éventuelles capacités
+  theorion/codly ; les signatures multiples ou pièces incorporées de Letterloom
+  restent des extensions à décider, distinctes de nos P.J. par mentions.
+
 **Accessibilité des exports (C/D) :** partager les diagnostics de description
 d’image entre les adaptateurs ; conserver et récupérer les brouillons incomplets,
 mais bloquer leur export accessible tant que la description manque. Activer les
@@ -443,6 +471,35 @@ contextuelle, sans maintenir sa propre liste de capacités. Ses résultats
 excluent les capacités étrangères au type actif ; les commandes générales de
 l’application restent accessibles. Vérifier également les résultats de palette
 lors du passage courrier → article → courrier.
+
+**E.2 — simplification des surfaces contextuelles, en-têtes et modales (8 novembre 2026) :**
+le [cadrage détaillé](docs/interface-simplification.md) découpe les interactions de
+l’éditeur en trois composants proportionnés à la tâche, en remplacement du bandeau
+interligne unique employé pour toutes les micro-actions :
+
+- **Menu contextuel d’objet (popover HTML flottant)** : ouvert au clic gauche sur les
+  poignées (`.table-handle`, boutons `⋯`, icône de bloc), au clavier (`Mod+.` / touche
+  Menu) et au clic droit ciblé sur `.spelling-error`, `.inline-object`, `.table-handle`
+  et `.widget-bar`. Sur la prose courante, `contextmenu` n’est pas intercepté afin de
+  préserver le menu natif WebKit/OS (*Copier/Coller* sans alerte de permission
+  presse-papiers, *Look Up / Dictionnaire*, *Traduire*) et de garder le même composant
+  entre Tauri et `browser-test`.
+- **Pop-up flottant de sélection/saisie avec recherche floue (*fuzzy*)** : ancré sous le
+  curseur ou le badge pour les renvois internes (score *fuzzy* sur alias `eq:`, libellé
+  résolu `ResolvedReference.display`, type et intitulé) et les citations (score *fuzzy*
+  sur `key`, `authors`, `year` et `title`). `Entrée` ou clic insère directement le badge
+  dans le cas nominal ; le bouton `+` ou le clic sur un badge existant expose la
+  multi-citation, les suppléments de page et les composantes de renvoi.
+- **Actions réversibles directes et allègement des blocs** : suppression directe des
+  blocs à la corbeille et suppression en deux temps (`Backspace` sélectionne puis
+  `Backspace` supprime) des badges inline, appuyées sur l’historique Yrs (`Cmd/Ctrl+Z`)
+  sans bandeau de confirmation ; masquage de la roue dentée sur les blocs sans paramètres
+  externes et retrait du doublon `alias` dans les propriétés de `mathBlock`.
+- **Désimbrication des modales et unification des métadonnées** : intégrer la recherche
+  en ligne (`bibliography-online.ts`) et la revue d’acquisition
+  (`bibliography-review-dialog.ts`) comme vues internes de `#bibliography-manager` (aucune
+  `<dialog>` empilée sur une autre `<dialog>`), harmoniser l’édition des collections dans
+  `metadata-collections.ts` et afficher la palette de commandes en overlay centré.
 
 **Séparation validée le 27 octobre 2026 :** l’accès **Projets** présente le
 catalogue global (récents, épinglés, recherche, création et ouverture) ; l’accès

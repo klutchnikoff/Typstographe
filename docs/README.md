@@ -10,7 +10,7 @@ les décisions, mesures et limites des étapes livrées.
 - [Guide de développement](../app/README.md) : prérequis, lancement, constructions
   normales et recettes isolées, commandes de vérification.
 - [CLI](cli.md), [MCP autonome](mcp.md), [MCP rattaché à Tauri](mcp-local.md),
-  [découverte MCP progressive](mcp-discovery.md).
+  [découverte MCP progressive](mcp-discovery.md), [retour d’expérience MCP](mcp-experience-feedback.md).
 - [Exemples](../examples/README.md) et [politique de CI](ci.md).
 - [Installateurs et releases en brouillon](releases.md) — procédure H.1 et limites de diffusion.
 - [Feuille de route produit](../ROADMAP.md) et [plan technique](../ROADMAP-ARCHITECTURE.md).
@@ -24,7 +24,7 @@ les décisions, mesures et limites des étapes livrées.
 | Cibles, texte, structures et contextes | [Commandes structurées](structured-commands.md), [contextes privés](structured-editing-contexts.md), [transformations](a2-transformations-inventory.md) |
 | Projet autonome et Versions | [Format CAS 17 et lecture CAS 16](a4-project-format.md), [comparateur et validation contextualisée](a4-comparison-contract.md) |
 | Conservation et récupération | [Contrat de conservation](a3-conservation.md), [parcours de reprise](a3-recovery-interface.md) |
-| Éditeur et interactions | [Zones riches](rich-zones.md), [widgets/bandeaux](editor-widgets.md), [navigation clavier](keyboard-navigation.md), [dialogues](metadata-dialogs.md), [retours/jointures](paragraph-join.md) |
+| Éditeur et interactions | [Zones riches](rich-zones.md), [widgets/bandeaux](editor-widgets.md), [simplification E.2](interface-simplification.md), [navigation clavier](keyboard-navigation.md), [dialogues](metadata-dialogs.md), [retours/jointures](paragraph-join.md) |
 | Catalogue des usages | [Groupes, types et fiches](document-type-catalogue.md) |
 | Types, modèles et bibliographie | [Article](article-contract.md), [citations et bibliographie](article-bibliography.md), [dépendances Typst et wrappers](typst-dependencies.md) |
 | Déclarations de types | [Contrat YAML et raccordement des types actifs](type-definitions.md), [schéma du manifeste](schemas/type-definition.schema.json) |

@@ -488,6 +488,42 @@ fictif, les brouillons, les réponses tardives et le clavier sans captures.
 - Vérifier les conventions typographiques et les langues sur des exemples réels ;
   garder leur composition dans Typst et les règles de modèles.
 
+### Modèles Typst à évaluer
+
+**Orientation retenue le 6 novembre 2026 :** réutiliser des modèles existants
+et les employer comme corpus pour éprouver nos types, structures d’en-tête et
+capacités. L’évaluation ne vaut pas sélection ni engagement à intégrer toutes
+leurs fonctionnalités.
+
+| Projet | Usage et points à examiner |
+| --- | --- |
+| [LaPreprint](https://github.com/myst-templates/lapreprint-typst) | Premier candidat pour Article : auteurs/affiliations, ORCID, résumés multiples, titre court, mots-clés et bibliographie ; examiner les besoins en DOI, dates éditoriales et informations marginales. |
+| [IEEE pour MyST](https://github.com/myst-templates/ieee-typst-template) | Article sous contraintes éditoriales : inspecter les signatures et la mise en page, puis qualifier les options imposées et le changement de modèle depuis un article de travail. |
+| [Plain Typst Book](https://github.com/myst-templates/plain_typst_book) | Référence pour Livre et Mémoire/thèse : couverture, préface, sommaire, chapitres et numérotation des figures/équations par chapitre. |
+| [Letterloom pour MyST](https://github.com/stefanv/myst-typst-letterloom), fondé sur [Letterloom](https://typst.app/universe/package/letterloom/) | Courrier de présentation anglaise ; comparer les champs expéditeur/destinataire, date, signature et pièces jointes. Examiner séparément les signatures multiples et l’incorporation de pièces, au-delà de nos mentions de P.J. actuelles. |
+| [Quire](https://typst.app/universe/package/quire), [sources](https://github.com/mariovagomarzal/quire) | Candidat prioritaire à évaluer pour les documents longs, également utilisable pour articles et rapports : parties/chapitres/sections, modes papier/écran, pages liminaires, résumés multilingues, annexes ; examiner les environnements scientifiques et le code via theorion/codly. |
+
+Commencer l’évaluation par LaPreprint pour Article, puis Letterloom et IEEE ;
+comparer Quire et Plain Typst Book pour préparer les types de documents longs.
+Pour chacun, distinguer présentation relevant du modèle, données nécessitant
+une structure du type et contenus nécessitant une capacité commune. Étendre
+ces contrats ensemble avant de développer les fonctions manquantes.
+
+L’auteur doit conserver des données et des fonctions stables lorsqu’il change
+de modèle au sein d’un même type. Le créateur du modèle prend en charge
+l’adaptation à la bibliothèque Typst sous-jacente. L’utilisation directe de ces
+conventions en Typst serait un bénéfice naturel de l’architecture de Typstographe,
+sans chantier autonome ni critère de livraison supplémentaire pour D.
+Préserver les primitives natives simples, sans wrappers inutiles.
+Une adaptation ne doit pas perdre silencieusement les informations du document.
+
+Examiner les fonctions Typst sous-jacentes et les adaptateurs MyST séparément,
+sans présumer que la chaîne MyST doit être intégrée. Qualifier compilation avec
+notre version épinglée de Typst, dépendances, polices, langues, licences et export
+hors ligne. Pour Quire, vérifier notamment l’ajout du français et la fourniture
+ou le remplacement des polices non embarquées ; réutiliser notre gestion des
+dates avec Datify. Épingler les versions retenues et conserver leur provenance.
+
 **Choix à valider :** format des paquets installables, extensions du manifeste
 `model.yaml` livré en B.1 et paramètres propres aux modèles,
 polices et licences d’incorporation, import, stockage et politique de mise à jour.
@@ -520,6 +556,30 @@ validé sur la recette représentative de chaque modèle livré.
   palette de commandes : ses propositions ne contiennent que les capacités du
   type actif, avec la même distinction entre absence du type et indisponibilité
   contextuelle. Les commandes générales de l’application restent accessibles.
+- **E.2 — simplification et fluidification des interactions — cadré le 8 novembre 2026 (prioritaire) :**
+  réduire le nombre de clics, les sauts de mise en page et l’empilement de
+  sous-fenêtres selon le [plan de simplification E.2](docs/interface-simplification.md),
+  à mener par lots courts validés sur maquette avant les extensions lourdes de D, F et J :
+  1. **Trois surfaces contextuelles distinctes** : remplacer les bandeaux interlignes
+     systématiques par un **menu contextuel d’objet** (popover flottant d’actions directes
+     pour orthographe, poignées de tableaux, conversions de listes et options de blocs),
+     un **pop-up de sélection/saisie** (recherche floue *fuzzy* et insertion en 1 geste
+     sur `Entrée`/clic pour citations, renvois internes et liens), et réserver le
+     **bandeau pleine largeur** à la rédaction longue (notes de bas de page).
+  2. **Politique de clic droit (`contextmenu`)** : conserver le menu natif WebKit/OS sur
+     la prose courante (*Copier/Coller, Dictionnaire, Traduire*) et ouvrir le popover
+     applicatif uniquement au clic droit sur les objets et annotations Typstographe
+     (`.spelling-error`, `.inline-object`, `.table-handle`, `.widget-bar`), ainsi qu’au
+     clic gauche sur les poignées et boutons `⋯`.
+  3. **Suppression directe annulable et nettoyage des blocs** : supprimer directement les
+     blocs au clic sur la corbeille (et les badges en ligne en deux temps `Backspace` × 2)
+     avec annulation par `Cmd/Ctrl+Z`, masquer les roues dentées désactivées en permanence
+     et retirer le doublon d’alias sur `mathBlock`.
+  4. **Désimbrication des modales et harmonisation de l’en-tête** : intégrer la recherche
+     bibliographique en ligne et la revue d’acquisition comme vues internes du gestionnaire
+     unique (sans `<dialog>` empilées), supprimer l’étape tremplin vide de l’onglet
+     *Bibliographie*, unifier le modèle d’édition des collections de métadonnées et
+     centrer la palette de commandes.
 - Revoir les parcours réels : accueil, création, en-tête, rédaction, recherche,
   sélection, correction, insertion, sauvegarde et export.
 - Achever l’harmonisation des widgets et bandeaux : même cadre et mêmes règles
