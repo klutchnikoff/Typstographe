@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/bibliography", "crates/core", "crates/i18n", "crates/cli", "crates/mcp", "app/src-tauri"]
+members = ["crates/bibliography-sources", "crates/bibliography", "crates/core", "crates/i18n", "crates/cli", "crates/mcp", "app/src-tauri"]
 default-members = ["app/src-tauri"]
 resolver = "3"
 
@@ -19,6 +19,9 @@ strsim = "=0.11.1"
 typstographe-mcp = { path = "crates/mcp" }
 typstographe-core = { path = "crates/core" }
 typstographe-bibliography = { path = "crates/bibliography" }
+typstographe-bibliography-sources = { path = "crates/bibliography-sources" }
+reqwest = { version = "=0.13.5", default-features = false, features = ["native-tls", "query", "system-proxy"] }
+roxmltree = "=0.21.1"
 typstographe-i18n = { path = "crates/i18n" }
 resvg = { version = "=0.47.0", default-features = false }
 unicode-segmentation = "1.13"

@@ -99,9 +99,11 @@ class CIPlanTests(unittest.TestCase):
     def test_shared_bibliography_engine_selects_the_bibliography_recipe(self):
         for source in ["crates/bibliography/src/import.rs", "crates/bibliography/src/search.rs",
                        "app/src/bibliography-manager.ts", "app/src/bibliography-fields.ts",
-                       "crates/core/src/bibliography.rs", "crates/core/src/content/api/bibliography.rs"]:
+                       "crates/core/src/bibliography.rs", "crates/core/src/content/api/bibliography.rs",
+                       "crates/core/src/bibliography/editions.rs", "crates/bibliography-sources/src/client.rs",
+                       "fixtures/bibliography/online/cairn-results.json"]:
             self.assertEqual(planner.browser_recipes([source]),
-                             ["tests/browser/bibliography.spec.ts"])
+                             ["tests/browser/bibliography-online.spec.ts", "tests/browser/bibliography.spec.ts"])
 
     def test_resource_contract_changes_cover_metadata_and_recovery(self):
         for source in ["crates/core/src/resources.rs", "app/src/metadata-resource.ts"]:

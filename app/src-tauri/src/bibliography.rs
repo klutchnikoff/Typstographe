@@ -65,3 +65,20 @@ pub fn bibliography_query(
     api::query_state(&state, &Default::default(), &operation, &params)
         .map_err(|e| CommandError::from(api::content_error(e)))
 }
+
+/// Explicit specialised acquisition with generic DOI fallback; no session lock or documentary publication.
+#[tauri::command]
+pub async fn bibliography_online(
+    request: typstographe_bibliography_sources::Search,
+) -> typstographe_bibliography_sources::Results {
+    use std::sync::OnceLock;
+    use typstographe_bibliography_sources::{Client, Error, Results};
+    static CLIENT: OnceLock<Result<Client, Error>> = OnceLock::new();
+    match CLIENT.get_or_init(Client::new) {
+        Ok(client) => client.search(request).await,
+        Err(error) => Results {
+            candidates: vec![],
+            issues: vec![error.clone()],
+        },
+    }
+}

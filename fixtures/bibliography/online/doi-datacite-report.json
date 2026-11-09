@@ -1,0 +1,19 @@
+{
+  "type": "report",
+  "id": "https://doi.org/10.5284/1015681",
+  "categories": ["Archaeology", "Grey Literature"],
+  "language": "en",
+  "author": [
+    {
+      "literal": "Archaeological Project Services"
+    }
+  ],
+  "issued": {
+    "date-parts": [[1995]]
+  },
+  "DOI": "10.5284/1015681",
+  "publisher": "Archaeology Data Service",
+  "title": "Excavation of a Romano-British Cemetery at the water treatment plant, Saltersford, Grantham, Lincolnshire",
+  "URL": "http://archaeologydataservice.ac.uk/archives/view/greylit/details.cfm?id=13979",
+  "copyright": "ADS Terms and Conditions apply to reuse"
+}

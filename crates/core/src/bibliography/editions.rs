@@ -55,6 +55,9 @@ pub enum Change {
         preparation: Fingerprint,
         #[serde(default)]
         decisions: Vec<Decision>,
+        /// Private form corrections over the complete prepared set. IDs and provenance are immutable.
+        #[serde(default)]
+        reviewed: Option<Vec<Record>>,
     },
 }
 pub fn metadata<'a>(
@@ -88,6 +91,41 @@ pub fn prepare(source: SourceInput) -> Result<bib::PreparedImport, Error> {
         .unwrap()
     })
     .map_err(Error::bibliography)
+}
+/// Apply explicit form corrections to a private preparation, preserving source and identity.
+pub fn reviewed(
+    mut prepared: bib::PreparedImport,
+    records: Option<&[Record]>,
+) -> Result<bib::PreparedImport, Error> {
+    if let Some(records) = records {
+        if records.len() != prepared.records.len() {
+            return Err(problem(
+                bib::Code::InvalidDecision,
+                "Review must preserve the prepared record set",
+            ));
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        for record in records {
+            let original = prepared
+                .records
+                .iter()
+                .find(|r| r.id() == record.id())
+                .ok_or_else(|| {
+                    problem(
+                        bib::Code::InvalidIdentity,
+                        "Reviewed record is not in this preparation",
+                    )
+                })?;
+            if !seen.insert(record.id()) || record.provenance() != original.provenance() {
+                return Err(problem(
+                    bib::Code::InvalidIdentity,
+                    "Review must preserve identities and immutable source provenance",
+                ));
+            }
+        }
+        prepared.records = records.to_vec();
+    }
+    Ok(prepared)
 }
 pub fn plan(library: &Library, prepared: &bib::PreparedImport) -> Result<ImportPlan, Error> {
     let mut incoming = vec![];
@@ -136,6 +174,7 @@ pub fn apply(
             source,
             preparation,
             decisions,
+            reviewed: corrections,
         } => {
             let prepared = prepare(source.clone())?;
             if &prepared.fingerprint() != preparation {
@@ -155,6 +194,7 @@ pub fn apply(
                     "Import sources are immutable",
                 ));
             }
+            let prepared = reviewed(prepared, corrections.as_deref())?;
             records = plan(&base, &prepared)?
                 .resolve(decisions)
                 .and_then(|p| p.apply(&base))

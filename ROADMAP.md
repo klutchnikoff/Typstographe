@@ -197,8 +197,10 @@ les primitives natives simples n’ont pas besoin d’un wrapper systématique.
 ### Lots validés le 3 novembre 2026 — après les contrats de B.1
 
 B.1 est clôturé. L’ordre de réalisation validé est désormais
-**C.1 → C.2 → C.3 → consolidation frontend / E.1 → C.4**, à partir des contrats
-préparatoires consignés en B.1. C.1, le premier périmètre de C.2 et C.3 sont
+**C.1 → C.2 → C.3 → consolidation frontend / E.1**, à partir des contrats
+préparatoires consignés en B.1. **Décision du 6 novembre 2026 : C.4 est différé**
+et retiré de l’ordre de réalisation immédiat. La bibliothèque du projet couvre
+le besoin actuel ; la bibliothèque personnelle n’est pas un préalable à la suite. C.1, le premier périmètre de C.2 et C.3 sont
 implémentés et vérifiés localement. C.3 comprend le gestionnaire compact complet,
 les profils natifs Hayagriva et le **CAS 16** ; sa fusion reste soumise à la CI
 et à la recette utilisateur. E.1 précède les extensions plus lourdes de D, F et J.
@@ -362,19 +364,26 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    de type sans perdre champs, conteneurs inactifs, provenance ou citations.
    Publier une édition gardée et annulable, avec les mêmes règles dans les
    adaptateurs et les exports.
-4. **C.4 — Bibliothèque bibliographique personnelle.** Recherche projet d’abord,
-   bibliothèque personnelle ensuite ; copier la notice dans le projet lors de
-   l’insertion. Échanges et corrections explicites, identités et clés stables,
-   conflits soumis à décision, aucune mise à jour silencieuse des documents.
-   Réutiliser le gestionnaire avec un choix Projet/Bibliothèque personnelle.
-   Réutiliser aussi la crate de C.3 et son corpus : ajouter le stockage personnel
-   et les échanges à révisions propres, sans second moteur de rapprochement.
+4. **C.4 — Gestion bibliographique personnelle et échanges avec les projets — différé, P3.**
+   **Décision du 6 novembre 2026 :** conserver pour l’instant la seule bibliothèque
+   locale au projet, autonome dans le `.typsto`. Aucun stockage central ni
+   mécanisme de synchronisation personnelle n’est ajouté.
+   Réexaminer ce lot lorsqu’un véritable outil de gestion bibliographique
+   personnelle dans typstOgraphe répondra à un besoin d’usage identifié.
+   Son périmètre comprendra alors le catalogue personnel, la recherche et
+   l’édition des notices, la conservation et les échanges avec les projets.
+   Réutiliser la crate, le gestionnaire et le corpus C.3 ; Citekeep reste une
+   référence pour les règles de rapprochement et les parcours, sans second moteur.
+   **Choix restant ouverts :** stockage (SQLite n’est qu’une proposition),
+   identités et révisions d’échange, conservation/sauvegarde, autorité des notices,
+   différences locales et conflits entre bibliothèques de collaborateurs.
+   Le statut de « vue matérialisée » et la synchronisation bidirectionnelle
+   n’ont pas été validés ; reprendre ces décisions ensemble avant toute implémentation.
 
-La séparation bibliothèque personnelle/projet et les garanties de Citekeep
-servent de référence de conception. Les règles seront portées une seule fois
-dans la crate Rust commune ; le moteur Python et son stockage BibTeX ne sont
-pas retenus. Le stockage personnel reste à décider en C.4. Chaque projet reste
-autonome et utilisable hors ligne, indépendamment de cette bibliothèque.
+Les garanties de rapprochement inspirées de Citekeep sont déjà portées dans la
+crate Rust commune. Le moteur Python et son stockage BibTeX ne sont pas retenus.
+Chaque projet conserve sa bibliothèque, son gestionnaire et ses exports autonomes,
+utilisables hors ligne, indépendamment d’une future bibliothèque personnelle.
 
 **Choix à valider :** périmètre par capacité, paramètres, contenus et imbrications
 autorisés, saisie, clavier et cibles MCP ; fonctions natives ou paquet externe.
@@ -382,9 +391,55 @@ autorisés, saisie, clavier et cibles MCP ; fonctions natives ou paquet externe.
 **Sortie :** insertion, édition, annulation, sauvegarde/réouverture et exports
 vérifiés, avec la même disponibilité dans les interfaces qui exposent la capacité.
 
+### C.5 — Recherche bibliographique en ligne — organisation révisée le 7 novembre 2026
+
+**Priorité P1, indépendante de C.4 différé.** Recherche par auteur/titre via
+les sources spécialisées qui la proposent, d’abord zbMATH Open. Pour un DOI,
+interroger les sources spécialisées appropriées (Cairn OAI, zbMATH), puis utiliser
+la négociation de contenu de `doi.org` seulement si aucune notice n’est obtenue.
+D’autres connecteurs spécialisés pourront compléter cette chaîne.
+
+- Retirer le connecteur Crossref et son choix dans l’interface. Crossref peut
+  répondre derrière le résolveur DOI, au même titre que DataCite ou une autre
+  agence compatible ; aucun endpoint Crossref de recherche n’est conservé.
+- Le repli DOI porte sur un identifiant connu, pas sur une recherche par texte.
+  Il intervient après absence, échec ou réponse invalide des sources spécialisées.
+  Une notice spécialisée partielle reste vérifiable sans remplacement automatique.
+  Les échecs partiels et l’origine des résultats restent visibles.
+- Cairn reste ciblé par DOI, identifiant ou URL exploitable. Une URL sans
+  identifiant nécessite un DOI dans ses métadonnées publiques ; à défaut,
+  demander le DOI ou l’identifiant Cairn. Aucun contournement d’une page protégée,
+  index local du catalogue, moissonnage ni recherche générale Cairn.
+- Les compléments de publication de Cairn passent aussi par le résolveur DOI.
+  Ils complètent le type/contenant, sans remplacer les champs propres de la
+  notice OAI. La provenance de cet enrichissement reste explicite.
+- Recherche locale conservée ; appels en ligne explicites, bornés et asynchrones.
+  Une réponse obsolète ne peut remplacer une nouvelle recherche ou un brouillon.
+- Collecteurs séparés de la crate bibliographique pure et du cœur documentaire.
+  Réutiliser les conversions et validations existantes vers Hayagriva ; conserver
+  la source d’import convertie, distincte de la notice corrigée, sans prétendre
+  archiver la réponse brute du fournisseur.
+- Formulaire commun avant ajout, diagnostics et rapprochement existants,
+  annulation sans édition. « Ajouter » / « Ajouter et citer » publie un lot
+  gardé, annulable et récupérable. Sauvegarde et export autonomes hors ligne.
+- Qualification : priorité spécialisée, absence de repli après succès partiel,
+  repli après absence/erreur, DOI erroné, redirections bornées, erreurs/délais,
+  recherche par auteur, provenance, clavier, conflits, récupération et export.
+  Le DOI Cairn `10.3917/dbu.jorro.2022.01.0155` distingue « Émancipation »
+  (Cairn) du titre d’ouvrage erroné fourni par le service DOI générique.
+- Commits locaux uniquement ; aucune poussée et aucun déclenchement de CI GitHub.
+
+La révision est **implémentée et vérifiée localement le 7 novembre 2026** :
+20 tests des collecteurs, tests frontend et Fluent, recettes Chromium/WebKit,
+essais réels Cairn, zbMATH et repli vers DataCite. Le connecteur Crossref et
+la résolution de catalogue par ISBN sont retirés. Les opérations de
+publication CLI/MCP restent sur le contrat commun, sans nouveau collecteur réseau
+exposé par ces adaptateurs. Le CAS reste 16 ; C.4 personnel demeure différé.
+Voir le [contrat et la qualification](docs/c5-online-bibliography.md).
+
 ### Consolidation frontend et E.1 — 6 novembre 2026
 
-Avant C.4, séparer les responsabilités des contrôleurs existants : rendu et
+Consolidation livrée après C.3 : séparer les responsabilités des contrôleurs existants : rendu et
 liaisons des champs d’en-tête, liste bibliographique et navigation, requêtes
 asynchrones liées à une génération documentaire, préparation pure des lots,
 puis orchestration des formulaires et de leur récupération. Réutiliser les
@@ -669,6 +724,10 @@ un document utile et retrouve son travail, sans lire le dépôt ni installer Rus
 
 ## I — Extensions à réexaminer après les premiers usages
 
+- **C.4 — Gestion bibliographique personnelle : différée.** Réexaminer avec un
+  besoin réel de catalogue personnel et de réutilisation entre projets, selon le
+  périmètre et les choix encore ouverts consignés dans C.4.
+
 - Correction grammaticale locale : orientation LanguageTool avec runtime Java
   embarqué, processus persistant et API HTTP officielle sur la boucle locale ;
   mesurer mémoire, démarrage et pertinence avant intégration.
@@ -737,17 +796,13 @@ droits en collaboration, parcours de saisie sur maquette avec de vrais relecteur
 **Sortie :** un article relu par deux personnes et un agent, suggestions
 acceptées ou refusées, aperçu corrigé compilé, sans modification directe du texte.
 
-## Prochain lot proposé
+## Prochain lot engagé
 
-**C.4 — Bibliothèque bibliographique personnelle**, après qualification du lot
-frontend / E.1 et de C.3 (gestionnaire complet, profils natifs, CAS 16).
+**C.5 — Recette utilisateur de l’acquisition vérifiée de notices.** Implémentation
+locale et vérifications automatisées terminées pour zbMATH, Cairn ciblé et le
+repli DOI générique ; valider le parcours dans l’application. C.4 reste
+différé. C.3/CAS 16 et E.1 fournissent le gestionnaire, le moteur et les garanties
+à réutiliser. Commits locaux uniquement tant que la CI GitHub est indisponible.
 
-1. Valider ensemble le stockage personnel, ses révisions, les échanges explicites
-   avec les projets et la maquette Projet/Bibliothèque personnelle.
-2. Réutiliser la crate, le corpus de rapprochement et le gestionnaire C.3 ;
-   aucune seconde implémentation des identités ou de la fusion des notices.
-3. Évaluer progressivement les modèles de D sur leur corpus, après E.1 ; les
-   chantiers F (ACP) et J (relecture) conservent leurs validations propres.
-
-Les tests locaux ne remplacent pas la qualification CI avant fusion ni la
-recette utilisateur. Aucun choix encore ouvert de C.4 n’est implémenté d’avance.
+La suite (modèles de D, autres besoins C/E ou maquette ACP de F) sera choisie
+ensemble. Les tests locaux ne remplacent pas la qualification CI avant fusion.

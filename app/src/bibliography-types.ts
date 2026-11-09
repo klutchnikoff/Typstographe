@@ -71,6 +71,7 @@ export interface Report {
   }
 }
 export interface Draft {
+  acquisition?: import('./bibliography-acquisition').Acquisition
   working: Notice
   profile: string
   profiles: string[]

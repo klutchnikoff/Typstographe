@@ -2,7 +2,7 @@
   "entries": [
     {
       "batch_step": true,
-      "description": "Publish one guarded native-library change in memory, never save. expected is the library fingerprint from bibliography.inspect. Edit, replace, rename and remove also require the record fingerprint from bibliography.record. Edit profile changes native type/parents; no independent genre is stored. Replace accepts a prepared native record while preserving identity/provenance, including retained inactive parents. Import requires the reviewed preparation fingerprint and explicit same/distinct/skip decisions; unresolved plans are refused. Use one atomic batch with inline.replace for create-and-cite. Undo restores notices, citations and provenance together.",
+      "description": "Publish one guarded native-library change in memory, never save. expected is the library fingerprint from bibliography.inspect. Edit, replace, rename and remove also require the record fingerprint from bibliography.record. Edit profile changes native type/parents; no independent genre is stored. Replace accepts a prepared native record while preserving identity/provenance, including retained inactive parents. Import requires the original preparation fingerprint and explicit same/distinct/skip decisions; optional reviewed records carry private form corrections while preserving the entire prepared identity/provenance set; unresolved plans are refused. Use one atomic batch with inline.replace for create-and-cite. Undo restores notices, citations and provenance together.",
       "family": "edit",
       "id": "bibliography.apply",
       "params_schema": {
@@ -167,6 +167,14 @@
                   },
                   "preparation": {
                     "$ref": "#/$defs/Fingerprint"
+                  },
+                  "reviewed": {
+                    "default": null,
+                    "description": "Private form corrections over the complete prepared set. IDs and provenance are immutable.",
+                    "items": {
+                      "$ref": "#/$defs/BibliographicRecord"
+                    },
+                    "type": ["array", "null"]
                   },
                   "source": {
                     "$ref": "#/$defs/SourceInput"
@@ -384,6 +392,19 @@
             "pattern": "^[0-9a-f]{64}$",
             "type": "string"
           },
+          "FormScope": {
+            "oneOf": [
+              {
+                "enum": ["project"],
+                "type": "string"
+              },
+              {
+                "const": "import",
+                "description": "Private import review: key collisions belong to the import plan, not form decoding.",
+                "type": "string"
+              }
+            ]
+          },
           "Profile": {
             "description": "Editing views derived exclusively from the active native entry and its parents.",
             "enum": [
@@ -442,6 +463,9 @@
           },
           "record": {
             "$ref": "#/$defs/BibliographicRecord"
+          },
+          "scope": {
+            "$ref": "#/$defs/FormScope"
           },
           "values": {
             "additionalProperties": true,
@@ -510,6 +534,19 @@
             "pattern": "^[0-9a-f]{64}$",
             "type": "string"
           },
+          "FormScope": {
+            "oneOf": [
+              {
+                "enum": ["project"],
+                "type": "string"
+              },
+              {
+                "const": "import",
+                "description": "Private import review: key collisions belong to the import plan, not form decoding.",
+                "type": "string"
+              }
+            ]
+          },
           "Profile": {
             "description": "Editing views derived exclusively from the active native entry and its parents.",
             "enum": [
@@ -568,6 +605,9 @@
           },
           "record": {
             "$ref": "#/$defs/BibliographicRecord"
+          },
+          "scope": {
+            "$ref": "#/$defs/FormScope"
           },
           "values": {
             "additionalProperties": true,
@@ -719,6 +759,39 @@
       "id": "bibliography.review_import",
       "params_schema": {
         "$defs": {
+          "BibliographicRecord": {
+            "additionalProperties": false,
+            "properties": {
+              "entry": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "id": {
+                "$ref": "#/$defs/RecordId"
+              },
+              "key": {
+                "type": "string"
+              },
+              "provenance": {
+                "default": [],
+                "items": {
+                  "$ref": "#/$defs/Provenance"
+                },
+                "type": "array"
+              },
+              "retained_parents": {
+                "default": [],
+                "description": "Inactive native publication containers. Never a second active bibliography.",
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": ["id", "key", "entry"],
+            "type": "object"
+          },
           "Decision": {
             "oneOf": [
               {
@@ -779,6 +852,23 @@
             "enum": ["hayagriva", "biblatex"],
             "type": "string"
           },
+          "Provenance": {
+            "additionalProperties": false,
+            "description": "Opaque origin link. Source bytes live in the import artifact, not in every record.",
+            "properties": {
+              "original_key": {
+                "type": "string"
+              },
+              "source_digest": {
+                "$ref": "#/$defs/Fingerprint"
+              },
+              "source_id": {
+                "$ref": "#/$defs/RecordId"
+              }
+            },
+            "required": ["source_id", "source_digest", "original_key"],
+            "type": "object"
+          },
           "RecordId": {
             "pattern": "^[A-Za-z0-9_-]{1,128}$",
             "type": "string"
@@ -818,6 +908,13 @@
           },
           "expected": {
             "$ref": "#/$defs/Fingerprint"
+          },
+          "reviewed": {
+            "default": null,
+            "items": {
+              "$ref": "#/$defs/BibliographicRecord"
+            },
+            "type": ["array", "null"]
           },
           "source": {
             "$ref": "#/$defs/SourceInput"
@@ -2377,6 +2474,14 @@
                   "preparation": {
                     "$ref": "#/$defs/Fingerprint"
                   },
+                  "reviewed": {
+                    "default": null,
+                    "description": "Private form corrections over the complete prepared set. IDs and provenance are immutable.",
+                    "items": {
+                      "$ref": "#/$defs/BibliographicRecord"
+                    },
+                    "type": ["array", "null"]
+                  },
                   "source": {
                     "$ref": "#/$defs/SourceInput"
                   }
@@ -3046,6 +3151,14 @@
                       },
                       "preparation": {
                         "$ref": "#/$defs/Fingerprint"
+                      },
+                      "reviewed": {
+                        "default": null,
+                        "description": "Private form corrections over the complete prepared set. IDs and provenance are immutable.",
+                        "items": {
+                          "$ref": "#/$defs/BibliographicRecord"
+                        },
+                        "type": ["array", "null"]
                       },
                       "source": {
                         "$ref": "#/$defs/SourceInput"

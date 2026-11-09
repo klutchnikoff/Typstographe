@@ -129,8 +129,9 @@ consignés. C.1 (renvois) et le premier périmètre de C.2 (mathématiques) sont
 implémentés et vérifiés localement, comme C.3 (gestionnaire complet, profils
 natifs Hayagriva et **CAS 16**). La CI et la recette utilisateur restent requises
 avant fusion. La consolidation frontend / E.1 est également livrée localement ;
-le prochain lot est C.4 (bibliothèque personnelle), avant les extensions lourdes
-de D, F et J. Préciser ensemble les paramètres,
+**C.4 est différé par décision du 6 novembre 2026**. Conserver la bibliothèque
+locale au projet ; aucune dépendance au stockage personnel n’est introduite
+pour les prochains lots de C/E, D ou F. Choisir ensemble la suite et préciser les paramètres,
 commandes/cibles et maquettes avant chaque implémentation ;
 la livraison de tous les types de B n’est pas un prérequis.
 
@@ -303,16 +304,20 @@ la livraison de tous les types de B n’est pas un prérequis.
   Retirer le genre persistant ; déduire les profils du type/parents Hayagriva.
   Mutualiser transitions natives, conservation des conteneurs inactifs et
   publication gardée dans la crate commune ; qualifier CAS, reprise et rendu.
-- **C.4 — Bibliothèque personnelle.** Recherche locale au projet avant recherche
-  personnelle ; copie d’une notice lors de son utilisation, liens de provenance
-  conservés et échanges de corrections explicites. Les deux stockages ont leurs
-  révisions et protections contre l’écrasement ; aucune transaction atomique entre
-  eux n’est présumée. Aucune modification personnelle ne réécrit silencieusement
-  un projet. Le gestionnaire de C.3 est réutilisé avec un choix de bibliothèque.
-  Réutiliser la crate et les tests C.3 pour les principes de Citekeep (identités,
-  clés locales stables, conflits explicites, planification avant écriture).
-  Son moteur Python et son stockage BibTeX ne sont pas retenus ; le stockage et
-  le format personnels restent à décider. Ne pas refaire le rapprochement en C.4.
+- **C.4 — Gestion bibliographique personnelle et échanges — différé, P3.**
+  Réexaminer uniquement avec un besoin identifié de véritable gestionnaire
+  personnel intégré à typstOgraphe. Pour l’instant, seule la bibliothèque locale
+  au projet est utilisée ; C.3 reste suffisant et le `.typsto` reste autonome.
+  Le futur lot couvrira catalogue personnel, recherche/édition, conservation et
+  échanges explicites, en réutilisant la crate, les formulaires et le corpus C.3.
+  Citekeep reste la référence de conception pour rapprochement, clés stables et
+  décisions avant écriture ; ne pas dupliquer son moteur en Python.
+  Le choix SQLite, le contrat de stockage, les révisions et états de référence,
+  les règles d’autorité, les différences locales et les conflits en collaboration
+  restent ouverts. Ni vue matérialisée ni synchronisation bidirectionnelle ne
+  sont validées. Préserver les frontières actuelles, sans créer de stockage,
+  d’API personnelle, de dépendance supplémentaire ou de couche de synchronisation
+  anticipant ce lot. Valider contrat et maquette ensemble lors de sa réouverture.
 
 Le contrat bibliographique C.3 et le CAS 16 sont courants ; les anciens lots
 de raccordement restent des bilans datés. Recherche en ligne et gestion de PDF
@@ -321,9 +326,55 @@ restent hors de ce premier parcours.
 **Sortie C :** contrat partagé GUI/CLI/MCP, recette clavier et aller-retour du
 fichier ; absence de logique spécifique dupliquée dans les déclencheurs.
 
+### C.5 — Recherche bibliographique en ligne — organisation révisée le 7 novembre 2026
+
+**Priorité P1, indépendante de C.4 différé.** Recherche par auteur/titre via
+les sources spécialisées qui la proposent, d’abord zbMATH Open. Pour un DOI,
+interroger les sources spécialisées appropriées (Cairn OAI, zbMATH), puis utiliser
+la négociation de contenu de `doi.org` seulement si aucune notice n’est obtenue.
+D’autres connecteurs spécialisés pourront compléter cette chaîne.
+
+- Retirer le connecteur Crossref et son choix dans l’interface. Crossref peut
+  répondre derrière le résolveur DOI, au même titre que DataCite ou une autre
+  agence compatible ; aucun endpoint Crossref de recherche n’est conservé.
+- Le repli DOI porte sur un identifiant connu, pas sur une recherche par texte.
+  Il intervient après absence, échec ou réponse invalide des sources spécialisées.
+  Une notice spécialisée partielle reste vérifiable sans remplacement automatique.
+  Les échecs partiels et l’origine des résultats restent visibles.
+- Cairn reste ciblé par DOI, identifiant ou URL exploitable. Une URL sans
+  identifiant nécessite un DOI dans ses métadonnées publiques ; à défaut,
+  demander le DOI ou l’identifiant Cairn. Aucun contournement d’une page protégée,
+  index local du catalogue, moissonnage ni recherche générale Cairn.
+- Les compléments de publication de Cairn passent aussi par le résolveur DOI.
+  Ils complètent le type/contenant, sans remplacer les champs propres de la
+  notice OAI. La provenance de cet enrichissement reste explicite.
+- Recherche locale conservée ; appels en ligne explicites, bornés et asynchrones.
+  Une réponse obsolète ne peut remplacer une nouvelle recherche ou un brouillon.
+- Collecteurs séparés de la crate bibliographique pure et du cœur documentaire.
+  Réutiliser les conversions et validations existantes vers Hayagriva ; conserver
+  la source d’import convertie, distincte de la notice corrigée, sans prétendre
+  archiver la réponse brute du fournisseur.
+- Formulaire commun avant ajout, diagnostics et rapprochement existants,
+  annulation sans édition. « Ajouter » / « Ajouter et citer » publie un lot
+  gardé, annulable et récupérable. Sauvegarde et export autonomes hors ligne.
+- Qualification : priorité spécialisée, absence de repli après succès partiel,
+  repli après absence/erreur, DOI erroné, redirections bornées, erreurs/délais,
+  recherche par auteur, provenance, clavier, conflits, récupération et export.
+  Le DOI Cairn `10.3917/dbu.jorro.2022.01.0155` distingue « Émancipation »
+  (Cairn) du titre d’ouvrage erroné fourni par le service DOI générique.
+- Commits locaux uniquement ; aucune poussée et aucun déclenchement de CI GitHub.
+
+La révision est **implémentée et vérifiée localement le 7 novembre 2026** :
+20 tests des collecteurs, tests frontend et Fluent, recettes Chromium/WebKit,
+essais réels Cairn, zbMATH et repli vers DataCite. Le connecteur Crossref et
+la résolution de catalogue par ISBN sont retirés. Les opérations de
+publication CLI/MCP restent sur le contrat commun, sans nouveau collecteur réseau
+exposé par ces adaptateurs. Le CAS reste 16 ; C.4 personnel demeure différé.
+Voir le [contrat et la qualification](docs/c5-online-bibliography.md).
+
 ### Consolidation frontend et E.1 — 6 novembre 2026
 
-Avant C.4, séparer les responsabilités des contrôleurs existants : rendu et
+Consolidation livrée après C.3 : séparer les responsabilités des contrôleurs existants : rendu et
 liaisons des champs d’en-tête, liste bibliographique et navigation, requêtes
 asynchrones liées à une génération documentaire, préparation pure des lots,
 puis orchestration des formulaires et de leur récupération. Réutiliser les

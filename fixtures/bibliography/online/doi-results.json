@@ -1,0 +1,38 @@
+{
+  "candidates": [
+    {
+      "id": "online-323fd6849a6c16f7b31f3add179101d4b0bc2cadcd56168da0145d5621ff73f6",
+      "provider": "doi",
+      "source_url": "https://doi.org/10.3917/dbu.jorro.2022.01.0155",
+      "title": "Dictionnaire des concepts de la professionnalisation",
+      "authors": "Eneau, Jérôme",
+      "year": 2022,
+      "doi": "10.3917/dbu.jorro.2022.01.0155",
+      "entry": {
+        "author": "Eneau, Jérôme",
+        "date": "2022-05-01",
+        "page-range": "155-159",
+        "parent": [
+          {
+            "date": "2022-05-01",
+            "publisher": "De Boeck Supérieur",
+            "serial-number": {
+              "isbn": "9782807340534"
+            },
+            "title": "Dictionnaire des concepts de la professionnalisation",
+            "type": "book"
+          }
+        ],
+        "serial-number": {
+          "doi": "10.3917/dbu.jorro.2022.01.0155"
+        },
+        "title": "Dictionnaire des concepts de la professionnalisation",
+        "type": "chapter",
+        "url": "http://dx.doi.org/10.3917/dbu.jorro.2022.01.0155"
+      },
+      "contents": "eneau_dictionnaire_2022:\n  type: chapter\n  title: Dictionnaire des concepts de la professionnalisation\n  author: Eneau, Jérôme\n  date: 2022-05-01\n  page-range: 155-159\n  url: http://dx.doi.org/10.3917/dbu.jorro.2022.01.0155\n  serial-number:\n    doi: 10.3917/dbu.jorro.2022.01.0155\n  parent:\n    type: book\n    title: Dictionnaire des concepts de la professionnalisation\n    date: 2022-05-01\n    publisher: De Boeck Supérieur\n    serial-number:\n      isbn: '9782807340534'\n",
+      "warnings": ["chapter_title_matches_book"]
+    }
+  ],
+  "issues": []
+}

@@ -13,7 +13,8 @@ export function bibliographyBrowser(parent: HTMLElement, activate: (id: string) 
     count = document.createElement('p'),
     add = document.createElement('button'),
     load = document.createElement('button'),
-    file = document.createElement('input')
+    file = document.createElement('input'),
+    online = document.createElement('button')
   layout.className = 'bibliography-layout'
   left.className = 'bibliography-browser'
   right.className = 'bibliography-detail'
@@ -37,7 +38,11 @@ export function bibliographyBrowser(parent: HTMLElement, activate: (id: string) 
   file.hidden = true
   file.setAttribute('aria-label', tr('Fichiers bibliographiques'))
   const top = actionRow()
-  top.append(load, add)
+  online.type = 'button'
+  online.innerHTML = icon('globe')
+  online.setAttribute('aria-label', tr('Rechercher en ligne'))
+  online.title = tr('Rechercher en ligne')
+  top.append(load, online, add)
   left.append(search, count, top, list, file)
   layout.append(left, right)
   parent.append(layout)
@@ -55,6 +60,7 @@ export function bibliographyBrowser(parent: HTMLElement, activate: (id: string) 
     add,
     load,
     file,
+    online,
     render(result: Browse, selected?: string) {
       count.textContent = tr('{count} / {total} notices', {
         count: result.entries.length,

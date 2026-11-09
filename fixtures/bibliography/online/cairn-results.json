@@ -1,0 +1,41 @@
+{
+  "candidates": [
+    {
+      "id": "online-f702c5db8840406b8be5db00d2625db55c1e4121605b7843fa6a2cbf8576b0bd",
+      "provider": "cairn",
+      "source_url": "https://shs.cairn.info/dictionnaire-des-concepts-de-la-professionnalisation--9782807340534-page-155?lang=fr",
+      "title": "Émancipation",
+      "authors": "Eneau, Jérôme",
+      "year": 2022,
+      "doi": "10.3917/dbu.jorro.2022.01.0155",
+      "entry": {
+        "author": "Eneau, Jérôme",
+        "date": 2022,
+        "language": "fr",
+        "page-range": "155-159",
+        "parent": [
+          {
+            "date": "2022-05-01",
+            "publisher": "De Boeck Supérieur",
+            "serial-number": {
+              "doi": "10.3917/dbu.jorro.2022.01",
+              "isbn": "9782807340534"
+            },
+            "title": "Dictionnaire des concepts de la professionnalisation",
+            "type": "book",
+            "url": "http://dx.doi.org/10.3917/dbu.jorro.2022.01"
+          }
+        ],
+        "serial-number": {
+          "doi": "10.3917/dbu.jorro.2022.01.0155"
+        },
+        "title": "Émancipation",
+        "type": "chapter",
+        "url": "https://shs.cairn.info/dictionnaire-des-concepts-de-la-professionnalisation--9782807340534-page-155?lang=fr"
+      },
+      "contents": "eneau_emancipation_2022:\n  type: chapter\n  title: Émancipation\n  author: Eneau, Jérôme\n  date: 2022\n  page-range: 155-159\n  url: https://shs.cairn.info/dictionnaire-des-concepts-de-la-professionnalisation--9782807340534-page-155?lang=fr\n  serial-number:\n    doi: 10.3917/dbu.jorro.2022.01.0155\n  language: fr\n  parent:\n    type: book\n    title: Dictionnaire des concepts de la professionnalisation\n    date: 2022-05-01\n    publisher: De Boeck Supérieur\n    url: http://dx.doi.org/10.3917/dbu.jorro.2022.01\n    serial-number:\n      doi: 10.3917/dbu.jorro.2022.01\n      isbn: '9782807340534'\n",
+      "warnings": []
+    }
+  ],
+  "issues": []
+}

@@ -20,3 +20,10 @@ Voir la [CLI](cli.md), le [MCP](mcp.md) et le
 [contrat structuré](structured-commands.md). La découverte ne donne aucun droit
 sur le système de fichiers et ne remplace jamais l’acceptation humaine d’une
 proposition MCP rattachée à l’application.
+
+La vérification d’une acquisition bibliographique en ligne utilise aussi ce
+contrat commun : `bibliography.review_import` prépare le rapprochement avec
+`reviewed` (jeu complet de notices corrigées), puis `bibliography.apply` publie
+l’import gardé. Identités et provenance doivent correspondre à la préparation
+originale ; les corrections ne réécrivent pas la source convertie. Voir le
+[contrat C.5](c5-online-bibliography.md).

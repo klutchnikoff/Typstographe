@@ -32,8 +32,10 @@ Elle ne dépend pas de `typstographe-core` : le sens de dépendance reste
 `core → bibliography → hayagriva`. Les adaptateurs passent par le moteur commun
 pour toute mutation du document, sans appliquer un plan directement dans l'UI.
 
-C.3 fournit le moteur commun une seule fois. C.4 ajoute un stockage personnel et
-ses échanges explicites ; il ne réimplémente ni les notices ni le rapprochement.
+C.3 fournit le moteur commun une seule fois. **C.4 est différé par décision du
+6 novembre 2026** : la bibliothèque reste locale au projet. Un futur outil de
+gestion bibliographique personnelle pourra réutiliser ce moteur ; stockage,
+autorité des notices et échanges restent à valider, sans implémentation anticipée.
 Le moteur Python et le format de stockage BibTeX de Citekeep ne sont pas retenus.
 
 ## Modèle logique et source de vérité
@@ -243,8 +245,9 @@ règle de fusion automatique.
 Les tests distingueront le moteur pur (import, identité, plans, aller-retour) des
 garanties du cœur (citations, annulation, CAS, récupération et concurrence) et
 des parcours d'interface. Un corpus écrit n'est pas encore un test réussi.
-C.4 reprend le même moteur ; stockage personnel, échanges à deux révisions,
-recherche en ligne et gestion de PDF restent hors de C.3.
+C.4, désormais différé, réutilisera ce moteur si son besoin est confirmé.
+Stockage personnel et contrat d’échange restent ouverts ; recherche en ligne
+et gestion de PDF restent également hors de C.3.
 
 ## Sources de la qualification
 
