@@ -1,4 +1,4 @@
-//! Autonomous format-11 CAS owner. Adapters must preserve this owner across saves.
+//! Autonomous CAS project owner. Adapters must preserve this owner across saves.
 //! Preparing a candidate is pure: publish it only after `save` succeeds.
 mod versions;
 pub use versions::{VersionAction, VersionChange};
@@ -13,11 +13,11 @@ use crate::{
     errors::{CoreError, StorageError},
 };
 pub use backup::Backup;
+use schema::{FORMAT_NAME, Manifest, VersionIndex};
 pub use schema::{
     FORMAT_VERSION, MAX_ARCHIVE_BYTES, MAX_OBJECTS, MAX_SNAPSHOTS, ObjectId, ReviewReference,
     SnapshotDetails, SnapshotReason, SnapshotRecord,
 };
-use schema::{Manifest, VersionIndex};
 use std::{
     io::{Cursor, Seek, Write},
     path::Path,
@@ -243,7 +243,7 @@ impl Project {
             std::iter::once(&self.current_id).chain(self.index.roots()),
         )?;
         let manifest = serialize(&Manifest {
-            format: "typstOgraphe".into(),
+            format: FORMAT_NAME.into(),
             version: FORMAT_VERSION,
             project_id: self.project_id,
             current: self.current_id.clone(),

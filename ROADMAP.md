@@ -1,4 +1,4 @@
-# Feuille de route de typstOgraphe
+# Feuille de route de Typstographe
 
 Révisée le **6 novembre 2026**. Objectif : transformer le prototype validé en une
 application de rédaction utilisable au quotidien, pour l’administration,
@@ -32,7 +32,7 @@ et de distribution restent dans H.
 **Aucune capture d’écran pour le moment** : les tests fonctionnels restent actifs,
 sans captures automatiques ni références au pixel près. L’interface n’est pas figée.
 
-## Un projet typstOgraphe — définition retenue
+## Un projet Typstographe — définition retenue
 
 Un **projet est le fichier .typsto autonome**, équivalent d’un répertoire de
 travail LaTeX dont l’organisation technique est masquée. Il rassemble un
@@ -346,7 +346,9 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    schémas et diagnostics typés, sans publier d'édition ni changer le format.
    Le [raccordement documentaire](docs/c3-bibliography-document-state.md) ajoute
    `bibliography.apply`, les notices/sources partagées, les citations par identité,
-   l’annulation et un Hayagriva actif unique ; le format courant est le CAS 16.
+   l’annulation et un Hayagriva actif unique depuis CAS 16. Le
+   [CAS 17](docs/a4-project-format.md) renomme le marqueur du manifeste et garde
+   la lecture des projets CAS 16.
    **Présentation validée :** [gestionnaire commun](docs/c3-bibliography-interface.md),
    liste compacte à deux lignes (auteur/année puis titre tronqué), défilement
    indépendant, détails et formulaire à droite. Le [gestionnaire implémenté](docs/c3-bibliography-manager.md)
@@ -369,7 +371,7 @@ lot ; ne pas attendre l’achèvement de tous les types de B pour avancer dans C
    locale au projet, autonome dans le `.typsto`. Aucun stockage central ni
    mécanisme de synchronisation personnelle n’est ajouté.
    Réexaminer ce lot lorsqu’un véritable outil de gestion bibliographique
-   personnelle dans typstOgraphe répondra à un besoin d’usage identifié.
+   personnelle dans Typstographe répondra à un besoin d’usage identifié.
    Son périmètre comprendra alors le catalogue personnel, la recherche et
    l’édition des notices, la conservation et les échanges avec les projets.
    Réutiliser la crate, le gestionnaire et le corpus C.3 ; Citekeep reste une
@@ -434,7 +436,7 @@ La révision est **implémentée et vérifiée localement le 7 novembre 2026** :
 essais réels Cairn, zbMATH et repli vers DataCite. Le connecteur Crossref et
 la résolution de catalogue par ISBN sont retirés. Les opérations de
 publication CLI/MCP restent sur le contrat commun, sans nouveau collecteur réseau
-exposé par ces adaptateurs. Le CAS reste 16 ; C.4 personnel demeure différé.
+exposé par ces adaptateurs. Le schéma d’état CAS 16/17 est inchangé ; C.4 personnel demeure différé.
 Voir le [contrat et la qualification](docs/c5-online-bibliography.md).
 
 ### Consolidation frontend et E.1 — 6 novembre 2026
@@ -610,7 +612,7 @@ de sauvegarde/export n’est à développer.
 La collaboration entre fenêtres sert de base technique. Le réseau distant,
 les droits et le cycle de vie du document partagé restent à construire.
 
-- **G.1 — Partage ponctuel :** héberger une session depuis typstOgraphe pour deux
+- **G.1 — Partage ponctuel :** héberger une session depuis Typstographe pour deux
   ou trois personnes ; invitation temporaire/révocable, lecture ou édition,
   liste des participants et fin de session explicite.
 - **G.2 — Partage sur Internet :** choisir un relais/tunnel ou une autre stratégie

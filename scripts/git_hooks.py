@@ -39,7 +39,8 @@ def staged():
             info = run('npx', '--no-install', 'prettier', '--file-info', name,
                        stdout=subprocess.PIPE).stdout
             if not json.loads(info)['ignored']:
-                run('npx', '--no-install', 'prettier', '--check', '--stdin-filepath', name, input=contents)
+                config = ['--config', 'app/.prettierrc.json'] if name.startswith('.github/scripts/') else []
+                run('npx', '--no-install', 'prettier', *config, '--check', '--stdin-filepath', name, input=contents)
 
 
 def tips(lines):

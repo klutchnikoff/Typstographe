@@ -32,7 +32,7 @@ utilisateurs. Elles auraient dû disparaître avec lui.
 
 Les rapports et leur comparaison sont disponibles localement dans
 `output/coverage-flat-retirement-2026-10-29/` (ignoré par Git). Le rapport distant
-complet est attaché à [la mesure de cette révision](https://github.com/klutchnikoff/typstOgraphe/actions/runs/40855800057).
+complet est attaché à [la mesure de cette révision](https://github.com/klutchnikoff/Typstographe/actions/runs/40855800057).
 
 ## Suite du nettoyage et garanties
 
@@ -115,7 +115,7 @@ branche temporaire n’est pas repris sur `main`.
 
 Validation complémentaire avant la poussée finale : **212 tests web et 3 tests
 de langues**, **8 parcours locaux Chromium/WebKit**, construction web et Prettier
-réussis. La [recette ciblée Linux](https://github.com/klutchnikoff/typstOgraphe/actions/runs/40873904345)
+réussis. La [recette ciblée Linux](https://github.com/klutchnikoff/Typstographe/actions/runs/40873904345)
 passe **cinq fois avec instrumentation puis cinq fois sans instrumentation**, sur
 le même runner que celui qui avait reproduit deux échecs sur cinq avant correction.
 La CI complète de `main` est lancée après cette vérification.

@@ -51,12 +51,12 @@ def icon(platform, size=1024):
     # transparent artboard. Preserve that ratio with each platform's padding.
     fitted = f'<g transform="translate({inset} {inset}) scale({width / dimension})">{optical_mark(size)}</g>'
     return f'''<svg xmlns="{SVG}" width="{dimension}" height="{dimension}" viewBox="0 0 {dimension} {dimension}" color="#f6f4ee">
-      <title>typstOgraphe — {platform}</title>{plate}{fitted}</svg>'''
+      <title>Typstographe — {platform}</title>{plate}{fitted}</svg>'''
 
 
 def document_icon():
     return f'''<svg xmlns="{SVG}" width="512" height="512" viewBox="0 0 512 512" color="#285c77">
-  <title>typstOgraphe — project document</title>
+  <title>Typstographe — project document</title>
   <path d="M128 48H320L400 128V448Q400 464 384 464H128Q112 464 112 448V64Q112 48 128 48Z" fill="#f6f4ee" stroke="#285c77" stroke-width="10" stroke-linejoin="round"/>
   <path d="M320 48V112Q320 128 336 128H400" fill="#dce6ea" stroke="#285c77" stroke-width="10" stroke-linejoin="round"/>
   <g transform="translate(256 298) scale(.54) translate(-256 -256)">{mark}</g>
@@ -131,7 +131,7 @@ def stroke_data():
 def build(include_splash=True):
     for size in (16, 24, 32, 48):
         drawing = f'''<svg xmlns="{SVG}" viewBox="0 0 {size} {size}" fill="none">
-  <title>typstOgraphe — st, {size} px</title>{optical_mark(size)}</svg>'''
+  <title>Typstographe — st, {size} px</title>{optical_mark(size)}</svg>'''
         (ROOT / "optical" / f"{size}.svg").write_text(drawing, encoding="utf-8")
 
     for platform in ("macos", "windows", "linux"):

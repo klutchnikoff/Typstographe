@@ -1,4 +1,4 @@
-# Documentation de typstOgraphe
+# Documentation de Typstographe
 
 Les pages ci-dessous décrivent l’application courante. Un numéro de lot dans un
 nom de fichier indique son origine, pas une fonctionnalité encore à développer.
@@ -22,7 +22,7 @@ les décisions, mesures et limites des étapes livrées.
 | Architecture, adaptateurs et autorité | [Contrat général](interface-contract.md), [contrat structuré](structured-contract.md), [adaptateurs](structured-adapters.md) |
 | Commandes et paramètres exécutables | [Catalogue généré](commands.md), [schémas JSON](commands.json), `typstographe-cli commands describe ID` |
 | Cibles, texte, structures et contextes | [Commandes structurées](structured-commands.md), [contextes privés](structured-editing-contexts.md), [transformations](a2-transformations-inventory.md) |
-| Projet autonome et Versions | [Format CAS 16](a4-project-format.md), [comparateur et validation contextualisée](a4-comparison-contract.md) |
+| Projet autonome et Versions | [Format CAS 17 et lecture CAS 16](a4-project-format.md), [comparateur et validation contextualisée](a4-comparison-contract.md) |
 | Conservation et récupération | [Contrat de conservation](a3-conservation.md), [parcours de reprise](a3-recovery-interface.md) |
 | Éditeur et interactions | [Zones riches](rich-zones.md), [widgets/bandeaux](editor-widgets.md), [navigation clavier](keyboard-navigation.md), [dialogues](metadata-dialogs.md), [retours/jointures](paragraph-join.md) |
 | Catalogue des usages | [Groupes, types et fiches](document-type-catalogue.md) |
@@ -49,7 +49,7 @@ les composantes des renvois, leur composition Typst et les interactions communes
 Le [contrat commun](c3-bibliography-contract.md), les
 [profils natifs Hayagriva](c3-native-bibliography-profiles.md), le
 [gestionnaire compact](c3-bibliography-manager.md) et le
-[format CAS 16](a4-project-format.md) décrivent l’implémentation courante.
+[format CAS 17](a4-project-format.md) décrivent l’implémentation courante.
 Le [corpus inspiré de Citekeep](../fixtures/bibliography/README.md) conserve les
 24 scénarios d’identité et les garanties de rapprochement. Les bilans de
 [fondation](c3-bibliography-foundation.md), de
@@ -90,7 +90,7 @@ vidéos, ni traces graphiques.
 
 ## Licences et provenance
 
-Le code de typstOgraphe est sous [MIT](../LICENSE). Les dépendances et ressources
+Le code de Typstographe est sous [MIT](../LICENSE). Les dépendances et ressources
 conservent leurs licences : [Inter](../assets/ui/fonts/inter/LICENSE.txt),
 [Noto CJK](../crates/core/assets/fonts/noto-cjk/LICENSE),
 [Lucide](../assets/ui/icons/lucide/README.md) et paquets Typst inventoriés dans
@@ -103,6 +103,6 @@ Aucune ressource tierce n’est relicenciée par le fichier MIT du projet.
 Le [sélecteur de fichiers macOS](native-localization-investigation.md) peut encore
 présenter ses boutons en anglais ; ce diagnostic est reporté. Les menus de
 l’application et l’interface suivent Fluent. Le contrat des Versions ne garantit
-pas un PDF identique entre versions différentes de typstOgraphe. Les relectures
+pas un PDF identique entre versions différentes de Typstographe. Les relectures
 par annotations, ACP, la collaboration réseau et la distribution signée sont des
 chantiers distincts, pas des fonctionnalités livrées par le socle A.

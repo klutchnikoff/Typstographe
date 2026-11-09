@@ -9,7 +9,7 @@ La première relecture portait sur `39245c4edbafb9067231c84f11257056b05aabb5`, p
 sur les tests de presse-papiers. Les absences signalées ont ensuite été complétées
 dans les lots `88d68d7` et `01f4328`, avec les vérifications ci-dessous.
 
-Références : [feuille technique](https://github.com/klutchnikoff/typstOgraphe/blob/7b0d6fd3e6ae25e5704ed43ce2f4efefa9c2fa0b/ROADMAP-ARCHITECTURE.md),
+Références : [feuille technique](https://github.com/klutchnikoff/Typstographe/blob/7b0d6fd3e6ae25e5704ed43ce2f4efefa9c2fa0b/ROADMAP-ARCHITECTURE.md),
 [inventaire relu](commands-inventory.md), [catalogue](commands.md),
 [schémas d’entrée](commands.json), [historique des lots](architecture-phase-2.md).
 Les tableaux de migration restent un relevé de départ ; ils ne constituent pas
@@ -26,8 +26,8 @@ une seconde définition des paramètres à côté du registre Rust.
 - Les 67 références de tests de l’inventaire existent encore aux emplacements indiqués.
 - Aucun `Deref/DerefMut` vers `Session` ni écriture `engine.session` dans l’application.
   `App::apply` compose des actions UI ou des appels documentaires au moteur.
-- La CI du code de la première relecture (`39245c4`) est verte : [Rust](https://github.com/klutchnikoff/typstOgraphe/actions/runs/40038633290)
-  (matrice Linux/macOS/Windows) et [couverture](https://github.com/klutchnikoff/typstOgraphe/actions/runs/40038633323).
+- La CI du code de la première relecture (`39245c4`) est verte : [Rust](https://github.com/klutchnikoff/Typstographe/actions/runs/40038633290)
+  (matrice Linux/macOS/Windows) et [couverture](https://github.com/klutchnikoff/Typstographe/actions/runs/40038633323).
   Ces liens ne prouvent pas le résultat CI de la clôture : ses tests locaux sont
   détaillés au §6, la nouvelle CI sera déclenchée par la poussée finale.
 

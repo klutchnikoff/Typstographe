@@ -2,6 +2,8 @@
   "bundle": {
     "linux": {
       "deb": {
+        "conflicts": ["typst-ographe"],
+        "replaces": ["typst-ographe"],
         "files": {
           "usr/share/mime/packages/typstographe.xml": "associations/typstographe.xml",
           "usr/share/icons/hicolor/16x16/mimetypes/application-x-typstographe.png": "icons/mimetypes/hicolor/16x16/mimetypes/application-x-typstographe.png",
@@ -19,6 +21,7 @@
         "desktopTemplate": "associations/typstographe.desktop"
       },
       "rpm": {
+        "obsoletes": ["typst-ographe"],
         "files": {
           "usr/share/mime/packages/typstographe.xml": "associations/typstographe.xml",
           "usr/share/icons/hicolor/16x16/mimetypes/application-x-typstographe.png": "icons/mimetypes/hicolor/16x16/mimetypes/application-x-typstographe.png",

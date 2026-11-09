@@ -250,7 +250,7 @@ Principes de la bibliothèque :
   composants de saisie communs et les interfaces documentaires éditent ces mêmes
   données. La bibliothèque Typst ne définit ni le formulaire ni l’état partagé.
 - Les fonctions publiques restent anglaises ou latines, avec une signature
-  propre à typstOgraphe. Les modèles importent des fonctions communes dans des
+  propre à Typstographe. Les modèles importent des fonctions communes dans des
   fichiers dédiés, par exemple `authorship.typ`, et choisissent leur composition.
 - Recevoir des données déjà validées, sans reproduire tous les formats d’entrée
   et mécanismes de normalisation de Pubmatter, MyST ou Quarto. Un courriel ne

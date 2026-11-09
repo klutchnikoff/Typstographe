@@ -44,14 +44,14 @@ des textures et les menus natifs restent des champs propres à l’application.
 (`output/baseline/run-n_a5mndu/`), puis après les réorganisations
 (`output/baseline/run-5o21qaps/`), sur le même environnement que la phase 0.
 
-La [CI Rust sur `b829f61`](https://github.com/klutchnikoff/typstOgraphe/actions/runs/39691516869)
+La [CI Rust sur `b829f61`](https://github.com/klutchnikoff/Typstographe/actions/runs/39691516869)
 est verte sur macOS, Windows et Linux. La
-[CI Coverage correspondante](https://github.com/klutchnikoff/typstOgraphe/actions/runs/39691516825)
+[CI Coverage correspondante](https://github.com/klutchnikoff/Typstographe/actions/runs/39691516825)
 est également verte. Ces exécutions couvrent le rangement de l’application.
 
-Sur `1782c82`, la [CI Rust finale](https://github.com/klutchnikoff/typstOgraphe/actions/runs/39693004381)
+Sur `1782c82`, la [CI Rust finale](https://github.com/klutchnikoff/Typstographe/actions/runs/39693004381)
 est verte sur les trois systèmes, y compris les six essais du diagnostic sous Linux
-et les garde-fous Python. La [couverture finale](https://github.com/klutchnikoff/typstOgraphe/actions/runs/39693004554)
+et les garde-fous Python. La [couverture finale](https://github.com/klutchnikoff/Typstographe/actions/runs/39693004554)
 est également verte. Le diagnostic est exclu des builds par défaut ; sa vérification
 locale supplémentaire avec Clippy et `--features editor-model-spike` passe sans avertissement.
 

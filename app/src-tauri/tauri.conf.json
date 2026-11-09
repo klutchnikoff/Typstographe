@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "typstOgraphe",
+  "productName": "Typstographe",
   "version": "0.1.0",
   "identifier": "org.typstographe.web-editor-spike",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "typstOgraphe",
+        "title": "Typstographe",
         "width": 1280,
         "height": 900,
         "minWidth": 800,
@@ -36,20 +36,15 @@
     ],
     "fileAssociations": [
       {
-        "ext": [
-          "typsto"
-        ],
+        "ext": ["typsto"],
         "name": "typstOgraphe.Project",
-        "description": "typstOgraphe",
+        "description": "Typstographe",
         "role": "Editor",
         "rank": "Owner",
         "mimeType": "application/x-typstographe",
         "exportedType": {
           "identifier": "org.typstographe.project",
-          "conformsTo": [
-            "public.data",
-            "public.composite-content"
-          ]
+          "conformsTo": ["public.data", "public.composite-content"]
         }
       }
     ]

@@ -1,4 +1,7 @@
-typstOgraphe — identité st
+Typstographe — identité st
+
+Le nom s’écrit « Typstographe » en texte courant. Le logotype distingue
+la ligature « st » par sa couleur et son inclinaison.
 
 SOURCES
 ligature-st.svg : ligature st d’EB Garamond Italic, agrandie de 15 % pour

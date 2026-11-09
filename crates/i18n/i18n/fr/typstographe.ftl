@@ -1,4 +1,4 @@
-# Interface typstOgraphe. Ne pas traduire les données des courriers.
+# Interface Typstographe. Ne pas traduire les données des courriers.
 
 cmd-spelling-toggle = Vérifier l’orthographe pendant la saisie
 cmd-spelling-next = Erreur orthographique suivante
@@ -59,15 +59,15 @@ recovery-load-failed = Impossible de récupérer cette copie : { $error }
 recovery-delete-failed = Impossible de supprimer cette copie : { $error }
 
 save-dialog = Enregistrer le document
-native-menu-about = À propos de typstOgraphe
-native-menu-hide = Masquer typstOgraphe
+native-menu-about = À propos de Typstographe
+native-menu-hide = Masquer Typstographe
 native-menu-hide-others = Masquer les autres
 native-menu-cut = Couper
 native-menu-copy = Copier
 native-menu-paste = Coller
 native-menu-select-all = Tout sélectionner
 file-dialog-unavailable = Le système n’a pas pu ouvrir le sélecteur de fichiers. Aucun fichier n’a été ouvert ni enregistré. Réessayez.
-letter-filter = Document typstOgraphe
+letter-filter = Document Typstographe
 default-filename = Document.typsto
 replace-title = Remplacer le document ?
 letter-opened = Document ouvert.
@@ -200,7 +200,7 @@ cli-usage-capture-search = Usage : --capture-search IMAGE.png RECHERCHE
 cli-unknown-option = Option inconnue : { $option }
 cli-capture-error = Capture : { $error }
 cli-help =
-    typstOgraphe
+    Typstographe
       cargo run
       cargo run -- COURRIER.typsto
       cargo run -- --capture IMAGE.png
@@ -243,9 +243,9 @@ statistics-hint =
     Périmètre : texte rédigé, titres, légendes et attributions, sans les métadonnées ni les ajouts du modèle.
 edit-menu = Édition
 view-menu = Affichage
-cmd-quit = Quitter typstOgraphe
+cmd-quit = Quitter Typstographe
 mac-services = Services
-mac-hide = Masquer typstOgraphe
+mac-hide = Masquer Typstographe
 mac-hide-others = Masquer les autres
 mac-show-all = Tout afficher
 native-menu-error = Impossible de mettre à jour les menus : { $error }

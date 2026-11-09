@@ -3,11 +3,10 @@
 **Statut : stockage CAS, adaptateurs, Versions et comparateur commun avec reprise complète implémentés le 31 octobre 2026.**
 Le **CAS est retenu** après [évaluation](a4-snapshot-storage-evaluation.md).
 L’organisation ci-dessous est implémentée par `content::project::Project`.
-Tauri, CLI et MCP lisent et écrivent ce même format 16 ; les lecteurs de formats
-antérieurs ont été retirés.
-La version 16 est retenue pour cette rupture, sans lecteur de compatibilité
-préventif ni conversion silencieuse des anciens projets de développement.
-L’exemple Article a été régénéré explicitement depuis son contenu versionné.
+Tauri, la CLI et MCP lisent les versions 16 et 17 et écrivent la version 17.
+Ouvrir un projet CAS 16 laisse le fichier intact. La prochaine sauvegarde écrit
+le manifeste CAS 17 et conserve les objets, l’identité du projet et ses versions.
+Les versions antérieures à CAS 16 restent hors du périmètre de lecture.
 La version 12 embarque le manifeste du modèle dans chaque état CAS ; le source
 `main.typ` utilise les options effectives, tandis que les métadonnées conservent
 les choix de l’auteur. La version 13 ajoute les dates structurées explicites et leurs arguments Typst
@@ -21,6 +20,7 @@ chaque notice (`retained_parents`) et dans `bibliography/retained.json`, sépar�
 du Hayagriva utilisé par Typst. Le [contrat natif C.3](c3-native-bibliography-profiles.md)
 précise les transitions, la conservation et les tests.
 Le [bilan C.3](c3-bibliography-document-state.md) précise les ressources et contrôles.
+La version 17 change uniquement le couple `format` et `version` du manifeste.
 
 ## Conteneur et organisation
 
@@ -61,8 +61,8 @@ incorporée devient au contraire une ressource autonome du document.
 
 | Champ | Rôle |
 | --- | --- |
-| `format` | Valeur fixe `typstOgraphe`. |
-| `version` | Version du conteneur ; `16` retenue. |
+| `format` | `Typstographe` en CAS 17, `typstOgraphe` en CAS 16. |
+| `version` | `17` à l’écriture, `16` ou `17` à la lecture selon le marqueur. |
 | `project_id` | UUID stable indépendant du chemin du fichier. |
 | `current` | Référence CAS du descripteur de l’état courant confirmé. |
 
@@ -100,7 +100,7 @@ comme dans le contrat existant. Les métadonnées et le modèle doivent égaleme
 correspondre aux valeurs documentaires partagées. Un arbre ou un source Typst
 isolé n’autorise pas à remplacer silencieusement un état partagé contradictoire.
 Les sources Typst sont conservées mais restent dérivées, hors de la voie d’édition.
-Le générateur courant est **4** : les apostrophes et guillemets du
+Depuis le générateur **4**, les apostrophes et guillemets du
 texte rédigé gardent la syntaxe `smartquote` de Typst, au lieu d’être échappés.
 Le modèle et la langue du document déterminent les caractères rendus. Les
 chaînes de code (chemins, URL et paramètres) restent encodées séparément.
@@ -152,7 +152,7 @@ Conserver les sources et ressources ne revient pas à embarquer les binaires de
 Typst, l’ensemble des polices du système ou le système d’exploitation. Les
 polices dont un modèle exige l’embarquement devront être déclarées comme
 ressources du projet. On garantit l’état documentaire, pas l’identité du PDF
-entre versions de typstOgraphe. Une future incompatibilité de format demandera
+entre versions de Typstographe. Une future incompatibilité de format demandera
 une importation/conversion explicite, sans construire ce parcours maintenant.
 Le [contrat des dépendances Typst](typst-dependencies.md) précise la séparation
 entre catalogue de l’application, état documentaire et autonomie des exports.
@@ -424,7 +424,7 @@ n’acquiert pas de verrou sur le chemin d’origine ; une copie issue d’un pr
 précédemment enregistré reçoit donc une nouvelle identité lors de sa sauvegarde.
 
 La récupération privée utilise le schéma `typstographe-web-editor-v2` : un champ
-`project` obligatoire contient une archive CAS 11 compressée et encodée en base64,
+`project` obligatoire contient une archive CAS compressée et encodée en base64,
 ainsi que `saved_origin`. Ce contexte est mis en cache par propriétaire et modèle,
 sans recompression de l’historique à chaque frappe. Le JSON/Yjs confirmé et les
 images courantes du checkpoint remplacent son ancien état courant à la reprise ;

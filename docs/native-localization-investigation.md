@@ -11,8 +11,9 @@ mais les boutons du sélecteur de fichiers macOS restent anglais.
 Le redémarrage complet et les corrections des menus ne résolvent pas ce cas.
 La langue du document reste indépendante de celle de l’interface.
 
-Les libellés standard de Tauri/Muda sont désormais fournis par Fluent :
-« À propos de typstOgraphe », masquer, couper, copier, coller, tout sélectionner.
+Fluent fournit désormais les libellés standard de Tauri/Muda, dont celui du
+menu À propos et ceux des commandes pour masquer l’application, couper, copier,
+coller et tout sélectionner.
 Cette correction est validée pour le menu. Le titre et le filtre du sélecteur
 proviennent aussi de Fluent ; cela ne traduit pas ses commandes internes.
 La traduction du sélecteur et celle du menu sont donc deux vérifications séparées.

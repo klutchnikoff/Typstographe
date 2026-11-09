@@ -6,7 +6,7 @@ export function welcomeBrand() {
   element.className = 'welcome-brand'
   element.dataset.state = 'settled'
   element.setAttribute('role', 'img')
-  element.setAttribute('aria-label', 'typstOgraphe')
+  element.setAttribute('aria-label', 'Typstographe')
   element.innerHTML = ligature
   return { element, ...createLigatureAnimation(element) }
 }

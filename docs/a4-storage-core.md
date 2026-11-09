@@ -31,7 +31,7 @@ Il s’agit de l’intégrité des copies transportées, pas de la sélection de
 bibliothèques à exécuter dans l’application : cette dernière suit désormais le
 [catalogue de la version installée](typst-dependencies.md). Le test de dépendance
 fictive ci-dessous vérifie l’autonomie des octets archivés pour un usage Typst
-extérieur, pas leur activation dans typstOgraphe.
+extérieur, pas leur activation dans Typstographe.
 Les empreintes garantissent l’intégrité des contenus attendus ; aucune signature
 cryptographique d’éditeur de package n’est revendiquée.
 

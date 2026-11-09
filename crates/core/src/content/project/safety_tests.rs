@@ -352,6 +352,48 @@ fn current_object_corruption_is_never_repaired_from_derived_sources() {
     }
 }
 #[test]
+fn cas_16_opens_unchanged_and_saves_as_cas_17() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("legacy.typsto");
+    let project = version(
+        &Project::new(fixture(DocumentType::Courrier, "Projet avec historique")).unwrap(),
+        "v1",
+    )
+    .prepare_review_reference(Uuid::new_v4())
+    .unwrap();
+    project
+        .save(&mut DocumentLease::acquire(&path).unwrap())
+        .unwrap();
+    let expected = entries(&path);
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(&expected["manifest.json"]).unwrap();
+    assert_eq!(manifest["format"], "Typstographe");
+    assert_eq!(manifest["version"], 17);
+
+    manifest["format"] = "typstOgraphe".into();
+    manifest["version"] = 16.into();
+    let mut legacy = expected.clone();
+    legacy.insert(
+        "manifest.json".into(),
+        serde_json::to_vec(&manifest).unwrap(),
+    );
+    write_zip(&path, legacy);
+    let bytes = fs::read(&path).unwrap();
+    let read = Project::read(&path).unwrap();
+    assert_eq!(
+        Project::from_bytes(bytes.clone()).unwrap().versions(),
+        project.versions()
+    );
+    assert_eq!(fs::read(&path).unwrap(), bytes);
+    assert_eq!(read.project_id(), project.project_id());
+    assert_eq!(read.versions(), project.versions());
+    assert_eq!(read.review_references(), project.review_references());
+    read.save(&mut DocumentLease::acquire(&path).unwrap())
+        .unwrap();
+    assert_eq!(entries(&path), expected);
+}
+
+#[test]
 fn invalid_index_and_envelope_are_refused() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("index.typsto");
@@ -369,6 +411,9 @@ fn invalid_index_and_envelope_are_refused() {
         "unknown-field",
         "nil-project",
         "future-version",
+        "legacy-format-current-version",
+        "current-format-legacy-version",
+        "older-version",
         "invalid-hash",
         "path",
         "missing-root",
@@ -386,6 +431,12 @@ fn invalid_index_and_envelope_are_refused() {
             "unknown-field" => index["unexpected"] = true.into(),
             "nil-project" => manifest["project_id"] = Uuid::nil().to_string().into(),
             "future-version" => manifest["version"] = (FORMAT_VERSION + 1).into(),
+            "legacy-format-current-version" => manifest["format"] = "typstOgraphe".into(),
+            "current-format-legacy-version" => manifest["version"] = 16.into(),
+            "older-version" => {
+                manifest["format"] = "typstOgraphe".into();
+                manifest["version"] = 15.into();
+            }
             "invalid-hash" => manifest["current"] = "sha256:../escape".into(),
             "path" => {
                 files.insert("objects/sha256/../escape".into(), vec![]);

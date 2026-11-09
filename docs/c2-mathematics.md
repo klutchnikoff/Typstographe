@@ -127,7 +127,7 @@ math-formula(source, language: "typst", block: false, alt: "")
 
 Typst interprète le source mathématique natif. MiTeX 0.2.7 convertit le source
 LaTeX puis Typst compose une véritable `math.equation`, avec ses compteurs,
-liens et description accessible. Il n’y a pas de liste propre à typstOgraphe de
+liens et description accessible. Il n’y a pas de liste propre à Typstographe de
 formules autorisées, ni de promesse de compatibilité avec tout LaTeX : les
 possibilités et diagnostics sont ceux des moteurs employés. On saisit une formule,
 éventuellement complexe et multiligne, plutôt qu’un document LaTeX complet.

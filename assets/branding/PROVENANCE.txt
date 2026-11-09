@@ -1,4 +1,4 @@
-typstOgraphe st icon
+Typstographe st icon
 
 Source font: EB Garamond Italic, TeX Live ebgaramond distribution.
 Upstream: https://github.com/octaviopardo/EBGaramond12

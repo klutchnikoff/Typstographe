@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 license.workspace = true
-description = "Éditeur visuel typstOgraphe avec Tauri et Typst"
+description = "Éditeur visuel Typstographe avec Tauri et Typst"
 
 [lints]
 workspace = true

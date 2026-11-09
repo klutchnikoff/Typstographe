@@ -82,8 +82,8 @@ Voir [le catalogue documentaire commun](commands.json).
 Une citation utilise l’identité issue du rapprochement, y compris pour une
 notice déjà présente. L’ajout et la citation forment un seul lot annulable.
 Les corrections non validées utilisent la récupération des formulaires, sans
-nouvelle requête en ligne à la reprise. Après ajout, CAS 16, sauvegarde et export
-restent autonomes hors ligne ; aucun changement de format ni bibliothèque
+nouvelle requête en ligne à la reprise. Après ajout, CAS 16/17, sauvegarde et export
+restent autonomes hors ligne ; aucun changement de schéma d’état ni bibliothèque
 personnelle n’est introduit.
 
 ## Qualification locale — 7 novembre 2026

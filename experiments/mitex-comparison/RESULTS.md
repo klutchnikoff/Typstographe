@@ -15,7 +15,7 @@ La base applicative est `baaf19f01106081df3f5b1cadf5c81c70bb616fc`.
 - MiTeX natif : tag officiel `0.2.7`, révision
   `51f7210e026ab05d037125247e92d4d023d8a80d` ; spécifications précompilées au
   sous-module `9eb762afa001b36205408c7615a73e5dfaa6f80a`.
-- WASM : fichier `mitex.wasm` 0.2.7 réellement embarqué dans typstOgraphe,
+- WASM : fichier `mitex.wasm` 0.2.7 réellement embarqué dans Typstographe,
   exécuté par le `PluginFunc` et le runtime de Typst 0.15.1.
 - **5 460 entrées** converties par les deux moteurs : code Typst identique
   octet par octet, y compris fractions, matrices, cas et systèmes alignés.

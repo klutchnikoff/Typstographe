@@ -1,7 +1,7 @@
 # Phase 4 — CLI documentaire
 
 Décisions validées le **24 octobre 2026** avant implémentation : D23 et D24 dans
-[ROADMAP-ARCHITECTURE.md](https://github.com/klutchnikoff/typstOgraphe/blob/7b0d6fd3e6ae25e5704ed43ce2f4efefa9c2fa0b/ROADMAP-ARCHITECTURE.md). **Phase terminée le 24 octobre 2026.**
+[ROADMAP-ARCHITECTURE.md](https://github.com/klutchnikoff/Typstographe/blob/7b0d6fd3e6ae25e5704ed43ce2f4efefa9c2fa0b/ROADMAP-ARCHITECTURE.md). **Phase terminée le 24 octobre 2026.**
 
 ## Premier lot
 
@@ -214,8 +214,8 @@ de synchronisation restent intacts. Un test injecte un véritable rendu A3 termi
 avant la frame pour vérifier cette limite, les proportions et la synchronisation.
 
 Ces deux corrections ont été confirmées par la CI du commit `8cc9554` :
-[macOS/Windows/Linux](https://github.com/klutchnikoff/typstOgraphe/actions/runs/40099125227)
-et [couverture](https://github.com/klutchnikoff/typstOgraphe/actions/runs/40099125202).
+[macOS/Windows/Linux](https://github.com/klutchnikoff/Typstographe/actions/runs/40099125227)
+et [couverture](https://github.com/klutchnikoff/Typstographe/actions/runs/40099125202).
 
 ## Dernier lot — page PNG et retrait du diagnostic graphique
 

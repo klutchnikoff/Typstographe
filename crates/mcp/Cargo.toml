@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 license.workspace = true
-description = "Adaptateur MCP partagé et rattachement local pour typstOgraphe"
+description = "Adaptateur MCP partagé et rattachement local pour Typstographe"
 
 [lints]
 workspace = true

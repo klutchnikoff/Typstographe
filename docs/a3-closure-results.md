@@ -1,9 +1,9 @@
 # A.3 — Recette de clôture et qualification native
 
 **31 octobre 2026.** L’implémentation et les recettes de sortie sont livrées.
-La première qualification native a réussi sous [macOS, Windows et Linux](https://github.com/klutchnikoff/typstOgraphe/actions/runs/41188235007).
+La première qualification native a réussi sous [macOS, Windows et Linux](https://github.com/klutchnikoff/Typstographe/actions/runs/41188235007).
 Les rapports sont conservés ci-dessous. La qualification du commit courant et
-l’archivage de ses rapports sont exécutés par le workflow [Validation complète](https://github.com/klutchnikoff/typstOgraphe/actions/workflows/exhaustive.yml).
+l’archivage de ses rapports sont exécutés par le workflow [Validation complète](https://github.com/klutchnikoff/Typstographe/actions/workflows/exhaustive.yml).
 Le lot A.4 commence après réussite de cette qualification et validation de ses propres choix.
 
 Le [contrat de conservation](a3-conservation.md), les [parcours de reprise](a3-recovery-interface.md)

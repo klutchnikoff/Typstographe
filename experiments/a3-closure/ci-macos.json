@@ -1,5 +1,5 @@
 {
-  "run": "https://github.com/klutchnikoff/typstOgraphe/actions/runs/41188235007",
+  "run": "https://github.com/klutchnikoff/Typstographe/actions/runs/41188235007",
   "commit": "f7b3785b5cd08794106bf5f4e9d3b9fd89e44e57",
   "provenance": "Unmodified native recipe JSON extracted from the successful workflow job stdout",
   "recovery": {
@@ -42,12 +42,7 @@
           "confirmed copy reopens after interruption without publishing the private note",
           "native exports match reopened archive and CLI export, including dependencies and resources"
         ],
-        "pageSizes": [
-          [
-            595.2755905511812,
-            841.8897637795276
-          ]
-        ],
+        "pageSizes": [[595.2755905511812, 841.8897637795276]],
         "archiveSha256": "32c01442255c2b3c1c5f9f8342a6cb4b3322f9faf621cec56102f5f8d7120156",
         "exportedEntries": 790
       },
@@ -65,18 +60,9 @@
           "native exports match reopened archive and CLI export, including dependencies and resources"
         ],
         "pageSizes": [
-          [
-            595.2755905511812,
-            841.8897637795276
-          ],
-          [
-            595.2755905511812,
-            841.8897637795276
-          ],
-          [
-            595.2755905511812,
-            841.8897637795276
-          ]
+          [595.2755905511812, 841.8897637795276],
+          [595.2755905511812, 841.8897637795276],
+          [595.2755905511812, 841.8897637795276]
         ],
         "archiveSha256": "90a27d196d65ff03a88b334bbb2c2aa47648db2d41e5b733ee9bd4c4b0c9c24b",
         "exportedEntries": 13

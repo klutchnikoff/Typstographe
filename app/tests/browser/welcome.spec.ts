@@ -14,7 +14,7 @@ test('accueil centré, ouverture sans fenêtre de progression et animation non r
   await page.goto('/?client=main&welcome=1')
   await page.waitForFunction(() => window.__spike?.ready)
   const welcome = page.locator('.welcome')
-  const brand = welcome.getByRole('img', { name: 'typstOgraphe', exact: true })
+  const brand = welcome.getByRole('img', { name: 'Typstographe', exact: true })
   const buttons = welcome.getByRole('button')
   await expect(buttons).toHaveCount(2)
   await expect(welcome).not.toContainText('Le contenu d’abord.')

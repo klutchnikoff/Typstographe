@@ -20,7 +20,7 @@ test('paragraph input uses the actual archived Yjs state, not a reconstructed do
   }))
   const file = join(initial.root, 'input.typsto')
   mkdirSync(initial.root, { recursive: true })
-  copyFileSync(resolve('../examples/article-working.typsto'), file)
+  copyFileSync(resolve('../fixtures/projects/article-working.typsto'), file)
   const hash = () => createHash('sha256').update(readFileSync(file)).digest('hex')
   const originalHash = hash()
   const reload = page.waitForEvent('domcontentloaded')

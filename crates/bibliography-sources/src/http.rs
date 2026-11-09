@@ -16,7 +16,7 @@ impl Http {
     pub fn new() -> Result<Self> {
         Ok(Self {
             client: reqwest::Client::builder()
-                .user_agent("typstOgraphe/0.1 (https://github.com/klutchnikoff/typstOgraphe)")
+                .user_agent("Typstographe/0.1 (https://github.com/klutchnikoff/Typstographe)")
                 .timeout(Duration::from_secs(12))
                 .connect_timeout(Duration::from_secs(5))
                 .redirect(reqwest::redirect::Policy::none())

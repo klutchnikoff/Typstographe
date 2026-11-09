@@ -1,4 +1,4 @@
-# Évaluation de Yrs pour typstOgraphe
+# Évaluation de Yrs pour Typstographe
 
 Évaluation du 27 octobre 2026, avant décision sur son adoption dans le chantier
 A.2. Ce répertoire est une expérience autonome : Yrs n'est ajouté ni au cœur,
@@ -167,7 +167,7 @@ complexité d'un long article avec de nombreux tableaux et références.
 
 La recommandation issue de l'essai est de retenir Yrs comme candidat au stockage
 et à l'édition collaborative côté Rust, en conservant Yjs dans l'interface et
-un contrat public propre à typstOgraphe. Ce choix permettrait un fonctionnement
+un contrat public propre à Typstographe. Ce choix permettrait un fonctionnement
 sans interface pour la CLI/MCP ; il ne supprimerait pas notre couche métier.
 La décision d'adoption et les autres choix du chantier A.2 restent à discuter.
 

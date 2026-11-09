@@ -2,7 +2,7 @@
 
 Ce document conserve les décisions et recettes historiques. Pour le contrat courant, voir [MCP](../mcp.md) et [rattachement](../mcp-local.md).
 
-# MCP typstOgraphe — session documentaire autonome
+# MCP Typstographe — session documentaire autonome
 
 Le [contrat général des interfaces](../interface-contract.md) décrit le moteur commun.
 Ce guide précise l'enveloppe MCP, sa découverte et ses règles de session/fichiers.

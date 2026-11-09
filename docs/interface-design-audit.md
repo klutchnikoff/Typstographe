@@ -22,7 +22,7 @@ Les maquettes interactives associées : [système d'interface](mockups/interface
 | Zone | Source | Aujourd'hui | Constats |
 | --- | --- | --- | --- |
 | Menus | `menus.rs`, `app/mod.rs` | natifs sous macOS (`muda`), barre egui ailleurs ; construits du registre | bon : à conserver. Rien à styler sous macOS |
-| Barre d'outils | `toolbar.rs`, `icons.rs` | marque « typstOgraphe » (17 px) + icônes Lucide 18 px, boutons 32 px, menu titres et listes, « P.-S. » et « P.J. » en texte | marque redondante avec le titre de fenêtre ; deux boutons textuels isolés ; annuler/rétablir absents de la barre ; sélection grise volontairement « neutre » (`neutral_selection`) |
+| Barre d'outils | `toolbar.rs`, `icons.rs` | nom de l’application (17 px) + icônes Lucide 18 px, boutons 32 px, menu titres et listes, « P.-S. » et « P.J. » en texte | marque redondante avec le titre de fenêtre ; deux boutons textuels isolés ; annuler/rétablir absents de la barre ; sélection grise volontairement « neutre » (`neutral_selection`) |
 | Panneau d'informations | `app/information.rs`, `information_fields.rs` | titre + petits boutons de rubrique, `Grid` 2 colonnes, `ComboBox`, zone défilante ≤ 45 % de la hauteur | trois « styles d'onglets » dans l'application (ici, préférences, relecture) ; largeur des libellés variable |
 | Recherche | `app/search.rs` | chevron de remplacement, champ, compteur 90 px, chevrons, « Aa », « × » en texte, ligne de remplacement | « × » texte alors que `Icon::Close` existe ; pas d'icône de recherche ; compteur de même poids que les libellés |
 | Éditeur | `app/editor_view.rs`, `editor/*` | `TextEdit` maître, marges proportionnelles à la police, widgets peints à la main | cœur de l'ergonomie : ne pas y toucher hors habillage |

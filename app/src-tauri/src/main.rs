@@ -466,7 +466,7 @@ fn open_peer(app: tauri::AppHandle) -> Result<(), CommandError> {
         format!("peer-{id}"),
         tauri::WebviewUrl::App("index.html".into()),
     )
-    .title(format!("typstOgraphe — participant {}", id + 1))
+    .title(format!("Typstographe — participant {}", id + 1))
     .inner_size(1280.0, 900.0)
     .min_inner_size(800.0, 600.0)
     .build()?;
@@ -683,7 +683,7 @@ fn main() {
             diagnostics::diagnostic_finish
         ])
         .build(tauri::generate_context!())
-        .expect("Erreur de l’application typstOgraphe")
+        .expect("Erreur de l’application Typstographe")
         .run(|_app, _event| {
             #[cfg(target_os = "macos")]
             if let tauri::RunEvent::Opened { urls } = _event {

@@ -331,7 +331,7 @@ publication, aucun historique et aucune écriture disque. Son candidat conserve
 les identités de blocs et zones. `check_proposal` vérifie la fraîcheur, sans
 représenter un accord humain ni publier quoi que ce soit.
 
-Le [contrat des contextes et propositions](https://github.com/klutchnikoff/typstOgraphe/blob/main/docs/editing-contexts.md)
+Le [contrat des contextes et propositions](https://github.com/klutchnikoff/Typstographe/blob/main/docs/editing-contexts.md)
 précise ces API et les affinités aux frontières. Le MCP rattaché utilise son propre
 contexte ; `proposals.submit/get/cancel` préparent et suivent des candidats privés.
 La relecture native, l’accord/refus du lot entier et la publication atomique passent
@@ -361,11 +361,11 @@ Pour le détail, les guides du dépôt sont liés ci-dessous avec leurs URL GitH
 afin que ces liens fonctionnent aussi depuis la documentation HTML de Rustdoc.
 Ils restent disponibles localement dans `docs/` et dans la feuille de route.
 
-- [Registre des opérations](https://github.com/klutchnikoff/typstOgraphe/blob/main/docs/commands.md), [schémas JSON](https://github.com/klutchnikoff/typstOgraphe/blob/main/docs/commands.json).
-- [Frontière Rust et saisie native](https://github.com/klutchnikoff/typstOgraphe/blob/main/docs/engine-adapters.md).
-- [Lectures, découverte et caches](https://github.com/klutchnikoff/typstOgraphe/blob/main/docs/engine-queries.md).
-- [Événements et actions de `ViewSync`](https://github.com/klutchnikoff/typstOgraphe/blob/main/docs/view-sync.md).
-- [Branchement egui, parcours et captures identiques](https://github.com/klutchnikoff/typstOgraphe/blob/main/docs/view-sync-egui.md).
-- [CLI](https://github.com/klutchnikoff/typstOgraphe/blob/main/docs/cli.md) et [MCP](https://github.com/klutchnikoff/typstOgraphe/blob/main/docs/mcp.md), pour leurs enveloppes et politiques propres.
-- [Rattachement MCP local en lecture](https://github.com/klutchnikoff/typstOgraphe/blob/main/docs/mcp-local.md).
-- [Décisions et suite de phase 6](https://github.com/klutchnikoff/typstOgraphe/blob/7b0d6fd3e6ae25e5704ed43ce2f4efefa9c2fa0b/ROADMAP-ARCHITECTURE.md#phase-6--assistance-à-la-composition-dans-lapplication-d14).
+- [Registre des opérations](https://github.com/klutchnikoff/Typstographe/blob/main/docs/commands.md), [schémas JSON](https://github.com/klutchnikoff/Typstographe/blob/main/docs/commands.json).
+- [Frontière Rust et saisie native](https://github.com/klutchnikoff/Typstographe/blob/main/docs/engine-adapters.md).
+- [Lectures, découverte et caches](https://github.com/klutchnikoff/Typstographe/blob/main/docs/engine-queries.md).
+- [Événements et actions de `ViewSync`](https://github.com/klutchnikoff/Typstographe/blob/main/docs/view-sync.md).
+- [Branchement egui, parcours et captures identiques](https://github.com/klutchnikoff/Typstographe/blob/main/docs/view-sync-egui.md).
+- [CLI](https://github.com/klutchnikoff/Typstographe/blob/main/docs/cli.md) et [MCP](https://github.com/klutchnikoff/Typstographe/blob/main/docs/mcp.md), pour leurs enveloppes et politiques propres.
+- [Rattachement MCP local en lecture](https://github.com/klutchnikoff/Typstographe/blob/main/docs/mcp-local.md).
+- [Décisions et suite de phase 6](https://github.com/klutchnikoff/Typstographe/blob/7b0d6fd3e6ae25e5704ed43ce2f4efefa9c2fa0b/ROADMAP-ARCHITECTURE.md#phase-6--assistance-à-la-composition-dans-lapplication-d14).

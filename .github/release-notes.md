@@ -1,4 +1,4 @@
-Development release of typstOgraphe, a semantic document editor powered by Typst.
+Development release of Typstographe, a semantic document editor powered by Typst.
 
 Installers are provided for macOS (Intel and Apple Silicon), Linux x86_64
 (`.deb` and AppImage), and Windows x64. They include the application, Typst

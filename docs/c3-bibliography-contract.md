@@ -3,7 +3,8 @@
 Décisions du **6 novembre 2026**, complétées par les
 [profils natifs Hayagriva](c3-native-bibliography-profiles.md).
 Le [gestionnaire](c3-bibliography-manager.md) et les commandes documentaires
-sont raccordés ; le format actuel est CAS 16, générateur de source 5.
+sont raccordés depuis CAS 16, avec le générateur de source 5.
+CAS 17 conserve le même schéma bibliographique.
 Les identifiants techniques sont anglais.
 
 ## Frontière de la crate
