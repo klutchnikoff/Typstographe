@@ -3,14 +3,11 @@ import type { SelectionBookmark, Transaction } from '@tiptap/pm/state'
 import { focusEditorSelection } from './editor-focus'
 import { composing, keyboardScope, navigationGroup, visible } from './keyboard-navigation'
 import { icon } from './icons'
+import { placePopover, unchangedRange, type EditorRange } from './editor-popover'
 import './object-menu.css'
 
-export interface MenuRange {
-  from: number
-  to: number
-}
 export interface MenuExecution {
-  range: MenuRange
+  range: EditorRange
   current: () => boolean
   dismiss: () => void
 }
@@ -29,9 +26,9 @@ export interface ObjectMenuGroup {
 }
 interface MenuOptions {
   label: string
-  range: MenuRange
-  anchor: (range: MenuRange) => DOMRect | null
-  origin?: (range: MenuRange) => HTMLElement | null
+  range: EditorRange
+  anchor: (range: EditorRange) => DOMRect | null
+  origin?: (range: EditorRange) => HTMLElement | null
   closed?: () => void
 }
 export function contextMenuKey(event: KeyboardEvent) {
@@ -43,7 +40,7 @@ export function contextMenuKey(event: KeyboardEvent) {
     (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))
   )
 }
-export function editorRangeRect(editor: Editor, range: MenuRange) {
+export function editorRangeRect(editor: Editor, range: EditorRange) {
   const domRange = document.createRange()
   const start = editor.view.domAtPos(range.from, 1)
   const end = editor.view.domAtPos(range.to, -1)
@@ -66,7 +63,7 @@ export function objectMenu(editor: Editor, host: HTMLElement, onError: (error: u
   let active:
     | {
         options: MenuOptions
-        range: MenuRange
+        range: EditorRange
         bookmark: SelectionBookmark
         pending: boolean
         targetValid: boolean
@@ -95,30 +92,7 @@ export function objectMenu(editor: Editor, host: HTMLElement, onError: (error: u
   function position() {
     if (!active?.targetValid) return
     const anchor = active.options.anchor(active.range)
-    const viewport = document.documentElement
-    const margin = 8
-    if (!anchor || anchor.bottom < 0 || anchor.top > viewport.clientHeight || !visible(host)) {
-      close()
-      return
-    }
-    const { width, height } = root.getBoundingClientRect()
-    const right = viewport.clientWidth - width - margin
-    const bottom = viewport.clientHeight - height - margin
-    let x = anchor.left
-    let y = anchor.bottom + 5
-    if (y > bottom) {
-      const above = anchor.top - height - 5
-      if (above >= margin) y = above
-      else {
-        const before = anchor.left - width - 5
-        const after = anchor.right + 5
-        if (after <= right) x = after
-        else if (before >= margin) x = before
-        y = anchor.top
-      }
-    }
-    root.style.left = `${Math.max(margin, Math.min(right, x))}px`
-    root.style.top = `${Math.max(margin, Math.min(bottom, y))}px`
+    if (!anchor || !visible(host) || !placePopover(root, anchor)) close()
   }
   function transaction({ transaction }: { transaction: Transaction }) {
     const session = active
@@ -126,22 +100,14 @@ export function objectMenu(editor: Editor, host: HTMLElement, onError: (error: u
     const before = session.range
     session.bookmark = session.bookmark.map(transaction.mapping)
     if (!session.targetValid) return
-    const start = transaction.mapping.mapResult(before.from, 1)
-    const end = transaction.mapping.mapResult(before.to, -1)
-    const from = start.pos,
-      to = end.pos
-    if (
-      start.deleted ||
-      end.deleted ||
-      to < from ||
-      !transaction.before.slice(before.from, before.to).eq(transaction.doc.slice(from, to))
-    ) {
+    const range = unchangedRange(transaction, before)
+    if (!range) {
       session.targetValid = false
       // A pending command may be publishing the intended change itself.
       if (!session.pending) close(root.contains(document.activeElement))
       return
     }
-    session.range = { from, to }
+    session.range = range
     position()
   }
   keyboardScope(root, { priority: 45, close: () => close(true) })

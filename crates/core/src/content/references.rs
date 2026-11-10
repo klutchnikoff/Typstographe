@@ -56,46 +56,50 @@ pub struct ResolvedReference {
     pub reference: Reference,
     pub display: String,
 }
-/// Read the rendered labels from the existing Typst introspector; never compile twice.
+mod preview;
+pub use preview::complete_preview;
+
+fn target_id(label: &str) -> Option<String> {
+    let id = label.trim_matches(['<', '>']).strip_prefix("tog-")?;
+    valid_id(id).then(|| id.to_owned())
+}
+fn resolved_metadata(content: &typst::foundations::Content) -> Option<ResolvedReference> {
+    use typst::{foundations::Value as TypstValue, introspection::MetadataElem};
+    let TypstValue::Dict(value) = &content.to_packed::<MetadataElem>()?.value else {
+        return None;
+    };
+    let TypstValue::Str(id) = value.get("typstographe-reference").ok()? else {
+        return None;
+    };
+    let TypstValue::Bool(include_label) = value.get("include-label").ok()? else {
+        return None;
+    };
+    let TypstValue::Bool(include_page) = value.get("include-page").ok()? else {
+        return None;
+    };
+    let display = match value.get("display").ok()? {
+        TypstValue::Content(c) => c.plain_text().to_string(),
+        TypstValue::Str(s) => s.to_string(),
+        _ => return None,
+    };
+    Some(ResolvedReference {
+        reference: Reference {
+            target: target_id(id.as_str())?,
+            include_label: *include_label,
+            include_page: *include_page,
+        },
+        display,
+    })
+}
+/// Read the rendered labels from the existing Typst introspector.
 pub fn resolved(document: &typst_layout::PagedDocument) -> Vec<ResolvedReference> {
-    use typst::foundations::{NativeElement, Selector, Value as TypstValue};
+    use typst::foundations::{NativeElement, Selector};
     use typst::introspection::{Introspector, MetadataElem};
     document
         .introspector()
         .query(&Selector::Elem(MetadataElem::ELEM, None))
         .iter()
-        .filter_map(|content| {
-            let TypstValue::Dict(value) = &content.to_packed::<MetadataElem>()?.value else {
-                return None;
-            };
-            let TypstValue::Str(id) = value.get("typstographe-reference").ok()? else {
-                return None;
-            };
-            let TypstValue::Bool(include_label) = value.get("include-label").ok()? else {
-                return None;
-            };
-            let TypstValue::Bool(include_page) = value.get("include-page").ok()? else {
-                return None;
-            };
-            let display = match value.get("display").ok()? {
-                TypstValue::Content(c) => c.plain_text().to_string(),
-                TypstValue::Str(s) => s.to_string(),
-                _ => return None,
-            };
-            let target = id
-                .as_str()
-                .trim_matches(['<', '>'])
-                .strip_prefix("tog-")?
-                .to_owned();
-            Some(ResolvedReference {
-                reference: Reference {
-                    target,
-                    include_label: *include_label,
-                    include_page: *include_page,
-                },
-                display,
-            })
-        })
+        .filter_map(resolved_metadata)
         .collect()
 }
 fn title(node: &Node) -> String {

@@ -15,6 +15,7 @@ import type { Catalogue } from './shell'
 export interface ShellOptions {
   bands: BandHost
   objectMenu: ObjectMenu
+  closeReferenceSelector: () => void
   editor: Editor
   provider: Provider
   transport: Transport

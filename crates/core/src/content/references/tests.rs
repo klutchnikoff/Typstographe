@@ -167,3 +167,32 @@ fn uncaptioned_images_do_not_fabricate_a_figure_zero() {
     assert!(!labels[0].display.contains('0'), "{:?}", labels);
     assert!(labels[0].display.contains("page"));
 }
+
+#[test]
+fn prospective_preview_uses_the_compiled_model_for_unreferenced_targets() {
+    let kind = crate::document_types::DocumentType::Article;
+    let mut world = crate::rendering::TypstWorld::default();
+    let document = world.compile_with_template(
+        r#"#import "capabilities/cross-references.typ": reference-style
+#reference-style(label: el => [Données], page: el => [p. I], combine: (label, page) => [#label — #page])
+= Méthode <tog-heading-first>
+Un paragraphe sans renvoi.
+"#,
+        &crate::document_types::Metadata::demo(kind),
+        &kind.default_model(),
+    ).unwrap();
+    let mut references = resolved(&document);
+    assert!(references.is_empty());
+    complete_preview(&world, &document, &mut references);
+    assert_eq!(
+        references
+            .iter()
+            .map(|r| (r.reference.target.as_str(), r.display.as_str()))
+            .collect::<Vec<_>>(),
+        [
+            ("heading-first", "Données"),
+            ("heading-first", "p. I"),
+            ("heading-first", "Données — p. I")
+        ],
+    );
+}

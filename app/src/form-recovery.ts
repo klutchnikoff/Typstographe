@@ -83,9 +83,9 @@ export function reopenBand(provider: Provider, item: RecoveredItem) {
       )
         continue
       if (!open(pos, draft)) continue
-      const panel = [...document.querySelectorAll<HTMLElement>('form.context-band')].find(
-        (el) => !el.hidden && panels.has(el),
-      )
+      const panel = [
+        ...document.querySelectorAll<HTMLElement>('form:is(.context-band, .floating-editor-panel)'),
+      ].find((el) => el.id === draft.form && !el.hidden && panels.has(el))
       if (panel) return hydrateForm(provider, panel, item)
     } catch {
       /* Missing or changed targets stay available as isolated drafts. */

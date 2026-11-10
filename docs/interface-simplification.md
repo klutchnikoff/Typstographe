@@ -213,6 +213,10 @@ Typstographe (**Choix A retenu**) :
    - Pop-up flottant avec recherche floue pondérée pour les renvois internes et les
      citations bibliographiques, validation directe sur `Entrée`/clic et édition rapide
      au clic sur un badge existant.
+   - Renvois internes : le sélecteur conserve la ligne de texte et cherche aussi dans les
+     libellés et les pages du dernier aperçu Typst. `$` limite la recherche aux équations.
+     Les flèches parcourent les résultats depuis le champ de recherche et `Échap` rend le
+     curseur à l’éditeur. `Appliquer` reste disponible pour modifier un badge existant.
 3. **Lot E.2c — Désimbrication bibliographique et palette centrée** :
    - Intégration de la recherche en ligne et des arbitrages d’acquisition à l’intérieur de
      `#bibliography-manager` (zéro sous-modale empilée), accès direct depuis l’onglet ou
