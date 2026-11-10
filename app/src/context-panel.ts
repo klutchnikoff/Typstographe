@@ -7,6 +7,7 @@ export function contextPanel(options: {
   id: string
   closeLabel: string
   close: () => void
+  escape?: () => void
   canConfirm: () => boolean
   tabExit?: () => void
   titleId?: string
@@ -145,7 +146,7 @@ export function contextPanel(options: {
     },
   }
   keyboardScope(element, {
-    close: options.close,
+    close: options.escape || options.close,
     confirm: () => panel.submit(),
     canConfirm: options.canConfirm,
     tab: true,

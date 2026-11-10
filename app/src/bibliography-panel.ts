@@ -4,8 +4,8 @@ import type { Editor } from '@tiptap/core'
 import type { Provider, Transport } from './provider'
 import type { DocumentType, ModelPolicy } from './shell'
 import { settingsFor } from './state'
-import { referenceRecords } from './citation-index'
 import { openBibliography } from './bibliography-manager'
+import { icon } from './icons'
 import { tr } from './i18n'
 /** Bibliographic presentation belongs to the document; notices use the common manager. */
 export function bibliographyPanel(
@@ -34,19 +34,15 @@ export function bibliographyPanel(
     () => settingsFor(provider).metadata.fields[descriptor.style],
     policy,
   )
-  const count = document.createElement('p'),
-    manage = document.createElement('button')
+  const manage = document.createElement('button')
   manage.type = 'button'
-  manage.textContent = tr('Gérer les références')
+  manage.className = 'bibliography-manage'
+  manage.innerHTML = icon('book-open')
+  manage.append(tr('Gérer les références'))
   manage.onclick = () => openBibliography(editor, provider, transport)
-  root.append(count, manage)
-  const refresh = () => {
-    style.refresh()
-    count.textContent = tr('{count} notices', { count: referenceRecords(provider).length })
-  }
-  refresh()
+  root.append(manage)
   return {
-    refresh,
+    refresh: style.refresh,
     destroy() {
       style.destroy()
       root.remove()

@@ -349,8 +349,11 @@ D’autres connecteurs spécialisés pourront compléter cette chaîne.
 - Les compléments de publication de Cairn passent aussi par le résolveur DOI.
   Ils complètent le type/contenant, sans remplacer les champs propres de la
   notice OAI. La provenance de cet enrichissement reste explicite.
-- Recherche locale conservée ; appels en ligne explicites, bornés et asynchrones.
+- Recherche locale conservée. Les appels réseau restent dans la vue en ligne :
+  après une pause de frappe, bornés et asynchrones. La recherche libre combine
+  titre, auteur et année dans le même champ et conserve la syntaxe du fournisseur.
   Une réponse obsolète ne peut remplacer une nouvelle recherche ou un brouillon.
+  Demander un résultat de plus que la limite d’affichage pour signaler une liste tronquée.
 - Collecteurs séparés de la crate bibliographique pure et du cœur documentaire.
   Réutiliser les conversions et validations existantes vers Hayagriva ; conserver
   la source d’import convertie, distincte de la notice corrigée, sans prétendre

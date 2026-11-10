@@ -12,9 +12,15 @@ pub(crate) fn parse(body: &str) -> Result<Vec<Candidate>> {
         .iter()
         .map(|record| {
             let identifier = text(&record["identifier"]);
-            if identifier.is_empty() {
-                return Err(Error::new(Provider::Zbmath, ErrorCode::InvalidResponse));
-            }
+            let url = if identifier.is_empty() {
+                let id = record["id"]
+                    .as_u64()
+                    .filter(|id| *id > 0)
+                    .ok_or_else(|| Error::new(Provider::Zbmath, ErrorCode::InvalidResponse))?;
+                format!("https://api.zbmath.org/v1/document/{id}")
+            } else {
+                format!("https://zbmath.org/{identifier}")
+            };
             let kind = text(&record["document_type"]["description"]).to_lowercase();
             let (child, parent) = match kind.as_str() {
                 "journal article" => ("article", Some("periodical")),
@@ -44,7 +50,6 @@ pub(crate) fn parse(body: &str) -> Result<Vec<Candidate>> {
                     }
                 }
             }
-            let url = format!("https://zbmath.org/{identifier}");
             value["url"] = json!(url);
             if let Some(parent_kind) = parent {
                 let source = &record["source"]["series"][0];

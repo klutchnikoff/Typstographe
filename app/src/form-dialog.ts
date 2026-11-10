@@ -7,14 +7,17 @@ export function formDialog(options: {
   id: string
   title: string
   cancel: () => void
+  escape?: () => void
   returnFocus: () => HTMLElement | undefined
 }) {
   const element = document.createElement('dialog')
+  const escape = options.escape || options.cancel
   element.className = 'app-dialog form-dialog'
   const form = contextPanel({
     id: options.id,
     closeLabel: tr('Annuler'),
     close: options.cancel,
+    escape,
     canConfirm: () => true,
     modal: true,
   })
@@ -25,7 +28,7 @@ export function formDialog(options: {
   element.append(form.element)
   element.addEventListener('cancel', (event) => {
     event.preventDefault()
-    options.cancel()
+    escape()
   })
   returnFocusOnClose(element, options.returnFocus)
   return Object.assign(form, {

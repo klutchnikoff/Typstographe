@@ -3,6 +3,9 @@ import type { Provider, Transport } from './provider'
 import type { Source, Report, Decision, Notice } from './bibliography-types'
 import { tr } from './i18n'
 import { diagnosticText, fieldLabel } from './bibliography-fields'
+import { navigationGroup } from './keyboard-navigation'
+import { labeledField } from './form-field'
+
 export interface ImportDraft {
   source: Source
   report: Report
@@ -10,124 +13,244 @@ export interface ImportDraft {
   ready: string
   reviewed?: Notice[]
 }
-export function refreshImportPlan(root: HTMLElement, plan: Report['plan']) {
-  for (const section of root.querySelectorAll<HTMLElement>('[data-incoming]')) {
-    const item = plan.items.find((i) => i.incoming === section.dataset.incoming)
-    const label = section.querySelector('.bibliography-plan-action')
-    if (item && label) label.textContent = planLabel(item.action)
-  }
+type PlanItem = Report['plan']['items'][number]
+const labels: Record<string, string> = {
+  new: 'Nouvelle notice',
+  unchanged: 'Notice conservée',
+  enrich: 'Notice enrichie',
+  conflict: 'Décision nécessaire',
+  skip: 'Notice ignorée',
 }
-function planLabel(action: string) {
-  return tr(
-    (
-      {
-        new: 'Nouvelle notice',
-        unchanged: 'Notice conservée',
-        enrich: 'Notice enrichie',
-        conflict: 'Décision nécessaire',
-        skip: 'Notice ignorée',
-      } as Record<string, string>
-    )[action] || 'Vérifier cette notice.',
-  )
+const planLabel = (item: PlanItem) => tr(labels[item.action] || 'Vérifier cette notice.')
+const title = (record: Notice) => displayValue(record.entry.title) || record.key
+
+function displayValue(value: unknown): string {
+  if (value === null || value === undefined) return ''
+  if (typeof value !== 'object') return String(value)
+  if (Array.isArray(value)) return value.map(displayValue).filter(Boolean).join(' · ')
+  return Object.values(value).map(displayValue).filter(Boolean).join(' · ')
 }
-export function importReview(
+function atPath(record: Notice, path: string) {
+  return path === '/retained_parents'
+    ? record.retained_parents
+    : path
+        .slice(1)
+        .split('/')
+        .reduce<unknown>(
+          (value, key) =>
+            value && typeof value === 'object'
+              ? (value as Record<string, unknown>)[key]
+              : undefined,
+          record.entry,
+        )
+}
+
+function comparison(
   root: HTMLElement,
+  item: PlanItem,
+  existing: Notice | undefined,
+  incoming: Notice,
+  file: boolean,
+) {
+  root.replaceChildren()
+  if (!existing) return
+  const paths = [...new Set([...item.added_fields, ...item.differing_fields])]
+  if (!paths.length) return
+  const table = document.createElement('table')
+  table.className = 'bibliography-import-comparison'
+  const header = table.createTHead().insertRow()
+  for (const label of ['Champ', 'Dans le projet', file ? 'Dans le fichier' : 'Source en ligne']) {
+    const cell = document.createElement('th')
+    cell.scope = 'col'
+    cell.textContent = tr(label)
+    header.append(cell)
+  }
+  const body = table.createTBody()
+  for (const path of paths) {
+    const row = body.insertRow()
+    row.insertCell().textContent = fieldLabel(path)
+    row.insertCell().textContent = displayValue(atPath(existing, path)) || '—'
+    const incomingCell = row.insertCell()
+    incomingCell.textContent = displayValue(atPath(incoming, path)) || '—'
+    const effect = document.createElement('small')
+    effect.textContent = tr(
+      item.added_fields.includes(path) ? 'Champ complété' : 'Valeur du projet conservée',
+    )
+    incomingCell.append(effect)
+  }
+  root.append(table)
+}
+
+/** The source list and selected decision share one review, for a file or a lookup. */
+export function importReview(
   draft: ImportDraft,
   existing: Notice[],
   changed: () => void,
-  allowSkip = true,
+  file = true,
 ) {
-  const heading = document.createElement('h3')
-  heading.textContent = draft.source.name
-  const notices = document.createElement('p')
-  notices.textContent = tr('{count} notices', { count: draft.report.records.length })
-  const original = document.createElement('details'),
-    summary = document.createElement('summary'),
-    source = document.createElement('pre')
-  summary.textContent = tr('Source originale (lecture seule)')
-  source.textContent = draft.source.contents
-  original.append(summary, source)
-  root.append(heading, notices)
-  for (const item of draft.report.plan.items) {
-    const record = draft.report.records.find((r) => r.id === item.incoming)!
-    const section = document.createElement('section')
-    section.className = 'bibliography-import-item'
-    section.dataset.incoming = item.incoming
-    const title = document.createElement('strong')
-    title.textContent = record.key
-    const action = document.createElement('p')
-    action.className = 'bibliography-plan-action'
-    action.textContent = planLabel(item.action)
-    const data = document.createElement('p')
-    const summary = draft.report.summaries?.find((s) => s.record_id === record.id)
-    data.textContent = summary
-      ? `${summary.title} · ${summary.authors} · ${summary.year}`
-      : typeof record.entry.title === 'string'
-        ? record.entry.title
-        : record.key
-    const select = document.createElement('select')
-    select.setAttribute('aria-label', `${tr('Décision')} · ${record.key}`)
-    const decision = draft.decisions.find((d) => d.incoming === item.incoming)
-    select.add(new Option(tr('Selon le rapprochement'), 'auto'))
-    select.add(new Option(tr('Conserver séparément'), 'distinct'))
-    select.add(new Option(tr('Même référence que…'), 'same'))
-    if (allowSkip) select.add(new Option(tr('Ignorer cette notice'), 'skip'))
-    select.value = decision?.kind || 'auto'
-    const key = document.createElement('input')
-    key.setAttribute('aria-label', `${tr('Clé de citation')} · ${record.key}`)
-    key.value = decision?.kind === 'distinct' ? decision.key : record.key
-    const target = document.createElement('select')
-    target.setAttribute('aria-label', `${tr('Notice correspondante')} · ${record.key}`)
-    target.add(new Option('—', ''))
-    for (const candidate of [...existing, ...draft.report.records].filter(
-      (r) => r.id !== item.incoming,
-    )) {
-      target.add(new Option(candidate.key, candidate.id))
+  const element = document.createElement('section'),
+    source = document.createElement('section'),
+    list = document.createElement('div')
+  element.id = file ? 'bibliography-file-review' : 'bibliography-acquisition-review'
+  element.className = 'bibliography-import-item'
+  source.className = 'bibliography-source'
+  list.className = 'bibliography-list'
+  list.setAttribute('role', 'listbox')
+  list.setAttribute('aria-label', tr('Notices du fichier'))
+  let selected: string | undefined = (
+    draft.report.plan.items.find((item) => item.action === 'conflict') || draft.report.plan.items[0]
+  )?.incoming
+  const buttons = new Map<string, HTMLButtonElement>()
+  const navigation = navigationGroup(list, {
+    axis: 'vertical',
+    onActivate: (row) => {
+      selected = row.dataset.incoming
+      render()
+      update()
+      buttons.get(selected!)?.focus()
+    },
+  })
+  if (file) {
+    const filename = document.createElement('strong')
+    filename.textContent = draft.source.name
+    source.append(filename, list)
+    for (const record of draft.report.records) {
+      const row = document.createElement('button')
+      row.type = 'button'
+      row.className = 'bibliography-list-row'
+      row.dataset.incoming = record.id
+      const name = document.createElement('span')
+      name.textContent = title(record)
+      row.append(name, document.createElement('span'))
+      buttons.set(record.id, row)
+      list.append(row)
     }
-    if (decision?.kind === 'same') target.value = decision.target
-    const update = () => {
-      key.hidden = select.value !== 'distinct'
-      target.hidden = select.value !== 'same'
-      draft.decisions = draft.decisions.filter((d) => d.incoming !== item.incoming)
-      if (select.value === 'skip') draft.decisions.push({ kind: 'skip', incoming: item.incoming })
-      if (select.value === 'distinct')
-        draft.decisions.push({ kind: 'distinct', incoming: item.incoming, key: key.value })
-      if (select.value === 'same')
-        draft.decisions.push({ kind: 'same', incoming: item.incoming, target: target.value })
-      draft.ready = ''
-      changed()
+    navigation.refresh()
+  }
+  const differences = document.createElement('div')
+  const status = document.createElement('p')
+  status.className = 'bibliography-plan-action'
+  function update() {
+    for (const item of draft.report.plan.items) {
+      const button = buttons.get(item.incoming)
+      if (button) {
+        button.lastElementChild!.textContent = planLabel(item)
+        button.setAttribute('aria-selected', String(item.incoming === selected))
+      }
     }
-    key.hidden = select.value !== 'distinct'
-    target.hidden = select.value !== 'same'
-    select.onchange = update
-    key.oninput = update
-    target.onchange = update
-    section.append(title, data, action, select, key, target)
-    if (item.added_fields.length || item.differing_fields.length) {
-      const info = document.createElement('p')
-      info.textContent = [
-        item.added_fields.length
-          ? `${tr('Champs complétés')} : ${item.added_fields.map(fieldLabel).join(', ')}`
-          : '',
-        item.differing_fields.length
-          ? `${tr('Valeurs existantes conservées')} : ${item.differing_fields.map(fieldLabel).join(', ')}`
-          : '',
-      ]
+    const item = draft.report.plan.items.find((item) => item.incoming === selected)
+    const incoming = draft.report.records.find((record) => record.id === selected)
+    if (!item || !incoming) return
+    status.textContent = planLabel(item)
+    const records = [...existing, ...draft.report.records]
+    const match =
+      item.target === incoming.id ? undefined : records.find((record) => record.id === item.target)
+    comparison(differences, item, match, incoming, file)
+  }
+  function render() {
+    const heading = document.createElement('h3')
+    heading.textContent = tr('Vérifier l’import')
+    element.replaceChildren(heading)
+    const record = draft.report.records.find((item) => item.id === selected)
+    const item = draft.report.plan.items.find((item) => item.incoming === selected)
+    if (record && item) {
+      const summary = draft.report.summaries?.find((value) => value.record_id === record.id)
+      const name = document.createElement('p')
+      name.textContent = [title(record), summary?.authors, summary?.year]
         .filter(Boolean)
         .join(' · ')
-      section.append(info)
+      const group = document.createElement('fieldset')
+      const legend = document.createElement('legend')
+      legend.textContent = tr('Décision')
+      group.append(legend)
+      const decision = draft.decisions.find((value) => value.incoming === record.id)
+      const key = document.createElement('input'),
+        target = document.createElement('select')
+      key.id = 'bibliography-distinct-key'
+      target.id = 'bibliography-same-target'
+      key.setAttribute('aria-label', `${tr('Clé de citation')} · ${record.key}`)
+      target.setAttribute('aria-label', `${tr('Notice correspondante')} · ${record.key}`)
+      key.value = decision?.kind === 'distinct' ? decision.key : record.key
+      target.add(new Option('—', ''))
+      for (const candidate of [...existing, ...draft.report.records].filter(
+        (value) => value.id !== record.id,
+      ))
+        target.add(new Option(candidate.key, candidate.id))
+      target.value =
+        decision?.kind === 'same'
+          ? decision.target
+          : item.target !== record.id
+            ? item.target || ''
+            : ''
+      const keyField = labeledField(tr('Clé de citation'), key)
+      const targetField = labeledField(tr('Notice correspondante'), target)
+      const choose = () => {
+        const kind = group.querySelector<HTMLInputElement>('input:checked')?.value
+        keyField.hidden = kind !== 'distinct'
+        targetField.hidden = kind !== 'same'
+        return kind
+      }
+      const onChange = () => {
+        const kind = choose()
+        draft.decisions = draft.decisions.filter((value) => value.incoming !== record.id)
+        if (kind === 'skip') draft.decisions.push({ kind, incoming: record.id })
+        if (kind === 'distinct') draft.decisions.push({ kind, incoming: record.id, key: key.value })
+        if (kind === 'same')
+          draft.decisions.push({ kind, incoming: record.id, target: target.value })
+        draft.ready = ''
+        changed()
+      }
+      const choices = [
+        ['auto', 'Selon le rapprochement'],
+        ['same', 'Même référence que…'],
+        ['distinct', 'Conserver séparément'],
+        ...(file ? [['skip', 'Ignorer cette notice']] : []),
+      ]
+      for (const [kind, label] of choices) {
+        const radio = document.createElement('input')
+        radio.type = 'radio'
+        radio.name = 'bibliography-import-decision'
+        radio.value = kind
+        radio.checked = kind === (decision?.kind || (item.action === 'conflict' ? '' : 'auto'))
+        radio.onchange = onChange
+        const option = document.createElement('label')
+        option.append(radio, tr(label))
+        group.append(option)
+      }
+      key.oninput = target.onchange = onChange
+      choose()
+      element.append(name, status, differences, group, keyField, targetField)
     }
-    root.append(section)
+    const diagnostics = document.createElement('ul')
+    diagnostics.className = 'bibliography-diagnostics'
+    for (const diagnostic of draft.report.diagnostics.filter(
+      (value) => !record || !value.key || value.key === record.key,
+    )) {
+      const row = document.createElement('li')
+      row.textContent = `${diagnostic.key} · ${diagnosticText(diagnostic.code)}${diagnostic.field ? ` (${fieldLabel(diagnostic.field)})` : ''}`
+      diagnostics.append(row)
+    }
+    if (diagnostics.childElementCount) element.append(diagnostics)
+    const original = document.createElement('details'),
+      summary = document.createElement('summary'),
+      raw = document.createElement('pre')
+    summary.textContent = tr('Source originale (lecture seule)')
+    raw.textContent = draft.source.contents
+    original.append(summary, raw)
+    element.append(original)
   }
-  const diagnostics = document.createElement('ul')
-  diagnostics.className = 'bibliography-diagnostics'
-  for (const diagnostic of draft.report.diagnostics) {
-    const row = document.createElement('li')
-    row.textContent = `${diagnostic.key} · ${diagnosticText(diagnostic.code)}${diagnostic.field ? ` (${fieldLabel(diagnostic.field)})` : ''}`
-    diagnostics.append(row)
+  render()
+  update()
+  return {
+    element,
+    source,
+    update,
+    focus: () =>
+      (buttons.get(selected!) || element.querySelector<HTMLInputElement>('input'))?.focus(),
+    destroy: () => navigation.destroy(),
   }
-  root.append(diagnostics, original)
 }
+
 export async function reviewImport(provider: Provider, transport: Transport, draft: ImportDraft) {
   return bibliographyQuery<{ plan: Report['plan'] }>(
     provider,
