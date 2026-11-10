@@ -498,11 +498,10 @@ interligne unique employé pour toutes les micro-actions :
   `Backspace` supprime) des badges inline, appuyées sur l’historique Yrs (`Cmd/Ctrl+Z`)
   sans bandeau de confirmation ; masquage de la roue dentée sur les blocs sans paramètres
   externes et retrait du doublon `alias` dans les propriétés de `mathBlock`.
-- **Désimbrication des modales et unification des métadonnées** : intégrer la recherche
-  en ligne (`bibliography-online.ts`) et la revue d’acquisition
-  (`bibliography-review-dialog.ts`) comme vues internes de `#bibliography-manager` (aucune
-  `<dialog>` empilée sur une autre `<dialog>`), harmoniser l’édition des collections dans
-  `metadata-collections.ts` et afficher la palette de commandes en overlay centré.
+- **Désimbrication des modales et unification des métadonnées** : la recherche
+  en ligne et la revue d’acquisition sont des vues internes de `#bibliography-manager`.
+  La palette de commandes s’ouvre en haut au centre. En E.2d, harmoniser l’édition
+  des collections et intégrer l’accès direct aux notices au panneau **Document**.
 
 **Séparation validée le 27 octobre 2026 :** l’accès **Projets** présente le
 catalogue global (récents, épinglés, recherche, création et ouverture) ; l’accès

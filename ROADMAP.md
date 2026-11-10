@@ -580,9 +580,9 @@ validé sur la recette représentative de chaque modèle livré.
      et retirer le doublon d’alias sur `mathBlock`.
   4. **Désimbrication des modales et harmonisation de l’en-tête** : intégrer la recherche
      bibliographique en ligne et la revue d’acquisition comme vues internes du gestionnaire
-     unique (sans `<dialog>` empilées), supprimer l’étape tremplin vide de l’onglet
-     *Bibliographie*, unifier le modèle d’édition des collections de métadonnées et
-     centrer la palette de commandes.
+     unique, centrer la palette de commandes, puis unifier le modèle d’édition des
+     collections de métadonnées. L’accès direct aux notices sera intégré au panneau
+     **Document** en E.2d.
 - Revoir les parcours réels : accueil, création, en-tête, rédaction, recherche,
   sélection, correction, insertion, sauvegarde et export.
 - Achever l’harmonisation des widgets et bandeaux : même cadre et mêmes règles

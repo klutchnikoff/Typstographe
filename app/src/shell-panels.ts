@@ -1,4 +1,5 @@
-import { commandPalette } from './command-palette'
+import { openCommandPalette } from './command-palette'
+import { commandEditor } from './command-context'
 import { keyboardScope } from './keyboard-navigation'
 import { tr } from './i18n'
 import { searchState } from './proofing'
@@ -17,12 +18,9 @@ export type SidePanels = ReturnType<typeof sidePanels>
  */
 export function sidePanels(ctx: ShellContext, layout: Pick<ShellLayout, 'side' | 'panel'>) {
   const { editor, commands } = ctx
-  let palette: ReturnType<typeof commandPalette> | undefined
   let versions: ReturnType<typeof versionsPanel> | undefined
   let releaseRecovered: (() => void) | undefined
   const release = () => {
-    palette?.destroy()
-    palette = undefined
     versions?.destroy()
     versions = undefined
     releaseRecovered?.()
@@ -77,11 +75,9 @@ export function sidePanels(ctx: ShellContext, layout: Pick<ShellLayout, 'side' |
       releaseRecovered?.()
     },
     palette() {
-      palette = commandPalette(show(tr('Commandes'), 'ui.palette'), commands, (command) => {
-        release()
-        railMode.close()
-        runCommand(command)
-      })
+      openCommandPalette(commands, () =>
+        ctx.state.active ? commandEditor(editor).view.dom : byId('create-document'),
+      )
     },
     search() {
       searchPanel(show(tr('Rechercher et remplacer'), 'ui.find'), editor)

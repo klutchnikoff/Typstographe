@@ -1,9 +1,49 @@
-import { navigationGroup } from './keyboard-navigation'
+import { keyboardScope, navigationGroup, visible } from './keyboard-navigation'
 import type { PublicCommand, Registry } from './commands'
-import { commandAvailability, commandVisible, refreshCommandButton } from './public-commands'
+import { returnFocusOnClose } from './dialog-focus'
+import {
+  commandAvailability,
+  commandVisible,
+  refreshCommandButton,
+  runCommand,
+} from './public-commands'
 import { tr } from './i18n'
 
 let nextId = 0
+
+export function openCommandPalette(commands: Registry, fallbackFocus: () => HTMLElement) {
+  const previous = document.activeElement
+  const dialog = document.createElement('dialog')
+  dialog.className = 'app-dialog command-palette-dialog'
+  dialog.setAttribute('aria-label', tr('Palette de commandes'))
+  const close = () => dialog.close()
+  keyboardScope(dialog, { close, priority: 40, tab: true, tabLoop: true })
+  returnFocusOnClose(dialog, () => {
+    if (previous instanceof HTMLElement && previous !== document.body && visible(previous)) {
+      if (previous instanceof HTMLButtonElement && previous.dataset.command) {
+        // The background button may still reflect the modal policy until the next refresh.
+        const command = commands.get(previous.dataset.command)
+        if (command) refreshCommandButton(previous, command)
+      }
+      if (!previous.matches(':disabled')) return previous
+    }
+    return fallbackFocus()
+  })
+  document.body.append(dialog)
+  dialog.showModal()
+  const palette = commandPalette(dialog, commands, (command) => {
+    close()
+    runCommand(command)
+  })
+  dialog.addEventListener(
+    'close',
+    () => {
+      palette.destroy()
+      dialog.remove()
+    },
+    { once: true },
+  )
+}
 
 /** The input owns focus; aria-activedescendant exposes the keyboard choice. */
 export function commandPalette(
@@ -33,12 +73,12 @@ export function commandPalette(
     beforeNavigate: () => refreshAvailability(),
     onActivate: (button) => {
       const row = rows.find((row) => row.button === button)
-      if (row && commandAvailability(row.command).enabled) execute(row.command)
+      if (row && commandAvailability(row.command, 'palette').enabled) execute(row.command)
     },
   })
   const refreshAvailability = () => {
     rows.forEach(({ command, button }) => {
-      refreshCommandButton(button, command)
+      refreshCommandButton(button, command, 'palette')
     })
   }
   const visibleCommands = () => [...commands.values()].filter(commandVisible)
@@ -60,10 +100,10 @@ export function commandPalette(
       results.append(button)
     }
     refreshAvailability()
-    navigation.refresh(true)
-    results.scrollTop = 0
     status.textContent = rows.length ? '' : tr('Aucune commande ne correspond.')
     status.hidden = !!rows.length
+    results.scrollTop = 0
+    navigation.refresh(true, true)
   }
   const refresh = () => {
     if (!input.isConnected) {
@@ -90,7 +130,6 @@ export function commandPalette(
   input.oninput = fill
   content.append(input, results, status)
   fill()
-  navigation.refresh(true)
   input.focus()
   return { destroy }
 }

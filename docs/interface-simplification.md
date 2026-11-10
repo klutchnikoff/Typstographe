@@ -166,28 +166,21 @@ rôle de validation. Un raccourci annulé laisse l’indicateur d’enregistreme
     directement une fiche dépliée éditable (ou supprimer toute différence visuelle entre
     un brouillon `.metadata-record-draft` et une fiche ouverte).
 - **Onglet *Bibliographie* (`bibliography-panel.ts`)** :
-  - Éliminer l’étape « onglet vide + bouton *Gérer les références* » : soit le clic sur
-    *Bibliographie* ouvre directement le gestionnaire (ou la section dédiée du futur accès
-    latéral **Document**), soit l’onglet affiche directement un aperçu compact des notices
-    du projet avec recherche rapide.
+  - L’onglet présente le style bibliographique et le bouton *Gérer les références*.
+    L’accès direct aux notices fera partie du panneau **Document** en E.2d.
 
 ### 5.2 Désimbrication des modales bibliographiques (`bibliography-manager.ts`, `bibliography-online.ts`)
 
-- **Une seule fenêtre modale ouverte à la fois** :
-  - Intégrer la **recherche en ligne** (`bibliography-online.ts` : DOI, Cairn, zbMATH) et
-    la **revue d’acquisition / rapprochement** (`bibliography-review-dialog.ts`) comme des
-    **vues ou panneaux internes** à l’intérieur de `#bibliography-manager`, au lieu
-    d’empiler 2 à 3 `<dialog>` modales les unes sur les autres.
-  - Lorsqu’on lance *« Rechercher en ligne »* depuis le pop-up de citation de l’éditeur,
-    ouvrir directement `#bibliography-manager` positionné sur sa vue de recherche en ligne.
-  - Remplacer la sous-modale `#bibliography-leave` (*Abandonner / Continuer / Valider*) et
-    `#bibliography-remove` par un bandeau d’alerte inline en haut du formulaire de droite.
+- `#bibliography-manager` réunit la bibliothèque, la recherche en ligne et la revue
+  d’acquisition ou d’import dans une seule fenêtre. Depuis le sélecteur de citations,
+  *Rechercher en ligne* ouvre directement la vue de recherche.
+- Les confirmations d’abandon ou de suppression apparaissent au-dessus du formulaire de droite.
 
 ### 5.3 Organisation globale de la fenêtre (`shell-layout.ts`, `shell-panels.ts`)
 
-- **Palette de commandes (`ui.palette`)** : l’afficher comme un **popover modal centré en
-  haut de la fenêtre** (*command palette* classique) plutôt que dans le tiroir latéral droit
-  qui masque l’aperçu Typst.
+- La **palette de commandes** (`ui.palette`) s’ouvre dans une modale centrée en haut de
+  la fenêtre. `Ctrl/Cmd+Maj+P` place le focus dans la recherche. Les flèches parcourent
+  les résultats, `Entrée` exécute la commande choisie et `Échap` rend le focus à son point de départ.
 - **Séparation *Projets* / *Document* dans le rail latéral** : préparer le regroupement
   des panneaux liés au document actif (*Plan, Bibliographie, Ressources, Versions,
   Relectures*) distinctement des accès globaux (*Projets, Préférences, Assistance*).
@@ -228,10 +221,11 @@ rôle de validation. Un raccourci annulé laisse l’indicateur d’enregistreme
    - Citations bibliographiques : même panneau flottant et même retour au curseur. La
      composition affiche les références, les localisateurs et la forme de la citation
      après `+`, `Maj+Entrée` ou l’ouverture d’un badge existant.
-3. **Lot E.2c — Désimbrication bibliographique et palette centrée** :
-   - Intégration de la recherche en ligne et des arbitrages d’acquisition à l’intérieur de
-     `#bibliography-manager` (zéro sous-modale empilée), accès direct depuis l’onglet ou
-     le panneau *Bibliographie*, et passage de la palette de commandes en overlay centré.
+3. **Lot E.2c — Gestionnaire bibliographique et palette centrée — terminé**
+   - La recherche en ligne et les arbitrages d’acquisition sont intégrés au gestionnaire.
+   - La palette s’ouvre en haut de la fenêtre. La recherche, le choix au clavier et le
+     retour du focus avec `Échap` ont été vérifiés sous Chromium et WebKit.
 4. **Lot E.2d — Harmonisation des en-têtes de métadonnées et accès *Projets / Document*** :
    - Épuration des collections de métadonnées (*Titres, Résumés, Auteurs, Affiliations*) et
      maquettage de la séparation latérale *Projets / Document*.
+   - Accès direct aux notices bibliographiques depuis le panneau **Document**.

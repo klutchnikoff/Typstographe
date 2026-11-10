@@ -70,6 +70,7 @@ export function mountToolMenus(menu: HTMLElement, commands: Registry) {
       button.dataset.command = id
       button.onclick = () => {
         details.open = false
+        if (id === 'ui.palette') summary.focus({ preventScroll: true })
         runCommand(command)
       }
       entries.append(button)
@@ -100,9 +101,13 @@ export function mountRailButtons(side: HTMLElement, commands: Registry) {
     [tr('Versions'), 'history', 'ui.versions'],
     [tr('Préférences'), 'settings-2', 'ui.preferences'],
   ] as const) {
-    const button = railButton(label, name, action)
+    const opensPalette = action === 'ui.palette'
+    const button = railButton(label, name, opensPalette ? undefined : action)
+    if (opensPalette) button.setAttribute('aria-haspopup', 'dialog')
     button.dataset.command = action
     button.onclick = () => {
+      // WebKit does not consistently focus a button when it is clicked.
+      if (opensPalette) button.focus({ preventScroll: true })
       runCommand(commands.get(action)!)
     }
     side.append(button)

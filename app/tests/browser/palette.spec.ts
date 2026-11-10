@@ -19,10 +19,21 @@ test('les flèches parcourent les commandes filtrées sans quitter la recherche 
   // Tiptap focus() resolves on an animation frame. The user starts from a
   // focused editor; opening the palette before that frame lets this test's
   // delayed setup steal focus back from the search field.
-  await expect(page.getByRole('textbox', { name: 'Corps du document', exact: true })).toBeFocused()
+  const body = page.getByRole('textbox', { name: 'Corps du document', exact: true })
+  await expect(body).toBeFocused()
+  await page.evaluate(() => window.__spike!.editor.commands.setTextSelection({ from: 2, to: 8 }))
+  const selection = () => page.evaluate(() => window.__spike!.editor.state.selection.toJSON())
+  const previousSelection = await selection()
   const before = await page.evaluate(() => window.__spike!.editor.getJSON())
-  await page.keyboard.press('ControlOrMeta+Shift+P')
-  const input = page.getByRole('combobox', { name: 'Rechercher une commande', exact: true })
+  const dialog = page.getByRole('dialog', { name: 'Palette de commandes', exact: true })
+  const input = dialog.getByRole('combobox', { name: 'Rechercher une commande', exact: true })
+  await body.press('ControlOrMeta+Shift+P')
+  await expect(input).toBeFocused()
+  await input.press('Escape')
+  await expect(dialog).toBeHidden()
+  await expect(body).toBeFocused()
+  expect(await selection()).toEqual(previousSelection)
+  await body.press('ControlOrMeta+Shift+P')
   await expect(input).toBeFocused()
   await input.fill('Titre')
   const options = page.getByRole('listbox', { name: 'Commandes', exact: true }).getByRole('option')
@@ -42,6 +53,7 @@ test('les flèches parcourent les commandes filtrées sans quitter la recherche 
   await input.fill('Titre 2')
   await expect(selected).toHaveText('Titre 2')
   await input.press('Enter')
+  await expect(dialog).toBeHidden()
   await expect(page.locator('.side-panel')).toBeHidden()
   await expect(page.locator('.tiptap h2')).toHaveText('Un titre à appliquer')
   await expect(page.locator('.tiptap')).toBeFocused()
@@ -50,6 +62,9 @@ test('les flèches parcourent les commandes filtrées sans quitter la recherche 
 test('la recherche reste visible pendant le défilement, sans action pour un résultat vide et fermeture avec Échap', async ({
   page,
 }) => {
+  await page.keyboard.press('ControlOrMeta+F')
+  const side = page.locator('.side-panel')
+  await expect(side).toBeVisible()
   const palette = page.getByRole('button', { name: 'Commandes', exact: true })
   const wrench = palette.locator(':scope > svg')
   await expect(wrench.locator('path')).toHaveAttribute(
@@ -67,9 +82,17 @@ test('la recherche reste visible pendant le défilement, sans action pour un ré
     await expect(wrench).toHaveCSS('stroke', color)
   }
   await palette.click()
-  const input = page.getByRole('combobox', { name: 'Rechercher une commande', exact: true })
-  const results = page.getByRole('listbox', { name: 'Commandes', exact: true })
+  const dialog = page.getByRole('dialog', { name: 'Palette de commandes', exact: true })
+  const input = dialog.getByRole('combobox', { name: 'Rechercher une commande', exact: true })
+  const results = dialog.getByRole('listbox', { name: 'Commandes', exact: true })
   await expect(input).toBeFocused()
+  for (const width of [1280, 720]) {
+    await page.setViewportSize({ width, height: 800 })
+    const bounds = (await dialog.boundingBox())!
+    expect(bounds.x + bounds.width / 2).toBeCloseTo(width / 2, 0)
+    expect(bounds.y).toBeGreaterThan(0)
+    expect(bounds.y).toBeLessThan(100)
+  }
   const before = await page.evaluate(() => window.__spike!.editor.getJSON())
   // The first enabled result is initially active; Up wraps to the last enabled command.
   await input.press('ArrowUp')
@@ -79,6 +102,9 @@ test('la recherche reste visible pendant le défilement, sans action pour un ré
   await expect(input).toBeFocused()
   expect(await results.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
   await input.fill('e')
+  await expect(selected).toBeInViewport({ ratio: 1 })
+  await input.fill('Nouveau document')
+  await expect(selected).toHaveText(/Nouveau document/)
   await expect(selected).toBeInViewport({ ratio: 1 })
   expect(await results.evaluate((element) => element.scrollTop)).toBe(0)
   await input.fill('zz-aucune-commande-zz')
@@ -90,9 +116,18 @@ test('la recherche reste visible pendant le défilement, sans action pour un ré
   await input.press('ArrowDown')
   await input.press('Enter')
   await expect(input).toBeFocused()
-  await expect(page.locator('.side-panel')).toBeVisible()
+  await expect(dialog).toBeVisible()
   expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
   await input.press('Escape')
-  await expect(page.locator('.side-panel')).toBeHidden()
-  await expect(page.locator('.tiptap')).toBeFocused()
+  await expect(dialog).toBeHidden()
+  await expect(side).toBeVisible()
+  await expect(palette).toBeFocused()
+
+  const editMenu = page.getByRole('button', { name: 'Édition', exact: true })
+  await editMenu.click()
+  await page.getByRole('menuitem', { name: 'Palette de commandes', exact: true }).click()
+  await expect(input).toBeFocused()
+  await input.press('Escape')
+  await expect(dialog).toBeHidden()
+  await expect(editMenu).toBeFocused()
 })

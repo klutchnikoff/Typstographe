@@ -74,11 +74,15 @@ it('modal state blocks direct public actions and is recomputed after cancellatio
   const dialog = document.createElement('dialog')
   dialog.setAttribute('open', '')
   document.body.append(dialog)
-  expect(commandAvailability(commands.get('text.clear')!)).toMatchObject({ reason: 'modal' })
-  commands.get('text.clear')!.run()
+  const command = commands.get('text.clear')!
+  expect(commandAvailability(command, 'palette')).toMatchObject({ reason: 'modal' })
+  dialog.className = 'command-palette-dialog'
+  expect(commandAvailability(command, 'palette').enabled).toBe(true)
+  expect(commandAvailability(command)).toMatchObject({ reason: 'modal' })
+  command.run()
   expect(run).not.toHaveBeenCalled()
   dialog.remove()
-  commands.get('text.clear')!.run()
+  command.run()
   expect(run).toHaveBeenCalledOnce()
 })
 it('document undo stays available after a search field takes focus, while native input keystrokes keep their own route', async () => {

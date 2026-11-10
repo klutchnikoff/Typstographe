@@ -32,8 +32,10 @@ export function mountCommandSurfaces(options: {
   ])
   let nativeTextField = false,
     destroyed = false
-  setCommandPolicy(commands, (command) => {
-    if (document.querySelector('dialog[open]') || document.getElementById('app')?.inert)
+  setCommandPolicy(commands, (command, surface) => {
+    const blockingDialog =
+      surface === 'palette' ? 'dialog[open]:not(.command-palette-dialog)' : 'dialog[open]'
+    if (document.querySelector(blockingDialog) || document.getElementById('app')?.inert)
       return refused('modal')
     if (
       (options.requiresDocument.has(command.id) || editorial.has(command.id)) &&

@@ -1164,28 +1164,42 @@ main[data-rail='labelled'] {
 #side-content .panel-actions button {
   text-align: center;
 }
-.side-panel:has(.command-palette-results) {
+.app-dialog.command-palette-dialog {
+  position: fixed;
+  inset: clamp(16px, 9vh, 72px) 0 auto;
+  margin: 0 auto;
+  width: min(560px, calc(100vw - 32px));
+  min-width: 0;
+  max-height: min(460px, 72vh);
+  padding: 12px;
+  overflow: hidden;
+  background: var(--panel);
+}
+.command-palette-dialog[open] {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 8px;
 }
-.side-panel:has(.command-palette-results) > .panel-title {
-  flex-shrink: 0;
+.command-palette-dialog::backdrop {
+  background: rgb(15 23 32 / 16%);
 }
-#side-content:has(.command-palette-results) {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-#side-content:has(.command-palette-results) > input {
-  flex-shrink: 0;
+.command-palette-input {
+  flex: none;
+  width: 100%;
+  padding: 9px 12px;
 }
 .command-palette-results {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* Start at the list's content height inside the auto-height dialog. */
+  flex: 0 1 auto;
   min-height: 0;
   overflow: auto;
 }
 .command-palette-results [role='option'] {
+  flex: none;
+  text-align: start;
   white-space: normal;
   overflow-wrap: anywhere;
 }

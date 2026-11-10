@@ -102,7 +102,7 @@ function createNavigation(root: HTMLElement, options: NavigationOptions) {
       if (notify) options.onSelect?.(item)
     }
   }
-  const refresh = (reset = false) => {
+  const refresh = (reset = false, reveal = false) => {
     const all = allItems(),
       enabled = items()
     if (options.itemRole) for (const item of all) item.setAttribute('role', options.itemRole)
@@ -121,6 +121,7 @@ function createNavigation(root: HTMLElement, options: NavigationOptions) {
       focused ||
         (!reset && selected && enabled.includes(selected) ? selected : undefined) ||
         (options.initial === false ? undefined : preferred || enabled[0]),
+      reveal,
     )
   }
   const activate = (item: HTMLElement) => {
