@@ -207,6 +207,41 @@ test('imports natifs, arbitrage de collision et suppression protégée', async (
   await peer.close()
 })
 
+test('@@ : Échap annule, Entrée écrit les signes ou valide après recherche', async ({ page }) => {
+  await create(page)
+  const editor = body(page)
+  await editor.fill('prenom@exemple.fr et Arts & Métiers')
+  await expect(selector(page)).toBeHidden()
+  const line = editor.locator('p').first()
+  const original = await line.textContent()
+  await page.keyboard.type('@@')
+  await expect(citationSearch(page)).toBeFocused()
+  await citationSearch(page).press('Escape')
+  await expect(selector(page)).toBeHidden()
+  await expect(line).toHaveText(original!)
+  await expect(editor).toBeFocused()
+
+  await page.keyboard.type('@@')
+  await expect(citationSearch(page)).toBeFocused()
+  await expect(selector(page).locator('[data-entry]')).toHaveCount(2)
+  await citationSearch(page).press('Enter')
+  await expect(selector(page)).toBeHidden()
+  await expect(line).toHaveText(`${original}@@`)
+  await expect(editor).toBeFocused()
+  await editor.press('ControlOrMeta+z')
+  await expect(line).toHaveText(original!)
+  await expect(editor).toBeEditable()
+  await expect(editor).toBeFocused()
+
+  await page.keyboard.type('@@')
+  await expect(citationSearch(page)).toBeFocused()
+  await choose(page, 'bourdieu1980')
+  await expect(selector(page)).toBeHidden()
+  await expect(line.locator('.citation-ref')).toHaveText('(Bourdieu, 1980)')
+  await editor.press('ControlOrMeta+z')
+  await expect(line).toHaveText(original!)
+})
+
 test('citation simple : Entrée et clic publient chacun une seule édition annulable', async ({
   page,
 }) => {

@@ -6,6 +6,7 @@ import { editingAvailability } from './command-availability'
 import { editingProvider } from './editing-history'
 import { contextPanel } from './context-panel'
 import { floatingEditorPanel } from './floating-editor-panel'
+import type { SelectorTrigger } from './inline-selector-input'
 import { navigationGroup } from './keyboard-navigation'
 import type { BandHost } from './band-layout'
 import type { ObjectMenu } from './object-menu'
@@ -413,7 +414,7 @@ export function citationPanel(
     },
     focus: floating.focus,
     close: floating.close,
-    open(pos?: number) {
+    open(pos?: number, trigger?: SelectorTrigger) {
       if (pending || !editingAvailability(editor).enabled) return false
       const node = pos === undefined ? undefined : editor.state.doc.nodeAt(pos)
       if (pos !== undefined && node?.type.name !== 'citation') return false
@@ -436,7 +437,7 @@ export function citationPanel(
       apply.textContent = tr(node ? 'Appliquer' : 'Insérer')
       renderResults([])
       renderChosen()
-      session = floating.open({ from, to, object: !!node })
+      session = floating.open({ from, to, object: !!node, trigger })
       void search()
       return floating.isOpen
     },

@@ -2,6 +2,7 @@ import * as Y from 'yjs'
 import type { Editor } from '@tiptap/core'
 import { decideClose } from './close-decision'
 import { historyFor } from './editing-history'
+import { inlineSelectorInputKey } from './inline-selector-input'
 import { tr } from './i18n'
 import { newDocumentDialog, newDocumentMetadata } from './new-document-dialog'
 import { privateDrafts } from './private-drafts'
@@ -53,6 +54,7 @@ export function shellDocuments(
   metadata: ShellMetadata,
 ) {
   const { editor, provider, transport, catalogue, state, options } = ctx
+  let cleanBeforeSign: Editor['state']['doc'] | undefined
 
   function updateTitle() {
     const title = documentTitle(state.path, provider.recoveredName)
@@ -63,6 +65,7 @@ export function shellDocuments(
     layout.header.dataset.document = title
   }
   function setActive(value: boolean) {
+    cleanBeforeSign = undefined
     options.objectMenu.close()
     options.closeEditorSelectors()
     panels.dismissVersions()
@@ -105,10 +108,12 @@ export function shellDocuments(
     }
   }
   async function saveFile(as = false) {
+    cleanBeforeSign = undefined
     await state.recovery?.flush()
     await provider.flush(false)
     if (!options.isTauri) {
       await options.save(false)
+      cleanBeforeSign = undefined
       state.dirty = false
       return true
     }
@@ -141,6 +146,7 @@ export function shellDocuments(
     state.path = destination
     state.savedRevision = persistedRevision
     await remember(destination)
+    cleanBeforeSign = undefined
     state.dirty = provider.revision !== persistedRevision
     provider.recoveredName = null
     document.querySelector('.recovered-document-line')?.remove()
@@ -246,6 +252,7 @@ export function shellDocuments(
 
   /** Records a save made elsewhere (version, native editing) as the persisted revision. */
   function saved(result: { path: string; revision: number }) {
+    cleanBeforeSign = undefined
     state.path = result.path
     state.savedRevision = result.revision
     state.dirty = provider.revision !== result.revision
@@ -371,11 +378,13 @@ export function shellDocuments(
     document.addEventListener('metadata:draft', () => {
       scheduleRecovery()
       if (metadata.editor.dirty()) {
+        cleanBeforeSign = undefined
         state.dirty = true
         updateTitle()
       }
     })
     ctx.settings.observeDeep(() => {
+      cleanBeforeSign = undefined
       state.dirty = true
       scheduleRecovery()
       if (!metadataRefreshQueued) {
@@ -388,9 +397,14 @@ export function shellDocuments(
       updateTitle()
       options.schedule()
     })
-    editor.on('update', () => {
+    editor.on('update', ({ transaction }) => {
+      const phase = transaction.getMeta(inlineSelectorInputKey)
+      // Only the exact return to a previously clean body can clear the flag.
+      // Any other document or settings change invalidates that comparison.
+      const consumedCleanSign = phase === 'consume' && cleanBeforeSign?.eq(editor.state.doc)
+      cleanBeforeSign = phase === 'start' && !state.dirty ? transaction.before : undefined
+      state.dirty = !consumedCleanSign
       scheduleRecovery()
-      state.dirty = true
       updateTitle()
     })
   }

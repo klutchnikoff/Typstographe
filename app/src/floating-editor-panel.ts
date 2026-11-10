@@ -6,10 +6,16 @@ import { focusEditorSelection } from './editor-focus'
 import { placePopover, unchangedRange, type EditorRange } from './editor-popover'
 import { editorRoot, nodeOffset, nodePath } from './editor-targets'
 import { formOwner } from './form-drafts'
+import { editingAvailability } from './command-availability'
+import { dispatchImmediateEdit } from './immediate-edit'
+import type { SelectorTrigger } from './inline-selector-input'
+import { composing } from './keyboard-navigation'
+import { tr } from './i18n'
 import './floating-editor-panel.css'
 
 interface FloatingTarget extends EditorRange {
   object?: boolean
+  trigger?: SelectorTrigger
 }
 const openPanels = new WeakMap<Editor, () => void>()
 
@@ -17,11 +23,22 @@ export function floatingEditorPanel(editor: Editor, host: HTMLElement, panel: Co
   const { element } = panel
   element.classList.add('floating-editor-panel')
   element.setAttribute('role', 'dialog')
+  const hint = document.createElement('div')
+  hint.id = `${element.id}-literal-hint`
+  hint.className = 'floating-literal-hint'
+  hint.hidden = true
+  panel.error.before(hint)
   host.append(element)
   const controller = new AbortController()
   const { signal } = controller
   let active:
-    | { target: FloatingTarget; bookmark: SelectionBookmark; pending: boolean; valid: boolean }
+    | {
+        target: FloatingTarget
+        bookmark: SelectionBookmark
+        pending: boolean
+        valid: boolean
+        literal: boolean
+      }
     | undefined
 
   function close(restore = false, committed = false) {
@@ -30,6 +47,8 @@ export function floatingEditorPanel(editor: Editor, host: HTMLElement, panel: Co
     active = undefined
     openPanels.delete(editor)
     element.hidden = true
+    hint.hidden = true
+    element.removeAttribute('aria-describedby')
     panel.discardRecovery()
     historyFor(editor)?.stopCapturing()
     if (restore) focusEditorSelection(editor, committed ? undefined : previous.bookmark)
@@ -76,6 +95,60 @@ export function floatingEditorPanel(editor: Editor, host: HTMLElement, panel: Co
     )
       close()
   }
+  function engage() {
+    if (!active?.literal) return
+    active.literal = false
+    hint.hidden = true
+    element.removeAttribute('aria-describedby')
+  }
+  const searchInput = (target: EventTarget | null) =>
+    target instanceof HTMLInputElement && target.matches('input[data-initial-focus]')
+  element.addEventListener('input', engage, { capture: true, signal })
+  element.addEventListener(
+    'click',
+    (event) => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest('button, input, select') &&
+        !searchInput(event.target)
+      )
+        engage()
+    },
+    { capture: true, signal },
+  )
+  element.addEventListener(
+    'keydown',
+    (event) => {
+      if (
+        !active?.literal ||
+        !searchInput(event.target) ||
+        composing(event) ||
+        event.altKey ||
+        event.metaKey ||
+        event.ctrlKey
+      )
+        return
+      if (
+        (!event.shiftKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) ||
+        (event.shiftKey && event.key === 'Enter')
+      ) {
+        engage()
+        return
+      }
+      if (event.key !== 'Enter' || panel.composing) return
+      event.preventDefault()
+      event.stopPropagation()
+      if (!active.valid || !editingAvailability(editor).enabled) return
+      const { from, to, trigger } = active.target
+      if (!trigger) return
+      const transaction = editor.state.tr.insertText(trigger, from, to)
+      transaction.setSelection(TextSelection.create(transaction.doc, from + trigger.length))
+      active.pending = true
+      if (dispatchImmediateEdit(editor, transaction)) close(true, true)
+      else active.pending = false
+    },
+    { capture: true, signal },
+  )
   document.addEventListener('pointerdown', dismissOutside, { capture: true, signal })
   document.addEventListener('focusin', dismissOutside, { signal })
   document.addEventListener('scroll', place, { capture: true, signal })
@@ -113,10 +186,14 @@ export function floatingEditorPanel(editor: Editor, host: HTMLElement, panel: Co
           : state.selection.getBookmark(),
         pending: false,
         valid: true,
+        literal: !!target.trigger,
       }
       const session = active
       openPanels.set(editor, close)
       historyFor(editor)?.stopCapturing()
+      hint.textContent = target.trigger ? `↵ ${tr('Insérer')} ${target.trigger}` : ''
+      hint.hidden = !target.trigger
+      if (target.trigger) element.setAttribute('aria-describedby', hint.id)
       element.hidden = false
       const owner = editingProvider(editor) || formOwner(editor)
       if (owner)

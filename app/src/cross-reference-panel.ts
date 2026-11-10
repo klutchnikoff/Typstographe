@@ -4,6 +4,7 @@ import { TextSelection } from '@tiptap/pm/state'
 import type { BandHost } from './band-layout'
 import { contextPanel } from './context-panel'
 import { floatingEditorPanel } from './floating-editor-panel'
+import type { SelectorTrigger } from './inline-selector-input'
 import type { ObjectMenu } from './object-menu'
 import { navigationGroup } from './keyboard-navigation'
 import { editingAvailability } from './command-availability'
@@ -277,7 +278,7 @@ export function crossReferencePanel(
     },
     focus: floating.focus,
     close: floating.close,
-    open(pos?: number) {
+    open(pos?: number, trigger?: SelectorTrigger) {
       if (pending || !editingAvailability(editor).enabled) return false
       const node = pos === undefined ? undefined : editor.state.doc.nodeAt(pos)
       if (pos !== undefined && node?.type.name !== 'crossReference') return false
@@ -305,7 +306,7 @@ export function crossReferencePanel(
       if (!current.reference.target) current.reference.target = find('')[0]?.id || ''
       full.checked = current.reference.include_label
       page.checked = current.reference.include_page
-      session = floating.open({ from, to, object: !!node })
+      session = floating.open({ from, to, object: !!node, trigger })
       search()
       return floating.isOpen
     },

@@ -7,8 +7,11 @@ import type { SelectionBookmark } from '@tiptap/pm/state'
  */
 export function focusEditorSelection(editor: Editor, bookmark?: SelectionBookmark) {
   if (editor.isDestroyed || editor.view.composing) return
-  if (bookmark)
-    editor.view.dispatch(editor.state.tr.setSelection(bookmark.resolve(editor.state.doc)))
+  if (bookmark) {
+    const selection = bookmark.resolve(editor.state.doc)
+    if (!selection.eq(editor.state.selection))
+      editor.view.dispatch(editor.state.tr.setSelection(selection))
+  }
   editor.view.focus()
   editor.commands.scrollIntoView()
 }

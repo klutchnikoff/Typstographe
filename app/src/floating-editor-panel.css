@@ -26,6 +26,15 @@
 .floating-editor-panel [role='alert']:empty {
   display: none;
 }
+.floating-literal-hint {
+  padding: 2px 4px;
+  color: var(--muted);
+  font-size: 0.85em;
+}
+.floating-editor-panel:has(.floating-literal-hint:not([hidden]))
+  :is(.citation-hint, .reference-enter) {
+  visibility: hidden;
+}
 .floating-editor-search {
   display: flex;
   align-items: center;

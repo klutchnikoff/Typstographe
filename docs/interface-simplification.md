@@ -122,6 +122,12 @@ Typstographe (**Choix A retenu**) :
     notice active au groupe. `Insérer` ou `Appliquer` publie la citation en une seule
     édition et `Échap` abandonne le brouillon.
 
+La frappe de `@@` ouvre les citations et `&&` ouvre les renvois internes, lorsque la
+commande correspondante est disponible. `Échap` annule les deux frappes. `Entrée` écrit
+les deux signes tant qu’aucune recherche ou navigation n’a commencé, puis reprend son
+rôle de validation. Un raccourci annulé laisse l’indicateur d’enregistrement dans son
+état précédent. Une frappe simple et le collage conservent le texte littéral.
+
 ---
 
 ## 4. Allègement des blocs et suppression directe avec `Undo`

@@ -2,6 +2,7 @@ import { inlineContentTarget } from './inline-objects'
 import { crossReferencePanel } from './cross-reference-panel'
 import { setResolvedReferences } from './cross-reference-index'
 import { registerRecoveryOpener } from './form-recovery'
+import { bindInlineSelectorInput } from './inline-selector-input'
 import { refreshCommandButton } from './public-commands'
 import { draftRecovery } from './draft-recovery'
 import { historyFor } from './editing-history'
@@ -455,6 +456,12 @@ async function start() {
     () => citations?.open(),
     () => tables?.open(),
     () => crossReferences?.open(),
+  )
+  bindInlineSelectorInput(
+    editor,
+    commands,
+    (trigger) =>
+      (trigger === '@@' ? citations : crossReferences)?.open(undefined, trigger) ?? false,
   )
   tables.register(commands)
   commands.set('context.open', {
