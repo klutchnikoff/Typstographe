@@ -34,6 +34,7 @@ import { resizableSeparator } from './resizable-separator'
 import { installMenus } from './menus'
 import { BandHost } from './band-layout'
 import { propertyPanel } from './properties'
+import { linkPanel } from './link-panel'
 import { tablePanel } from './table-panel'
 import { objectMenu } from './object-menu'
 import { editorObjectActions } from './editor-object-actions'
@@ -99,6 +100,7 @@ if (synchronizationMeter) host.transport = synchronizationMeter.transport
 const provider = new Provider(host.id, host.transport)
 let editor: Editor
 let properties: ReturnType<typeof propertyPanel> | undefined
+let links: ReturnType<typeof linkPanel> | undefined
 let citations: ReturnType<typeof citationPanel> | undefined
 let tables: ReturnType<typeof tablePanel> | undefined
 let crossReferences: ReturnType<typeof crossReferencePanel> | undefined
@@ -133,6 +135,7 @@ function openProperties(pos: number, kind: string, remove = false) {
   if (kind === 'tableFigure' && !remove) tables?.openHeaders(pos)
   else if (kind === 'crossReference' && !remove) crossReferences?.open(pos)
   else if (kind === 'citation' && !remove) citations?.open(pos)
+  else if (kind === 'link' && !remove) links?.open()
   else properties?.open(pos, kind, remove)
 }
 
@@ -367,7 +370,7 @@ async function start() {
     },
     presentations,
     binding: { kind: 'document', document: provider.doc, presence: provider },
-    openLink: (zone) => openProperties(zone.state.selection.from, 'link'),
+    openLink: (pos) => links?.open(pos) ?? false,
     openContext: () => openContext(),
     onTransaction: ({ transaction }) => {
       refresh()
@@ -385,7 +388,8 @@ async function start() {
   const menu = objectMenu(editor, app, (error) => provider.onError(error))
   const openContext = () => {
     if (editor.view.composing) return false
-    if (menu.focus() || crossReferences?.focus() || citations?.focus()) return true
+    if (menu.focus() || crossReferences?.focus() || citations?.focus() || links?.focus())
+      return true
     if (bands.isOpen) {
       bands.focus()
       return true
@@ -424,6 +428,10 @@ async function start() {
   preview = previewController(editor, provider, host.transport, () => version)
   crossReferences = crossReferencePanel(editor, bands, menu, app)
   citations = citationPanel(editor, provider, host.transport, bands, menu, app)
+  links = linkPanel(editor, app, contentCatalogue, () => {
+    bands.close(false)
+    menu.close()
+  })
   let referenceKey = '',
     referenceTicket = 0
   const refreshReferences = () => {
@@ -473,6 +481,7 @@ async function start() {
       (bands.isOpen ||
         !!crossReferences?.isOpen ||
         !!citations?.isOpen ||
+        !!links?.isOpen ||
         !!correctionAtCursor(editor) ||
         !!propertyTarget()),
     run: openContext,
@@ -492,6 +501,10 @@ async function start() {
   registerRecoveryOpener(provider, editor, (pos, draft) => {
     bands.close(false)
     const details = (draft.data as any)?.data
+    if (draft.form === 'link-properties' || details?.kind === 'link') {
+      const { range } = draft.context as { range: { from: number; to: number } }
+      return links?.resume({ from: pos, to: pos + range.to - range.from }) ?? false
+    }
     const selector =
       draft.form === 'cross-reference-properties'
         ? crossReferences
@@ -528,6 +541,7 @@ async function start() {
     closeEditorSelectors: () => {
       crossReferences?.close()
       citations?.close()
+      links?.close()
     },
     commands,
     save,

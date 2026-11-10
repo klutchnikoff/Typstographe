@@ -167,7 +167,7 @@ for (const kind of ['footnote', 'link'] as const) {
       return pos
     }, kind)
     await page.keyboard.press('Control+Enter')
-    const panel = page.locator('#properties')
+    const panel = page.locator(kind === 'footnote' ? '#properties' : '#link-properties')
     await expect(panel).toBeVisible()
     await panel
       .getByRole('textbox', {
@@ -175,7 +175,9 @@ for (const kind of ['footnote', 'link'] as const) {
         exact: true,
       })
       .fill(kind === 'footnote' ? 'Nouvelle note' : 'https://example.org/relecture')
-    await panel.getByRole('button', { name: 'Valider', exact: true }).click()
+    await panel
+      .getByRole('button', { name: kind === 'footnote' ? 'Valider' : 'Appliquer', exact: true })
+      .click()
     await expect(panel).toBeHidden()
     await expect
       .poll(() => returned(page, 'paragraph'))

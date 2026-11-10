@@ -50,7 +50,7 @@ export function hydrateForm(provider: Provider, element: HTMLElement, item: Reco
   return true
 }
 /** Mounted zones register their existing opener; no duplicate editor or widget renderer. */
-type Opener = (position: number, draft: FormDraft) => boolean
+type Opener = (position: number, draft: FormDraft) => boolean | HTMLElement
 const openers = new WeakMap<object, Map<Editor, Opener>>()
 export function registerRecoveryOpener(provider: object, editor: Editor, open: Opener) {
   let map = openers.get(provider)
@@ -77,12 +77,15 @@ export function reopenBand(provider: Provider, item: RecoveredItem) {
       }
       const size = context.range.to - context.range.from
       if (pos + size > editor.state.doc.content.size) continue
+      const original = editor.state.doc.slice(pos, pos + size).toJSON()
       if (
-        stableJSON(documentContent(editor.state.doc.slice(pos, pos + size).toJSON())) !==
-        stableJSON(documentContent(context.original))
+        stableJSON(original && documentContent(original)) !==
+        stableJSON(context.original && documentContent(context.original))
       )
         continue
-      if (!open(pos, draft)) continue
+      const opened = open(pos, draft)
+      if (!opened) continue
+      if (opened instanceof HTMLElement) return hydrateForm(provider, opened, item)
       const panel = [
         ...document.querySelectorAll<HTMLElement>('form:is(.context-band, .floating-editor-panel)'),
       ].find((el) => el.id === draft.form && !el.hidden && panels.has(el))

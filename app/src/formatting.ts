@@ -1,9 +1,11 @@
 import { getMarkRange, type Editor } from '@tiptap/core'
-import { Selection } from '@tiptap/pm/state'
-import { capabilityAvailability } from './command-availability'
+import { Selection, TextSelection } from '@tiptap/pm/state'
+import { capabilityAvailability, unlinkAvailability } from './command-availability'
 import { editingProvider } from './editing-history'
 import { editorRoot, selectedTextblocks, textTargets } from './editor-targets'
-import { executeStructured, type StructuredCommand } from './structured-commands'
+import { applyPlannedEdit, executeStructured, type StructuredCommand } from './structured-commands'
+import { inlineTarget } from './object-commands'
+import { normalizeSpaces } from './horizontal-space'
 
 export type Formatting =
   | 'text.bold'
@@ -67,6 +69,8 @@ export async function applyFormatting(
     id === 'text.remove_link' && current.from === current.to
       ? getMarkRange(editor.state.doc.resolve(current.from), editor.schema.marks.link) || current
       : current
+  if (id === 'text.remove_link' && range.from === range.to && !unlinkAvailability(editor).enabled)
+    return false
   const selection = editor.state.selection
   const restore = () => {
     if (!editor.isDestroyed)
@@ -124,6 +128,43 @@ export async function applyFormatting(
   }
   if (id === 'block.paragraph') return chain.setParagraph().run()
   return chain.toggleHeading({ level: Number(id.at(-1)) as 1 | 2 | 3 }).run()
+}
+export function insertLinkedText(
+  editor: Editor,
+  position: number,
+  text: string,
+  url: string,
+  current: () => boolean,
+) {
+  const { doc, schema, storedMarks, tr } = editor.state
+  const styles = (storedMarks ?? doc.resolve(position).marks()).filter(
+    (mark) => mark.type === schema.marks.bold || mark.type === schema.marks.italic,
+  )
+  const link = schema.marks.link.create({ href: url })
+  const transaction = tr.insert(position, schema.text(text, [...styles, link]))
+  transaction.setSelection(TextSelection.create(transaction.doc, position + text.length))
+  normalizeSpaces(transaction)
+  transaction.setStoredMarks(styles)
+  const commands: StructuredCommand[] = editingProvider(editor)
+    ? [
+        {
+          id: 'text.insert',
+          params: {
+            target: inlineTarget(editor, position, position),
+            text,
+            marks: [...styles.map((mark) => ({ type: mark.type.name })), { type: 'link', url }],
+          },
+        },
+      ]
+    : []
+  return applyPlannedEdit(editor, transaction, commands, {
+    current,
+    focus: false,
+    installed: () => {
+      // A native publication reinstalls the caret; keep typing outside the link.
+      if (!editor.state.storedMarks) editor.view.dispatch(editor.state.tr.setStoredMarks(styles))
+    },
+  })
 }
 export function runFormatting(editor: Editor, id: Formatting) {
   void applyFormatting(editor, id).catch((error: unknown) => {

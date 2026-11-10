@@ -26,7 +26,7 @@ import { bindCommandContext } from './command-context'
 import { capabilityAvailability, editingAvailability } from './command-availability'
 import { runFormatting } from './formatting'
 import { syncNativeTextSelection } from './native-selection'
-import { Plugin } from '@tiptap/pm/state'
+import { Plugin, TextSelection } from '@tiptap/pm/state'
 import { ContextBand } from './band-layout'
 import { confirmEnclosingScope } from './keyboard-navigation'
 import { DocumentInput, SoftBreak, TypstInlineInput } from './editing'
@@ -300,7 +300,7 @@ export interface RichZoneOptions extends Lifecycle, ZoneConfiguration {
   profile: RichZoneProfile
   label: string
   language?: string
-  openLink?: (editor: Editor) => void
+  openLink?: (position?: number) => boolean
   openContext?: (editor: Editor) => boolean
 }
 
@@ -341,6 +341,7 @@ export function createRichZone(options: RichZoneOptions): Editor {
     if (!covered) owner.addToScope(binding.fragment)
   }
   let editor!: Editor
+  let linkPress: { x: number; y: number } | undefined
   editor = new Editor({
     ...lifecycle,
     extensions: [
@@ -377,8 +378,7 @@ export function createRichZone(options: RichZoneOptions): Editor {
               : {}),
             'Mod-k': () => {
               if (!openLink || !editingAvailability(this.editor).enabled) return false
-              if (capabilityAvailability(this.editor, 'text.link', 'link').enabled)
-                openLink(this.editor)
+              if (capabilityAvailability(this.editor, 'text.link', 'link').enabled) openLink()
               return true
             },
           }
@@ -395,6 +395,45 @@ export function createRichZone(options: RichZoneOptions): Editor {
         // The app owns proofing; native services remain available on explicit request.
         spellcheck: 'false',
         autocorrect: 'off',
+      },
+      handleDOMEvents: {
+        pointerdown(_view, event) {
+          linkPress =
+            openLink &&
+            event.button === 0 &&
+            event.target instanceof Element &&
+            event.target.closest('a[href]')
+              ? { x: event.clientX, y: event.clientY }
+              : undefined
+          return false
+        },
+        click(view, event) {
+          const link = event.target instanceof Element && event.target.closest('a[href]')
+          if (!openLink || !link || !view.dom.contains(link) || event.shiftKey) return false
+          if (linkPress && Math.hypot(linkPress.x - event.clientX, linkPress.y - event.clientY) > 4)
+            return false
+          event.preventDefault()
+          // A click can leave a native select-all intact, particularly inside a dialog.
+          const hit = view.posAtCoords({ left: event.clientX, top: event.clientY })
+          if (hit) {
+            const caret = TextSelection.near(view.state.doc.resolve(hit.pos))
+            if (!caret.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(caret))
+          }
+          const { doc, selection } = view.state
+          // WebKit can refocus the clicked editable after the click handler returns.
+          requestAnimationFrame(() => {
+            if (
+              view.isDestroyed ||
+              !view.hasFocus() ||
+              view.state.doc !== doc ||
+              !view.state.selection.eq(selection) ||
+              !view.dom.contains(link)
+            )
+              return
+            openLink(view.posAtDOM(link, 0))
+          })
+          return true
+        },
       },
       handleKeyDown: (view, event) => {
         if (event.isComposing || view.composing) return false
@@ -424,7 +463,7 @@ export function createRichZone(options: RichZoneOptions): Editor {
           }
           if (openLink && owner.isActive('link')) {
             event.preventDefault()
-            openLink(owner)
+            openLink()
             return true
           }
           if (confirmEnclosingScope(view.dom, event)) return true
@@ -451,7 +490,7 @@ export function createRichZone(options: RichZoneOptions): Editor {
     binding?.kind === 'fragment' ? binding.historyOwner : editor,
     openLink
       ? () => {
-          if (capabilityAvailability(editor, 'text.link', 'link').enabled) openLink(editor)
+          if (capabilityAvailability(editor, 'text.link', 'link').enabled) openLink()
         }
       : undefined,
   )

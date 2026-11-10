@@ -26,6 +26,29 @@
 .floating-editor-panel [role='alert']:empty {
   display: none;
 }
+.link-selector .context-panel-body {
+  display: grid;
+  gap: 8px;
+}
+.link-selector label {
+  margin: 0 0 3px;
+}
+.link-selector input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+.link-selector input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+.link-selector .danger {
+  margin-inline-end: auto;
+}
 .floating-literal-hint {
   padding: 2px 4px;
   color: var(--muted);

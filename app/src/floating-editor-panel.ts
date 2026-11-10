@@ -87,13 +87,9 @@ export function floatingEditorPanel(editor: Editor, host: HTMLElement, panel: Co
   }
 
   const dismissOutside = (event: Event) => {
-    if (
-      active &&
-      event.target instanceof Element &&
-      !element.contains(event.target) &&
-      !event.target.closest('dialog[open]')
-    )
-      close()
+    if (!active || !(event.target instanceof Element) || element.contains(event.target)) return
+    const dialog = event.target.closest('dialog[open]')
+    if (!dialog || dialog.contains(element)) close()
   }
   function engage() {
     if (!active?.literal) return

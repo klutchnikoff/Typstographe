@@ -57,12 +57,7 @@ export function interactionAvailability(editor: Editor, policy: InteractionPolic
     s instanceof AllSelection ||
     s instanceof CellSelection ||
     (s.$from.parent.inlineContent && s.$to.parent.inlineContent)
-  if (policy === 'style' || policy === 'link') {
-    if (!text) return refused('text_required')
-    if (policy === 'link' && s.empty && !getMarkRange(s.$from, editor.schema.marks.link))
-      return refused('selection_required')
-    return allowed
-  }
+  if (policy === 'style' || policy === 'link') return text ? allowed : refused('text_required')
   if (!body) return refused('body_required')
   const top = [s.$from, s.$to].every(($p) => $p.depth === 0 || $p.depth === 1)
   const firstIndex = s instanceof AllSelection ? 0 : s.$from.index(0)
@@ -94,6 +89,14 @@ export function interactionAvailability(editor: Editor, policy: InteractionPolic
   if (!top) return refused('top_level_required')
   if (s instanceof NodeSelection && policy === 'heading') return refused('text_required')
   return allowed
+}
+export function unlinkAvailability(editor: Editor) {
+  const local = interactionAvailability(editor, 'link')
+  if (!local.enabled) return local
+  const selection = editor.state.selection
+  return !selection.empty || getMarkRange(selection.$from, editor.schema.marks.link)
+    ? allowed
+    : refused('selection_required')
 }
 export function capabilityAvailability(editor: Editor, id: string, policy: InteractionPolicy) {
   const catalogue = commandCapabilities(editor)

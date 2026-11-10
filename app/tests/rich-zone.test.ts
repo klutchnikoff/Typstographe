@@ -86,7 +86,7 @@ it('le profil en ligne bloque les retours et conserve les styles, les liens et u
   expect(editor.getJSON()).toEqual(before)
   editor.chain().selectAll().toggleBold().toggleItalic().run()
   editor.commands.keyboardShortcut('Mod-k')
-  expect(openLink).toHaveBeenCalledWith(editor)
+  expect(openLink).toHaveBeenCalledWith()
   expect(editor.state.doc.firstChild!.firstChild!.marks.map((m) => m.type.name)).toEqual([
     'bold',
     'italic',
@@ -229,7 +229,7 @@ it('le contexte et les liens passent par la fabrique, indépendamment de la vue'
   editor.commands.setTextSelection(3)
   const key = new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, cancelable: true })
   editor.view.someProp('handleKeyDown', (handler) => handler(editor.view, key))
-  expect(openLink).toHaveBeenCalledWith(editor)
+  expect(openLink).toHaveBeenCalledWith()
   const body = await create('document', { content: '<p>Texte</p>', openContext })
   body.view.someProp('handleKeyDown', (handler) =>
     handler(

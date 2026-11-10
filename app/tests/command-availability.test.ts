@@ -5,7 +5,12 @@ import { bindCommandContext, commandEditor } from '../src/command-context'
 import { createRegistry, toolbar, refreshCommands, type Capability } from '../src/commands'
 import { commandPalette } from '../src/command-palette'
 import { commandAvailability, runCommand, setCommandPolicy } from '../src/public-commands'
-import { interactionAvailability, allowed, refused } from '../src/command-availability'
+import {
+  interactionAvailability,
+  unlinkAvailability,
+  allowed,
+  refused,
+} from '../src/command-availability'
 import { applyFormatting } from '../src/formatting'
 
 const editors: Editor[] = []
@@ -99,12 +104,14 @@ it('the last rich field remains the target after palette focus; body blocks are 
 it('link opening, caret styles, read-only zones and IME use the same interaction guard', async () => {
   const editor = await zone()
   expect(interactionAvailability(editor, 'style')).toEqual(allowed)
-  expect(interactionAvailability(editor, 'link')).toEqual(refused('selection_required'))
+  expect(interactionAvailability(editor, 'link')).toEqual(allowed)
+  expect(unlinkAvailability(editor)).toEqual(refused('selection_required'))
   editor.commands.setTextSelection({ from: 1, to: 3 })
   expect(interactionAvailability(editor, 'link')).toEqual(allowed)
   editor.commands.setLink({ href: 'https://example.org' })
   editor.commands.setTextSelection(2)
   expect(interactionAvailability(editor, 'link')).toEqual(allowed)
+  expect(unlinkAvailability(editor)).toEqual(allowed)
   const composing = vi.spyOn(editor.view, 'composing', 'get').mockReturnValue(true)
   expect(await applyFormatting(editor, 'text.bold')).toBe(false)
   composing.mockRestore()

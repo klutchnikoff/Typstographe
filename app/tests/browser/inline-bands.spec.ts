@@ -150,10 +150,21 @@ for (const context of ['prose', 'list', 'quote'] as const) {
         }, target)
         await page.keyboard.press('Control+Enter')
       }
-      const band = target === 'spelling' ? '#object-menu' : '#properties'
+      const band =
+        target === 'spelling'
+          ? '#object-menu'
+          : target === 'link'
+            ? '#link-properties'
+            : '#properties'
       await expect(page.locator(band)).toBeVisible()
       await unchangedWrapping(page, before)
-      if (target !== 'spelling') await aboveTarget(page, band, selector)
+      if (target === 'note') await aboveTarget(page, band, selector)
+      if (target === 'link') {
+        const box = await page.locator(band).boundingBox()
+        const anchor = await page.locator(selector).boundingBox()
+        expect(box!.y).toBeGreaterThan(anchor!.y)
+        expect(box!.y - anchor!.y).toBeLessThan(35)
+      }
       expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(document)
       await page.keyboard.press('Escape')
       await expect(page.locator(band)).toBeHidden()

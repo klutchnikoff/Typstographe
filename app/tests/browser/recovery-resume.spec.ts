@@ -135,6 +135,42 @@ test('la note récupérée réutilise le bandeau et n’est publiée qu’à sa 
   )
 })
 
+test('un lien récupéré au curseur garde son adresse et son texte jusqu’à validation', async ({
+  page,
+}) => {
+  await create(page)
+  await page.locator('[data-command="text.link"]').click()
+  const panel = page.locator('#link-properties')
+  const address = panel.getByRole('textbox', { name: 'Adresse du lien', exact: true })
+  const text = panel.getByRole('textbox', { name: 'Texte du lien (facultatif)', exact: true })
+  await address.fill('https://example.org/recherche')
+  await text.fill('Un lien à reprendre')
+  await page.evaluate(() => window.__spike!.provider.transport.invoke('diagnostic_request_close'))
+  const closing = page.locator('dialog.recovery-close-dialog')
+  await Promise.all([
+    page.waitForEvent('domcontentloaded'),
+    closing.getByRole('button', { name: 'Conserver et fermer', exact: true }).click(),
+  ])
+  await page.waitForFunction(() => window.__spike?.ready)
+  await Promise.all([
+    page.waitForEvent('domcontentloaded'),
+    page
+      .locator('.recovery-work-list')
+      .getByRole('button', { name: 'Reprendre', exact: true })
+      .first()
+      .click(),
+  ])
+  await restored(page)
+  await page.getByRole('button', { name: 'Reprendre la saisie', exact: true }).click()
+  await expect(address).toHaveValue('https://example.org/recherche')
+  await expect(text).toHaveValue('Un lien à reprendre')
+  const link = page.locator('.tiptap').getByRole('link', { name: 'Un lien à reprendre' })
+  await expect(link).toHaveCount(0)
+  await address.press('Enter')
+  await expect(link).toHaveAttribute('href', 'https://example.org/recherche')
+  await expect(page.locator('#side-content')).toContainText('Toutes les saisies ont été traitées.')
+})
+
 test('un changement de document protège la saisie de l’autre fenêtre avant le délai automatique', async ({
   page,
   context,

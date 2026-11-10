@@ -42,7 +42,6 @@ pub enum Reason {
     NoSelection,
     UnsupportedDocumentType,
     TextRequired,
-    SelectionRequired,
     BodyRequired,
     TopLevelRequired,
     CaretRequired,
@@ -114,22 +113,12 @@ fn inline(node: &Node) -> bool {
             | "attachment"
     )
 }
-fn link_at(node: &Node, offset: u32) -> bool {
-    let mut start = 0;
-    node.content.iter().any(|n| {
-        let end = start + n.inline_len() as u32;
-        let matches = start <= offset && offset <= end && n.marks.iter().any(|m| m.kind == "link");
-        start = end;
-        matches
-    })
-}
 struct Target<'a> {
     root: Cow<'a, Node>,
     body: bool,
     from: Vec<usize>,
     to: Vec<usize>,
     empty: bool,
-    linked: bool,
     text: bool,
     inline_selection: bool,
 }
@@ -148,13 +137,11 @@ impl<'a> Target<'a> {
                 if !inline(first) || !inline(last) {
                     return None;
                 }
-                let linked = path == end && link_at(first, anchor.offset);
                 Some(Self {
                     body: a == TreeRoot::Body,
                     from: path.to_vec(),
                     to: end.to_vec(),
                     empty: anchor == head,
-                    linked,
                     text: true,
                     inline_selection: path == end,
                     root,
@@ -176,7 +163,6 @@ impl<'a> Target<'a> {
                     from: path.clone(),
                     to: path,
                     empty: false,
-                    linked: false,
                     text: inline_node,
                     inline_selection: inline_node,
                     root,
@@ -190,7 +176,6 @@ impl<'a> Target<'a> {
                     from: vec![0],
                     to: vec![last],
                     empty: false,
-                    linked: false,
                     text: true,
                     inline_selection: false,
                     root,
@@ -215,7 +200,6 @@ impl<'a> Target<'a> {
                     from: anchor.path.clone(),
                     to: head.path.clone(),
                     empty: false,
-                    linked: false,
                     text: true,
                     inline_selection: false,
                     root,
@@ -228,7 +212,6 @@ impl<'a> Target<'a> {
                     from: before.path.clone(),
                     to: before.path.clone(),
                     empty: true,
-                    linked: false,
                     text: false,
                     inline_selection: false,
                     root,
@@ -256,9 +239,7 @@ impl<'a> Target<'a> {
     }
     fn reason(&self, policy: Policy) -> Option<Reason> {
         match policy {
-            Policy::Style if !self.text => Some(Reason::TextRequired),
-            Policy::Link if !self.text => Some(Reason::TextRequired),
-            Policy::Link if self.empty && !self.linked => Some(Reason::SelectionRequired),
+            Policy::Style | Policy::Link if !self.text => Some(Reason::TextRequired),
             Policy::Style | Policy::Link => None,
             _ if !self.body => Some(Reason::BodyRequired),
             Policy::Inline if !self.inline_selection => Some(Reason::TextRequired),

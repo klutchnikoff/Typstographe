@@ -346,7 +346,7 @@ test('un clic supprime le tableau ciblé et un seul raccourci restaure son conte
   })
   await page.keyboard.press('Control+Enter')
   await expect(page.getByLabel('Adresse du lien', { exact: true })).toBeFocused()
-  await expect(page.locator('#properties')).toHaveClass(/inline-context-band/)
+  await expect(page.locator('#link-properties')).toHaveClass(/floating-editor-panel/)
   await page.getByLabel('Adresse du lien', { exact: true }).fill('https://example.com')
   await page.keyboard.press('Enter')
   await expect(page.locator('.tiptap a')).toHaveAttribute('href', 'https://example.com')
