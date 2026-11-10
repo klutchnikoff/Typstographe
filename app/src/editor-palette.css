@@ -137,9 +137,24 @@ pre.math-source {
   margin-inline: auto 8px;
 }
 .widget-attribute-field {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
   min-width: 0;
-  max-width: min(22ch, 55%);
+  max-width: min(34ch, 65%);
   margin-inline: 6px;
+}
+.widget-attribute-field label {
+  white-space: nowrap;
+}
+.widget-attribute-field .prefixed-parameter {
+  min-width: 0;
+}
+#editor-scroll:has(#properties[data-recovered-header-field]:not([hidden]))
+  .widget-mathBlock.band-open
+  > .widget-bar
+  > .widget-attribute-field {
+  display: none;
 }
 .widget-attribute-field input {
   width: 100%;

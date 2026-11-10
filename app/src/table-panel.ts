@@ -1,3 +1,4 @@
+import type { MenuExecution, ObjectMenu, ObjectMenuGroup } from './object-menu'
 import { focusEditorSelection } from './editor-focus'
 import { editingAvailability } from './command-availability'
 import { tableCursor } from './table-selection'
@@ -44,6 +45,7 @@ export function tablePanel(
   provider: Provider,
   transport: Transport,
   capability: Capability,
+  menu: ObjectMenu,
 ) {
   const operations = capability.editor?.actions || []
   const rowSpec = capability.parameters.properties!.rows
@@ -54,9 +56,6 @@ export function tablePanel(
         node?: PMNode
         row: number
         column: number
-        action?: string
-        axis?: TableAxis
-        returnHandle?: boolean
       }
     | undefined
   let pending = false
@@ -68,22 +67,8 @@ export function tablePanel(
       refreshTableHandles(editor)
     }
   }
-  function cancel() {
-    if (pending) return
-    const draft = opened,
-      anchor = bands.forPanel(panel.element)
-    const pos = anchor?.from
-    bands.close()
-    if (draft?.returnHandle && pos !== undefined && editor.state.doc.nodeAt(pos)?.eq(draft.node!)) {
-      const index = draft.axis === 'row' ? draft.row : draft.column
-      const element = editor.view.nodeDOM(pos)
-      if (element instanceof HTMLElement)
-        element
-          .querySelector<HTMLElement>(
-            `[data-table-axis="${draft.axis}"][data-table-index="${index}"]`,
-          )
-          ?.focus()
-    }
+  const cancel = () => {
+    if (!pending) bands.close()
   }
   const panel = contextPanel({
     id: 'table-properties',
@@ -122,19 +107,8 @@ export function tablePanel(
     return input
   })
   const [header, rowHeaders] = headerInputs
-  const info = document.createElement('p')
-  info.className = 'band-hint'
-  panel.body.append(dimensions, headerOptions, info)
-  const remove = panel.action({
-    label: tr('Supprimer'),
-    danger: true,
-    run: () => chooseAxisAction(true),
-  })
-  const dismiss = panel.action({
-    label: tr('Annuler'),
-    run: cancel,
-  })
-  const before = panel.action({ label: '', run: () => chooseAxisAction(false, false) })
+  panel.body.append(dimensions, headerOptions)
+  panel.action({ label: tr('Annuler'), run: cancel })
   const apply = panel.action({ label: tr('Valider'), primary: true, run: () => panel.submit() })
   function available(operation: TableAction, node: PMNode) {
     const grid = node.firstChild!
@@ -142,39 +116,7 @@ export function tablePanel(
     const count = row ? grid.childCount : grid.firstChild!.childCount
     return operation.remove ? count > 1 : count < Number((row ? rowSpec : columnSpec).maximum)
   }
-  function refreshActions() {
-    apply.disabled = before.disabled = remove.disabled = pending
-    if (!opened?.node) return
-    if (opened.axis) {
-      for (const [button, operation] of [
-        [remove, axisAction(true)],
-        [before, axisAction(false, false)],
-        [apply, axisAction(false, true)],
-      ] as const)
-        button.disabled = pending || !operation || !available(operation, opened.node)
-    }
-  }
-
-  panel.confirm = () => {
-    if (opened?.axis) {
-      chooseAxisAction(false, true)
-      return
-    }
-    void confirm()
-  }
-  function axisAction(remove: boolean, after = true) {
-    return operations.find(
-      (op) =>
-        op.axis === opened?.axis && op.remove === remove && (remove || op.offset === Number(after)),
-    )
-  }
-  function chooseAxisAction(remove: boolean, after = true) {
-    if (!opened?.axis || pending) return
-    const operation = axisAction(remove, after)
-    if (!operation || !opened.node || !available(operation, opened.node)) return
-    opened.action = operation.id
-    void confirm()
-  }
+  panel.confirm = () => void confirm()
   async function confirm() {
     if (!opened || pending) return
     const draft = opened,
@@ -241,40 +183,18 @@ export function tablePanel(
     } else {
       path = nodePath(editor, anchor.from)
       const target = tree(path)
-      const operation = operations.find(({ id }) => id === draft.action)
-      if (operation) {
-        const { command: id, offset } = operation,
-          isRow = operation.axis === 'row'
-        commands.push({ id, params: { target, index: (isRow ? row : column) + offset } })
-        if (id.endsWith('insert')) {
-          if (isRow) {
-            row += offset
-            column = 0
-          } else {
-            column += offset
-          }
-        }
-      }
-      if (!draft.axis) {
-        commands.push({
-          id: 'table.header',
-          params: { target, axis: 'columns', enabled: header.checked },
-        })
-        commands.push({
-          id: 'table.header',
-          params: { target, axis: 'rows', enabled: rowHeaders.checked },
-        })
-      }
+      commands.push(
+        { id: 'table.header', params: { target, axis: 'columns', enabled: header.checked } },
+        { id: 'table.header', params: { target, axis: 'rows', enabled: rowHeaders.checked } },
+      )
     }
     pending = true
     refresh()
     apply.disabled = true
-    before.disabled = true
-    refreshActions()
     // Keep the pending band focused until the owner has committed the guarded batch.
     try {
       const current = () => opened === draft && !!bands.forPanel(panel.element)
-      if (draft.node && !draft.action) {
+      if (draft.node) {
         // Header roles preserve projected positions even when Yrs replaces a
         // cell's identity. Use the same selection restoration as other settings.
         await applyPlannedEdit(editor, editor.state.tr, commands, { focus: false, current })
@@ -284,7 +204,7 @@ export function tablePanel(
       if (!current()) return
       let returned = editor.state.selection.getBookmark()
       const figure = editor.state.doc.nodeAt(positionAtPath(editor, path))
-      if (figure?.type.name === 'tableFigure' && (!draft.node || draft.action)) {
+      if (figure?.type.name === 'tableFigure' && !draft.node) {
         const grid = figure.firstChild!
         row = Math.min(row, grid.childCount - 1)
         column = Math.min(column, grid.firstChild!.childCount - 1)
@@ -300,9 +220,8 @@ export function tablePanel(
       provider.onError(error)
     } finally {
       pending = false
-      selectTableAxis(editor, null)
       refresh()
-      refreshActions()
+      apply.disabled = false
     }
   }
   function open(pos?: number) {
@@ -326,11 +245,6 @@ export function tablePanel(
       column: context?.column || 0,
     }
     dimensions.hidden = !!node
-    remove.hidden = true
-    before.hidden = true
-    headerOptions.hidden = false
-    apply.textContent = tr('Valider')
-    info.hidden = true
     panel.title.textContent = tr(node ? 'Modifier le tableau' : 'Insérer un tableau')
     const grid = node?.firstChild
     header.checked = grid
@@ -349,11 +263,7 @@ export function tablePanel(
       : capability.parameters.properties!.row_headers.default === true
     inputs[0].value = String(rowSpec.default)
     inputs[1].value = String(columnSpec.default)
-    info.textContent = node
-      ? `${tr('Ligne')} ${opened.row + 1} · ${tr('Colonne')} ${opened.column + 1}`
-      : ''
     panel.error.textContent = ''
-    refreshActions()
     bands.open(
       panel,
       {
@@ -367,100 +277,213 @@ export function tablePanel(
       },
     )
   }
-  function canOpen(target: TableHandleTarget, axis: TableAxis) {
+  function canOpen() {
     return (
       !pending &&
       provider.online &&
       editingAvailability(editor, false).enabled &&
-      commandCapabilities(editor)?.available()?.includes('insert.table') !== false &&
-      operations.some((op) => op.axis === axis && available(op, target.node))
+      commandCapabilities(editor)?.available()?.includes('insert.table') !== false
     )
   }
-  function openAxis(target: TableHandleTarget, axis: TableAxis, initial?: TableAction) {
-    if (!canOpen(target, axis)) return
-    const context = tableContext(editor)
-    bands.close(false)
-    opened = {
-      ...target,
-      // Column handles live above the first row, but editing continues on the
-      // user's row when its caret belongs to this table.
-      row: axis === 'column' && context?.pos === target.pos ? context.row : target.row,
-      axis,
-      returnHandle: true,
-    }
-    const draft = opened
-    dimensions.hidden = headerOptions.hidden = true
-    info.hidden = before.hidden = remove.hidden = false
-    info.textContent = `${tr(axis === 'row' ? 'Ligne' : 'Colonne')} ${(axis === 'row' ? target.row : target.column) + 1}`
-    panel.title.textContent = tr('Modifier le tableau')
-    before.textContent = tr(axis === 'row' ? 'Au-dessus' : 'À gauche')
-    apply.textContent = tr(axis === 'row' ? 'Au-dessous' : 'À droite')
-    panel.error.textContent = ''
-    refreshActions()
-    bands.open(
-      panel,
-      { from: target.pos, to: target.pos + target.node.nodeSize, placement: 'widget-header' },
+  async function changeAxis(
+    target: TableHandleTarget,
+    operation: TableAction,
+    current: () => boolean,
+  ) {
+    const path = nodePath(editor, target.pos)
+    const isRow = operation.axis === 'row'
+    const index = (isRow ? target.row : target.column) + operation.offset
+    await executeStructured(
+      editor,
+      provider,
+      transport,
+      [
+        {
+          id: operation.command,
+          params: { target: tree(path), index },
+        },
+      ],
+      current,
       () => {
-        if (opened === draft) opened = undefined
-        selectTableAxis(editor, null)
+        const grid = editor.state.doc.nodeAt(positionAtPath(editor, path))?.firstChild
+        if (!grid) return
+        const row = Math.min(isRow ? index : target.row, grid.childCount - 1)
+        const column = Math.min(isRow ? target.column : index, grid.firstChild!.childCount - 1)
+        editor.commands.setTextSelection(positionAtPath(editor, [...path, 0, row, column, 0]) + 1)
       },
     )
-    selectTableAxis(editor, {
-      pos: target.pos,
-      node: target.node,
-      axis,
-      index: axis === 'row' ? target.row : target.column,
+  }
+  function openMenu(target: TableHandleTarget, mode: TableAxis | 'cell' | 'headers') {
+    if (!canOpen()) return false
+    const { row, column, pos, node } = target
+    const axis = mode === 'row' || mode === 'column' ? mode : undefined
+    const index = mode === 'row' ? row : column
+    const elementAt = (from: number) => {
+      const node = editor.view.nodeDOM(from)
+      return node instanceof HTMLElement ? node : null
+    }
+    const handleAt = (from: number) =>
+      elementAt(from)?.querySelector<HTMLElement>(
+        `[data-table-axis="${axis}"][data-table-index="${index}"]`,
+      ) ?? null
+    const headerAt = (from: number) =>
+      elementAt(from)?.querySelector<HTMLElement>('.widget-bar button[aria-haspopup="menu"]') ??
+      null
+    const cellAt = (from: number) => {
+      const grid = elementAt(from)?.querySelector('table')
+      return grid?.rows[row]?.cells[column] ?? null
+    }
+    const trigger = axis ? handleAt(pos) : mode === 'headers' ? headerAt(pos) : null
+    if (menu.closeFrom(trigger)) return true
+    bands.close(false)
+    menu.close()
+    if (axis) selectTableAxis(editor, { pos, node, axis, index })
+    const session = menu.open({
+      label: tr('Modifier le tableau'),
+      range: { from: pos, to: pos + node.nodeSize },
+      anchor: ({ from }) =>
+        (axis
+          ? handleAt(from)
+          : mode === 'cell'
+            ? cellAt(from)
+            : headerAt(from)
+        )?.getBoundingClientRect() ?? null,
+      origin: axis
+        ? ({ from }) => handleAt(from)
+        : mode === 'headers'
+          ? ({ from }) => headerAt(from)
+          : undefined,
+      closed: axis ? () => selectTableAxis(editor, null) : undefined,
     })
-    const focus = initial?.remove ? remove : initial?.offset === 0 ? before : apply
-    ;(focus.disabled ? dismiss : focus).focus({ preventScroll: true })
+    const groups: ObjectMenuGroup[] = []
+    if (mode !== 'headers')
+      for (const dimension of ['row', 'column'] as const) {
+        if (axis && axis !== dimension) continue
+        const isRow = dimension === 'row'
+        const label = `${tr(isRow ? 'Ligne' : 'Colonne')} ${(isRow ? row : column) + 1}`
+        groups.push({
+          label,
+          actions: operations
+            .filter((operation) => operation.axis === dimension)
+            .sort((a, b) => Number(a.remove) - Number(b.remove) || a.offset - b.offset)
+            .map((operation) => ({
+              label: tr(
+                operation.remove
+                  ? operation.label
+                  : isRow
+                    ? operation.offset
+                      ? 'Insérer en dessous'
+                      : 'Insérer au-dessus'
+                    : operation.offset
+                      ? 'Insérer à droite'
+                      : 'Insérer à gauche',
+              ),
+              disabled: !available(operation, node),
+              danger: operation.remove,
+              run: ({ range, current }) =>
+                changeAxis({ ...target, pos: range.from }, operation, current),
+            })),
+        })
+      }
+    const grid = node.firstChild!
+    const top = grid.firstChild!.content.content.every(
+      (cell) =>
+        cell.type.name === 'tableHeader' &&
+        ['column', 'both'].includes(cell.attrs.scope || 'column'),
+    )
+    const left = grid.content.content.every(
+      (row) =>
+        row.firstChild!.type.name === 'tableHeader' &&
+        ['row', 'both'].includes(row.firstChild!.attrs.scope),
+    )
+    const headerAction = (name: string, axis: 'rows' | 'columns', checked: boolean) => ({
+      label: capability.parameters.properties![name].title || name,
+      checked,
+      async run({ range, current }: MenuExecution) {
+        const path = nodePath(editor, range.from)
+        const transaction = editor.state.tr
+        const { from, to } = transaction.selection
+        if (from <= range.from || to >= range.to)
+          transaction.setSelection(
+            TextSelection.create(
+              transaction.doc,
+              positionAtPath(editor, [...path, 0, row, column, 0]) + 1,
+            ),
+          )
+        await applyPlannedEdit(
+          editor,
+          transaction,
+          [
+            {
+              id: 'table.header',
+              params: { target: tree(path), axis, enabled: !checked },
+            },
+          ],
+          { focus: false, current },
+        )
+      },
+    })
+    groups.push({
+      label: tr('En-têtes du tableau'),
+      actions: [
+        ...(axis === 'column' ? [] : [headerAction('header', 'columns', top)]),
+        ...(axis === 'row' ? [] : [headerAction('row_headers', 'rows', left)]),
+      ],
+    })
+    session.show(groups)
+    return true
   }
   bindTableHandles(editor, {
     available: canOpen,
-    open: openAxis,
+    open(target, axis) {
+      const context = tableContext(editor)
+      const row = axis === 'column' && context?.pos === target.pos ? context.row : target.row
+      return openMenu({ ...target, row }, axis)
+    },
   })
   panel.recoveryData = () =>
-    opened
-      ? { new: !opened.node, axis: opened.axis || null, row: opened.row, column: opened.column }
-      : null
+    opened ? { new: !opened.node, row: opened.row, column: opened.column } : null
   return {
     resume(pos: number, data: any) {
-      const node = editor.state.doc.nodeAt(pos)
-      if (!node || node.type.name !== 'tableFigure') return false
-      if (data?.axis === 'row' || data?.axis === 'column') {
-        if (
-          !Number.isInteger(data.row) ||
-          !Number.isInteger(data.column) ||
-          data.row < 0 ||
-          data.column < 0 ||
-          data.row >= node.firstChild!.childCount ||
-          data.column >= node.firstChild!.firstChild!.childCount
-        )
-          return false
-        openAxis({ pos, node, row: data.row, column: data.column }, data.axis)
-      } else open(pos)
+      if (data?.axis) return false // Axis menus never carry editable fields.
+      open(pos)
       return !!bands.forPanel(panel.element)
     },
     open,
+    openHeaders(pos: number) {
+      const node = editor.state.doc.nodeAt(pos)
+      return (
+        node?.type.name === 'tableFigure' && openMenu({ pos, node, row: 0, column: 0 }, 'headers')
+      )
+    },
+    openAtCursor() {
+      const target = tableContext(editor)
+      const cursor = tableCursor(editor)
+      if (
+        !target ||
+        !Array.from({ length: cursor.depth }, (_, i) => cursor.node(i + 1).type.name).some(
+          (kind) => kind === 'tableCell' || kind === 'tableHeader',
+        )
+      )
+        return false
+      return openMenu(target, 'cell')
+    },
     refresh,
     register(registry: Registry) {
       for (const operation of operations) {
-        const { id, label } = operation
-        registry.set(id, {
-          id,
-          label: tr(label),
+        registry.set(operation.id, {
+          id: operation.id,
+          label: tr(operation.label),
           enabled: () => {
             const target = tableContext(editor)
-            return (
-              !pending &&
-              provider.online &&
-              !editor.view.composing &&
-              !!target &&
-              available(operation, target.node)
-            )
+            return !!target && canOpen() && available(operation, target.node)
           },
           run: () => {
             const target = tableContext(editor)
-            if (target) openAxis(target, operation.axis, operation)
+            if (!target || !canOpen() || !available(operation, target.node)) return
+            void changeAxis(target, operation, () => true)
+              .then(() => focusEditorSelection(editor))
+              .catch((error: unknown) => provider.onError(error))
           },
         })
       }

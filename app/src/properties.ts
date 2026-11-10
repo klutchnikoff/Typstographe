@@ -86,6 +86,7 @@ export function propertyPanel(
         remove: boolean
         resource?: ImageResource
         drafts: Record<string, Scalar | undefined>
+        settingsOnly: boolean
       }
     | undefined
   panel.recoveryData = () =>
@@ -94,6 +95,7 @@ export function propertyPanel(
           kind: opened.kind,
           selected: opened.selected,
           remove: opened.remove,
+          settingsOnly: opened.settingsOnly,
           drafts: opened.drafts,
           resource: opened.resource || null,
         }
@@ -157,8 +159,8 @@ export function propertyPanel(
     const current = opened!
     const contract = settingsForNode(current.selected, catalogue.entries)
     group.replaceChildren()
-    group.hidden = current.remove || contract.conversions.length < 2
-    for (const [index, capability] of contract.conversions.entries()) {
+    group.hidden = current.remove || current.settingsOnly || contract.conversions.length < 2
+    for (const capability of current.settingsOnly ? [] : contract.conversions) {
       const kind = capability.node!
       const button = document.createElement('button')
       button.type = 'button'
@@ -174,9 +176,19 @@ export function propertyPanel(
       }
       group.append(button)
     }
-    fields.render(contract.fields, current.drafts)
+    // A recovered form may still contain an unsaved alias from the old panel.
+    const header = contract.headerField
+    const recoverHeader =
+      header &&
+      Object.hasOwn(current.drafts, header.name) &&
+      current.drafts[header.name] !==
+        (current.node.attrs[header.attribute] ?? header.schema.default)
+    form.toggleAttribute('data-recovered-header-field', !!recoverHeader)
+    fields.render(recoverHeader ? [...contract.fields, header] : contract.fields, current.drafts)
     hint.textContent =
-      contract.conversions.length > 1 ? tr('Ces paramètres concernent la liste entière.') : ''
+      !current.settingsOnly && contract.conversions.length > 1
+        ? tr('Ces paramètres concernent la liste entière.')
+        : ''
   }
   async function changeLink(
     id: 'text.link' | 'text.remove_link',
@@ -265,7 +277,7 @@ export function propertyPanel(
     }
   }
   const api = {
-    open(pos: number, kind: string, remove = false) {
+    open(pos: number, kind: string, remove = false, settingsOnly = false) {
       if (pending || !editingAvailability(editor).enabled) return
       const contract = settingsForNode(kind, catalogue.entries)
       if (!remove && !hasSettings(contract)) return
@@ -288,6 +300,7 @@ export function propertyPanel(
         original: kind === 'link' ? editor.state.doc.textBetween(range.from, range.to) : '',
         remove,
         drafts,
+        settingsOnly,
       }
       const current = opened
       render()

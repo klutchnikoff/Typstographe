@@ -58,11 +58,13 @@ test('standalone markers create raw-code widgets, preserve multiline spacing and
   await page.keyboard.press('Control+Enter')
   const settings = page.locator('#properties')
   await expect(settings).toBeVisible()
-  const alias = settings.getByRole('textbox', { name: 'Label facultatif' })
+  await expect(settings.getByRole('textbox', { name: 'Description accessible' })).toBeFocused()
+  await expect(settings.getByRole('textbox', { name: 'Label facultatif' })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  const alias = widget.getByRole('textbox', { name: 'Label facultatif' })
   await alias.fill('fraction')
-  await expect(settings.locator('.prefixed-parameter > span')).toHaveText('eq:')
-  await settings.getByRole('button', { name: 'Valider', exact: true }).click()
-  await expect(settings).toBeHidden()
+  await alias.press('Enter')
+  await expect(page.locator('.tiptap')).toBeFocused()
   await page.keyboard.press('Tab')
   await page.locator('[data-command="insert.reference"]').click()
   const band = page.locator('#cross-reference-properties')
@@ -276,7 +278,7 @@ test('typing after an equation reference never swaps its label or changes its wi
   await expect(badge).toHaveText('(2)')
 })
 
-test('the header label and properties share one attribute while mathematical language stays fixed', async ({
+test('the only equation label is visible in the header and the accessible description remains editable', async ({
   page,
 }) => {
   await page.keyboard.type('$$')
@@ -285,6 +287,8 @@ test('the header label and properties share one attribute while mathematical lan
   await page.evaluate(() => window.__spike!.provider.flush())
   const widget = page.locator('[data-editor-widget="mathBlock"]')
   const label = widget.locator('.widget-bar').getByRole('textbox', { name: 'Label facultatif' })
+  await expect(widget.locator('.widget-bar label')).toHaveText('Label facultatif')
+  await expect(widget.locator('.widget-bar label')).toBeVisible()
   await expect(label.locator('..').locator('span')).toHaveText('eq:')
   await label.fill('fraction')
   await label.press('Enter')
@@ -298,24 +302,24 @@ test('the header label and properties share one attribute while mathematical lan
   await widget.getByRole('button', { name: 'Paramètres · Équation', exact: true }).click()
   const panel = page.locator('#properties')
   await expect(panel.getByRole('combobox', { name: 'Langage mathématique' })).toHaveCount(0)
-  await expect(panel.getByRole('textbox', { name: 'Label facultatif' })).toHaveValue('fraction')
+  await expect(panel.getByRole('textbox', { name: 'Label facultatif' })).toHaveCount(0)
   await panel.getByRole('textbox', { name: 'Description accessible' }).fill('a divisé par b')
   await label.fill('header-update')
   await label.press('Enter')
-  await expect(panel.getByRole('textbox', { name: 'Label facultatif' })).toHaveValue(
-    'header-update',
-  )
   await expect(panel.getByRole('textbox', { name: 'Description accessible' })).toHaveValue(
     'a divisé par b',
   )
-  await panel.getByRole('textbox', { name: 'Label facultatif' }).fill('ratio')
   await panel.getByRole('button', { name: 'Valider', exact: true }).click()
-  await expect(label).toHaveValue('ratio')
+  await expect(panel).toBeHidden()
+  await expect(label).toHaveValue('header-update')
+  expect(await page.evaluate(() => window.__spike!.editor.state.doc.firstChild!.attrs.alt)).toBe(
+    'a divisé par b',
+  )
   await expect(widget).toHaveAttribute('data-math-source', 'latex')
   await expect(widget.locator('.math-source')).toHaveText('\\frac{a}{b}')
   await label.fill('cancelled')
   await label.press('Escape')
-  await expect(label).toHaveValue('ratio')
+  await expect(label).toHaveValue('header-update')
   expect(await page.evaluate(() => window.__spike!.provider.rejected)).toBeFalsy()
 })
 

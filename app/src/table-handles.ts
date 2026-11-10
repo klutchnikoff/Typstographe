@@ -4,6 +4,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { tr } from './i18n'
 import { navigationGroup } from './keyboard-navigation'
+import { contextMenuKey } from './object-menu'
 
 export type TableAxis = 'row' | 'column'
 export interface TableHandleTarget {
@@ -90,6 +91,8 @@ export const TableHandles = Extension.create({
                       button.disabled = !enabled
                       button.title = label
                       button.setAttribute('aria-label', label)
+                      button.setAttribute('aria-haspopup', 'menu')
+                      button.setAttribute('aria-controls', 'object-menu')
                       button.dataset.tableAxis = axis
                       button.dataset.tableIndex = String(axis === 'row' ? row : column)
                       button.setAttribute('aria-expanded', String(!!active))
@@ -98,13 +101,18 @@ export const TableHandles = Extension.create({
                       button.onmousedown = (event) => {
                         if (event.button === 0) event.preventDefault()
                       }
-                      button.onclick = () => {
+                      const open = (event: Event) => {
                         const current = getPos()
                         const target =
                           current === undefined ? undefined : targetAt(view.state.doc, current)
                         const controls = bindings.get(editor)
                         if (!target || !controls?.available(target, axis)) return
+                        event.preventDefault()
                         controls.open(target, axis)
+                      }
+                      button.onclick = button.oncontextmenu = open
+                      button.onkeydown = (event) => {
+                        if (contextMenuKey(event)) open(event)
                       }
                       return button
                     },

@@ -150,10 +150,10 @@ for (const context of ['prose', 'list', 'quote'] as const) {
         }, target)
         await page.keyboard.press('Control+Enter')
       }
-      const band = target === 'spelling' ? '#proofing-band' : '#properties'
+      const band = target === 'spelling' ? '#object-menu' : '#properties'
       await expect(page.locator(band)).toBeVisible()
       await unchangedWrapping(page, before)
-      await aboveTarget(page, band, selector)
+      if (target !== 'spelling') await aboveTarget(page, band, selector)
       expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(document)
       await page.keyboard.press('Escape')
       await expect(page.locator(band)).toBeHidden()

@@ -413,7 +413,7 @@ export function createRichZone(options: RichZoneOptions): Editor {
           }
         }
         if (policy.widgets) {
-          if (inlineObjectKey(owner, event, properties || (() => {}))) return true
+          if (inlineObjectKey(owner, event)) return true
           if (widgetKey(owner, event)) return true
         }
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {

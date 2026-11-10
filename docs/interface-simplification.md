@@ -67,7 +67,7 @@ l’éditeur distingue désormais **trois surfaces proportionnées à la tâche*
 
 | Surface | Déclencheur | Usage | Règle d’interaction |
 | :--- | :--- | :--- | :--- |
-| **1. Menu contextuel d’objet** *(popover flottant d’actions)* | • Clic gauche sur une poignée (`.table-handle`, bouton `⋯`, icône de bloc)<br>• Clic droit ciblé sur un objet ou une faute (`.spelling-error`, `.inline-object`, `.table-handle`, `.widget-bar`)<br>• Raccourci `Mod+.` / touche Menu | • **Orthographe** : suggestions + ajout au dictionnaire + ignorer<br>• **Tableaux** : insérer/supprimer lignes et colonnes, basculer ligne/colonne d’en-tête<br>• **Blocs** : convertir liste puces ↔ numérotée, supprimer le bloc<br>• **Badges / Liens** : modifier, aller à la cible / notice, supprimer | Flottant (aucun décalage du document). **1 clic = 1 action immédiate** (annulable par `Cmd/Ctrl+Z`). |
+| **1. Menu contextuel d’objet** *(popover flottant d’actions)* | • Clic gauche sur une poignée (`.table-handle`, bouton `⋯`, icône de bloc)<br>• Clic droit ciblé sur un objet ou une faute (`.spelling-error`, `.inline-object`, `.table-handle`, `.widget-bar`)<br>• Raccourci `Ctrl/Cmd+Entrée` / `Maj+F10` / touche Menu | • **Orthographe** : suggestions + ajout au dictionnaire + ignorer<br>• **Tableaux** : insérer/supprimer lignes et colonnes, basculer ligne/colonne d’en-tête<br>• **Blocs** : convertir liste puces ↔ numérotée, supprimer le bloc<br>• **Badges / Liens** : modifier, aller à la cible / notice, supprimer | Flottant (aucun décalage du document). **1 clic = 1 action immédiate** (annulable par `Cmd/Ctrl+Z`). |
 | **2. Pop-up de sélection / saisie** *(popover flottant avec champ)* | • Bouton de barre d’outils ou raccourci clavier<br>• Clic gauche sur un badge de citation, de renvoi ou un lien<br>• Frappe d’un déclencheur en ligne (ex. `@`) | • **Citations** : recherche floue (*fuzzy*) + sélection directe ou multiple (`+`) + supplément de page<br>• **Renvois internes** : recherche floue (*fuzzy*) + choix des composantes<br>• **Liens** : saisie/modification d’URL<br>• **Création de tableau** : sélecteur rapide de grille ou dimensions compactes | Flottant, ancré sous le curseur ou le badge. **`Entrée` ou clic sur un résultat valide immédiatement** le cas simple sans passer par un bouton `Valider`. |
 | **3. Bandeau / Zone inline** *(pleine largeur de colonne)* | • Insertion ou clic sur un badge de note de bas de page<br>• Paramètres d’accessibilité longs (ex. description `alt` multiligne d’image ou d’équation) | • **Notes de bas de page** (rédaction de prose enrichie sur plusieurs phrases)<br>• **Description accessible (`alt`)** lorsqu’elle n’est pas directement intégrée au pied du bloc | Conserve l’architecture actuelle `BandHost` avec transition de hauteur adoucie. |
 
@@ -207,7 +207,8 @@ Typstographe (**Choix A retenu**) :
      `mathBlock`.
    - Composant de **menu contextuel d’objet** (clic gauche sur poignées/blocs + clic droit
      ciblé sur `.spelling-error`, `.inline-object`, `.table-handle`, `.widget-bar`)
-     appliqué à l’orthographe, aux poignées de tableaux et aux conversions de listes.
+     appliqué à l’orthographe, aux poignées de tableaux et à la conversion Puces ↔ Numérotée.
+     Depuis une cellule, le menu affiche les groupes Ligne et Colonne.
 2. **Lot E.2b — Pop-ups de sélection *fuzzy* (Renvois, Citations, Liens)** :
    - Pop-up flottant avec recherche floue pondérée pour les renvois internes et les
      citations bibliographiques, validation directe sur `Entrée`/clic et édition rapide

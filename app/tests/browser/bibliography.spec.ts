@@ -121,13 +121,10 @@ test('bibliothèque multi-format, recherche fuzzy, badge, clavier et rendu natif
   expect(citation.items[0].supplement).toBe('p. 23–25')
   await expectPreviewReady(page)
   await expect(page.locator('#render-status')).not.toHaveClass(/error/)
-  // Cancellation and deletion use the same protected inline object path as footnotes.
+  // Citations use the same two-step deletion as footnotes.
   await body(page).press('Backspace')
-  await expect(page.locator('#property-title')).toHaveText('Supprimer la citation')
-  await page.locator('#cancel-properties').click()
-  await expect(body(page).locator('.citation-ref')).toHaveCount(1)
+  await expect(body(page).locator('.citation-ref')).toHaveClass(/ProseMirror-selectednode/)
   await body(page).press('Backspace')
-  await page.locator('#apply-properties').click()
   await expect(body(page).locator('.citation-ref')).toHaveCount(0)
   await expect(page.locator('#properties')).toBeHidden()
   await page.getByRole('button', { name: 'Annuler', exact: true }).click()

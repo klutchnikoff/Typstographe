@@ -66,6 +66,23 @@ test('renvoi : sélection clavier, trois formes Typst, annulation, frontière du
   })
   expect(await page.evaluate(() => JSON.stringify(window.__spike!.editor.getJSON()))).toBe(before)
   expect(await page.evaluate(() => window.__spike!.provider.rejected)).toBeFalsy()
+  await page.evaluate(() => {
+    const { editor } = window.__spike!
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === 'crossReference') editor.commands.setTextSelection(pos)
+    })
+    editor.view.focus()
+  })
+  await page.keyboard.press('Delete')
+  await expect(badge.locator('..')).toHaveClass(/ProseMirror-selectednode/)
+  await page.keyboard.press('Delete')
+  await expect(badge).toHaveCount(0)
+  await expect(page.locator('.tiptap h1').first()).toHaveText('Méthode')
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(badge).toHaveText(/page\s+1/)
+  await expect
+    .poll(() => page.evaluate(() => JSON.stringify(window.__spike!.editor.getJSON())))
+    .toBe(before)
 })
 
 test('le même sélecteur fonctionne dans une citation sans couper sa ligne et restaure le focus', async ({

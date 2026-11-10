@@ -99,33 +99,39 @@ for (const kind of ['orderedList', 'tableFigure'] as const)
     }) => {
       const before = await fixture(page, kind, inside)
       const widget = page.locator(`[data-editor-widget="${kind}"]`)
-      const panel = page.locator(kind === 'orderedList' ? '#properties' : '#table-properties')
+      const menu = page.locator('#object-menu')
       const settings = widget.getByRole('button', {
-        name: kind === 'orderedList' ? 'Paramètres · Liste numérotée' : 'Paramètres · Tableau',
+        name: kind === 'orderedList' ? 'Liste numérotée' : 'Paramètres · Tableau',
         exact: true,
       })
-      await settings.click()
-      if (kind === 'orderedList')
-        await panel.getByRole('spinbutton', { name: 'Numéro initial', exact: true }).fill('3')
-      else
-        await panel
-          .getByRole('checkbox', { name: 'Première colonne : en-têtes de lignes', exact: true })
-          .check()
-      await panel.getByRole('button', { name: 'Valider', exact: true }).click()
-      await expect(panel).toBeHidden()
+      const open = async () => {
+        await settings.click()
+        await expect(menu).toBeVisible()
+        if (kind === 'orderedList')
+          await menu.getByRole('menuitem', { name: 'Numéro initial…', exact: true }).click()
+      }
+      await open()
+      if (kind === 'orderedList') {
+        const field = page
+          .locator('#properties')
+          .getByRole('spinbutton', { name: 'Numéro initial' })
+        await field.fill('3')
+        await field.press('Enter')
+        await expect(page.locator('#properties')).toBeHidden()
+      } else {
+        await menu
+          .getByRole('menuitemcheckbox', { name: 'Première colonne : en-têtes de lignes' })
+          .click()
+      }
+      await expect(menu).toBeHidden()
       await page.waitForFunction(() => !window.__spike!.provider.historyBusy)
       await expect
         .poll(() => returned(page, kind))
         .toMatchObject({ visible: true, scrolled: true, inWidget: true, ...(inside ? before : {}) })
-      const after = await returned(page, kind)
       await settings.click()
       await page.keyboard.press('Escape')
-      await expect(panel).toBeHidden()
-      await expect.poll(() => returned(page, kind)).toMatchObject(after)
-      await settings.click()
-      await panel.getByRole('button', { name: 'Valider', exact: true }).click()
-      await expect(panel).toBeHidden()
-      await expect.poll(() => returned(page, kind)).toMatchObject(after)
+      await expect(menu).toBeHidden()
+      await expect(settings).toBeFocused()
     })
   }
 
@@ -181,10 +187,9 @@ test('changer le type de liste conserve le point de rédaction dans le contenu c
   page,
 }) => {
   const before = await fixture(page, 'orderedList', true)
-  await page.getByRole('button', { name: 'Paramètres · Liste numérotée', exact: true }).click()
-  const panel = page.locator('#properties')
-  await panel.getByRole('radio', { name: 'Liste à puces', exact: true }).click()
-  await panel.getByRole('button', { name: 'Valider', exact: true }).click()
+  await page.getByRole('button', { name: 'Liste numérotée', exact: true }).click()
+  const panel = page.locator('#object-menu')
+  await panel.getByRole('menuitemradio', { name: 'Liste à puces', exact: true }).click()
   await expect(panel).toBeHidden()
   await expect
     .poll(() => returned(page, 'bulletList'))

@@ -142,7 +142,7 @@ export async function mountShell(s: ShellOptions) {
   layout.side.append(panels.railMode.control)
   mountProofing(
     editor,
-    s.bands,
+    s.objectMenu,
     provider,
     transport,
     preferences.proofing,

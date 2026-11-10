@@ -37,7 +37,7 @@ test('le badge est un objet accessible ; son contexte reste distinct du mot inco
     timeout: 15000,
   })
   await page.keyboard.press('Control+Enter')
-  await expect(page.locator('#proofing-band')).toBeVisible()
+  await expect(page.locator('#object-menu')).toBeVisible()
   await page.keyboard.press('Escape')
   // At the left boundary the word owns the contextual command, never the badge.
   await page.evaluate(() => {
@@ -47,7 +47,7 @@ test('le badge est un objet accessible ; son contexte reste distinct du mot inco
   })
   await expect(page.locator('.inline-object-active')).toHaveCount(0)
   await page.keyboard.press('Control+Enter')
-  await expect(page.locator('#proofing-band')).toBeVisible()
+  await expect(page.locator('#object-menu')).toBeVisible()
   await expect(page.locator('#properties')).not.toBeVisible()
   await page.keyboard.press('Escape')
   await page.keyboard.press('ArrowRight')
@@ -55,7 +55,7 @@ test('le badge est un objet accessible ; son contexte reste distinct du mot inco
   await expect(page.locator('.inline-object-active .inline-object-label')).toHaveText('Note 1')
   await page.keyboard.press('Control+Enter')
   await expect(page.getByLabel('Texte de la note', { exact: true })).toBeFocused()
-  await expect(page.locator('#proofing-band')).toHaveCount(0)
+  await expect(page.locator('#object-menu')).toBeHidden()
   await page.keyboard.press('Escape')
   // Selecting the object is distinct from a caret after it; Enter/Space still work.
   await page.evaluate(() => {
@@ -66,7 +66,7 @@ test('le badge est un objet accessible ; son contexte reste distinct du mot inco
   await expect(page.locator('.inline-object-active')).toHaveCount(0)
   await page.keyboard.press('Control+Enter')
   await expect(page.locator('#properties')).not.toBeVisible()
-  await expect(page.locator('#proofing-band')).toHaveCount(0)
+  await expect(page.locator('#object-menu')).toBeHidden()
   await note.click()
   await expect(page.getByLabel('Texte de la note', { exact: true })).toBeFocused()
   await page.keyboard.press('Escape')
@@ -169,7 +169,7 @@ test('le badge actif est inversé uniquement à droite et le raccourci suit ce r
 })
 
 for (const context of ['prose', 'quote'] as const) {
-  test(`suppression protégée d’une note dans ${context}, annulation, confirmation et undo`, async ({
+  test(`suppression en deux appuis d’une note dans ${context}, renoncement et undo`, async ({
     page,
   }) => {
     await page.evaluate((kind) => {
@@ -190,6 +190,8 @@ for (const context of ['prose', 'quote'] as const) {
       e.view.focus()
     }, context)
     const before = await page.evaluate(() => window.__spike!.editor.getJSON())
+    const badge = page.locator('.footnote-ref.inline-object')
+    const body = context === 'quote' ? '.tiptap blockquote p' : '.tiptap > p:first-child'
     for (const key of ['Backspace', 'Delete', 'Control+Backspace', 'Meta+Backspace']) {
       await page.evaluate((key) => {
         const e = window.__spike!.editor
@@ -200,25 +202,33 @@ for (const context of ['prose', 'quote'] as const) {
         e.view.focus()
       }, key)
       await page.keyboard.press(key)
-      await expect(page.locator('#properties')).toHaveAttribute('data-intent', 'remove')
-      await expect(page.locator('#property-title')).toHaveText('Supprimer la note de bas de page')
+      await expect(badge).toHaveClass(/ProseMirror-selectednode/)
+      await expect(page.locator('#properties')).toBeHidden()
       expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
-      await page.keyboard.press('Escape')
+      await page.keyboard.press(key === 'Delete' ? 'ArrowLeft' : 'ArrowRight')
+      await expect(badge).not.toHaveClass(/ProseMirror-selectednode/)
+      await page.keyboard.press(key)
+      await expect(badge).toHaveClass(/ProseMirror-selectednode/)
+      await page.keyboard.press(key)
+      await expect(badge).toHaveCount(0)
+      await expect(page.locator('#properties')).toBeHidden()
       await expect(page.locator('.tiptap')).toBeFocused()
-      expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
+      await expect(page.locator(body)).toContainText('Avant après')
+      await page.keyboard.press('ControlOrMeta+z')
+      await expect(badge).toHaveCount(1)
+      await expect.poll(() => page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
     }
-    // The properties button goes through the very same confirmation.
-    await page.locator('.footnote-ref .inline-object-label').click()
+    // The explicit button in the note settings keeps its own confirmation.
+    await badge.locator('.inline-object-label').click()
     await page.locator('#remove-block').click()
     await expect(page.locator('#properties')).toHaveAttribute('data-intent', 'remove')
     expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
     await page.keyboard.press('Enter')
-    await expect(page.locator('.footnote-ref .inline-object-label')).toHaveCount(0)
+    await expect(badge).toHaveCount(0)
     await expect(page.locator('.tiptap')).toBeFocused()
-    const body = context === 'quote' ? '.tiptap blockquote p' : '.tiptap > p:first-child'
     await expect(page.locator(body)).toContainText('Avant après')
     await page.keyboard.press('Control+z')
-    await expect(page.locator('.footnote-ref .inline-object-label')).toHaveCount(1)
+    await expect(badge).toHaveCount(1)
     expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
   })
 }

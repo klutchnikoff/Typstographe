@@ -58,7 +58,9 @@ async function spelling(page: Page) {
     timeout: 15000,
   })
   await body(page).press('ControlOrMeta+Enter')
-  await expect(page.locator('#proofing-band [data-default]')).toHaveText('courrier')
+  await expect(
+    page.locator('#object-menu').getByRole('menuitem', { name: 'courrier', exact: true }),
+  ).toBeFocused()
 }
 
 test('tout remplacer publie un lot multizone unique, conserve les styles et badges et s’annule en une étape', async ({
@@ -212,8 +214,8 @@ test('la correction dans un widget utilise text.insert, garde le gras et restitu
   await spelling(page)
   const before = await page.evaluate(() => window.__spike!.editor.getJSON())
   const requests = publications(page)
-  await page.locator('#proofing-band').press('Enter')
-  await expect(page.locator('#proofing-band')).toHaveCount(0)
+  await page.keyboard.press('Enter')
+  await expect(page.locator('#object-menu')).toBeHidden()
   await expect(body(page).locator('blockquote strong')).toHaveText('Ce courrier est prêt.')
   await expect(body(page)).toBeFocused()
   expect(
@@ -238,8 +240,8 @@ test('ignorer un mot modifie seulement les exceptions documentaires et s’annul
   await spelling(page)
   const before = await page.evaluate(() => window.__spike!.editor.getJSON())
   const requests = publications(page)
-  await page.getByRole('button', { name: 'Ignorer dans ce document', exact: true }).click()
-  await expect(page.locator('#proofing-band')).toHaveCount(0)
+  await page.getByRole('menuitem', { name: 'Ignorer dans ce document', exact: true }).click()
+  await expect(page.locator('#object-menu')).toBeHidden()
   await expect(page.locator('.spelling-error[data-word="courrrier"]')).toHaveCount(0)
   expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
   expect(
@@ -255,7 +257,7 @@ test('ignorer un mot modifie seulement les exceptions documentaires et s’annul
   })
 })
 
-test('fermer une correction pendant sa préparation conserve le mot et ne ferme pas le nouveau bandeau', async ({
+test('fermer une correction pendant sa préparation conserve le mot et ne ferme pas le nouveau menu', async ({
   page,
 }) => {
   await spelling(page)
@@ -265,18 +267,20 @@ test('fermer une correction pendant sa préparation conserve le mot et ne ferme 
     if (route.request().postDataJSON().command === 'prepare_structured_commands' && !interrupted) {
       interrupted = true
       const response = await route.fetch()
-      await page.locator('#proofing-band').press('Escape')
+      await page.keyboard.press('Escape')
       await body(page).press('ControlOrMeta+Enter')
       await route.fulfill({ response })
       completed = true
     } else await route.continue()
   })
   const requests = publications(page)
-  await page.locator('#proofing-band').press('Enter')
+  await page.keyboard.press('Enter')
   await expect.poll(() => completed).toBe(true)
-  await expect(page.locator('#proofing-band')).toBeVisible()
+  await expect(page.locator('#object-menu')).toBeVisible()
   await expect.poll(() => interrupted).toBe(true)
-  await expect(page.locator('#proofing-band [data-default]')).toHaveText('courrier')
+  await expect(
+    page.locator('#object-menu').getByRole('menuitem', { name: 'courrier', exact: true }),
+  ).toBeFocused()
   await expect(body(page)).toContainText('courrrier')
   expect(requests.filter((r) => r.command === 'commit_structured_commands')).toEqual([])
 })

@@ -63,6 +63,7 @@ export function shellDocuments(
     layout.header.dataset.document = title
   }
   function setActive(value: boolean) {
+    options.objectMenu.close()
     panels.dismissVersions()
     state.active = value
     byId('synchronization').hidden = !value

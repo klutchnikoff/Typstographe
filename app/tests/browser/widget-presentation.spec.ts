@@ -43,7 +43,6 @@ test('citation : paramètres indisponibles, filet intérieur et attribution à g
   const header = widget.locator(':scope > .widget-bar')
   const panel = page.locator('#properties')
   const before = await page.evaluate(() => JSON.stringify(window.__spike!.editor.getJSON()))
-  const headerHTML = await header.evaluate((el) => el.innerHTML)
   const toolbarIcon = await page
     .locator('[data-command="block.quote"] svg')
     .evaluate((el) => el.innerHTML)
@@ -71,8 +70,7 @@ test('citation : paramètres indisponibles, filet intérieur et attribution à g
         .evaluate((el) => getComputedStyle(el).backgroundColor),
     ).toBe(await page.locator('html').evaluate((el) => getComputedStyle(el).backgroundColor))
     const settings = header.getByRole('button', { name: 'Paramètres · Citation', exact: true })
-    await expect(settings).toBeDisabled()
-    await expect(settings).toHaveAttribute('title', /Aucun paramètre supplémentaire/)
+    await expect(settings).toHaveCount(0)
     const geometry = await widget.evaluate((host) => {
       const body = host.querySelector('blockquote')!,
         p = body.querySelector('p')!,
@@ -138,17 +136,6 @@ test('citation : paramètres indisponibles, filet intérieur et attribution à g
         page.evaluate(() => window.__spike!.editor.state.selection.$from.parent.type.name),
       )
       .toBe('quoteAttribution')
-    await header.getByRole('button', { name: 'Supprimer · Citation', exact: true }).click()
-    await expect(panel.locator('.panel-actions button:visible')).toHaveText([
-      'Annuler',
-      'Supprimer',
-    ])
-    await expect(panel.locator('.context-panel-body')).toBeHidden()
-    expect(await header.evaluate((el) => el.innerHTML)).toBe(headerHTML)
-    await page.keyboard.press('Shift+Tab')
-    await expect(page.locator('#cancel-properties')).toBeFocused()
-    await page.keyboard.press('Enter')
-    await expect(panel).toBeHidden()
     expect(await page.evaluate(() => JSON.stringify(window.__spike!.editor.getJSON()))).toBe(before)
   }
 })

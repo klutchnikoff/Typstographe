@@ -55,35 +55,6 @@ test('onglets : les flèches changent de section et Échap ferme les information
   await expect(tabs.nth(1)).toBeFocused()
 })
 
-test('orthographe : les suggestions tardives ne volent pas le focus et les flèches ne corrigent pas le texte', async ({
-  page,
-}) => {
-  await page.route('**/__spike/invoke', async (route) => {
-    if (route.request().postDataJSON().command !== 'spelling_suggestions') return route.continue()
-    await route.fulfill({ json: { result: ['courrier', 'courriers'] } })
-  })
-  await page.evaluate(() => {
-    const editor = window.__spike!.editor
-    editor.commands.setContent('<p>Ce courrrier est prêt.</p>')
-    editor.commands.setTextSelection(6)
-    editor.commands.focus()
-  })
-  await expect(page.locator('.spelling-error[data-word="courrrier"]')).toBeVisible({
-    timeout: 15000,
-  })
-  const before = await contents(page)
-  await page.keyboard.press('Control+Enter')
-  const band = page.locator('#proofing-band')
-  await expect(band.locator('[data-default]')).toHaveText('courrier')
-  await expect(band).toBeFocused()
-  await page.keyboard.press('ArrowLeft')
-  await expect(band.getByRole('button', { name: 'courriers', exact: true })).toBeFocused()
-  expect(await contents(page)).toEqual(before)
-  await page.keyboard.press('Enter')
-  await expect(page.locator('.tiptap')).toHaveText('Ce courriers est prêt.')
-  await expect(page.locator('.tiptap')).toBeFocused()
-})
-
 test('bandeaux : déplacement entre actions sans suppression et annulation au clavier', async ({
   page,
 }) => {
@@ -101,12 +72,6 @@ test('bandeaux : déplacement entre actions sans suppression et annulation au cl
   expect(await contents(page)).toEqual(before)
   await page.keyboard.press('Escape')
   await expect(page.locator('.tiptap')).toBeFocused()
-  await page.getByRole('button', { name: 'Supprimer · Image', exact: true }).click()
-  await page.locator('#cancel-properties').focus()
-  await page.keyboard.press('ArrowRight')
-  await expect(page.locator('#apply-properties')).toBeFocused()
-  expect(await contents(page)).toEqual(before)
-  await page.keyboard.press('Escape')
   expect(await contents(page)).toEqual(before)
 })
 
