@@ -1801,8 +1801,7 @@ li:has(.interline-band-gap[data-marker])::marker {
   display: grid;
   gap: 4px;
 }
-.bibliography-file-row,
-.citation-selected-row {
+.bibliography-file-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1814,8 +1813,7 @@ li:has(.interline-band-gap[data-marker])::marker {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.bibliography-file-row .panel-actions,
-.citation-selected-row .panel-actions {
+.bibliography-file-row .panel-actions {
   margin: 0;
 }
 .bibliography-file-row svg {
@@ -1846,33 +1844,6 @@ li:has(.interline-band-gap[data-marker])::marker {
 .document-option-checkbox input {
   width: auto;
 }
-#citation-search-results {
-  max-height: 170px;
-  overflow: auto;
-}
-#citation-search-results button {
-  display: grid;
-  text-align: left;
-  gap: 3px;
-}
-#citation-search-results button span {
-  color: var(--muted);
-  font-size: 11px;
-}
-.citation-selected {
-  display: grid;
-  gap: 5px;
-}
-.citation-selected-row > span {
-  flex: 1;
-  overflow-wrap: anywhere;
-  font-size: 12px;
-}
-.citation-selected-row > input {
-  flex: 1;
-  min-width: 0;
-}
-
 .table-dimensions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

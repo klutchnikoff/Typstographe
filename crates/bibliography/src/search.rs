@@ -65,23 +65,49 @@ impl SearchQuery {
         }
     }
     pub fn score(&self, title: &str, authors: &str) -> Option<f64> {
-        let tokens = self.tokens.as_ref()?;
         let text = normalize_text(&format!("{title} {authors}"));
-        let mut score = 0.0;
-        for token in tokens {
-            let best = if text.contains(token) {
-                1.0
-            } else {
-                text.split(|c: char| !c.is_alphanumeric())
-                    .map(|word| strsim::jaro_winkler(token, word))
-                    .fold(0.0, f64::max)
-            };
-            if best < 0.84 {
-                return None;
+        self.score_tokens(|token| text_score(&text, token))
+    }
+
+    /// Citation discovery adds the public key and both forms of a known year.
+    pub fn score_citation(&self, title: &str, authors: &str, key: &str, year: &str) -> Option<f64> {
+        let prose = normalize_text(&format!("{title} {authors}"));
+        let key = normalize_text(key);
+        let short_year = year
+            .parse::<i32>()
+            .ok()
+            .map(|value| format!("{:02}", value.unsigned_abs() % 100));
+        self.score_tokens(|token| {
+            if token == key
+                || short_year
+                    .as_deref()
+                    .is_some_and(|short| token == short || token == year)
+            {
+                return 1.25;
             }
-            score += best;
-        }
-        Some(score)
+            text_score(&prose, token).max(text_score(&key, token))
+        })
+    }
+
+    fn score_tokens(&self, mut score: impl FnMut(&str) -> f64) -> Option<f64> {
+        self.tokens
+            .as_ref()?
+            .iter()
+            .map(|token| {
+                let best = score(token);
+                (best >= 0.84).then_some(best)
+            })
+            .sum()
+    }
+}
+
+fn text_score(text: &str, token: &str) -> f64 {
+    if text.contains(token) {
+        1.0
+    } else {
+        text.split(|c: char| !c.is_alphanumeric())
+            .map(|word| strsim::jaro_winkler(token, word))
+            .fold(0.0, f64::max)
     }
 }
 

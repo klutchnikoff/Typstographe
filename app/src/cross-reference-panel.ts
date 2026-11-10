@@ -42,7 +42,7 @@ export function crossReferencePanel(
   input.setAttribute('aria-label', tr('Rechercher une cible'))
   input.dataset.initialFocus = ''
   const searchBox = document.createElement('div')
-  searchBox.className = 'reference-search'
+  searchBox.className = 'floating-editor-search'
   searchBox.innerHTML = icon('search')
   const filterHint = document.createElement('span')
   filterHint.id = 'reference-filter-hint'
@@ -51,7 +51,7 @@ export function crossReferencePanel(
   input.setAttribute('aria-describedby', filterHint.id)
   searchBox.append(input, filterHint)
   const results = document.createElement('div')
-  results.className = 'reference-results'
+  results.className = 'floating-editor-results'
   results.setAttribute('aria-label', tr('Cibles du document'))
   const components = document.createElement('fieldset')
   components.className = 'reference-components'
@@ -152,10 +152,12 @@ export function crossReferencePanel(
       )
       const info = document.createElement('span')
       const label = document.createElement('strong')
+      label.className = 'floating-editor-result-line'
       label.textContent = target.label || target.title
       info.append(label)
       if (target.label && target.label !== target.title) {
         const detail = document.createElement('small')
+        detail.className = 'floating-editor-result-line'
         detail.textContent = target.title
         info.append(detail)
       }

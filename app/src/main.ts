@@ -384,7 +384,7 @@ async function start() {
   const menu = objectMenu(editor, app, (error) => provider.onError(error))
   const openContext = () => {
     if (editor.view.composing) return false
-    if (menu.focus() || crossReferences?.focus()) return true
+    if (menu.focus() || crossReferences?.focus() || citations?.focus()) return true
     if (bands.isOpen) {
       bands.focus()
       return true
@@ -422,7 +422,7 @@ async function start() {
   )
   preview = previewController(editor, provider, host.transport, () => version)
   crossReferences = crossReferencePanel(editor, bands, menu, app)
-  citations = citationPanel(editor, provider, host.transport, bands)
+  citations = citationPanel(editor, provider, host.transport, bands, menu, app)
   let referenceKey = '',
     referenceTicket = 0
   const refreshReferences = () => {
@@ -465,6 +465,7 @@ async function start() {
       !editor.view.composing &&
       (bands.isOpen ||
         !!crossReferences?.isOpen ||
+        !!citations?.isOpen ||
         !!correctionAtCursor(editor) ||
         !!propertyTarget()),
     run: openContext,
@@ -484,21 +485,23 @@ async function start() {
   registerRecoveryOpener(provider, editor, (pos, draft) => {
     bands.close(false)
     const details = (draft.data as any)?.data
-    if (draft.form === 'cross-reference-properties') {
-      if (!details?.new) return crossReferences?.open(pos) ?? false
+    const selector =
+      draft.form === 'cross-reference-properties'
+        ? crossReferences
+        : draft.form === 'citation-properties'
+          ? citations
+          : undefined
+    if (selector) {
+      if (!details?.new) return selector.open(pos)
       const { range } = draft.context as { range: { from: number; to: number } }
       editor.commands.setTextSelection({ from: pos, to: pos + range.to - range.from })
-      return crossReferences?.open() ?? false
+      return selector.open()
     }
     if (!details?.remove && editor.state.doc.nodeAt(pos)?.type.name === 'tableFigure')
       return tables?.resume(pos, details) || false
-    if (
-      details?.new &&
-      (draft.form === 'citation-properties' || draft.form === 'table-properties')
-    ) {
+    if (details?.new && draft.form === 'table-properties') {
       editor.commands.setTextSelection(pos)
-      if (draft.form === 'citation-properties') citations?.open()
-      else tables?.open()
+      tables?.open()
       return bands.isOpen
     }
     const kind = details?.kind || editor.state.doc.nodeAt(pos)?.type.name
@@ -515,7 +518,10 @@ async function start() {
     catalogue: contentCatalogue,
     bands,
     objectMenu: menu,
-    closeReferenceSelector: () => crossReferences?.close(),
+    closeEditorSelectors: () => {
+      crossReferences?.close()
+      citations?.close()
+    },
     commands,
     save,
     schedule,

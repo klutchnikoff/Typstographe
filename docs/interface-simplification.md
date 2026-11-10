@@ -111,14 +111,16 @@ Typstographe (**Choix A retenu**) :
 - **Indexation floue multi-champs** : tolérer les fautes de frappe et les requêtes
   croisant `key`, `authors`, `year` (y compris année sur 2 chiffres) et `title` (ex.
   `dupont 23` ou `bourbaki ens`).
-- **Séparation du cas simple (90 %) et du cas composé (10 %)** :
+- **Séparation du cas simple et du cas composé** :
   - **En création rapide** : `Entrée` ou clic principal sur une notice insère
     immédiatement la citation simple `(Auteur, Année)` et referme le pop-up.
   - **Pour une citation multiple ou paginée** : un bouton `+` (ou `Shift+Entrée`) ajoute
     la notice au groupe en cours dans le pop-up sans le fermer ; cliquer sur un badge de
     citation existant rouvre le pop-up directement sur les notices citées pour renseigner
     les pages (`p. 42`), réordonner les entrées ou basculer entre *Standard* et *Dans la
-    phrase*.
+    phrase*. Une fois la composition ouverte, `Entrée` depuis la recherche ajoute la
+    notice active au groupe. `Insérer` ou `Appliquer` publie la citation en une seule
+    édition et `Échap` abandonne le brouillon.
 
 ---
 
@@ -217,6 +219,9 @@ Typstographe (**Choix A retenu**) :
      libellés et les pages du dernier aperçu Typst. `$` limite la recherche aux équations.
      Les flèches parcourent les résultats depuis le champ de recherche et `Échap` rend le
      curseur à l’éditeur. `Appliquer` reste disponible pour modifier un badge existant.
+   - Citations bibliographiques : même panneau flottant et même retour au curseur. La
+     composition affiche les références, les localisateurs et la forme de la citation
+     après `+`, `Maj+Entrée` ou l’ouverture d’un badge existant.
 3. **Lot E.2c — Désimbrication bibliographique et palette centrée** :
    - Intégration de la recherche en ligne et des arbitrages d’acquisition à l’intérieur de
      `#bibliography-manager` (zéro sous-modale empilée), accès direct depuis l’onglet ou

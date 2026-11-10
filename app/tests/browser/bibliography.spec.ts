@@ -8,7 +8,9 @@ const yaml =
   'durand2020:\n  type: Article\n  title: Le travail collectif\n  author: Durand, Camille\n  date: 2020\n  parent:\n    type: Periodical\n    title: Revue exemple\n'
 const tab = (page: Page, id: string) => page.locator(`#metadata-tab-${id}`).click()
 const body = (page: Page) => page.getByRole('textbox', { name: 'Corps du document', exact: true })
-const band = (page: Page) => page.locator('#citation-properties')
+const selector = (page: Page) => page.locator('#citation-properties')
+const citationSearch = (page: Page) =>
+  selector(page).getByRole('combobox', { name: 'Rechercher une référence' })
 const manager = (page: Page) => page.locator('#bibliography-manager')
 const files = (page: Page) => manager(page).getByLabel('Fichiers bibliographiques', { exact: true })
 async function manage(page: Page) {
@@ -63,23 +65,27 @@ async function create(page: Page) {
   await expect(manager(page).getByRole('alert')).toHaveCount(0)
   await finishManager(page)
 }
-async function choose(page: Page, query: string) {
-  const search = band(page).getByRole('combobox', { name: 'Rechercher une référence' })
+async function choose(page: Page, query: string, key = 'Enter') {
+  const search = citationSearch(page)
   await search.fill(query)
-  await expect(band(page).locator('[role=option]:not(:disabled)')).toHaveCount(1)
+  await expect(selector(page).locator('[role=gridcell][data-entry]')).toHaveCount(1)
   await search.press('ArrowDown')
   await expect(search).toBeFocused()
-  await search.press('Enter')
+  await search.press(key)
 }
 async function insert(page: Page) {
   await body(page).fill('Une lecture du travail. ')
   await page.getByRole('button', { name: 'Citer une référence', exact: true }).click()
-  await expect(band(page).getByRole('combobox', { name: 'Rechercher une référence' })).toBeFocused()
-  await choose(page, 'sens bordieu')
-  await band(page).getByLabel('Pages ou chapitre · bourdieu1980', { exact: true }).fill('p. 23–25')
-  await choose(page, 'travail DURAND')
-  await band(page).getByRole('button', { name: 'Valider', exact: true }).click()
-  await expect(band(page)).toBeHidden()
+  await expect(citationSearch(page)).toBeFocused()
+  await choose(page, 'sens bordieu', 'Shift+Enter')
+  await selector(page)
+    .getByLabel('Pages ou chapitre · bourdieu1980', { exact: true })
+    .fill('p. 23–25')
+  await choose(page, 'travail DURAN 20')
+  await expect(body(page).locator('.citation-ref')).toHaveCount(0)
+  await expect(selector(page).getByRole('button', { name: 'Insérer', exact: true })).toBeEnabled()
+  await citationSearch(page).press('ControlOrMeta+Enter')
+  await expect(selector(page)).toBeHidden()
   await expect(body(page).locator('.citation-ref')).toHaveCount(1)
   await expect(body(page).locator('.citation-ref')).toContainText('Bourdieu, 1980')
   await expect(body(page).locator('.citation-ref')).toContainText('Durand, 2020')
@@ -102,10 +108,10 @@ test('bibliothèque multi-format, recherche fuzzy, badge, clavier et rendu natif
   await insert(page)
   await expect(body(page).locator('.citation-ref')).toHaveClass(/inline-object-active/)
   await body(page).press('ControlOrMeta+Enter')
-  await expect(band(page).getByRole('combobox', { name: 'Rechercher une référence' })).toBeFocused()
-  await band(page).getByLabel('Forme de la citation', { exact: true }).selectOption('prose')
-  await band(page).getByRole('button', { name: 'Valider', exact: true }).click()
-  await expect(band(page)).toBeHidden()
+  await expect(citationSearch(page)).toBeFocused()
+  await selector(page).getByLabel('Forme de la citation', { exact: true }).selectOption('prose')
+  await selector(page).getByRole('button', { name: 'Appliquer', exact: true }).click()
+  await expect(selector(page)).toBeHidden()
   await expect(body(page).locator('.inline-object-label')).toHaveText(
     'Bourdieu, 1980 ; Durand, 2020',
   )
@@ -201,7 +207,35 @@ test('imports natifs, arbitrage de collision et suppression protégée', async (
   await peer.close()
 })
 
-test('citation dans un widget : même bandeau, recherche au clavier et annulation sans édition', async ({
+test('citation simple : Entrée et clic publient chacun une seule édition annulable', async ({
+  page,
+}) => {
+  await create(page)
+  await body(page).fill('Une lecture du travail. ')
+  const cite = page.getByRole('button', { name: 'Citer une référence', exact: true })
+  const badge = body(page).locator('.citation-ref')
+  await cite.click()
+  await expect(selector(page).getByRole('button', { name: 'Insérer', exact: true })).toBeHidden()
+  await choose(page, 'DURAN 2020')
+  await expect(selector(page)).toBeHidden()
+  await expect(badge).toHaveText('(Durand, 2020)')
+  await expect(body(page)).toBeFocused()
+  await body(page).press('ControlOrMeta+z')
+  await expect(badge).toHaveCount(0)
+  await cite.click()
+  await citationSearch(page).fill('bourdieu1980')
+  await selector(page)
+    .getByRole('button', { name: /Le sens pratique/ })
+    .click()
+  await expect(selector(page)).toBeHidden()
+  await expect(badge).toHaveText('(Bourdieu, 1980)')
+  await expect(body(page)).toBeFocused()
+  await body(page).press('ControlOrMeta+z')
+  await expect(badge).toHaveCount(0)
+  await expect(body(page)).toContainText('Une lecture du travail.')
+})
+
+test('citation groupée dans un widget : souris, réordre et annulation sans édition', async ({
   page,
 }) => {
   await create(page)
@@ -220,23 +254,53 @@ test('citation dans un widget : même bandeau, recherche au clavier et annulatio
       ],
     }),
   )
-  await page.evaluate(() => window.__spike!.editor.commands.setTextSelection(8))
+  await page.evaluate(() => {
+    const { editor } = window.__spike!
+    editor.commands.setTextSelection(8)
+    editor.view.focus()
+  })
   const before = await page.evaluate(() => window.__spike!.editor.getJSON())
-  // Palette and toolbar share the public command; no atom is published before confirmation.
-  await page.getByRole('button', { name: 'Citer une référence', exact: true }).click()
-  await choose(page, 'bourdieu')
-  await band(page).getByRole('combobox', { name: 'Rechercher une référence' }).press('Escape')
+  const cite = page.getByRole('button', { name: 'Citer une référence', exact: true })
+  const quote = body(page).locator('blockquote')
+  const line = await quote.locator('p').boundingBox()
+  await cite.click()
+  await expect(citationSearch(page)).toBeFocused()
+  expect(await quote.locator('p').boundingBox()).toEqual(line)
+  await selector(page).getByRole('button', { name: 'Ajouter au groupe · Bourdieu, 1980' }).click()
+  await selector(page).getByLabel('Pages ou chapitre · bourdieu1980', { exact: true }).fill('p. 42')
+  await selector(page).getByRole('button', { name: 'Créer une notice…', exact: true }).click()
+  await expect(manager(page).getByLabel('Titre', { exact: true })).toBeVisible()
+  await finishManager(page)
+  await expect(
+    selector(page).getByLabel('Pages ou chapitre · bourdieu1980', { exact: true }),
+  ).toHaveValue('p. 42')
+  await citationSearch(page).press('Escape')
+  await expect(selector(page)).toBeHidden()
+  await expect(body(page)).toBeFocused()
   expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
-  await page.getByRole('button', { name: 'Citer une référence', exact: true }).click()
-  await choose(page, 'bourdieu')
-  await band(page).getByRole('button', { name: 'Valider', exact: true }).click()
-  await expect(body(page).locator('blockquote .citation-ref')).toHaveCount(1)
-  await body(page).press('ControlOrMeta+Enter')
-  await expect(band(page).getByRole('combobox', { name: 'Rechercher une référence' })).toBeFocused()
-  const bandBox = await band(page).boundingBox(),
-    widgetBox = await body(page).locator('blockquote').boundingBox()
-  expect(bandBox!.width).toBeLessThanOrEqual(widgetBox!.width + 2)
-  await band(page).getByRole('combobox', { name: 'Rechercher une référence' }).press('Escape')
+  expect(await page.evaluate(() => window.__spike!.editor.state.selection.from)).toBe(8)
+  await cite.click()
+  await selector(page).getByRole('button', { name: 'Ajouter au groupe · Bourdieu, 1980' }).click()
+  await selector(page)
+    .getByRole('button', { name: /Le travail collectif/ })
+    .click()
+  await selector(page).getByRole('button', { name: 'Monter · Durand, 2020' }).click()
+  await selector(page).getByLabel('Pages ou chapitre · bourdieu1980', { exact: true }).fill('p. 42')
+  await selector(page).getByRole('button', { name: 'Insérer', exact: true }).click()
+  await expect(selector(page)).toBeHidden()
+  const badge = quote.locator('.citation-ref')
+  await expect(badge).toHaveText('(Durand, 2020 ; Bourdieu, 1980)')
+  await badge.locator('.inline-object-label').click()
+  await expect(citationSearch(page)).toBeFocused()
+  await expect(
+    selector(page).getByLabel('Pages ou chapitre · bourdieu1980', { exact: true }),
+  ).toHaveValue('p. 42')
+  await selector(page)
+    .getByRole('button', { name: 'Retirer de la citation · Durand, 2020' })
+    .click()
+  await selector(page).getByRole('button', { name: 'Appliquer', exact: true }).click()
+  await expect(selector(page)).toBeHidden()
+  await expect(badge).toHaveText('(Bourdieu, 1980)')
   await expect(body(page)).toBeFocused()
 })
 
@@ -291,7 +355,7 @@ test('créer et citer publie un seul lot annulable', async ({ page }) => {
   await create(page)
   await body(page).fill('Une citation nouvelle. ')
   await page.getByRole('button', { name: 'Citer une référence', exact: true }).click()
-  await band(page).getByRole('button', { name: 'Créer une notice…', exact: true }).click()
+  await selector(page).getByRole('button', { name: 'Créer une notice…', exact: true }).click()
   const title = manager(page).getByLabel('Titre', { exact: true })
   await expect(title).toBeFocused()
   await title.fill('Nouvelle publication')
@@ -439,7 +503,7 @@ test('créer depuis une citation groupée conserve les références déjà chois
   await insert(page)
   const before = await page.evaluate(() => window.__spike!.editor.getJSON())
   await body(page).press('ControlOrMeta+Enter')
-  await band(page).getByRole('button', { name: 'Créer une notice…', exact: true }).click()
+  await selector(page).getByRole('button', { name: 'Créer une notice…', exact: true }).click()
   await manager(page).getByLabel('Titre', { exact: true }).fill('Troisième ouvrage')
   await manager(page).getByRole('button', { name: 'Créer et citer', exact: true }).click()
   await expect(manager(page)).toBeHidden()

@@ -11,6 +11,7 @@ import './floating-editor-panel.css'
 interface FloatingTarget extends EditorRange {
   object?: boolean
 }
+const openPanels = new WeakMap<Editor, () => void>()
 
 export function floatingEditorPanel(editor: Editor, host: HTMLElement, panel: ContextPanel) {
   const { element } = panel
@@ -27,6 +28,7 @@ export function floatingEditorPanel(editor: Editor, host: HTMLElement, panel: Co
     const previous = active
     if (!previous) return
     active = undefined
+    openPanels.delete(editor)
     element.hidden = true
     panel.discardRecovery()
     historyFor(editor)?.stopCapturing()
@@ -66,7 +68,13 @@ export function floatingEditorPanel(editor: Editor, host: HTMLElement, panel: Co
   }
 
   const dismissOutside = (event: Event) => {
-    if (active && event.target instanceof Node && !element.contains(event.target)) close()
+    if (
+      active &&
+      event.target instanceof Element &&
+      !element.contains(event.target) &&
+      !event.target.closest('dialog[open]')
+    )
+      close()
   }
   document.addEventListener('pointerdown', dismissOutside, { capture: true, signal })
   document.addEventListener('focusin', dismissOutside, { signal })
@@ -76,6 +84,7 @@ export function floatingEditorPanel(editor: Editor, host: HTMLElement, panel: Co
   observer.observe(element)
   editor.on('transaction', transaction)
   editor.on('destroy', () => {
+    if (active) openPanels.delete(editor)
     active = undefined
     panel.detachRecovery()
     observer.disconnect()
@@ -95,7 +104,7 @@ export function floatingEditorPanel(editor: Editor, host: HTMLElement, panel: Co
       return true
     },
     open(target: FloatingTarget) {
-      close()
+      openPanels.get(editor)?.()
       const state = editor.state
       active = {
         target,
@@ -106,6 +115,7 @@ export function floatingEditorPanel(editor: Editor, host: HTMLElement, panel: Co
         valid: true,
       }
       const session = active
+      openPanels.set(editor, close)
       historyFor(editor)?.stopCapturing()
       element.hidden = false
       const owner = editingProvider(editor) || formOwner(editor)

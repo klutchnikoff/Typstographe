@@ -41,10 +41,12 @@ interface NavigationOptions {
   activateOnMove?: boolean
   initial?: boolean
   enter?: boolean
+  popupRole?: 'grid'
   beforeNavigate?: () => void
   itemRole?: string
   onSelect?: (item: HTMLElement) => void
   onActivate?: (item: HTMLElement) => void
+  onAlternateActivate?: (item: HTMLElement) => void
 }
 const navigators = new WeakMap<HTMLElement, ReturnType<typeof createNavigation>>()
 
@@ -107,7 +109,7 @@ function createNavigation(root: HTMLElement, options: NavigationOptions) {
     if (options.input)
       for (const item of all) {
         item.id ||= `keyboard-choice-${++nextId}`
-        item.setAttribute('role', 'option')
+        item.setAttribute('role', options.itemRole || 'option')
       }
     const focused = enabled.find((item) => item === document.activeElement)
     const preferred = enabled.find((item) =>
@@ -138,7 +140,9 @@ function createNavigation(root: HTMLElement, options: NavigationOptions) {
     const move = arrows.includes(event.key)
     const boundary = !options.input && ['Home', 'End'].includes(event.key)
     const enter =
-      options.input && event.key === 'Enter' && !event.shiftKey && options.enter !== false
+      options.input &&
+      event.key === 'Enter' &&
+      (event.shiftKey ? !!options.onAlternateActivate : options.enter !== false)
     if (!move && !boundary && !enter) return
     consume(event)
     options.beforeNavigate?.()
@@ -152,7 +156,10 @@ function createNavigation(root: HTMLElement, options: NavigationOptions) {
     )
     const index = current >= 0 ? current : choices.indexOf(selected!)
     if (enter) {
-      if (index >= 0) activate(choices[index])
+      if (index >= 0) {
+        if (event.shiftKey) options.onAlternateActivate?.(choices[index])
+        else activate(choices[index])
+      }
       return
     }
     const backwards = ['ArrowUp', 'ArrowLeft'].includes(event.key)
@@ -202,11 +209,12 @@ function createNavigation(root: HTMLElement, options: NavigationOptions) {
   }
   if (options.input) {
     root.id ||= `keyboard-list-${++nextId}`
-    root.setAttribute('role', 'listbox')
+    root.setAttribute('role', options.popupRole || 'listbox')
     options.input.setAttribute('role', 'combobox')
     options.input.setAttribute('aria-controls', root.id)
     options.input.setAttribute('aria-expanded', 'true')
     options.input.setAttribute('aria-autocomplete', 'list')
+    if (options.popupRole) options.input.setAttribute('aria-haspopup', options.popupRole)
     options.input.addEventListener('keydown', handle)
     root.addEventListener('mousedown', pointer)
     root.addEventListener('click', click)

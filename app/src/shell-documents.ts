@@ -64,7 +64,7 @@ export function shellDocuments(
   }
   function setActive(value: boolean) {
     options.objectMenu.close()
-    options.closeReferenceSelector()
+    options.closeEditorSelectors()
     panels.dismissVersions()
     state.active = value
     byId('synchronization').hidden = !value
