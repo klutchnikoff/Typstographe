@@ -6,24 +6,37 @@ async function ready(page: Page) {
   await page.request.post('/__spike/invoke', { data: { command: 'reset', peer: 'main', args: {} } })
   await page.goto('/?client=main')
   await page.waitForFunction(() => window.__spike?.ready)
-  await writing(page, 'Original one', 'Original two')
+  await page.evaluate(async () => {
+    const { editor, provider } = window.__spike!
+    editor.commands.setContent({
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'Original one' }] },
+        { type: 'paragraph', content: [{ type: 'text', text: 'Stable anchor' }] },
+        { type: 'paragraph', content: [{ type: 'text', text: 'Original two' }] },
+        { type: 'paragraph' },
+      ],
+    })
+    await provider.flush()
+  })
 }
-async function writing(page: Page, a: string, b: string) {
+async function editParagraphs(page: Page, firstText: string, thirdText: string) {
   await page.evaluate(
-    async ({ a, b }) => {
+    async ({ firstText, thirdText }) => {
       const { editor, provider } = window.__spike!
-      editor.commands.setContent({
-        type: 'doc',
-        content: [
-          { type: 'paragraph', content: [{ type: 'text', text: a }] },
-          { type: 'paragraph', content: [{ type: 'text', text: 'Stable anchor' }] },
-          { type: 'paragraph', content: [{ type: 'text', text: b }] },
-          { type: 'paragraph' },
-        ],
+      // Edit only the text so the existing paragraph identities survive between snapshots.
+      editor.commands.command(({ tr }) => {
+        const first = tr.doc.child(0)
+        const middle = tr.doc.child(1)
+        const third = tr.doc.child(2)
+        const thirdStart = first.nodeSize + middle.nodeSize
+        tr.insertText(thirdText, thirdStart + 1, thirdStart + third.nodeSize - 1)
+        tr.insertText(firstText, 1, first.nodeSize - 1)
+        return true
       })
       await provider.flush()
     },
-    { a, b },
+    { firstText, thirdText },
   )
 }
 async function capture(page: Page, name: string) {
@@ -42,7 +55,7 @@ test('Versions: guarded local reprise, immutable right column, real independent 
   await ready(page)
   await openDocumentVersions(page)
   await capture(page, 'Base de travail')
-  await writing(page, 'Current one', 'Current two')
+  await editParagraphs(page, 'Current one', 'Current two')
   await page.locator('.versions-groups [data-version]').click()
   const dialog = page.locator('.version-dialog[open]')
   await dialog.getByRole('tab', { name: 'Comparer', exact: true }).click()
@@ -95,9 +108,9 @@ test('historical composition is reviewed against all current changes before one 
   await ready(page)
   await openDocumentVersions(page)
   await capture(page, 'Before')
-  await writing(page, 'Current one', 'Current two')
+  await editParagraphs(page, 'Current one', 'Current two')
   await capture(page, 'After')
-  await writing(page, 'Only in current one', 'Only in current two')
+  await editParagraphs(page, 'Only in current one', 'Only in current two')
   const current = await page.evaluate(() => window.__spike!.editor.getText())
   await page.locator('.versions-groups [data-version]').filter({ hasText: 'Before' }).click()
   const dialog = page.locator('.version-dialog[open]')
@@ -184,7 +197,7 @@ test('selecting a complete version remains provisional, preserves the file bindi
   const original = await page.evaluate(() => window.__spike!.editor.getText())
   await openDocumentVersions(page)
   await capture(page, 'Original')
-  await writing(page, 'Current one', 'Current two')
+  await editParagraphs(page, 'Current one', 'Current two')
   await capture(page, 'Saved current')
   const current = await page.evaluate(() => window.__spike!.editor.getText())
   const joined = await page.evaluate(() =>
@@ -234,7 +247,7 @@ test('keeping every green choice leaves writing and undo history unchanged', asy
   await ready(page)
   await openDocumentVersions(page)
   await capture(page, 'Before')
-  await writing(page, 'Current one', 'Current two')
+  await editParagraphs(page, 'Current one', 'Current two')
   const initial = await page.evaluate(async () => {
     const { provider, editor } = window.__spike!
     const context = await provider.transport.invoke<{ undo_steps: number }>('editing_context', {
@@ -273,8 +286,8 @@ test('Article snapshots show deleted and inserted words beside a citation in lig
     metadata.fields.references = [
       {
         id: 'demo-books',
-        name: 'books.bib',
-        contents: '@book{lefevre2021, author={Lefèvre, Camille}, title={Écrire}, year={2021}}',
+        key: 'lefevre2021',
+        entry: { type: 'book', author: ['Lefèvre, Camille'], title: 'Écrire', date: '2021' },
       },
     ]
     return {
