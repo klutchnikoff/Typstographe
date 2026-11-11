@@ -607,6 +607,7 @@ summary svg {
   flex: 1;
 }
 .welcome {
+  grid-column: 1 / -1;
   flex: 1;
   display: grid;
   place-items: center;
@@ -623,7 +624,7 @@ summary svg {
   gap: 32px;
 }
 .welcome-brand {
-  width: min(680px, calc(100vw - 64px));
+  width: min(680px, calc(100vw - var(--side-rail-width, 36px) - 64px));
   color: var(--brand-ink);
 }
 .welcome-brand .brand-scene {
@@ -982,6 +983,9 @@ summary svg {
 main {
   position: relative;
 }
+main[data-document-active='false'] > :is(.writing, .splitter, .preview) {
+  display: none;
+}
 .side-rail {
   position: absolute;
   top: 0;
@@ -1137,6 +1141,86 @@ main[data-rail='labelled'] {
   flex: 1;
   overflow: auto;
 }
+#side-content > .project-panel-actions {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 5px;
+}
+.project-panel-actions button,
+.document-navigation > button,
+.document-navigation > details > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.project-catalogue h3 {
+  margin: 8px 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.project-catalogue-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+}
+.project-catalogue-row button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.project-catalogue-row [aria-current='true'],
+.project-catalogue-row [aria-pressed='true'] {
+  background: var(--soft);
+  color: var(--accent);
+}
+.document-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.document-navigation > details {
+  border-inline-start: 1px solid transparent;
+  border-radius: 6px;
+}
+.document-navigation > details[open] {
+  border-inline-start-color: color-mix(in srgb, var(--accent) 60%, var(--bg));
+  background: color-mix(in srgb, var(--soft) 60%, var(--bg));
+}
+.document-navigation > details > summary,
+.document-navigation > button {
+  width: 100%;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.document-navigation > details > summary:hover,
+.document-navigation > details[open] > summary {
+  background: var(--soft);
+}
+.document-navigation > details > summary::-webkit-details-marker {
+  display: none;
+}
+.document-navigation-caret {
+  display: flex;
+  margin-inline-start: auto;
+  color: var(--muted);
+}
+.document-navigation > details[open] > summary .document-navigation-caret {
+  transform: rotate(90deg);
+}
+.document-navigation-content {
+  padding: 6px 8px 8px 16px;
+  overflow-wrap: anywhere;
+}
+.document-navigation-content > button {
+  display: block;
+  padding-inline-start: calc(8px + 10px * var(--outline-depth, 0));
+  white-space: normal;
+}
+.document-navigation-content ul {
+  margin: 0;
+  padding-inline-start: 20px;
+}
 #side-content input,
 #side-content textarea,
 #side-content select {
@@ -1152,7 +1236,7 @@ main[data-rail='labelled'] {
 #document-search-draft > input {
   padding: 8px;
 }
-#side-content > div:not(.panel-actions):has(> button),
+#side-content > div:not(.panel-actions, .project-panel-actions):has(> button),
 #document-search-draft > div:not(.panel-actions):has(> button) {
   display: flex;
   flex-direction: column;

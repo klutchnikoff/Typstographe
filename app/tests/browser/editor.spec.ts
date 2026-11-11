@@ -386,7 +386,7 @@ test('accueil sans document et création depuis les types et modèles disponible
   await page.goto('/?client=main&welcome=1')
   await page.waitForFunction(() => window.__spike?.ready)
   await expect(page.locator('.welcome')).toBeVisible()
-  await expect(page.locator('main')).toBeHidden()
+  await expect(page.locator('.writing')).toBeHidden()
   await page.locator('#create-document').click()
   await expect(page.locator('dialog')).toBeVisible()
   await expect(page.locator('dialog .type-card:not(.planned)')).toHaveCount(2)
@@ -395,7 +395,7 @@ test('accueil sans document et création depuis les types et modèles disponible
     page.getByRole('dialog').getByLabel('Modèle', { exact: true }).locator('[data-model]'),
   ).toHaveCount(1)
   await confirmNewDocument(page)
-  await expect(page.locator('main')).toBeVisible()
+  await expect(page.locator('.writing')).toBeVisible()
   await expect(page.locator('.tiptap')).not.toContainText('Valmont')
   await expect(page.locator('.tiptap')).not.toContainText('Madame, Monsieur')
   await page.getByRole('button', { name: 'En-tête', exact: true }).click()

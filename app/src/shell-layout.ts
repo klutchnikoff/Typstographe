@@ -40,13 +40,15 @@ export function mountShellLayout(options: {
     header.hidden = true
   }
   const workspace = document.querySelector('main')!
+  workspace.dataset.documentActive = String(options.active)
   const welcome = document.createElement('section')
   welcome.className = 'welcome'
+  welcome.hidden = options.active
   welcome.innerHTML =
     '<div class="welcome-card"><div class="welcome-actions"><button id="create-document" class="primary">Nouveau document</button><button id="open-document">Ouvrir…</button><button id="resume-document">Reprendre la session</button></div></div>'
   const brand = welcomeBrand()
   welcome.querySelector('.welcome-card')!.prepend(brand.element)
-  workspace.before(welcome)
+  workspace.prepend(welcome)
   byId<HTMLButtonElement>('resume-document').hidden = true
   for (const [id, label] of [
     ['create-document', 'Nouveau document'],

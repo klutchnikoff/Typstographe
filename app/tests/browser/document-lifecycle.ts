@@ -10,3 +10,13 @@ export async function confirmNewDocument(page: Page) {
   ])
   await page.waitForFunction(() => window.__spike?.ready)
 }
+
+export async function openDocumentVersions(page: Page) {
+  const document = page.locator('.side-rail [data-command="ui.document"]')
+  if ((await document.getAttribute('aria-expanded')) !== 'true') await document.click()
+  const summary = page
+    .locator('.document-navigation summary')
+    .getByText('Versions', { exact: true })
+  if (!(await summary.evaluate((element) => element.closest('details')!.open)))
+    await summary.click()
+}

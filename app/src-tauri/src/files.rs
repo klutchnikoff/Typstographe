@@ -169,7 +169,9 @@ pub async fn open_file(
         )
     })
     .await??;
-    let _ = crate::preferences::remember(&app, &path);
+    if let Ok(root) = crate::preferences::root(&app) {
+        let _ = crate::preferences::remember(&root, &path);
+    }
     app.emit("app:document", path.to_string_lossy().as_ref())?;
     Ok(response)
 }

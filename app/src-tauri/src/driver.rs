@@ -414,19 +414,20 @@ fn dispatch(
             Ok(serde_json::Value::Null)
         }
         "open_file" => {
-            let path =
-                std::path::PathBuf::from(args["path"].as_str().ok_or("Missing project path")?)
-                    .canonicalize()?;
-            let session_root = bridge.session()?.root.canonicalize()?;
-            if !path.starts_with(session_root) {
+            let path = std::path::Path::new(args["path"].as_str().ok_or("Missing project path")?);
+            let canonical = path.canonicalize()?;
+            let session_root = bridge.session()?.root.clone();
+            if !canonical.starts_with(session_root.canonicalize()?) {
                 return Err("Recipe projects must stay inside the isolated session".into());
             }
-            files::open_for_recipe(
+            let opened = files::open_for_recipe(
                 &bridge.session,
-                &path,
+                &canonical,
                 args["revision"].as_u64().ok_or("Missing revision")?,
                 |source, assets, context| bridge.renderer.validate(source, assets, context),
-            )
+            )?;
+            let _ = preferences::remember(&session_root, path);
+            Ok(opened)
         }
         "new_document" => {
             let settings = serde_json::from_value(args["settings"].clone())?;

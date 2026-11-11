@@ -14,6 +14,7 @@ import { settingsFor } from './state'
 /** Shell commands that only make sense while a document is shown. */
 export const DOCUMENT_COMMANDS = [
   'ui.versions',
+  'ui.document',
   'document.save',
   'document.save_as',
   'document.export',

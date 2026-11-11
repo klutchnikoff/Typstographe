@@ -11,6 +11,7 @@ export interface Preferences {
   profile: Record<string, string>
   signature: Resource | null
   recent: string[]
+  pinned?: string[]
   personal: Record<string, string[]>
   editor_fraction: number
   spelling_enabled: boolean

@@ -500,18 +500,23 @@ interligne unique employé pour toutes les micro-actions :
   externes et retrait du doublon `alias` dans les propriétés de `mathBlock`.
 - **Désimbrication des modales et unification des métadonnées** : la recherche
   en ligne et la revue d’acquisition sont des vues internes de `#bibliography-manager`.
-  La palette de commandes s’ouvre en haut au centre. En E.2d, harmoniser l’édition
-  des collections et intégrer l’accès direct aux notices au panneau **Document**.
+  La palette de commandes s’ouvre en haut au centre. Les collections d’en-tête
+  partagent les cartes et les modales d’édition. Le panneau **Document** donne accès
+  directement aux notices.
 
 **Séparation validée le 27 octobre 2026 :** l’accès **Projets** présente le
 catalogue global (récents, épinglés, recherche, création et ouverture) ; l’accès
 **Document** présente le plan, les références, les ressources, les versions et les relectures du
-projet actif, selon son type. Le catalogue référence les fichiers ; retirer une
-entrée ne les supprime pas. Préférences et bibliothèque globales restent
-distinctes des données du projet.
+projet actif, selon son type. Le catalogue référence les fichiers. Un lot ultérieur
+vérifiera les chemins en arrière-plan à l’ouverture de **Projets** et signalera les
+fichiers introuvables ou inaccessibles par une couleur et un libellé. Les entrées
+et leurs épingles seront conservées, notamment si un volume est déconnecté.
+**Retirer de la liste** effacera la référence des récents et des épingles en laissant
+le fichier en place. Préférences et bibliothèque globales restent distinctes des
+données du projet.
 
-Maquetter cette séparation sur la barre verticale existante ; un seul panneau
-ouvert à la fois. **Versions** et **Relectures** sont des entrées distinctes.
+La barre verticale présente un seul panneau ouvert à la fois. Les rubriques de
+**Document**, dont **Versions** et **Relectures**, se déplient indépendamment.
 La consultation de Versions et des propositions MCP partage une modale à 90 %,
 avec onglets Contenu/Aperçu/Comparer et confirmations intégrées ; Relectures
 garde les interactions prévues dans J. Le choix fenêtres/onglets pour

@@ -47,6 +47,8 @@ export function mountToolMenus(menu: HTMLElement, commands: Registry) {
     [
       tr('Affichage'),
       [
+        'ui.projects',
+        'ui.document',
         'ui.versions',
         'ui.preferences',
         'ui.peer',
@@ -96,9 +98,10 @@ export function appendMenuCommands(menu: HTMLElement, commands: Registry, ids: s
 
 export function mountRailButtons(side: HTMLElement, commands: Registry) {
   for (const [label, name, action] of [
+    [tr('Projets'), 'folder', 'ui.projects'],
+    [tr('Document'), 'file-text', 'ui.document'],
     [tr('Commandes'), 'wrench', 'ui.palette'],
     [tr('Rechercher'), 'search', 'ui.find'],
-    [tr('Versions'), 'history', 'ui.versions'],
     [tr('Préférences'), 'settings-2', 'ui.preferences'],
   ] as const) {
     const opensPalette = action === 'ui.palette'

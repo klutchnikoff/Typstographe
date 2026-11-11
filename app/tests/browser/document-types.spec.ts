@@ -25,7 +25,7 @@ test(
     await expect(dialog.getByLabel('Modèle', { exact: true })).toBeHidden()
     await page.keyboard.press('ControlOrMeta+Enter')
     await expect(dialog).toBeVisible()
-    await expect(page.locator('main')).toBeHidden()
+    await expect(page.locator('.writing')).toBeHidden()
     await page.keyboard.press('Escape')
     await expect(dialog).toBeHidden()
     await expect(page.locator('.welcome')).toBeVisible()
@@ -96,7 +96,7 @@ test('thumbnail failure leaves the actual model selectable and creation availabl
   await expect(dialog.locator('.model-thumbnail-status')).toHaveText('Aperçu indisponible')
   await expect(dialog.getByRole('button', { name: 'Créer', exact: true })).toBeEnabled()
   await confirmNewDocument(page)
-  await expect(page.locator('main')).toBeVisible()
+  await expect(page.locator('.writing')).toBeVisible()
 })
 
 for (const dark of [false, true]) {

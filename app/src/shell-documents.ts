@@ -45,6 +45,7 @@ export function pendingInputs(provider: Provider) {
 }
 
 export type ShellDocuments = ReturnType<typeof shellDocuments>
+const catalogueOpenKey = 'typstographe:catalogue-open'
 
 /** Document lifecycle: create, open, save, export, close, title and dirty state. */
 export function shellDocuments(
@@ -68,11 +69,11 @@ export function shellDocuments(
     cleanBeforeSign = undefined
     options.objectMenu.close()
     options.closeEditorSelectors()
-    panels.dismissVersions()
+    panels.dismissDocument()
     state.active = value
     byId('synchronization').hidden = !value
     layout.welcome.hidden = value
-    layout.workspace.hidden = !value
+    layout.workspace.dataset.documentActive = String(value)
     if (value) layout.brand.finish()
     else layout.brand.play()
     if (value) {
@@ -157,24 +158,30 @@ export function shellDocuments(
   async function remember(file: string) {
     const { preferences } = state
     preferences.recent = [file, ...preferences.recent.filter((p) => p !== file)].slice(0, 12)
+    document.dispatchEvent(new Event('projects:changed'))
     await ctx.persistPreferences()
   }
-  async function open(file?: string) {
+  async function open(file?: string, fromCatalogue = false) {
     const selected = file || (await transport.invoke<string | null>('choose_file', { save: false }))
     if (!selected) return
     await state.recovery?.flush()
     await provider.flush(false)
-    const opened = await ctx.switchDocument((revision) =>
-      transport.invoke<{
-        document: unknown
-        settings: Settings
-        resources: Resource[]
-      }>('open_file', { path: selected, revision }),
-    )
-    if (options.isTauri || provider.nativeEditing) {
-      await remember(selected)
-      return
-    }
+    const reloads = options.isTauri || provider.nativeEditing
+    const opened = await ctx.switchDocument(async (revision) => {
+      // The native owner replaces the web view's document before open_file resolves.
+      if (fromCatalogue && reloads) sessionStorage.setItem(catalogueOpenKey, provider.generation)
+      try {
+        return await transport.invoke<{
+          document: unknown
+          settings: Settings
+          resources: Resource[]
+        }>('open_file', { path: selected, revision })
+      } catch (error) {
+        if (fromCatalogue && reloads) sessionStorage.removeItem(catalogueOpenKey)
+        throw error
+      }
+    })
+    if (reloads) return
     for (const resource of opened.resources) provider.addResource(resource)
     provider.doc.transact(() => {
       setDocument(provider, opened.settings)
@@ -245,8 +252,15 @@ export function shellDocuments(
       },
       () => (state.active ? editor.view.dom : byId('create-document')),
     )
-  const requestOpen = (file?: string) =>
-    file && state.path === file ? Promise.resolve(false) : confirmDiscard(() => open(file))
+  const requestOpen = (file?: string, fromCatalogue = false) =>
+    file && state.path === file
+      ? Promise.resolve(false)
+      : confirmDiscard(() => open(file, fromCatalogue))
+  function consumeCatalogueOpen() {
+    const previous = sessionStorage.getItem(catalogueOpenKey)
+    sessionStorage.removeItem(catalogueOpenKey)
+    return !!previous && previous !== provider.generation && state.active && !!state.path
+  }
   const openChosen = () => void requestOpen()
   const createChosen = () => confirmDiscard(create)
 
@@ -335,31 +349,6 @@ export function shellDocuments(
       }
       panels.refreshVersions()
     }
-    add('ui.versions', tr('Versions'), () => {
-      const api = versionsAPI({
-        creator: state.preferences.profile['sender.name'] || null,
-        provider,
-        transport,
-        destination: async () =>
-          state.path ? undefined : transport.invoke<string | null>('choose_file', { save: true }),
-        saved: async (result) => {
-          saved(result)
-          provider.recoveredName = null
-          updateTitle()
-          try {
-            await remember(result.path)
-          } catch (error) {
-            ctx.reportError(error)
-            return
-          }
-          if (result.warning) options.message(result.warning, true)
-          else options.message(tr('Versions enregistrées.'))
-        },
-      })
-      panels.adoptVersions(
-        versionsPanel(panels.show(tr('Versions'), 'ui.versions'), api, catalogue, ctx.reportError),
-      )
-    })
     void transport.listen<{ document: string; path: string; revision: number }>(
       'web-editor:versions',
       (event) => {
@@ -369,6 +358,30 @@ export function shellDocuments(
         panels.refreshVersions()
       },
     )
+  }
+
+  function mountVersions(root: HTMLElement) {
+    const api = versionsAPI({
+      creator: state.preferences.profile['sender.name'] || null,
+      provider,
+      transport,
+      destination: async () =>
+        state.path ? undefined : transport.invoke<string | null>('choose_file', { save: true }),
+      saved: async (result) => {
+        saved(result)
+        provider.recoveredName = null
+        updateTitle()
+        try {
+          await remember(result.path)
+        } catch (error) {
+          ctx.reportError(error)
+          return
+        }
+        if (result.warning) options.message(result.warning, true)
+        else options.message(tr('Versions enregistrées.'))
+      },
+    })
+    panels.adoptVersions(versionsPanel(root, api, catalogue, ctx.reportError))
   }
 
   /** Marks the document dirty and schedules recovery and preview on every change. */
@@ -415,6 +428,8 @@ export function shellDocuments(
     confirmDiscard,
     open,
     requestOpen,
+    consumeCatalogueOpen,
+    mountVersions,
     register,
     observeChanges,
     /** Welcome screen buttons share the File menu commands. */
