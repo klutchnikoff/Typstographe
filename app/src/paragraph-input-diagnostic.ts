@@ -119,7 +119,9 @@ export async function paragraphInputDiagnostic(
       const after = state()
       const changed =
         test === 'enter-at-end'
-          ? editor.state.doc.child(index).lastChild?.type.name === 'softBreak'
+          ? beforeDocument.eq(editor.state.doc) &&
+            editor.state.selection instanceof ParagraphSelection &&
+            editor.state.selection.head === start + first.nodeSize
           : editor.state.doc.child(index).textContent === first.textContent + secondText
       const result = { test, changed, before, event, after, document: editor.getJSON() }
       report.cases.push(result)

@@ -1,54 +1,20 @@
 import { Extension } from '@tiptap/core'
-import { Plugin, PluginKey, TextSelection, type Transaction } from '@tiptap/pm/state'
+import { Plugin, TextSelection } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { ParagraphSelection, paragraphBoundary, emptyWidgetParagraph } from './paragraph-selection'
 import { joinParagraphs } from './paragraph-join'
 import { dispatchImmediateEdit } from './immediate-edit'
-import { lineBreak } from './document-whitespace'
 import { syncNativeTextSelection } from './native-selection'
 import { ySyncPluginKey } from '@tiptap/y-tiptap'
 
-const pendingLine = new PluginKey<number | null>('pending-paragraph-line')
-export function temporaryParagraphLine(tr: Transaction, pos: number) {
-  return tr.setMeta(pendingLine, pos)
-}
-/** Navigation, pointer placement and temporary composition lines share one flow policy. */
+/** Keyboard and pointer navigation use the same paragraph separator. */
 export const ParagraphFlow = Extension.create({
   name: 'paragraphFlow',
   priority: 1150,
   addProseMirrorPlugins() {
     const editor = this.editor
     return [
-      new Plugin<number | null>({
-        key: pendingLine,
-        state: {
-          init: () => null,
-          apply(tr, previous) {
-            const meta = tr.getMeta(pendingLine)
-            const pos =
-              meta !== undefined ? meta : previous === null ? null : tr.mapping.map(previous)
-            if (pos === null || !lineBreak(tr.doc.nodeAt(pos))) return null
-            const $pos = tr.doc.resolve(pos)
-            return $pos.parent.type.name === 'paragraph' &&
-              $pos.parentOffset + 1 === $pos.parent.content.size
-              ? pos
-              : null
-          },
-        },
-        appendTransaction(_transactions, _previous, current) {
-          const pos = pendingLine.getState(current)
-          if (pos == null) return null
-          if (
-            current.selection instanceof TextSelection &&
-            current.selection.empty &&
-            current.selection.head === pos + 1
-          )
-            return null
-          return current.tr
-            .delete(pos, pos + 1)
-            .setMeta(pendingLine, null)
-            .setMeta('addToHistory', false)
-        },
+      new Plugin({
         props: {
           handleKeyDown(view, event) {
             if (
@@ -87,8 +53,9 @@ export const ParagraphFlow = Extension.create({
               return false
             const { $head } = selection
             if ($head.parent.type.name !== 'paragraph') return false
+            const enter = event.key === 'Enter' && !event.shiftKey && selection.empty
             const backwards = ['ArrowLeft', 'ArrowUp', 'Backspace'].includes(event.key)
-            const forwards = ['ArrowRight', 'ArrowDown'].includes(event.key)
+            const forwards = enter || ['ArrowRight', 'ArrowDown'].includes(event.key)
             if (!backwards && !forwards) return false
             const vertical = ['ArrowUp', 'ArrowDown'].includes(event.key)
             if (
@@ -100,6 +67,8 @@ export const ParagraphFlow = Extension.create({
             const boundary = backwards ? $head.before() : $head.after()
             const $boundary = view.state.doc.resolve(boundary)
             if (!paragraphBoundary($boundary)) return false
+            // The empty writing slot at the end of the document is not an existing separator.
+            if (enter && !$boundary.nodeAfter!.content.size) return false
             if (event.key === 'Backspace')
               return selection.empty ? joinParagraphs(editor, true, false) : false
             const next = event.shiftKey

@@ -49,11 +49,12 @@ function press(e: Editor, key: string) {
 it('structural input accepts adjacent shared text runs and preserves marks, notes and unaffected block identity', async () => {
   const { e, root, second } = await fixture()
   const original = e.state.doc.firstChild!
-  e.commands.setTextSelection(original.nodeSize - 1)
+  e.commands.setTextSelection(original.nodeSize - 2)
   expect(() => press(e, 'Enter')).not.toThrow()
-  expect(e.state.doc.firstChild!.lastChild!.type.name).toBe('softBreak')
+  const content = e.state.doc.firstChild!.content.content
+  expect(content.at(-2)!.type.name).toBe('softBreak')
   e.commands.insertContent('Suite')
-  expect(e.state.doc.firstChild!.textContent).toBe(original.textContent + 'Suite')
+  expect(e.state.doc.firstChild!.textContent).toBe(original.textContent.slice(0, -1) + 'Suite.')
   const italic = e.state.doc.firstChild!.content.content.find((n) => n.text === 'texte')!
   expect(italic.marks.map((m) => m.type.name)).toEqual(['italic'])
   expect(
