@@ -75,8 +75,6 @@ test('paragraph input uses the actual archived Yjs state, not a reconstructed do
   // Native selection/focus notifications can arrive after the initial click.
   await page.waitForTimeout(200)
   await page.keyboard.press('Enter')
-  await expect(body.locator(':scope > p').first().locator('br[data-soft-break]')).toHaveCount(1)
-  await page.keyboard.press('ArrowDown')
   await expect(body.locator('.paragraph-marker[data-active]')).toHaveCount(1)
   expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(original.document)
   await page.keyboard.press('ArrowRight')

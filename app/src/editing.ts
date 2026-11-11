@@ -7,7 +7,6 @@ import { lineBreak } from './document-whitespace'
 import { runObjectEdit } from './object-commands'
 import { joinParagraphs } from './paragraph-join'
 import { listKey } from './list-transforms'
-import { temporaryParagraphLine } from './paragraph-flow'
 
 /** Shared Typst-style inline input, also used by named editorial zones. */
 export const TypstInlineInput = Extension.create({
@@ -248,7 +247,7 @@ export const DocumentInput = Extension.create({
           return true
         }
         if (selection.empty && lineBreak($from.nodeBefore)) {
-          // A pending empty writing line already sits immediately before ¶.
+          // An empty writing paragraph already follows this line.
           if (
             $from.parentOffset === $from.parent.content.size &&
             this.editor.state.doc.resolve($from.after()).nodeAfter?.type.name === 'paragraph'
@@ -267,11 +266,6 @@ export const DocumentInput = Extension.create({
           this.editor.schema.nodes.softBreak.create(),
           true,
         )
-        if (selection.empty && $from.parentOffset === $from.parent.content.size) {
-          const next = this.editor.state.doc.resolve($from.after()).nodeAfter
-          if (next?.type.name === 'paragraph' && next.content.size)
-            temporaryParagraphLine(tr, $from.pos)
-        }
         this.editor.view.dispatch(tr.scrollIntoView())
         return true
       },

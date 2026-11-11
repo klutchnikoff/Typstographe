@@ -19,35 +19,24 @@ test.beforeEach(async ({ page, request }) => {
   )
 })
 
-test('a temporary writing line is usable before ¶ and disappears only if left empty', async ({
+test('Enter at the end of a paragraph moves directly to ¶ without adding a line', async ({
   page,
 }) => {
   const body = page.getByRole('textbox', { name: 'Corps du document', exact: true })
   const original = await page.evaluate(() => window.__spike!.editor.getJSON())
   await page.keyboard.press('Enter')
-  await expect(body.locator('p').first().locator('br[data-soft-break]')).toHaveCount(1)
-  const marker = body.locator('.paragraph-marker').first()
-  const blank = await page.evaluate(() => {
-    const { editor } = window.__spike!
-    const point = editor.view.coordsAtPos(editor.state.selection.from)
-    const marker = editor.view.dom.querySelector('.paragraph-marker')!.getBoundingClientRect()
-    return { caret: point.top, marker: marker.top }
-  })
-  expect(blank.marker).toBeGreaterThan(blank.caret + 8)
-  await page.keyboard.press('ArrowDown')
-  await expect(body.locator('.paragraph-marker[data-active]')).toHaveCount(1)
+  const marker = body.locator('.paragraph-marker[data-active]')
+  await expect(marker).toBeVisible()
+  await expect(body.locator('br[data-soft-break]')).toHaveCount(0)
+  expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(original)
+  await page.keyboard.press('Enter')
+  await expect(marker).toBeVisible()
   expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(original)
   await page.keyboard.press('ArrowLeft')
-  await page.keyboard.press('Enter')
-  await page.keyboard.type('Une suite rédigée.')
-  await page.keyboard.press('ArrowRight')
-  await expect(body.locator('p').first()).toHaveText(first + 'Une suite rédigée.')
-  await expect(body.locator('p').first().locator('br[data-soft-break]')).toHaveCount(1)
-  await expect(marker).toBeVisible()
-  await page.evaluate(async () => {
-    await window.__spike!.provider.flush()
-  })
-  expect(await page.evaluate(() => window.__spike!.provider.rejected)).toBeFalsy()
+  await page.keyboard.press('Shift+Enter')
+  await expect(body.locator('p').first().locator('br:not(.ProseMirror-trailingBreak)')).toHaveCount(
+    1,
+  )
 })
 
 test('the separator supports vertical and pointer navigation, no-op Enter and two-stage deletion with undo', async ({
@@ -86,7 +75,7 @@ test('the separator supports vertical and pointer navigation, no-op Enter and tw
   await expect(body.locator('p').first()).toHaveText(first + second)
 })
 
-test('leaving an unused writing line does not make undo resurrect it', async ({ page }) => {
+test('moving to the separator with Enter leaves undo for the previous edit', async ({ page }) => {
   const body = page.getByRole('textbox', { name: 'Corps du document', exact: true })
   await page.evaluate(
     ({ first }) => {
@@ -103,6 +92,7 @@ test('leaving an unused writing line does not make undo resurrect it', async ({ 
     editor.commands.setTextSelection(editor.state.doc.firstChild!.nodeSize - 1)
   })
   await page.keyboard.press('Enter')
+  await expect(body.locator('.paragraph-marker[data-active]')).toBeVisible()
   await page.evaluate(async () => {
     await window.__spike!.provider.flush()
     window.__spike!.provider.stopCapturing()

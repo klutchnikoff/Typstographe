@@ -44,11 +44,10 @@ du paragraphe précédent et du début du suivant. Le symbole n'est pas éditabl
 n'ajoute aucun nœud ni caractère au document. Un clic, les flèches horizontales
 et les flèches verticales permettent de rejoindre cette ligne.
 
-Entrée en fin de paragraphe ouvre une ligne de rédaction avant la séparation
-existante. Si on la quitte vide, ce retour temporaire disparaît ; si on y écrit,
-le texte et son retour simple sont conservés dans le même paragraphe. Entrée sur
-`¶`, au début du paragraphe suivant ou sur cette ligne encore vide ne multiplie
-pas les lignes. Une sélection étendue continue à désigner le contenu réel.
+En fin de paragraphe, Entrée place directement le curseur sur `¶` quand un
+paragraphe suit. Sur `¶` et au début du paragraphe suivant, le curseur reste en
+place. Dans le texte, Maj+Entrée insère un saut de ligne forcé. Une sélection
+étendue continue à désigner le contenu réel.
 
 Retour arrière au début du paragraphe ou sur `¶` supprime directement la
 séparation tout en conservant un retour simple entre les deux textes. Un second

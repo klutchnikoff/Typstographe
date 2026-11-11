@@ -31,10 +31,11 @@ for (const profile of ['rich-text', 'inline-text']) {
           label: 'Zone indépendante',
           language: 'fr',
           content: '<p>Texte</p>',
-          openLink: (editor: import('@tiptap/core').Editor) => {
+          openLink: () => {
             linkCalls++
-            editor.commands.setLink({ href: 'https://example.org' })
+            zone.commands.setLink({ href: 'https://example.org' })
             mount.dataset.links = String(linkCalls)
+            return true
           },
         })
         if (!zone.isInitialized)
@@ -55,7 +56,8 @@ for (const profile of ['rich-text', 'inline-text']) {
     await zone.press('ControlOrMeta+a')
     await zone.press('ControlOrMeta+k')
     await expect(zone.locator('a')).toHaveAttribute('href', 'https://example.org')
-    await zone.locator('a').click()
+    await zone.press('ArrowLeft')
+    await zone.press('ArrowRight')
     await zone.press('ControlOrMeta+Enter')
     await expect(page.locator('[data-links="2"]')).toBeVisible()
     await expect.poll(() => page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)

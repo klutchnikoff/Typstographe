@@ -118,23 +118,18 @@ for (const profile of ['document', 'rich-text'] as const) {
     ])
     expect(e.state.selection.head).toBe(7)
   })
-  it(`${profile}: an empty writing line before a separator is removed when left, but authored text survives`, () => {
+  it(`${profile}: Enter moves directly to an existing separator without editing`, () => {
     const e = create(),
       before = e.getJSON()
     e.commands.setTextSelection(6)
-    press(e, 'Enter')
-    expect(e.state.doc.firstChild!.lastChild!.type.name).toBe('softBreak')
+    expect(press(e, 'Enter')).toBe(true)
+    expect(e.state.selection).toBeInstanceOf(ParagraphSelection)
     expect(e.state.selection.head).toBe(7)
+    expect(e.getJSON()).toEqual(before)
     press(e, 'Enter')
-    expect(e.state.selection.head).toBe(7)
-    press(e, 'ArrowRight')
     expect(e.state.selection).toBeInstanceOf(ParagraphSelection)
     expect(e.getJSON()).toEqual(before)
     press(e, 'ArrowLeft')
-    press(e, 'Enter')
-    e.commands.insertContent('Suite')
-    press(e, 'ArrowRight')
-    expect(e.state.doc.firstChild!.textContent).toBe('AvantSuite')
-    expect(e.state.doc.firstChild!.child(1).type.name).toBe('softBreak')
+    expect(e.state.selection.head).toBe(6)
   })
 }
