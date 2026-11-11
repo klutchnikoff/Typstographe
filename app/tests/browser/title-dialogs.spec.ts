@@ -49,7 +49,6 @@ test('titres par langue : brouillon privé, trois zones riches, validation atomi
   await expect(dialog(page)).toHaveCount(0)
   await expect(cards(page).locator('.metadata-record-caption')).toHaveText(`Français (${title})`)
   expect(await cards(page).getAttribute('title')).toBeNull()
-  await expect(cards(page).locator('.metadata-record-detail')).toBeHidden()
   const saved = await values(page)
   const body = page.getByRole('textbox', { name: 'Corps du document', exact: true })
   await body.focus()

@@ -2,7 +2,7 @@ import { expect, it } from 'vitest'
 import * as Y from 'yjs'
 import { ySyncPluginKey } from '@tiptap/y-tiptap'
 import type { Provider } from '../src/provider'
-import { removeRecordCommands, moveRecordCommands } from '../src/metadata-record-commands'
+import { removeRecordCommands } from '../src/metadata-record-commands'
 import {
   initializeRecords,
   snapshotRecords,
@@ -109,20 +109,6 @@ it('used affiliations require explicit detachment in the atomic deletion plan', 
   expect(snapshot(provider)).toEqual(before)
   provider.doc.destroy()
 })
-it('reordering translates visible positions to stable ID anchors without modifying records', () => {
-  const provider = setup()
-  const second = addRecord(provider, schema.collections[0], { name: 'Camille' }),
-    id = second.get('id') as string
-  expect(moveRecordCommands(provider, schema.collections[0], id, -1)).toEqual([
-    { id: 'record.move', params: { collection: 'people', id, before: 'a' } },
-  ])
-  expect(moveRecordCommands(provider, schema.collections[0], 'a', 1)).toEqual([
-    { id: 'record.move', params: { collection: 'people', id: 'a' } },
-  ])
-  expect(recordIds(provider, schema.collections[0])).toEqual(['a', id])
-  provider.doc.destroy()
-})
-
 it('pending additions are private; cancellation preserves peer changes and document undo', () => {
   const provider = setup()
   const undo = new Y.UndoManager(provider.doc.getMap('settings'), {

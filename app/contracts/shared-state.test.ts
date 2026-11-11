@@ -12,7 +12,7 @@ import * as Y from 'yjs'
 import { createRichZone, richZoneExtensions } from '../src/rich-zone'
 import { initializeSettings, settingsFor, setSetting } from '../src/state'
 import { addRecord, setRecordField, prepareRecordEdit, recordMap } from '../src/metadata-records'
-import { moveRecordCommands, removeRecordCommands } from '../src/metadata-record-commands'
+import { removeRecordCommands } from '../src/metadata-record-commands'
 import type { Provider } from '../src/provider'
 import type { Catalogue } from '../src/shell'
 import { formattingBatch } from '../src/formatting'
@@ -903,7 +903,9 @@ it('publishes actual header form plans, reorders stable records and undoes expli
     await confirm(authors, { name: 'Dr Camille 😀', email: 'camille@example.org' }, first)
     expect(recordMap(storeValue, authors).get(first)).toBe(firstMap)
     expect(firstMap.get('name')).toBe(name)
-    await publish(moveRecordCommands(storeValue, authors, second, -1))
+    await publish([
+      { id: 'record.move', params: { collection: authors.parameter, id: second, before: first } },
+    ])
     expect(
       (settingsFor(storeValue).metadata.fields.authors as { id: string }[]).map(
         (author) => author.id,

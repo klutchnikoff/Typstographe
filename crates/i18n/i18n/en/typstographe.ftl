@@ -762,9 +762,8 @@ web-record-edit = Edit
 web-move-up = Move up
 web-move-down = Move down
 web-keyword-lines = One keyword per line; phrases may contain spaces.
-web-detach-affiliation = Also remove links to this affiliation.
-web-keep-primary-localization = Keep the primary language entry.
-web-affiliation-in-use = This affiliation is used. Confirm removing its links.
+web-detach-record-links = Also remove links to this record.
+web-record-in-use = Other records use this item.
 
 group-article-titles = Titles
 group-article-abstracts = Abstracts

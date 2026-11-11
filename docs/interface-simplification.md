@@ -68,7 +68,7 @@ l’éditeur distingue désormais **trois surfaces proportionnées à la tâche*
 | Surface | Déclencheur | Usage | Règle d’interaction |
 | :--- | :--- | :--- | :--- |
 | **1. Menu contextuel d’objet** *(popover flottant d’actions)* | • Clic gauche sur une poignée (`.table-handle`, bouton `⋯`, icône de bloc)<br>• Clic droit ciblé sur un objet ou une faute (`.spelling-error`, `.inline-object`, `.table-handle`, `.widget-bar`)<br>• Raccourci `Ctrl/Cmd+Entrée` / `Maj+F10` / touche Menu | • **Orthographe** : suggestions + ajout au dictionnaire + ignorer<br>• **Tableaux** : insérer/supprimer lignes et colonnes, basculer ligne/colonne d’en-tête<br>• **Blocs** : convertir liste puces ↔ numérotée, supprimer le bloc<br>• **Badges / Liens** : modifier, aller à la cible / notice, supprimer | Flottant (aucun décalage du document). **1 clic = 1 action immédiate** (annulable par `Cmd/Ctrl+Z`). |
-| **2. Pop-up de sélection / saisie** *(popover flottant avec champ)* | • Bouton de barre d’outils ou raccourci clavier<br>• Clic gauche sur un badge de citation, de renvoi ou un lien<br>• Frappe d’un déclencheur en ligne (ex. `@`) | • **Citations** : recherche floue (*fuzzy*) + sélection directe ou multiple (`+`) + supplément de page<br>• **Renvois internes** : recherche floue (*fuzzy*) + choix des composantes<br>• **Liens** : saisie/modification d’URL<br>• **Création de tableau** : sélecteur rapide de grille ou dimensions compactes | Flottant, ancré sous le curseur ou le badge. **`Entrée` ou clic sur un résultat valide immédiatement** le cas simple sans passer par un bouton `Valider`. |
+| **2. Pop-up de sélection / saisie** *(popover flottant avec champ)* | • Bouton de barre d’outils ou raccourci clavier<br>• Clic gauche sur un badge de citation, de renvoi ou un lien<br>• Frappe de `@@` pour les citations ou `&&` pour les renvois | • **Citations** : recherche floue (*fuzzy*) + sélection directe ou multiple (`+`) + supplément de page<br>• **Renvois internes** : recherche floue (*fuzzy*) + choix des composantes<br>• **Liens** : saisie, modification et retrait<br>• **Création de tableau** : sélecteur rapide de grille ou dimensions compactes | Flottant, ancré sous le curseur ou l’élément ciblé. **`Entrée` ou clic sur un résultat valide immédiatement** le cas simple. |
 | **3. Bandeau / Zone inline** *(pleine largeur de colonne)* | • Insertion ou clic sur un badge de note de bas de page<br>• Paramètres d’accessibilité longs (ex. description `alt` multiligne d’image ou d’équation) | • **Notes de bas de page** (rédaction de prose enrichie sur plusieurs phrases)<br>• **Description accessible (`alt`)** lorsqu’elle n’est pas directement intégrée au pied du bloc | Conserve l’architecture actuelle `BandHost` avec transition de hauteur adoucie. |
 
 ### Politique de clic droit (`contextmenu`) vis-à-vis de WebKit / Chromium / WebKitGTK
@@ -89,7 +89,7 @@ Typstographe (**Choix A retenu**) :
 
 ---
 
-## 3. Recherche floue (*fuzzy*) et insertion directe des citations et renvois
+## 3. Panneau flottant des renvois, des citations et des liens
 
 ### 3.1 Renvois internes (`cross-reference-panel.ts` / `cross-reference-index.ts`)
 
@@ -128,6 +128,21 @@ les deux signes tant qu’aucune recherche ou navigation n’a commencé, puis r
 rôle de validation. Un raccourci annulé laisse l’indicateur d’enregistrement dans son
 état précédent. Une frappe simple et le collage conservent le texte littéral.
 
+### 3.3 Liens (`link-panel.ts`)
+
+- Le bouton *Lien* et `Ctrl/Cmd+K` ouvrent le même panneau flottant que les
+  renvois et les citations, dans le corps du document et dans les champs riches
+  de l’en-tête. Le panneau s’ancre à la sélection, au curseur ou au lien ciblé
+  et conserve la disposition du texte.
+- Sur une sélection, l’adresse s’applique au texte sélectionné. Au curseur,
+  le texte du lien est facultatif. L’adresse sert de libellé par défaut.
+- Un clic sur un lien existant rouvre le panneau avec l’adresse préremplie.
+  *Appliquer* modifie cette adresse. *Retirer le lien* conserve le texte visible
+  et le retrait peut être annulé avec `Ctrl/Cmd+Z`.
+- `Entrée` valide la saisie et `Échap` l’abandonne. Après fermeture au clavier,
+  le focus revient à l’éditeur, avec la sélection ou le curseur approprié.
+  La reprise après fermeture restaure l’adresse et le texte saisis en brouillon.
+
 ---
 
 ## 4. Allègement des blocs et suppression directe avec `Undo`
@@ -157,17 +172,17 @@ rôle de validation. Un raccourci annulé laisse l’indicateur d’enregistreme
 
 ### 5.1 Unification des onglets de métadonnées (`shell-metadata.ts`, `metadata-collections.ts`)
 
-- **Édition cohérente dans les collections (*Titres*, *Résumés*, *Auteurs*, *Affiliations*)** :
-  - Supprimer les rangées de 5 mini-boutons dans les barres `<summary>` des accordéons :
-    le clic sur l’en-tête déplie/replie naturellement la fiche, un bouton unique `+ Ajouter`
-    en bas de la liste crée une nouvelle entrée, et un menu compact `⋯` (ou une corbeille
-    directe annulable par `Undo`) regroupe *Monter / Descendre / Supprimer*.
-  - Lorsque l’utilisateur clique sur `+ Ajouter` dans *Titres* ou *Résumés*, créer
-    directement une fiche dépliée éditable (ou supprimer toute différence visuelle entre
-    un brouillon `.metadata-record-draft` et une fiche ouverte).
+- **Édition commune des collections (*Titres*, *Résumés*, *Auteurs*, *Affiliations*)**
+  - Une carte ouvre la modale d’édition. Le bouton `+` centré en bas ouvre le même
+    formulaire pour une nouvelle fiche. `Échap` annule la saisie et rend le focus à
+    son déclencheur. La poignée permet de réordonner à la souris ou au clavier.
+  - La corbeille retire directement une fiche autonome, avec annulation dans
+    l’historique du document. Une confirmation précise l’effet d’une suppression
+    sur les associations d’une autre fiche ou sur les titres, le résumé et les mots-clés
+    d’une même langue. La fiche de la langue principale est protégée.
 - **Onglet *Bibliographie* (`bibliography-panel.ts`)** :
   - L’onglet présente le style bibliographique et le bouton *Gérer les références*.
-    L’accès direct aux notices fera partie du panneau **Document** en E.2d.
+    Le panneau **Document** donne aussi accès directement aux notices.
 
 ### 5.2 Désimbrication des modales bibliographiques (`bibliography-manager.ts`, `bibliography-online.ts`)
 
@@ -181,9 +196,10 @@ rôle de validation. Un raccourci annulé laisse l’indicateur d’enregistreme
 - La **palette de commandes** (`ui.palette`) s’ouvre dans une modale centrée en haut de
   la fenêtre. `Ctrl/Cmd+Maj+P` place le focus dans la recherche. Les flèches parcourent
   les résultats, `Entrée` exécute la commande choisie et `Échap` rend le focus à son point de départ.
-- **Séparation *Projets* / *Document* dans le rail latéral** : préparer le regroupement
-  des panneaux liés au document actif (*Plan, Bibliographie, Ressources, Versions,
-  Relectures*) distinctement des accès globaux (*Projets, Préférences, Assistance*).
+- **Séparation *Projets* / *Document* dans le rail latéral** : *Document* regroupe les
+  accès liés au projet actif (*Plan, Bibliographie, Ressources, Versions, Relectures*).
+  Les rubriques dépliables s’ouvrent indépendamment. *Projets*, *Préférences* et
+  *Assistance* restent des accès de la barre latérale.
 
 ---
 
@@ -195,7 +211,7 @@ rôle de validation. Un raccourci annulé laisse l’indicateur d’enregistreme
 | **Correction orthographique (`proofing.ts`) et poignées de tableau (`table-panel.ts`)** : ouvrent un bandeau `.context-band` qui décale le texte ou le tableau. | **Menu contextuel flottant (popover HTML)** au clic gauche sur la poignée et au clic droit ciblé sur la faute ou l’objet. | Zéro saut de mise en page (*layout shift*), 1 clic = 1 action, et conservation du menu natif WebKit sur le texte courant. |
 | **Insertion de renvoi (`cross-reference-panel.ts`) et de citation (`citation-panel.ts`)** : bandeau interligne + recherche par sous-chaîne stricte + clic obligatoire sur `Valider`. | **Pop-up flottant avec recherche floue (*fuzzy*)** ; `Entrée` ou clic insère immédiatement le badge dans le cas nominal. | Passe de 3–4 actions avec décalage du paragraphe à 1 geste fluide sans déplacement du texte. |
 | **Roue dentée (`Paramètres`) sur tous les blocs** : affichée mais grisée (`disabled`) sur `quote`, `descriptionList`, `postscript`, `attachment`, et dupliquant `alias` sur `mathBlock`. | **Masquer la roue dentée** lorsqu’aucun paramètre externe n’existe, et garder `eq:` uniquement dans l’en-tête du bloc. | Supprime les boutons morts et la redondance entre l’en-tête et le bandeau. |
-| **En-tête documentaire (`metadata-collections.ts`)** : 3 modes de validation concurrents, 5 mini-boutons par ligne d’accordéon et onglet *Bibliographie* quasi vide. | **Modèle d’édition unifié**, barre d’accordéon épurée (clic pour déplier + menu `⋯`) et accès direct aux références. | Réduit la charge cognitive et l’encombrement visuel de la colonne d’édition. |
+| **En-tête documentaire (`metadata-collections.ts`)** : 3 modes de validation concurrents, 5 mini-boutons par ligne d’accordéon et onglet *Bibliographie* quasi vide. | **Cartes communes**, modale d’ajout et d’édition, poignée et corbeille. Accès direct aux références. | Réduit l’encombrement de l’en-tête et rend explicites les suppressions qui touchent plusieurs fiches ou onglets. |
 | **Parcours bibliographique (`bibliography-manager.ts` + `bibliography-online.ts` + `review-dialog.ts`)** : jusqu’à 3–4 `<dialog>` modales superposées. | **Gestionnaire bibliographique à niveau unique** intégrant la recherche en ligne et la revue d’import comme vues internes. | Élimine l’effet « poupées russes » et garde un cadre visuel stable. |
 
 ---
@@ -210,7 +226,7 @@ rôle de validation. Un raccourci annulé laisse l’indicateur d’enregistreme
      ciblé sur `.spelling-error`, `.inline-object`, `.table-handle`, `.widget-bar`)
      appliqué à l’orthographe, aux poignées de tableaux et à la conversion Puces ↔ Numérotée.
      Depuis une cellule, le menu affiche les groupes Ligne et Colonne.
-2. **Lot E.2b — Pop-ups de sélection *fuzzy* (Renvois, Citations, Liens)** :
+2. **Lot E.2b — Panneau flottant des renvois, des citations et des liens — terminé**
    - Pop-up flottant avec recherche floue pondérée pour les renvois internes et les
      citations bibliographiques, validation directe sur `Entrée`/clic et édition rapide
      au clic sur un badge existant.
@@ -221,11 +237,17 @@ rôle de validation. Un raccourci annulé laisse l’indicateur d’enregistreme
    - Citations bibliographiques : même panneau flottant et même retour au curseur. La
      composition affiche les références, les localisateurs et la forme de la citation
      après `+`, `Maj+Entrée` ou l’ouverture d’un badge existant.
+   - Liens : insertion sur une sélection ou au curseur, modification et retrait
+     annulable via le même composant, selon le [parcours des liens](#33-liens-link-panelts).
+   - Recette à la souris et au clavier dans Chromium et WebKit, y compris la saisie
+     dans la modale de résumé, la reprise d’un lien en brouillon et les raccourcis
+     `@@` et `&&`.
 3. **Lot E.2c — Gestionnaire bibliographique et palette centrée — terminé**
    - La recherche en ligne et les arbitrages d’acquisition sont intégrés au gestionnaire.
    - La palette s’ouvre en haut de la fenêtre. La recherche, le choix au clavier et le
      retour du focus avec `Échap` ont été vérifiés sous Chromium et WebKit.
 4. **Lot E.2d — Harmonisation des en-têtes de métadonnées et accès *Projets / Document*** :
-   - Épuration des collections de métadonnées (*Titres, Résumés, Auteurs, Affiliations*) et
-     maquettage de la séparation latérale *Projets / Document*.
-   - Accès direct aux notices bibliographiques depuis le panneau **Document**.
+   - Cartes et modales communes pour les collections de métadonnées (*Titres, Résumés,
+     Auteurs, Affiliations*), avec suppression directe annulable pour les fiches autonomes.
+   - Panneaux *Projets* et *Document* dans les deux modes du rail, avec accès direct aux
+     notices bibliographiques depuis *Document*.

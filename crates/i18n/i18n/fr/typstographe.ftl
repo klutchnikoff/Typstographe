@@ -764,9 +764,8 @@ web-record-edit = Modifier
 web-move-up = Monter
 web-move-down = Descendre
 web-keyword-lines = Un mot-clé par ligne ; les expressions peuvent contenir des espaces.
-web-detach-affiliation = Retirer aussi les associations à cette affiliation.
-web-keep-primary-localization = L’ensemble de la langue principale doit être conservé.
-web-affiliation-in-use = Cette affiliation est utilisée. Confirmez le retrait de ses associations.
+web-detach-record-links = Retirer aussi les liens vers cet élément.
+web-record-in-use = Cet élément est utilisé par d’autres fiches.
 
 group-article-titles = Titres
 group-article-abstracts = Résumés

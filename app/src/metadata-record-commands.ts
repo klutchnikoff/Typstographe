@@ -7,24 +7,6 @@ import {
   type StructuredMetadata,
 } from './metadata-records'
 
-export function moveRecordCommands(
-  provider: RecordStore,
-  definition: RecordCollection,
-  id: string,
-  delta: number,
-): StructuredCommand[] {
-  const ids = recordIds(provider, definition),
-    index = ids.indexOf(id),
-    next = index + delta
-  if (index < 0 || next < 0 || next >= ids.length) return []
-  const before = delta < 0 ? ids[next] : ids[next + 1]
-  return [
-    {
-      id: 'record.move',
-      params: { collection: definition.parameter, id, ...(before ? { before } : {}) },
-    },
-  ]
-}
 /** Detachment is explicit and shares the final validation/undo of the deletion. */
 export function removeRecordCommands(
   provider: RecordStore,

@@ -24,11 +24,9 @@ export function recordCard(id: string, label: string) {
   open.setAttribute('aria-label', `${tr('Modifier')} · ${label}`)
   const caption = document.createElement('span')
   caption.className = 'metadata-record-caption'
-  const detail = document.createElement('small')
-  detail.className = 'metadata-record-detail'
-  open.append(caption, detail)
+  open.append(caption)
   const actions = actionRow()
   header.append(handle, open, actions)
   element.append(header)
-  return { element, header, handle, open, caption, detail, actions }
+  return { element, handle, open, caption, actions }
 }
