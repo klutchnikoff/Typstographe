@@ -7,9 +7,10 @@ négociation DOI générique en repli, retrait du connecteur Crossref.
 
 Dans un Article, ouvrir **Bibliographie → Gérer les références → Rechercher en
 ligne** (globe). La même action est disponible dans le bandeau d’une citation.
-Choisir les sources spécialisées puis lancer explicitement la recherche :
+Choisir les sources spécialisées puis saisir la recherche. Elle part après une
+courte pause de frappe.
 
-- **Auteur/titre ou requête zbMATH** : recherche dans zbMATH Open. Le mécanisme DOI
+- **Auteur, titre, année ou requête zbMATH** : recherche dans zbMATH Open. Le mécanisme DOI
   ne sait pas rechercher un texte sans identifiant.
 - **DOI** : récupération par les sources spécialisées appropriées et cochées
   (Cairn OAI, zbMATH). Si aucune notice n’est obtenue, interrogation de `doi.org`
@@ -26,9 +27,9 @@ du catalogue, ni recherche générale Cairn, ni contournement d’une protection
 
 Les flèches parcourent les résultats sans déplacer le focus du champ de recherche.
 Entrée, un clic ou **Vérifier la notice** ouvre le formulaire commun. Vérifier le
-type natif Hayagriva et les champs, corriger, puis **Ajouter** ou **Ajouter et citer**.
-Les collisions utilisent les choix d’import existants : conserver séparément
-avec une autre clé ou désigner la notice correspondante. Annuler n’ajoute rien.
+type natif Hayagriva et les champs, corriger, puis **Ajouter au projet** ou
+**Ajouter et citer**. En cas de correspondance à vérifier, choisir **Comparer les
+notices**. Un doublon exact réutilise directement la notice du projet.
 
 ## Contrat des collecteurs
 
@@ -50,7 +51,7 @@ opérations documentaires, sans nouveau collecteur réseau exposé dans ce lot.
   pages). Le formulaire indique cet enrichissement via DOI.
 - Le DOI reçu doit correspondre au DOI demandé, chez les spécialistes comme
   dans le repli. Une réponse erronée ne peut produire une citation d’un autre travail.
-- La frappe et la recherche locale du projet ne déclenchent aucun appel réseau.
+- La saisie dans l’éditeur et la recherche locale du projet restent hors ligne.
   Une réponse devenue obsolète ne remplace ni une nouvelle recherche ni une saisie.
 
 Le client partage les connexions HTTPS, les certificats et le proxy système.
@@ -69,9 +70,18 @@ et les URL Cairn validées sont utilisés.
 
 ## Vérification et publication
 
-La notice reçue reste un brouillon privé dans le formulaire commun. Le projet
-conserve un **instantané Hayagriva converti**, nommé selon la source, distinct
-de la notice vérifiée. Ce n’est pas une archive du JSON/XML brut.
+La notice reçue reste un brouillon privé dans le formulaire commun. En cas de
+correspondance ou de clé déjà utilisée, le gestionnaire indique le motif et
+compare la notice du projet à la notice reçue. Conserver réutilise la notice
+du projet telle quelle. Ajouter exige une clé disponible. Enrichir complète
+les champs manquants lorsqu’une correspondance bibliographique le permet.
+
+Si une seule notice du projet possède les mêmes champs bibliographiques,
+l’import réutilise sa clé et son identité. Les imports groupés comptent ces
+doublons dans leur bilan. Une citation utilise directement la notice existante.
+
+Lorsqu’une notice est ajoutée ou enrichie, le projet conserve un **instantané
+Hayagriva converti**, nommé selon la source et distinct de la notice vérifiée.
 
 `bibliography.review_import` reçoit le jeu corrigé `reviewed`, puis
 `bibliography.apply` publie l’import gardé. Les identités et la provenance

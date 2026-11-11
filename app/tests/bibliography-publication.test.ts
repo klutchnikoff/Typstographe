@@ -38,7 +38,7 @@ it('prepares a guarded replacement without losing identity or touching the priva
     before = stableJSON(selected)
   const next = { ...record, entry: { ...record.entry, title: 'Edited' } }
   const { api } = query(next)
-  expect(await prepareBibliographyPublication(api, selected)).toEqual([
+  expect((await prepareBibliographyPublication(api, selected))?.batch).toEqual([
     {
       id: 'bibliography.apply',
       params: {
@@ -71,8 +71,11 @@ it('creates and cites in one batch, preserving existing citation items, form and
   }
   const { api } = query(record)
   const batch = await prepareBibliographyPublication(api, selected, undefined, cite)
-  expect(batch?.map((command) => command.id)).toEqual(['bibliography.apply', 'inline.replace'])
-  expect(batch?.[1].params).toMatchObject({
+  expect(batch?.batch.map((command) => command.id)).toEqual([
+    'bibliography.apply',
+    'inline.replace',
+  ])
+  expect(batch?.batch[1].params).toMatchObject({
     target: cite.target,
     node: {
       marks: cite.node?.marks,
@@ -88,7 +91,7 @@ it('creates and cites in one batch, preserving existing citation items, form and
   expect(cite.node?.attrs?.items).toHaveLength(1)
 })
 it('a clean notice does not publish a spurious replacement', async () => {
-  expect(await prepareBibliographyPublication(query(record).api, draft())).toEqual([])
+  expect((await prepareBibliographyPublication(query(record).api, draft()))?.batch).toEqual([])
 })
 it('refuses unreviewed imports and keeps the exact reviewed preparation guard', async () => {
   const review: ImportDraft = {
@@ -109,7 +112,7 @@ it('refuses unreviewed imports and keeps the exact reviewed preparation guard', 
   review.ready = 'stale'
   expect(await prepareBibliographyPublication(api, undefined, review)).toBeNull()
   review.ready = stableJSON(review.decisions)
-  expect(await prepareBibliographyPublication(api, undefined, review)).toEqual([
+  expect((await prepareBibliographyPublication(api, undefined, review))?.batch).toEqual([
     {
       id: 'bibliography.apply',
       params: {

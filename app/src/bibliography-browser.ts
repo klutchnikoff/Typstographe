@@ -55,11 +55,15 @@ export function bibliographyBrowser(parent: HTMLElement, activate: (id: string) 
   back.innerHTML = icon('chevron-right')
   back.append(tr('Retour aux notices du projet'))
   toolbar.append(add, load, online, back, file)
+  const importStatus = document.createElement('p')
+  importStatus.role = 'status'
+  importStatus.className = 'bibliography-import-status'
+  importStatus.hidden = true
   project.append(search, status, list)
   left.append(project, alternative)
   layout.append(left, detail)
   parent.classList.add('bibliography-workspace')
-  parent.append(toolbar, layout)
+  parent.append(toolbar, importStatus, layout)
   back.hidden = alternative.hidden = true
   const navigation = navigationGroup(list, {
     axis: 'vertical',
@@ -77,6 +81,10 @@ export function bibliographyBrowser(parent: HTMLElement, activate: (id: string) 
     load,
     file,
     online,
+    reportImport(text = '') {
+      importStatus.hidden = !text
+      importStatus.textContent = text
+    },
     source(element?: HTMLElement) {
       const alternate = !!element
       project.hidden = alternate

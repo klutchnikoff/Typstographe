@@ -172,7 +172,13 @@ test('imports natifs, arbitrage de collision et suppression protégée', async (
   await manage(page)
   await setFiles(page, file('doublon.bib', bib.replace(/}$/, ', edition={2}}')))
   const fileReview = manager(page).locator('#bibliography-file-review')
-  await expect(fileReview.locator('table')).toContainText('Champ complété')
+  await expect(fileReview.locator('table')).toContainText('Champ à compléter')
+  await expect(fileReview.getByRole('columnheader', { name: 'Notice du projet' })).toBeVisible()
+  await expect(fileReview.getByRole('columnheader', { name: 'Notice du fichier' })).toBeVisible()
+  await expect(fileReview.getByRole('radio', { checked: true })).toHaveCount(0)
+  await expect(manager(page).getByRole('button', { name: 'Importer', exact: true })).toBeDisabled()
+  await fileReview.getByRole('radio', { name: 'Enrichir la notice du projet', exact: true }).check()
+  await expect(manager(page).getByRole('button', { name: 'Importer', exact: true })).toBeEnabled()
   await expect(
     manager(page).locator('.bibliography-browser [aria-label="Notices du fichier"]'),
   ).toBeVisible()
@@ -181,7 +187,7 @@ test('imports natifs, arbitrage de collision et suppression protégée', async (
   const viewport = page.viewportSize()!
   await page.setViewportSize({ width: 560, height: viewport.height })
   await expect(manager(page).locator('.bibliography-layout')).toHaveCSS('display', 'block')
-  await expect(fileReview.locator('table')).toContainText('Champ complété')
+  await expect(fileReview.locator('table')).toContainText('Champ à compléter')
   await page.setViewportSize(viewport)
   await manager(page).getByRole('button', { name: 'Importer', exact: true }).click()
   await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
@@ -192,10 +198,13 @@ test('imports natifs, arbitrage de collision et suppression protégée', async (
       '@book{bourdieu1980,author={Other, Alex},title={A different book},year={1990}}',
     ),
   )
-  await expect(manager(page).getByRole('alert')).toContainText('décision de rapprochement')
-  await manager(page).getByRole('radio', { name: 'Conserver séparément' }).check()
+  await expect(fileReview).toContainText('La clé de citation est déjà utilisée.')
+  await expect(
+    fileReview.getByRole('row', { name: /Titre Le sens pratique A different book/ }),
+  ).toBeVisible()
+  await manager(page).getByRole('radio', { name: 'Ajouter avec une nouvelle clé' }).check()
   await manager(page)
-    .getByLabel('Clé de citation · bourdieu1980', { exact: true })
+    .getByLabel('Nouvelle clé de citation · bourdieu1980', { exact: true })
     .fill('other1990')
   await expect(manager(page).getByRole('button', { name: 'Importer', exact: true })).toBeEnabled()
   await manager(page).getByRole('button', { name: 'Importer', exact: true }).click()
@@ -711,10 +720,14 @@ test('un champ invalide refuse le changement de type en conservant le brouillon'
   await changeType(page, 'book')
   await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
   await profile.press('Escape')
-  await page
-    .locator('#bibliography-leave')
-    .getByRole('button', { name: 'Abandonner', exact: true })
-    .click()
+  await expect(manager(page)).toBeVisible()
+  await expect(manager(page).locator('#bibliography-leave')).toHaveCount(0)
+  await expect(manager(page).getByRole('button', { name: 'Ajouter au projet' })).toBeHidden()
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
+  const search = manager(page).getByRole('combobox', { name: 'Rechercher une référence' })
+  await expect(search).toBeFocused()
+  await expect(manager(page).getByRole('button', { name: 'Nouvelle notice' })).toBeEnabled()
+  await search.press('Escape')
   await expect(manager(page)).toBeHidden()
 })
 
@@ -756,4 +769,30 @@ test('volume et numéro hérités restent visibles et modifiables après un chan
   )
   expect(record.entry).not.toHaveProperty('volume')
   expect(record.entry.parent[0].volume).toBe(13)
+})
+
+test('les doublons exacts sont écartés et comptés dans un import groupé', async ({ page }) => {
+  await create(page)
+  await manage(page)
+  const entries = manager(page).locator('#bibliography-list .bibliography-list-row')
+  const feedback = manager(page).locator('.bibliography-import-status')
+  const review = manager(page).locator('#bibliography-file-review')
+
+  await setFiles(page, file('reimport.bib', bib))
+  await expect(feedback).toHaveText('Cette notice est déjà dans le projet.')
+  await expect(review).toHaveCount(0)
+  await expect(entries).toHaveCount(2)
+
+  const mixed = [
+    yaml,
+    'new: {type: book, title: A new reference, author: "Doe, Jane", date: 2026}',
+  ].join('\n')
+  await setFiles(page, file('mixed.yaml', mixed))
+  await expect(review).toBeVisible()
+  const source = manager(page).getByRole('listbox', { name: 'Notices du fichier' })
+  await expect(source.getByRole('button')).toHaveCount(1)
+  await expect(source).toContainText('A new reference')
+  await manager(page).getByRole('button', { name: 'Importer', exact: true }).click()
+  await expect(feedback).toHaveText('1 notice ajoutée · 1 notice déjà présente')
+  await expect(entries).toHaveCount(3)
 })

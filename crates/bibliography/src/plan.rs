@@ -1,7 +1,7 @@
 //! Immutable import plans. Preparing, resolving and applying never writes a file.
 use crate::{
     CandidateGroup, Code, ConflictReason, Error, Fingerprint, Library, Record, RecordId, Result,
-    candidate_groups,
+    Signal, candidate_groups, evidence,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -13,6 +13,10 @@ use std::collections::{BTreeMap, BTreeSet};
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Decision {
     Same {
+        incoming: RecordId,
+        target: RecordId,
+    },
+    Keep {
         incoming: RecordId,
         target: RecordId,
     },
@@ -29,6 +33,7 @@ impl Decision {
     fn incoming(&self) -> &RecordId {
         match self {
             Self::Same { incoming, .. }
+            | Self::Keep { incoming, .. }
             | Self::Distinct { incoming, .. }
             | Self::Skip { incoming } => incoming,
         }
@@ -40,6 +45,7 @@ impl Decision {
 pub enum Action {
     New,
     Unchanged,
+    Duplicate,
     Enrich,
     Conflict,
     Skip,
@@ -54,6 +60,18 @@ pub struct PlanItem {
     /// Fields that will fill gaps, not overwrite known values.
     pub added_fields: Vec<String>,
     /// Known values left unchanged; correction remains a separate explicit edit.
+    pub differing_fields: Vec<String>,
+    /// Candidate pairs remain available while switching import decisions.
+    pub matches: Vec<ImportMatch>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct ImportMatch {
+    pub target: RecordId,
+    pub in_project: bool,
+    pub identical: bool,
+    pub signals: Vec<Signal>,
+    pub added_fields: Vec<String>,
     pub differing_fields: Vec<String>,
 }
 
@@ -148,13 +166,26 @@ impl ImportPlan {
             .chain(self.incoming.iter().cloned())
             .collect::<Vec<_>>();
         let groups = candidate_groups(&all)?;
+        let mut matches = import_matches(&self.base, &all, &groups, &self.incoming);
+        let duplicates: BTreeMap<_, _> = matches
+            .iter()
+            .filter_map(|(incoming, matches)| {
+                let mut identical = matches.iter().filter(|m| m.in_project && m.identical);
+                let target = identical.next()?;
+                identical
+                    .next()
+                    .is_none()
+                    .then(|| (incoming.clone(), target.target.clone()))
+            })
+            .collect();
         let active = all
             .iter()
-            .filter(|r| {
-                !matches!(
-                    self.decisions.get(r.id()),
-                    Some(Decision::Skip { .. } | Decision::Distinct { .. })
-                )
+            .filter(|r| match self.decisions.get(r.id()) {
+                Some(Decision::Skip { .. } | Decision::Distinct { .. } | Decision::Keep { .. }) => {
+                    false
+                }
+                Some(Decision::Same { .. }) => true,
+                None => !duplicates.contains_key(r.id()),
             })
             .cloned()
             .collect::<Vec<_>>();
@@ -165,6 +196,7 @@ impl ImportPlan {
             decisions: &self.decisions,
             groups: &groups,
             default_groups: &default_groups,
+            duplicates: &duplicates,
             records: self.base.records().to_vec(),
             items: BTreeMap::new(),
             aliases: BTreeMap::new(),
@@ -174,6 +206,9 @@ impl ImportPlan {
             executor.process(record.id())?;
         }
         self.items = executor.items.into_values().collect();
+        for item in &mut self.items {
+            item.matches = matches.remove(&item.incoming).unwrap_or_default();
+        }
         self.proposed = if self.items.iter().any(|i| i.action == Action::Conflict) {
             None
         } else {
@@ -189,6 +224,7 @@ struct Executor<'a> {
     decisions: &'a BTreeMap<RecordId, Decision>,
     groups: &'a [CandidateGroup],
     default_groups: &'a [CandidateGroup],
+    duplicates: &'a BTreeMap<RecordId, RecordId>,
     records: Vec<Record>,
     items: BTreeMap<RecordId, PlanItem>,
     aliases: BTreeMap<RecordId, Option<RecordId>>,
@@ -223,6 +259,35 @@ impl Executor<'_> {
                 None
             }
             Some(Decision::Distinct { key, .. }) => self.add(&incoming, &key)?,
+            Some(Decision::Keep { target, .. }) => {
+                let same_key = self
+                    .base
+                    .get(&target)
+                    .or_else(|| self.incoming.iter().find(|r| r.id() == &target))
+                    .is_some_and(|r| r.key() == incoming.key());
+                if &target == id
+                    || (!same_key && group.is_none_or(|g| !g.members.contains(&target)))
+                {
+                    return Err(Error::new(
+                        Code::InvalidDecision,
+                        "Kept record is not an import candidate",
+                    ));
+                }
+                let target = self.process(&target)?;
+                if let Some(target) = &target {
+                    self.item(
+                        &incoming,
+                        Some(target.clone()),
+                        Action::Unchanged,
+                        vec![],
+                        vec![],
+                        vec![],
+                    );
+                } else {
+                    self.conflict(&incoming, vec![ConflictReason::AmbiguousTarget]);
+                }
+                target
+            }
             Some(Decision::Same { target, .. }) => {
                 if &target == id || group.is_none_or(|g| !g.members.contains(&target)) {
                     return Err(Error::new(
@@ -231,6 +296,18 @@ impl Executor<'_> {
                     ));
                 }
                 self.merge(&incoming, &target)?
+            }
+            None if self.duplicates.contains_key(id) => {
+                let target = self.duplicates[id].clone();
+                self.item(
+                    &incoming,
+                    Some(target.clone()),
+                    Action::Duplicate,
+                    vec![],
+                    vec![],
+                    vec![],
+                );
+                Some(target)
             }
             None => {
                 let group = self.default_groups.iter().find(|g| g.members.contains(id));
@@ -291,6 +368,7 @@ impl Executor<'_> {
                 conflicts,
                 added_fields,
                 differing_fields,
+                matches: vec![],
             },
         );
     }
@@ -325,32 +403,7 @@ impl Executor<'_> {
             .position(|r| r.id() == &target)
             .ok_or_else(|| Error::new(Code::InvalidDecision, "Target has no planned record"))?;
         let existing = &self.records[position];
-        let mut value = existing.native_value();
-        let mut fields = vec![];
-        let mut differences = vec![];
-        fill_gaps(
-            &mut value,
-            &incoming.native_value(),
-            "",
-            &mut fields,
-            &mut differences,
-        );
-        let mut record = existing.with_entry(value)?;
-        let different_type = existing.entry().entry_type() != incoming.entry().entry_type();
-        for parent in incoming
-            .retained_parents()
-            .iter()
-            .chain(incoming.entry().parents().iter().filter(|_| different_type))
-        {
-            if !record.retained_parents.contains(parent)
-                && !record.entry().parents().contains(parent)
-            {
-                record.retained_parents.push(parent.clone());
-                if !fields.iter().any(|path| path == "/retained_parents") {
-                    fields.push("/retained_parents".into())
-                }
-            }
-        }
+        let (mut record, fields, differences) = enrich(existing, incoming)?;
         for source in existing.provenance().iter().chain(incoming.provenance()) {
             record.add_provenance(source.clone());
         }
@@ -369,6 +422,115 @@ impl Executor<'_> {
         );
         Ok(Some(target))
     }
+}
+
+fn import_matches(
+    base: &Library,
+    all: &[Record],
+    groups: &[CandidateGroup],
+    incoming: &[Record],
+) -> BTreeMap<RecordId, Vec<ImportMatch>> {
+    let by_id: BTreeMap<_, _> = all.iter().map(|record| (record.id(), record)).collect();
+    let by_group: BTreeMap<_, _> = groups
+        .iter()
+        .flat_map(|group| group.members.iter().map(move |id| (id, &group.members)))
+        .collect();
+    let mut by_key: BTreeMap<_, Vec<_>> = BTreeMap::new();
+    for record in all {
+        by_key.entry(record.key()).or_default().push(record.id());
+    }
+    incoming
+        .iter()
+        .map(|incoming| {
+            let related = by_group
+                .get(incoming.id())
+                .into_iter()
+                .flat_map(|ids| ids.iter());
+            let targets: BTreeSet<_> = related
+                .chain(by_key[incoming.key()].iter().copied())
+                .collect();
+            let matches = targets
+                .into_iter()
+                .filter(|target| *target != incoming.id())
+                .filter_map(|target| {
+                    compare_match(incoming, by_id[target], base.get(target).is_some())
+                })
+                .collect();
+            (incoming.id().clone(), matches)
+        })
+        .collect()
+}
+
+fn compare_match(incoming: &Record, target: &Record, in_project: bool) -> Option<ImportMatch> {
+    let evidence = evidence(incoming, target);
+    let signals = if evidence.refuted {
+        vec![]
+    } else {
+        evidence.signals
+    };
+    if signals.is_empty() && incoming.key() != target.key() {
+        return None;
+    }
+    let identical = incoming.native_value() == target.native_value()
+        && incoming
+            .retained_parents()
+            .iter()
+            .map(crate::model::canonical_entry)
+            .eq(target
+                .retained_parents()
+                .iter()
+                .map(crate::model::canonical_entry));
+    let (added_fields, differing_fields) = if identical {
+        (vec![], vec![])
+    } else if signals.is_empty() {
+        (vec![], gaps(target, incoming).2)
+    } else {
+        match enrich(target, incoming) {
+            Ok((_, added, differences)) => (added, differences),
+            Err(_) => (vec![], gaps(target, incoming).2),
+        }
+    };
+    Some(ImportMatch {
+        target: target.id().clone(),
+        in_project,
+        identical,
+        signals,
+        added_fields,
+        differing_fields,
+    })
+}
+
+fn gaps(existing: &Record, incoming: &Record) -> (Value, Vec<String>, Vec<String>) {
+    let mut value = existing.native_value();
+    let mut fields = vec![];
+    let mut differences = vec![];
+    fill_gaps(
+        &mut value,
+        &incoming.native_value(),
+        "",
+        &mut fields,
+        &mut differences,
+    );
+    (value, fields, differences)
+}
+
+fn enrich(existing: &Record, incoming: &Record) -> Result<(Record, Vec<String>, Vec<String>)> {
+    let (value, mut fields, differences) = gaps(existing, incoming);
+    let mut record = existing.with_entry(value)?;
+    let different_type = existing.entry().entry_type() != incoming.entry().entry_type();
+    for parent in incoming
+        .retained_parents()
+        .iter()
+        .chain(incoming.entry().parents().iter().filter(|_| different_type))
+    {
+        if !record.retained_parents.contains(parent) && !record.entry().parents().contains(parent) {
+            record.retained_parents.push(parent.clone());
+            if !fields.iter().any(|path| path == "/retained_parents") {
+                fields.push("/retained_parents".into())
+            }
+        }
+    }
+    Ok((record, fields, differences))
 }
 
 fn empty(value: &Value) -> bool {

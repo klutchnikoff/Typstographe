@@ -236,3 +236,126 @@ fn identifiers_are_normalized_only_for_matching_not_for_storage() {
     assert_eq!(evidence(&a, &b).contradictions, vec![]);
     assert_eq!(a.entry().arxiv(), Some("2108.06507"));
 }
+
+#[test]
+fn comparing_a_match_keeps_its_identity_available_for_each_decision() {
+    let existing = record(
+        "existing",
+        "study",
+        json!({"type":"article","title":"A study","date":2020,"serial-number":{"doi":"10.5555/study"}}),
+    );
+    let base = Library::new(vec![existing.clone()]).unwrap();
+    let incoming = import(
+        "study: {type: article, title: A study, date: 2021, page-range: 15-20, serial-number: {doi: 10.5555/study}}",
+        ImportFormat::Hayagriva,
+    )
+    .records;
+    let incoming_id = incoming[0].id().clone();
+    let plan = ImportPlan::prepare(&base, &incoming).unwrap();
+    let matches = &plan.items()[0].matches;
+    assert_eq!(matches.len(), 1);
+    assert_eq!(matches[0].target, id("existing"));
+    assert!(matches[0].in_project);
+    assert!(matches[0].signals.contains(&Signal::Doi));
+    assert_eq!(matches[0].added_fields, ["/page-range"]);
+    assert_eq!(matches[0].differing_fields, ["/date"]);
+
+    let kept = plan
+        .resolve(&[Decision::Keep {
+            incoming: incoming_id.clone(),
+            target: id("existing"),
+        }])
+        .unwrap();
+    assert_eq!(kept.items()[0].target, Some(id("existing")));
+    assert_eq!(kept.items()[0].matches, *matches);
+    assert_eq!(kept.apply(&base).unwrap(), base);
+
+    let enriched = plan
+        .resolve(&[Decision::Same {
+            incoming: incoming_id.clone(),
+            target: id("existing"),
+        }])
+        .unwrap()
+        .apply(&base)
+        .unwrap();
+    let entry = enriched.get(&id("existing")).unwrap();
+    assert_eq!(
+        entry.native_value()["date"],
+        existing.native_value()["date"]
+    );
+    assert_eq!(
+        entry.native_value()["page-range"],
+        incoming[0].native_value()["page-range"]
+    );
+    assert!(!entry.provenance().is_empty());
+
+    let separate = plan
+        .resolve(&[Decision::Distinct {
+            incoming: incoming_id.clone(),
+            key: "study2".into(),
+        }])
+        .unwrap()
+        .apply(&base)
+        .unwrap();
+    assert_eq!(separate.get(&id("existing")), Some(&existing));
+    assert_eq!(separate.get(&incoming_id).unwrap().key(), "study2");
+}
+
+#[test]
+fn a_shared_key_alone_identifies_the_collision_without_proposing_enrichment() {
+    let existing = record(
+        "existing",
+        "shared",
+        json!({"type":"book","title":"First work"}),
+    );
+    let base = Library::new(vec![existing]).unwrap();
+    let incoming = record(
+        "incoming",
+        "shared",
+        json!({"type":"article","title":"Second work","date":2021}),
+    );
+    let plan = ImportPlan::prepare(&base, &[incoming]).unwrap();
+    assert!(plan.blocked());
+    assert_eq!(plan.items()[0].conflicts, [ConflictReason::KeyCollision]);
+    let matches = &plan.items()[0].matches;
+    assert_eq!(matches.len(), 1);
+    assert_eq!(matches[0].target, id("existing"));
+    assert!(matches[0].signals.is_empty());
+    assert!(matches[0].added_fields.is_empty());
+    let kept = plan
+        .resolve(&[Decision::Keep {
+            incoming: id("incoming"),
+            target: id("existing"),
+        }])
+        .unwrap();
+    assert_eq!(kept.apply(&base).unwrap(), base);
+}
+
+#[test]
+fn exact_project_duplicates_reuse_the_key_and_do_not_import_provenance() {
+    let base = Library::new(vec![record(
+        "project",
+        "project_key",
+        json!({"type":"article","title":"A study","date":2020,"serial-number":{"doi":"10.5555/study"}}),
+    )]).unwrap();
+    let prepared = import(
+        "other_key: {type: article, title: A study, date: 2020, serial-number: {doi: 10.5555/study}}",
+        ImportFormat::Hayagriva,
+    );
+    let plan = ImportPlan::prepare(&base, &prepared.records).unwrap();
+    let item = &plan.items()[0];
+    assert_eq!(item.action, Action::Duplicate);
+    assert_eq!(item.target, Some(id("project")));
+    assert!(item.matches[0].identical);
+    assert_eq!(plan.apply(&base).unwrap(), base);
+
+    let conflicting_project = record(
+        "also_in_project",
+        "second_project_key",
+        base.records()[0].native_value(),
+    );
+    let ambiguous = Library::new(vec![base.records()[0].clone(), conflicting_project]).unwrap();
+    let plan = ImportPlan::prepare(&ambiguous, &prepared.records).unwrap();
+    assert!(plan.blocked());
+    assert_eq!(plan.items()[0].conflicts, [ConflictReason::AmbiguousTarget]);
+}

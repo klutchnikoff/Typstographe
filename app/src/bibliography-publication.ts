@@ -1,9 +1,15 @@
 import type { JSONContent } from '@tiptap/core'
 import type { Draft, Form } from './bibliography-types'
-import type { ImportDraft } from './bibliography-import'
+import {
+  alreadyInProject,
+  importNeedsDecision,
+  importSummary,
+  type ImportDraft,
+} from './bibliography-import'
 import type { StructuredCommand } from './structured-commands'
 import { stableJSON } from './provider'
 import { planAcquisition } from './bibliography-acquisition'
+import { tr } from './i18n'
 
 export interface CitationDraft {
   node?: JSONContent
@@ -25,10 +31,16 @@ export async function prepareBibliographyPublication(
   review?: ImportDraft,
   cite?: CitationDraft,
   confirmedAcquisition = false,
-): Promise<StructuredCommand[] | null> {
+): Promise<{ batch: StructuredCommand[]; target?: string; summary?: string } | null> {
   const batch: StructuredCommand[] = []
+  let target: string | undefined, summary: string | undefined
   if (review) {
-    if (review.report.plan.blocked || review.ready !== stableJSON(review.decisions)) return null
+    if (
+      review.report.plan.blocked ||
+      importNeedsDecision(review) ||
+      review.ready !== stableJSON(review.decisions)
+    )
+      return null
     batch.push({
       id: 'bibliography.apply',
       params: {
@@ -42,6 +54,12 @@ export async function prepareBibliographyPublication(
         },
       },
     })
+    const items = review.report.plan.items
+    target =
+      items.find((item) => item.action === 'new')?.target ||
+      items.find((item) => item.target)?.target ||
+      undefined
+    summary = importSummary(review.report.plan)
   } else if (selected) {
     const prepared = await api<Form>('bibliography.prepare_form', {
       record: selected.working,
@@ -54,6 +72,7 @@ export async function prepareBibliographyPublication(
       const acquisition = await planAcquisition(api, selected, prepared, confirmedAcquisition)
       batch.push(acquisition.command)
       citedId = acquisition.target
+      if (acquisition.duplicate) summary = tr(alreadyInProject)
     }
     if (!selected.acquisition) {
       const inspection = await api<{ fingerprint: string }>('bibliography.inspect')
@@ -94,6 +113,7 @@ export async function prepareBibliographyPublication(
         },
       })
     }
+    target = citedId
   }
-  return batch
+  return { batch, target, summary }
 }

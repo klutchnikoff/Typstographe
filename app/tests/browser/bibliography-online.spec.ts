@@ -136,17 +136,22 @@ test('generic fallback remains editable and reconciles with a later specialised 
     .locator('#bibliography-leave')
     .getByRole('button', { name: 'Valider et poursuivre', exact: true })
     .click()
-  await expect(manager(page).locator('#bibliography-acquisition-review')).toBeVisible()
-  await manager(page).getByRole('button', { name: 'Ajouter au projet', exact: true }).click()
+  const review = manager(page).locator('#bibliography-acquisition-review')
+  await expect(review).toBeVisible()
+  await expect(review).toContainText('Les deux notices ont le même DOI.')
+  await expect(
+    review.getByRole('row', { name: /Titre Émancipation Émancipation dans la source spécialisée/ }),
+  ).toBeVisible()
+  const apply = manager(page).getByRole('button', { name: 'Appliquer le choix', exact: true })
+  await expect(apply).toBeDisabled()
+  await review.getByRole('radio', { name: 'Conserver la notice du projet' }).check()
+  await expect(apply).toBeEnabled()
+  await apply.click()
   await expect(online(page).getByRole('option', { name: / · Cairn.info$/ })).toBeFocused()
   await expect(title(page)).toBeHidden()
   await manager(page).getByRole('button', { name: 'Retour aux notices du projet' }).click()
   await expect(manager(page).locator('#bibliography-list .bibliography-list-row')).toHaveCount(1)
   await expect(title(page)).toHaveValue('Émancipation')
-  await manager(page).locator('.panel-title button').click()
-  await page.getByRole('button', { name: 'Annuler', exact: true }).click()
-  await manage(page)
-  await expect(manager(page).locator('#bibliography-list .bibliography-list-row')).toHaveCount(1)
   await manager(page).locator('.panel-title button').click()
   await page.getByRole('button', { name: 'Annuler', exact: true }).click()
   await manage(page)
@@ -374,17 +379,59 @@ test('a citation-key collision requires an explicit decision and keeps the verif
   await search(page)
   await choose(page, 'Cairn.info')
   await title(page).fill('Émancipation vérifiée')
-  await manager(page)
-    .getByRole('button', { name: 'Vérifier le rapprochement', exact: true })
-    .click()
+  await manager(page).getByRole('button', { name: 'Comparer les notices', exact: true }).click()
   const review = page.locator('#bibliography-acquisition-review')
   await expect(review).toBeVisible()
-  const apply = manager(page).getByRole('button', { name: 'Ajouter au projet', exact: true })
+  const apply = manager(page).getByRole('button', { name: 'Appliquer le choix', exact: true })
   await expect(apply).toBeDisabled()
   await expect(page.locator('dialog[open]')).toHaveCount(1)
-  await review.getByRole('radio', { name: 'Conserver séparément' }).check()
+  const distinct = 'Ajouter avec une nouvelle clé'
+  const keep = 'Conserver la notice du projet'
+  await expect(review).toContainText('La clé de citation est déjà utilisée.')
+  await expect(
+    review.getByRole('row', { name: /Titre A different work Émancipation vérifiée/ }),
+  ).toBeVisible()
+  await expect(review.getByRole('combobox')).toHaveCount(0)
+  await expect(review.getByRole('radio', { name: 'Enrichir la notice du projet' })).toHaveCount(0)
+  await expect(review.getByRole('radio')).toHaveCount(2)
+  await expect(review.getByRole('radio', { checked: true })).toHaveCount(0)
+  for (const width of [1280, 560]) {
+    await page.setViewportSize({ width, height: 850 })
+    for (const name of [keep, distinct]) {
+      const option = review.getByRole('radio', { name, exact: true })
+      const layout = await option.evaluate((input) => {
+        const label = input.closest('label')!
+        const row = label.getBoundingClientRect()
+        const radio = input.getBoundingClientRect()
+        const range = document.createRange()
+        range.selectNode(label.lastChild!)
+        const text = range.getBoundingClientRect()
+        return {
+          compactRadio: radio.width < row.width / 3,
+          besideRadio: text.left >= radio.right,
+          fitsRow: text.width > 0 && text.right <= row.right + 1,
+        }
+      })
+      expect(layout, `${name} at ${width}px`).toEqual({
+        compactRadio: true,
+        besideRadio: true,
+        fitsRow: true,
+      })
+    }
+  }
+  await review.getByText(distinct, { exact: true }).click()
+  await expect(review.getByRole('radio', { name: distinct })).toBeChecked()
+  await expect(review).toContainText('Cette clé est déjà utilisée.')
+  await expect(apply).toBeDisabled()
+  await review.getByRole('radio', { name: keep }).press('Space')
+  await expect(review.getByRole('radio', { name: keep })).toBeChecked()
+  await expect(
+    review.getByRole('row', { name: /Titre A different work Émancipation vérifiée/ }),
+  ).toBeVisible()
+  await expect(apply).toBeEnabled()
+  await review.getByText(distinct, { exact: true }).click()
   await review
-    .getByLabel('Clé de citation · eneau_emancipation_2022', { exact: true })
+    .getByLabel('Nouvelle clé de citation · eneau_emancipation_2022', { exact: true })
     .fill('eneau2022verified')
   await expect(apply).toBeEnabled()
   await apply.click()
@@ -437,4 +484,69 @@ test('a validated acquisition saves, reopens and exports without any provider re
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.export"]').click()
   await expect(page.locator('#message')).toContainText('sources Typst exportés')
+})
+
+test('un résultat identique est réutilisé directement, y compris dans une citation groupée', async ({
+  page,
+}) => {
+  await manage(page)
+  const content = response.candidates[0].contents.replace(
+    /^eneau_emancipation_2022:/,
+    'my_existing_key:',
+  )
+  await manager(page)
+    .getByLabel('Fichiers bibliographiques', { exact: true })
+    .setInputFiles({
+      name: 'existing.yaml',
+      mimeType: 'text/plain',
+      buffer: Buffer.from(
+        content +
+          '\nexample: {type: book, title: First reference, author: "Doe, Jane", date: 2025}\n',
+      ),
+    })
+  await manager(page).getByRole('button', { name: 'Importer', exact: true }).click()
+  const entries = manager(page).locator('#bibliography-list .bibliography-list-row')
+  await expect(entries).toHaveCount(2)
+  const initial = await entries
+    .getByText('Émancipation', { exact: true })
+    .locator('..')
+    .getAttribute('data-record-id')
+  expect(initial).toBeTruthy()
+  await search(page)
+  await online(page)
+    .getByRole('option', { name: /Cairn\.info$/ })
+    .click()
+  await expect(manager(page).locator('.bibliography-import-status')).toHaveText(
+    'Cette notice est déjà dans le projet.',
+  )
+  await expect(manager(page).locator('#bibliography-acquisition-review')).toHaveCount(0)
+  await expect(entries).toHaveCount(2)
+  await manager(page).locator('.panel-title button').click()
+
+  await body(page).fill('Une référence déjà présente. ')
+  await page.getByRole('button', { name: 'Citer une référence', exact: true }).click()
+  const selector = page.locator('#citation-properties')
+  await selector.getByRole('button', { name: 'Ajouter au groupe · Doe, 2025' }).click()
+  await selector.getByLabel('Pages ou chapitre · example', { exact: true }).fill('p. 5')
+  await selector.getByRole('button', { name: 'Rechercher en ligne', exact: true }).click()
+  await query(page).fill('10.3917/dbu.jorro.2022.01.0155')
+  await online(page)
+    .getByRole('option', { name: /Cairn\.info$/ })
+    .click()
+  await expect(manager(page)).toBeHidden()
+  await expect(body(page).locator('.citation-ref')).toHaveCount(1)
+  const items = await page.evaluate(() => {
+    const result: CitationItem[] = []
+    window.__spike!.editor.state.doc.descendants((node) => {
+      if (node.type.name === 'citation') result.push(...node.attrs.items)
+    })
+    return result
+  })
+  expect(items).toHaveLength(2)
+  expect(items[0].supplement).toBe('p. 5')
+  expect(items[1].record_id).toBe(initial)
+  await page.getByRole('button', { name: 'Annuler', exact: true }).click()
+  await expect(body(page).locator('.citation-ref')).toHaveCount(0)
+  await manage(page)
+  await expect(entries).toHaveCount(2)
 })

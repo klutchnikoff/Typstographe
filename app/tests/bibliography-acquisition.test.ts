@@ -41,6 +41,7 @@ const report = (): Report => ({
         added_fields: [],
         differing_fields: [],
         conflicts: [],
+        matches: [],
       },
     ],
   },
@@ -100,8 +101,8 @@ it('publishes corrected import and citation as one batch using the reconciled ta
     },
   }
   const batch = await prepareBibliographyPublication(api, draft, undefined, cite)
-  expect(batch?.map((c) => c.id)).toEqual(['bibliography.apply', 'inline.replace'])
-  expect(batch?.[0].params).toMatchObject({
+  expect(batch?.batch.map((c) => c.id)).toEqual(['bibliography.apply', 'inline.replace'])
+  expect(batch?.batch[0].params).toMatchObject({
     expected: 'library',
     change: {
       kind: 'import',
@@ -109,7 +110,7 @@ it('publishes corrected import and citation as one batch using the reconciled ta
       reviewed: [{ id: 'incoming', entry: { title: 'Verified' }, provenance: record.provenance }],
     },
   })
-  expect(batch?.[1].params).toMatchObject({
+  expect(batch?.batch[1].params).toMatchObject({
     node: {
       attrs: { items: [{ record_id: 'already-in-project', supplement: 'p. 2' }], form: 'prose' },
       marks: cite.node?.marks,
@@ -159,5 +160,5 @@ it('requires the matching plan shown in the review before publishing an enrichme
   draft.acquisition = changed.review
   await expect(
     prepareBibliographyPublication(api, draft, undefined, undefined, true),
-  ).resolves.toHaveLength(1)
+  ).resolves.toMatchObject({ batch: [{ id: 'bibliography.apply' }] })
 })

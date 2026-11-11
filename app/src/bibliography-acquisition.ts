@@ -1,5 +1,5 @@
 import type { Draft, Form, Report, Source } from './bibliography-types'
-import type { ImportDraft } from './bibliography-import'
+import { importNeedsDecision, type ImportDraft } from './bibliography-import'
 import type { BibliographyQuery } from './bibliography-publication'
 import type { OnlineCandidate } from './bibliography-online-types'
 import { providerLabel } from './bibliography-online-types'
@@ -79,7 +79,12 @@ export async function planAcquisition(
     old.ready === stableJSON(decisions) &&
     stableJSON(old.reviewed) === stableJSON(reviewed) &&
     stableJSON(old.report.plan) === stableJSON(plan)
-  if (plan.blocked || !item?.target || ((confirmed || needsReview) && !sameReview))
+  if (
+    plan.blocked ||
+    importNeedsDecision(review) ||
+    !item?.target ||
+    (item.action !== 'duplicate' && (confirmed || needsReview) && !sameReview)
+  )
     throw new AcquisitionReview(review)
   return {
     command: {
@@ -96,5 +101,6 @@ export async function planAcquisition(
       },
     },
     target: item.target,
+    duplicate: item.action === 'duplicate',
   }
 }
