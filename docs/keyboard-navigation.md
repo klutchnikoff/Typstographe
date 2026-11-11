@@ -11,7 +11,7 @@ Les actions continuent à passer par leurs commandes et validations habituelles.
 | Recherche de commandes ou de texte | Haut / Bas, Entrée | Le champ conserve le focus ; le choix actif est annoncé par `aria-activedescendant`. Entrée exécute la commande ou passe à l’occurrence suivante ; Maj+Entrée revient à la précédente dans la recherche de texte. |
 | Menu | Haut / Bas, Gauche / Droite, Début / Fin, Entrée, Échap | Gauche/Droite passe au menu voisin ; navigation parmi les actions disponibles ; Entrée exécute, Échap ferme et rend le focus au déclencheur. |
 | Onglets et choix exclusifs | Gauche / Droite, Début / Fin | Activation du choix parcouru. Les onglets reconstruits conservent le focus. |
-| Suggestions orthographiques | Flèches, Entrée | Le bandeau garde d’abord le focus, même si les suggestions arrivent plus tard. Les flèches choisissent ; Entrée applique. |
+| Menu contextuel d’objet | Haut / Bas, Début / Fin, Entrée / Espace, Échap, Tab | Le focus va au premier choix non destructif. Les flèches déplacent le focus, Entrée ou Espace applique. Échap rend le focus au déclencheur ou au curseur, Tab poursuit le parcours. |
 | Actions, barre d’outils, en-têtes de widgets | Gauche / Droite, Début / Fin | Déplacement du focus seulement ; Entrée ou Espace déclenche le bouton. |
 | Listes de récupération et dictionnaire personnel | Haut / Bas, Début / Fin | Parcours des entrées. Les actions de récupération restent explicites. |
 | Formulaire | Tab / Maj+Tab, Entrée, Échap | Parcours des champs ; Entrée valide ou actionne le bouton focalisé. Échap ferme la portée locale sans valider. |
@@ -66,15 +66,14 @@ celui-ci au prochain élément disponible.
 
 Tous les bandeaux utilisent `contextPanel` et le même cadre CSS : en-tête visible
 avec titre et fermeture, contenu, actions et erreur éventuelle. Cela comprend les
-paramètres et la suppression d’un widget, ainsi que l’orthographe, les liens et
-les notes dans son texte. Il n’existe plus de variante visuelle « dans un widget » :
+paramètres d’un widget, ainsi que les liens et les notes dans son texte. Il n’existe plus de variante visuelle « dans un widget » :
 seule la largeur s’adapte à son conteneur. Les champs conservent les mêmes touches
 et les boutons passent par les mêmes groupes de navigation.
 
-L’ancrage reste adapté au déclencheur : les paramètres et la suppression se
-placent sous l’en-tête du widget ; un outil de texte se place au-dessus du passage
-concerné avec sa flèche. Ce placement ne change ni l’anatomie ni le comportement
-du formulaire. Le bandeau reste hors du DOM éditable pour protéger la sélection.
+Les paramètres se placent sous l’en-tête du widget. Un outil de texte se place
+au-dessus du passage concerné avec sa flèche. Le bandeau reste hors du DOM
+éditable pour protéger la sélection. La corbeille d’un widget supprime le bloc
+directement et Ctrl/Cmd+Z le restaure.
 
 ## Fermeture et focus
 
@@ -102,6 +101,21 @@ la main au champ. `insertInlineWithSettings` est le chemin commun des insertions
 inline accompagnées d’un bandeau. Le générateur `ParameterFields` accepte le hint
 `x-editor.label_visibility: "accessible"` : le nom accessible du champ est conservé
 sans afficher un libellé qui ferait doublon avec le titre du bandeau.
+
+## Menu contextuel d’objet
+
+L’orthographe, les poignées de tableau et les listes à puces ou numérotées
+partagent un menu flottant. Son ouverture ne déplace pas le texte. Ctrl/Cmd+Entrée
+garde la priorité du bandeau ouvert, du badge actif et de la correction avant les
+actions du widget. Maj+F10 et la touche Menu donnent aussi accès au menu
+contextuel. Depuis une cellule, le menu expose Ligne et Colonne, tandis qu’une
+poignée cible son axe. Un clic droit sur le texte ou sa sélection garde le menu
+du système. Les suggestions tardives laissent le focus sur l’action déjà parcourue.
+
+Les commandes documentaires passent par le moteur et s’annulent avec Ctrl/Cmd+Z.
+Le réglage « Numéro initial… » ouvre un bandeau de saisie distinct de la
+conversion immédiate. Ajouter un mot au dictionnaire personnel modifie les
+préférences globales.
 
 ## Objets intégrés au texte
 
@@ -144,22 +158,23 @@ Avant une note, le raccourci reste donc disponible pour corriger le mot précéd
 Entre deux badges, seul celui qui précède le curseur est actif et visé. Le clic
 sur le cadre et Entrée/Espace sur son bouton permettent toujours d’ouvrir la note.
 
-Retour arrière juste après un objet et Suppr juste avant ouvrent sa confirmation
-de suppression, sans changer le document. La commande centrale Ctrl/Cmd+Retour
-arrière applique la même priorité à l’objet plutôt qu’au widget qui l’entoure.
-Une sélection explicite d’objet suit ce même chemin. Échap conserve l’objet et
-restitue le curseur ; Entrée confirme, avec possibilité d’annuler ensuite. Le
-bouton « Supprimer » des paramètres d’une note ouvre cette même confirmation.
+Retour arrière juste après un badge et Suppr juste avant sélectionnent d’abord
+le badge sans modifier le document. Un nouvel appui sur l’une de ces touches
+supprime le badge sélectionné. Maintenir la touche enfoncée ne vaut pas second
+appui. Les flèches Gauche et Droite ramènent le curseur dans le texte. Ctrl/Cmd+Z
+restaure le badge supprimé. Ctrl/Cmd+Retour arrière donne la priorité au badge
+sur le widget qui l’entoure. Le bouton « Supprimer » dans les paramètres d’une
+note ouvre sa confirmation habituelle.
 
 ## Raccordements
 
 | Zone | Composant commun |
 | --- | --- |
 | Palette et recherche/remplacement | Liste avec focus dans le champ |
-| Orthographe et futurs diagnostics | `contextPanel`, groupe de suggestions |
+| Orthographe, poignées de tableau et conversion de listes | `objectMenu`, `navigationGroup`, `keyboardScope` |
 | Titres, listes, fin de courrier, menus de l’application | `installMenus` |
 | Métadonnées | Groupe horizontal à activation automatique |
-| Paramètres/suppression des widgets, liens et notes | `contextPanel` et `actionRow` |
+| Paramètres des widgets, liens et notes | `contextPanel` et `actionRow` |
 | Préférences et dictionnaire personnel | Portée de formulaire et groupe vertical |
 | Création et document non enregistré | Portée de dialogue et `actionRow` |
 | Récupération | Entrées verticales et actions horizontales |

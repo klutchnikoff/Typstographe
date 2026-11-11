@@ -47,6 +47,8 @@ export function mountToolMenus(menu: HTMLElement, commands: Registry) {
     [
       tr('Affichage'),
       [
+        'ui.projects',
+        'ui.document',
         'ui.versions',
         'ui.preferences',
         'ui.peer',
@@ -70,6 +72,7 @@ export function mountToolMenus(menu: HTMLElement, commands: Registry) {
       button.dataset.command = id
       button.onclick = () => {
         details.open = false
+        if (id === 'ui.palette') summary.focus({ preventScroll: true })
         runCommand(command)
       }
       entries.append(button)
@@ -95,14 +98,19 @@ export function appendMenuCommands(menu: HTMLElement, commands: Registry, ids: s
 
 export function mountRailButtons(side: HTMLElement, commands: Registry) {
   for (const [label, name, action] of [
+    [tr('Projets'), 'folder', 'ui.projects'],
+    [tr('Document'), 'file-text', 'ui.document'],
     [tr('Commandes'), 'wrench', 'ui.palette'],
     [tr('Rechercher'), 'search', 'ui.find'],
-    [tr('Versions'), 'history', 'ui.versions'],
     [tr('Préférences'), 'settings-2', 'ui.preferences'],
   ] as const) {
-    const button = railButton(label, name, action)
+    const opensPalette = action === 'ui.palette'
+    const button = railButton(label, name, opensPalette ? undefined : action)
+    if (opensPalette) button.setAttribute('aria-haspopup', 'dialog')
     button.dataset.command = action
     button.onclick = () => {
+      // WebKit does not consistently focus a button when it is clicked.
+      if (opensPalette) button.focus({ preventScroll: true })
       runCommand(commands.get(action)!)
     }
     side.append(button)

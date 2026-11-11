@@ -1,0 +1,111 @@
+.floating-editor-panel.citation-selector {
+  width: min(416px, calc(100vw - 16px));
+}
+.citation-selector .floating-editor-results {
+  max-height: min(11rem, 31vh);
+}
+.citation-result-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px;
+}
+.citation-result-row:has([aria-selected='true']) {
+  background: var(--soft);
+  border-radius: 5px;
+}
+.citation-result-row [role='gridcell'] {
+  min-width: 0;
+}
+.citation-selector .citation-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+}
+.citation-result small,
+.citation-hint,
+.citation-search-status {
+  color: var(--muted);
+  font-size: 0.85em;
+}
+.citation-search-status:not(:empty) {
+  padding: 3px;
+}
+.citation-composition,
+.citation-footer,
+.citation-selector > .panel-actions {
+  padding: 6px 3px 2px;
+  border-top: 1px solid var(--border);
+}
+.citation-selected {
+  display: grid;
+  gap: 4px;
+  padding: 0;
+  margin: 4px 0 6px;
+  list-style: none;
+}
+.citation-selected-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(6ch, 11ch) auto;
+  align-items: center;
+  gap: 4px;
+}
+.citation-selected-row span {
+  overflow-wrap: anywhere;
+}
+.citation-selector .citation-selected-row input,
+.citation-selector .citation-form select {
+  min-width: 0;
+  padding: 3px 5px;
+}
+.citation-row-actions,
+.citation-form,
+.citation-footer,
+.citation-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.citation-row-actions {
+  gap: 1px;
+}
+.citation-row-actions button {
+  padding-inline: 3px;
+}
+.citation-result-row svg,
+.citation-row-actions svg {
+  width: 14px;
+  height: 14px;
+}
+.citation-form select {
+  width: auto;
+}
+.citation-footer,
+.citation-selector > .panel-actions {
+  flex-wrap: wrap;
+}
+.citation-footer-actions {
+  margin-inline-start: auto;
+}
+.citation-badge-example {
+  padding: 1px 5px;
+  color: var(--citation-ink);
+  border: 1px solid var(--citation-border);
+  background: var(--citation-surface);
+  border-radius: 5px;
+  overflow-wrap: anywhere;
+}
+.citation-selector > .panel-actions {
+  justify-content: flex-start;
+  margin: 4px 0 0;
+}
+@media (max-width: 360px) {
+  .citation-selected-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .citation-selected-row span {
+    grid-column: 1 / -1;
+  }
+}

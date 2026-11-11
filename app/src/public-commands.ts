@@ -1,14 +1,20 @@
 import type { PublicCommand, Registry } from './commands'
 import { allowed, refused, availabilityLabel, type Availability } from './command-availability'
 
+export type CommandSurface = 'palette'
+
 /** Type support is distinct from temporary contextual availability. */
 export function commandVisible(command: PublicCommand) {
   return command.visible?.() !== false
 }
-export function commandAvailability(command: PublicCommand): Availability {
+export function commandAvailability(
+  command: PublicCommand,
+  surface?: CommandSurface,
+): Availability {
   if (!commandVisible(command)) return refused('unsupported_document_type')
   return (
-    command.availability?.() || (command.enabled?.() === false ? refused('unavailable') : allowed)
+    command.availability?.(surface) ||
+    (command.enabled?.() === false ? refused('unavailable') : allowed)
   )
 }
 export function runCommand(command: PublicCommand): boolean {
@@ -16,8 +22,12 @@ export function runCommand(command: PublicCommand): boolean {
   command.run()
   return true
 }
-export function refreshCommandButton(button: HTMLButtonElement, command: PublicCommand) {
-  const value = commandAvailability(command)
+export function refreshCommandButton(
+  button: HTMLButtonElement,
+  command: PublicCommand,
+  surface?: CommandSurface,
+) {
+  const value = commandAvailability(command, surface)
   button.disabled = !value.enabled
   button.setAttribute('aria-disabled', String(!value.enabled))
   const shortcut = command.shortcut?.replace(
@@ -34,14 +44,13 @@ export class CommandRegistry extends Map<string, PublicCommand> {
   constructor(private readonly supports: (command: PublicCommand) => boolean = () => true) {
     super()
   }
-  policy: (command: PublicCommand) => Availability = () => allowed
+  policy: (command: PublicCommand, surface?: CommandSurface) => Availability = () => allowed
   override set(id: string, command: PublicCommand) {
-    const own = () => commandAvailability(command)
     const visible = () => this.supports(command) && commandVisible(command)
-    const availability = () => {
+    const availability = (surface?: CommandSurface) => {
       if (!visible()) return refused('unsupported_document_type')
-      const global = this.policy(command)
-      return global.enabled ? own() : global
+      const global = this.policy(command, surface)
+      return global.enabled ? commandAvailability(command, surface) : global
     }
     return super.set(id, {
       ...command,

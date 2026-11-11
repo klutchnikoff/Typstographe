@@ -2,10 +2,8 @@ import type { Editor } from '@tiptap/core'
 import type { Provider } from './provider'
 import type { Catalogue } from './shell'
 import { historyFor } from './editing-history'
-import { metadataCommands } from './metadata-commands'
 import { metadataRich } from './metadata-rich'
 import { richFieldProfile } from './rich-zone'
-import { bindMetadataInput } from './metadata-input'
 import { tr } from './i18n'
 import {
   recordIds,
@@ -19,7 +17,7 @@ import {
 } from './metadata-records'
 import * as Y from 'yjs'
 
-/** Field rendering and bindings shared by live records and isolated modal drafts.
+/** Field rendering and bindings for isolated record drafts.
  * The collection controller owns ordering/dialog lifetime; this renderer only owns
  * its controls, rich zones and their subscriptions.
  */
@@ -27,28 +25,26 @@ export function createRecordFields(
   provider: Provider,
   schema: StructuredMetadata,
   catalogue: Catalogue,
-  main: Editor,
   language: () => string,
 ) {
-  const commands = metadataCommands(main, provider)
-  const history = historyFor(main)
   const definitions = new Map(schema.collections.map((item) => [item.parameter, item]))
-  const discrete = (action: () => void) => {
-    history?.stopCapturing()
-    try {
-      action()
-    } finally {
-      history?.stopCapturing()
-    }
-  }
   function fieldView(
     container: HTMLElement,
     definition: RecordCollection,
     record: SharedRecord,
     field: RecordField,
-    store: RecordStore = provider,
-    owner: Editor = main,
+    store: RecordStore,
+    owner: Editor,
   ) {
+    const history = historyFor(owner)
+    const discrete = (action: () => void) => {
+      history?.stopCapturing()
+      try {
+        action()
+      } finally {
+        history?.stopCapturing()
+      }
+    }
     const row = document.createElement('div')
     row.className = 'field metadata-record-field'
     row.dataset.recordField = field.key
@@ -95,19 +91,9 @@ export function createRecordFields(
       choices.setAttribute('role', 'group')
       choices.setAttribute('aria-labelledby', label.id)
       row.append(label, choices)
-      const publicTarget = {
-        kind: 'record' as const,
-        collection: definition.parameter,
-        id: String(record.get('id')),
-        field: field.key,
-      }
-      const selectedValues = () =>
-        (store === provider
-          ? commands.value(publicTarget, record.get(field.key))
-          : record.get(field.key)) as string[]
-      let stop = () => {}
-      const view = {
-        destroy: () => stop(),
+      const selectedValues = () => record.get(field.key) as string[]
+      return {
+        destroy: () => {},
         refresh() {
           const target = definitions.get(field.references!)!
           const ids = recordIds(provider, target)
@@ -135,18 +121,7 @@ export function createRecordFields(
                 const selected = new Set(selectedValues())
                 if (checkbox.checked) selected.add(key)
                 else selected.delete(key)
-                if (store === provider)
-                  commands.set(
-                    {
-                      kind: 'record',
-                      collection: definition.parameter,
-                      id: String(record.get('id')),
-                      field: field.key,
-                    },
-                    [...selected],
-                    () => record.get(field.key),
-                  )
-                else discrete(() => setRecordField(store, record, field.key, [...selected]))
+                discrete(() => setRecordField(store, record, field.key, [...selected]))
               }
             }
             const reference = recordMap(provider, target).get(key)
@@ -157,8 +132,6 @@ export function createRecordFields(
           }
         },
       }
-      if (store === provider) stop = commands.watch(() => view.refresh())
-      return view
     }
     const input =
       field.kind === 'multiline' || field.kind === 'tokens'
@@ -184,7 +157,6 @@ export function createRecordFields(
           : field.kind === 'tokens'
             ? input.value.split('\n').filter((s) => s.trim() !== '')
             : input.value
-      if (store === provider) return // The common native-field binding owns live publication and IME.
       const update = () => setRecordField(store, record, field.key, value)
       if (field.kind === 'boolean' || field.kind === 'language' || field.kind === 'choice')
         discrete(update)
@@ -201,35 +173,10 @@ export function createRecordFields(
       row.append(label)
     } else row.append(label, input)
     input.dataset.fieldKind = field.kind
-    const binding =
-      store === provider
-        ? bindMetadataInput(
-            input,
-            commands,
-            {
-              kind: 'record',
-              collection: definition.parameter,
-              id: String(record.get('id')),
-              field: field.key,
-            },
-            () => record.get(field.key),
-            () =>
-              field.kind === 'boolean'
-                ? (input as HTMLInputElement).checked
-                : field.kind === 'tokens'
-                  ? input.value.split('\n').filter((value) => value.trim() !== '')
-                  : input.value,
-            (value) =>
-              field.kind === 'tokens'
-                ? ((value as string[]) || []).join('\n')
-                : String(value ?? ''),
-          )
-        : undefined
     return {
-      destroy: () => binding?.destroy(),
+      destroy: () => {},
       refresh() {
-        if (binding) binding.refresh()
-        else if (field.kind === 'boolean')
+        if (field.kind === 'boolean')
           (input as HTMLInputElement).checked = Boolean(record.get(field.key))
         else {
           const current =

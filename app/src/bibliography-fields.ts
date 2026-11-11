@@ -1,6 +1,6 @@
 import { sortableCards } from './sortable-cards'
 import { labeledField } from './form-field'
-import { metadataSection } from './metadata-fields'
+import { formSection } from './form-section'
 import { actionRow } from './keyboard-navigation'
 import { icon } from './icons'
 import { tr } from './i18n'
@@ -51,43 +51,38 @@ export function bibliographyFields(
   fields: Field[],
   values: Record<string, unknown>,
   changed: () => void,
+  expanded: Map<string, boolean>,
 ) {
   const cleanups: (() => void)[] = []
   const sections = new Map<string, HTMLElement>()
+  const sectionFor = (id: string, label: string) => {
+    let section = sections.get(id)
+    if (!section) {
+      section = formSection(parent, `bibliography-${id}`, label, expanded)
+      sections.set(id, section)
+    }
+    return section
+  }
   for (const field of fields) {
     if (!(field.path in values)) values[field.path] = structuredClone(field.value)
-    let section = sections.get(field.group)
-    if (!section) {
-      const frame = metadataSection({
-        id: field.group,
-        label: tr(
-          field.group === 'work'
-            ? 'Notice'
-            : field.group === 'publication'
-              ? 'Publication'
-              : 'Identifiants et liens',
-        ),
-        layout: 'editorial',
-      })
-      section = frame.content
-      sections.set(field.group, section)
-      if (field.group === 'identifiers') {
-        const details = document.createElement('details'),
-          summary = document.createElement('summary')
-        summary.textContent = tr('Identifiants et liens')
-        frame.root.querySelector('legend')?.remove()
-        details.append(summary, frame.root)
-        parent.append(details)
-      } else parent.append(frame.root)
-    }
+    const section = sectionFor(
+      field.kind === 'people' ? field.path : field.group,
+      field.kind === 'people'
+        ? fieldLabel(field.path)
+        : tr(
+            field.group === 'work'
+              ? 'Notice'
+              : field.group === 'publication'
+                ? 'Publication'
+                : 'Identifiants et liens',
+          ),
+    )
     const id = `bibliography-field-${field.path.replaceAll('/', '-')}`
     if (field.kind === 'people') {
-      const frame = document.createElement('fieldset'),
-        legend = document.createElement('legend'),
+      const frame = document.createElement('div'),
         rows = document.createElement('div'),
         add = document.createElement('button')
       frame.className = 'bibliography-people'
-      legend.textContent = fieldLabel(field.path)
       add.type = 'button'
       add.innerHTML = icon('plus')
       add.setAttribute('aria-label', tr('Ajouter une personne'))
@@ -144,7 +139,7 @@ export function bibliographyFields(
         changed()
         rows.lastElementChild?.querySelector('input')?.focus()
       }
-      frame.append(legend, rows, actionRow())
+      frame.append(rows, actionRow())
       frame.lastElementChild!.append(add)
       section.append(frame)
       render()
@@ -174,5 +169,8 @@ export function bibliographyFields(
       section.append(labeledField(fieldLabel(field.path), input))
     }
   }
-  return () => cleanups.forEach((cleanup) => cleanup())
+  return {
+    section: sectionFor,
+    cleanup: () => cleanups.forEach((cleanup) => cleanup()),
+  }
 }

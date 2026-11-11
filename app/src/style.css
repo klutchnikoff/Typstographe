@@ -607,6 +607,7 @@ summary svg {
   flex: 1;
 }
 .welcome {
+  grid-column: 1 / -1;
   flex: 1;
   display: grid;
   place-items: center;
@@ -623,7 +624,7 @@ summary svg {
   gap: 32px;
 }
 .welcome-brand {
-  width: min(680px, calc(100vw - 64px));
+  width: min(680px, calc(100vw - var(--side-rail-width, 36px) - 64px));
   color: var(--brand-ink);
 }
 .welcome-brand .brand-scene {
@@ -982,6 +983,9 @@ summary svg {
 main {
   position: relative;
 }
+main[data-document-active='false'] > :is(.writing, .splitter, .preview) {
+  display: none;
+}
 .side-rail {
   position: absolute;
   top: 0;
@@ -1137,6 +1141,86 @@ main[data-rail='labelled'] {
   flex: 1;
   overflow: auto;
 }
+#side-content > .project-panel-actions {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 5px;
+}
+.project-panel-actions button,
+.document-navigation > button,
+.document-navigation > details > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.project-catalogue h3 {
+  margin: 8px 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.project-catalogue-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+}
+.project-catalogue-row button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.project-catalogue-row [aria-current='true'],
+.project-catalogue-row [aria-pressed='true'] {
+  background: var(--soft);
+  color: var(--accent);
+}
+.document-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.document-navigation > details {
+  border-inline-start: 1px solid transparent;
+  border-radius: 6px;
+}
+.document-navigation > details[open] {
+  border-inline-start-color: color-mix(in srgb, var(--accent) 60%, var(--bg));
+  background: color-mix(in srgb, var(--soft) 60%, var(--bg));
+}
+.document-navigation > details > summary,
+.document-navigation > button {
+  width: 100%;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.document-navigation > details > summary:hover,
+.document-navigation > details[open] > summary {
+  background: var(--soft);
+}
+.document-navigation > details > summary::-webkit-details-marker {
+  display: none;
+}
+.document-navigation-caret {
+  display: flex;
+  margin-inline-start: auto;
+  color: var(--muted);
+}
+.document-navigation > details[open] > summary .document-navigation-caret {
+  transform: rotate(90deg);
+}
+.document-navigation-content {
+  padding: 6px 8px 8px 16px;
+  overflow-wrap: anywhere;
+}
+.document-navigation-content > button {
+  display: block;
+  padding-inline-start: calc(8px + 10px * var(--outline-depth, 0));
+  white-space: normal;
+}
+.document-navigation-content ul {
+  margin: 0;
+  padding-inline-start: 20px;
+}
 #side-content input,
 #side-content textarea,
 #side-content select {
@@ -1152,7 +1236,7 @@ main[data-rail='labelled'] {
 #document-search-draft > input {
   padding: 8px;
 }
-#side-content > div:not(.panel-actions):has(> button),
+#side-content > div:not(.panel-actions, .project-panel-actions):has(> button),
 #document-search-draft > div:not(.panel-actions):has(> button) {
   display: flex;
   flex-direction: column;
@@ -1164,28 +1248,42 @@ main[data-rail='labelled'] {
 #side-content .panel-actions button {
   text-align: center;
 }
-.side-panel:has(.command-palette-results) {
+.app-dialog.command-palette-dialog {
+  position: fixed;
+  inset: clamp(16px, 9vh, 72px) 0 auto;
+  margin: 0 auto;
+  width: min(560px, calc(100vw - 32px));
+  min-width: 0;
+  max-height: min(460px, 72vh);
+  padding: 12px;
+  overflow: hidden;
+  background: var(--panel);
+}
+.command-palette-dialog[open] {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 8px;
 }
-.side-panel:has(.command-palette-results) > .panel-title {
-  flex-shrink: 0;
+.command-palette-dialog::backdrop {
+  background: rgb(15 23 32 / 16%);
 }
-#side-content:has(.command-palette-results) {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-#side-content:has(.command-palette-results) > input {
-  flex-shrink: 0;
+.command-palette-input {
+  flex: none;
+  width: 100%;
+  padding: 9px 12px;
 }
 .command-palette-results {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* Start at the list's content height inside the auto-height dialog. */
+  flex: 0 1 auto;
   min-height: 0;
   overflow: auto;
 }
 .command-palette-results [role='option'] {
+  flex: none;
+  text-align: start;
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -1522,16 +1620,6 @@ main[data-rail='labelled'] {
 li:has(.interline-band-gap[data-marker])::marker {
   color: transparent;
 }
-.suggestions {
-  display: flex;
-  gap: 6px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-.suggestions button:not(.primary) {
-  border: 1px solid var(--border);
-  background: var(--panel);
-}
 .tiptap p {
   margin: 0;
 }
@@ -1582,14 +1670,6 @@ li:has(.interline-band-gap[data-marker])::marker {
 .context-band:focus-visible {
   outline: none;
 }
-.band-kind {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--danger);
-  margin-right: 8px;
-}
 
 /* Repeatable editorial metadata uses the shared section and context-panel anatomy. */
 .metadata-collections {
@@ -1610,11 +1690,11 @@ li:has(.interline-band-gap[data-marker])::marker {
   display: grid;
   gap: 8px;
 }
-.collection-card.metadata-record {
+.collection-card {
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--panel);
-  margin: 0;
+  min-width: 0;
 }
 .collection-card-heading {
   display: flex;
@@ -1637,6 +1717,7 @@ li:has(.interline-band-gap[data-marker])::marker {
   text-align: left;
 }
 .collection-card-open .metadata-record-caption {
+  display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1664,50 +1745,9 @@ li:has(.interline-band-gap[data-marker])::marker {
 .collection-sorting .collection-card-handle {
   cursor: grabbing;
 }
-.collection-card .metadata-record-deletion {
-  padding: 0 6px;
-}
 .metadata-card-section .metadata-record-empty-actions {
   margin-top: 8px;
   justify-content: center;
-}
-.metadata-record {
-  border-top: 1px solid var(--border);
-  min-width: 0;
-  margin-top: 6px;
-}
-.metadata-record > summary {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 3px 0;
-  cursor: pointer;
-}
-.metadata-record-label {
-  flex: 1;
-  min-width: 0;
-}
-.metadata-record-caption,
-.metadata-record-detail {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.metadata-record-detail {
-  color: var(--muted);
-  font-size: 12px;
-}
-.metadata-record > summary .panel-actions {
-  margin: 0;
-  flex-wrap: nowrap;
-}
-.metadata-record > summary button {
-  padding: 4px;
-}
-.metadata-record > summary svg {
-  width: 15px;
-  height: 15px;
 }
 .metadata-record-fields {
   display: grid;
@@ -1730,12 +1770,11 @@ li:has(.interline-band-gap[data-marker])::marker {
   gap: 6px;
   color: var(--text);
 }
-.metadata-record-deletion .properties,
-.metadata-record-draft.properties {
+.properties.metadata-record-deletion {
   position: static;
   box-shadow: none;
-  width: 100%;
-  margin: 0 0 6px;
+  width: auto;
+  margin: 0 6px 6px;
 }
 .metadata-rich {
   min-width: 0;
@@ -1815,12 +1854,30 @@ li:has(.interline-band-gap[data-marker])::marker {
   display: grid;
   gap: 10px;
 }
+.bibliography-manage,
+.bibliography-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-color: var(--border);
+  background: var(--panel);
+}
+.bibliography-manage:hover,
+.bibliography-toolbar button:hover {
+  background: var(--soft);
+}
+.bibliography-manage {
+  justify-self: end;
+}
+.bibliography-manage svg {
+  width: 16px;
+  height: 16px;
+}
 .bibliography-files {
   display: grid;
   gap: 4px;
 }
-.bibliography-file-row,
-.citation-selected-row {
+.bibliography-file-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1832,8 +1889,7 @@ li:has(.interline-band-gap[data-marker])::marker {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.bibliography-file-row .panel-actions,
-.citation-selected-row .panel-actions {
+.bibliography-file-row .panel-actions {
   margin: 0;
 }
 .bibliography-file-row svg {
@@ -1864,33 +1920,6 @@ li:has(.interline-band-gap[data-marker])::marker {
 .document-option-checkbox input {
   width: auto;
 }
-#citation-search-results {
-  max-height: 170px;
-  overflow: auto;
-}
-#citation-search-results button {
-  display: grid;
-  text-align: left;
-  gap: 3px;
-}
-#citation-search-results button span {
-  color: var(--muted);
-  font-size: 11px;
-}
-.citation-selected {
-  display: grid;
-  gap: 5px;
-}
-.citation-selected-row > span {
-  flex: 1;
-  overflow-wrap: anywhere;
-  font-size: 12px;
-}
-.citation-selected-row > input {
-  flex: 1;
-  min-width: 0;
-}
-
 .table-dimensions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2325,15 +2354,44 @@ li:has(.interline-band-gap[data-marker])::marker {
   flex-direction: column;
   min-height: 0;
 }
+.bibliography-dialog .dialog-form > .panel-title {
+  margin-bottom: 10px;
+}
+.bibliography-searching .dialog-form > .panel-title > strong {
+  color: var(--accent);
+}
+.bibliography-dialog .dialog-form > .panel-actions {
+  border: 0;
+  margin-top: 8px;
+  padding-top: 0;
+}
 .bibliography-dialog .context-panel-body {
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
+.bibliography-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bibliography-toolbar {
+  flex: none;
+  justify-content: flex-start;
+  margin: 0;
+}
+.bibliography-toolbar svg {
+  width: 15px;
+  height: 15px;
+}
+.bibliography-back svg {
+  transform: rotate(180deg);
+}
 .bibliography-layout {
   display: grid;
   grid-template-columns: minmax(230px, 32%) minmax(0, 1fr);
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   gap: 20px;
 }
 .bibliography-browser {
@@ -2345,10 +2403,21 @@ li:has(.interline-band-gap[data-marker])::marker {
   border-right: 1px solid var(--border);
   padding-right: 16px;
 }
-.bibliography-browser > input {
+.bibliography-source {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  gap: 8px;
+}
+.bibliography-source > input {
   width: 100%;
 }
-.bibliography-browser > p {
+.bibliography-source input[type='search']:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.bibliography-source > p {
   margin: 0;
   color: var(--muted);
   font-size: 12px;
@@ -2386,24 +2455,51 @@ li:has(.interline-band-gap[data-marker])::marker {
 }
 .bibliography-list-row[aria-selected='true'] {
   background: var(--soft);
-  border-color: var(--accent);
 }
 .bibliography-detail {
   overflow-y: auto;
   min-width: 0;
   padding: 0 8px 16px 0;
 }
-.bibliography-detail .metadata-section-fields {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.bibliography-remove-notice {
+  display: block;
+  margin-block-end: 8px;
+  margin-inline-start: auto;
 }
-.bibliography-detail .field:has(input[id$='-title']),
-.bibliography-people {
-  grid-column: 1 / -1;
-}
-.bibliography-people {
-  padding: 8px;
-  border: 1px solid var(--border);
+.bibliography-people,
+.bibliography-import-item fieldset {
   min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.bibliography-import-item legend {
+  padding: 0;
+  margin-bottom: 6px;
+}
+.bibliography-detail .form-section-fields > .field {
+  display: grid;
+  grid-template-columns: minmax(118px, 155px) minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0;
+}
+.bibliography-detail .field > label {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  margin: 0;
+}
+.bibliography-detail .form-section-fields > .field select {
+  margin: 0;
+  padding: 6px 9px;
+  width: 100%;
+  min-width: 0;
+}
+.bibliography-people > .panel-actions {
+  margin: 0;
+  justify-content: flex-start;
 }
 .bibliography-person {
   display: grid;
@@ -2416,27 +2512,53 @@ li:has(.interline-band-gap[data-marker])::marker {
   width: 15px;
   height: 15px;
 }
-.bibliography-detail details {
-  margin-block: 12px;
-}
-.bibliography-detail details > summary {
-  cursor: pointer;
-  color: var(--muted);
-  padding-block: 8px;
-}
-.bibliography-notice-heading {
-  margin-bottom: 12px;
-}
 .bibliography-import-item {
+  display: grid;
+  gap: 8px;
+}
+.bibliography-import-item > :is(h3, p),
+.bibliography-confirmation p {
+  margin: 0;
+}
+.bibliography-import-item fieldset {
+  display: grid;
+  gap: 5px;
+}
+.bibliography-import-item label:has(input[type='radio']) {
+  display: flex;
+  gap: 6px;
+}
+.bibliography-import-comparison {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  overflow-wrap: anywhere;
+}
+.bibliography-import-comparison :is(th, td) {
+  padding: 6px;
   border-bottom: 1px solid var(--border);
-  padding: 12px 0;
+  text-align: start;
+  vertical-align: top;
 }
-.bibliography-import-item > input,
-.bibliography-import-item > select {
-  margin: 4px;
-  max-width: 100%;
+.bibliography-import-comparison :is(th, td):first-child {
+  width: 24%;
 }
-.bibliography-completeness,
+.bibliography-import-comparison small {
+  display: block;
+  color: var(--muted);
+}
+.bibliography-confirmation {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 10px;
+  background: var(--soft);
+  border-radius: 6px;
+}
+.bibliography-confirmation [role='alert']:empty,
+.bibliography-online-error:empty {
+  display: none;
+}
 .bibliography-diagnostics {
   color: var(--muted);
   font-size: 12px;
@@ -2451,41 +2573,50 @@ li:has(.interline-band-gap[data-marker])::marker {
     grid-template-columns: minmax(190px, 35%) minmax(0, 1fr);
     gap: 12px;
   }
-  .bibliography-detail .metadata-section-fields,
   .bibliography-person {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 
-.bibliography-online-dialog {
-  width: min(860px, 94vw);
-  height: min(680px, 88vh);
+@media (max-width: 630px) {
+  .bibliography-dialog .context-panel-body {
+    overflow-y: auto;
+  }
+  .bibliography-layout {
+    display: block;
+  }
+  .bibliography-browser {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 0 10px;
+  }
+  .bibliography-list {
+    max-height: 28vh;
+  }
+  .bibliography-detail {
+    overflow: visible;
+    padding-top: 10px;
+  }
 }
-.bibliography-online-dialog .dialog-form,
-.bibliography-online-dialog .context-panel-body {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  height: 100%;
+@media (max-width: 480px) {
+  .bibliography-detail .form-section-fields > .field {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
-.bibliography-online-dialog .context-panel-body {
-  overflow: hidden;
-  gap: 8px;
-}
-.bibliography-online-dialog fieldset {
+.bibliography-online fieldset {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  padding: 0;
+  margin: 0;
+  border: 0;
 }
-.bibliography-online-dialog fieldset label {
+.bibliography-online fieldset label {
   display: flex;
   align-items: center;
   gap: 4px;
 }
-.bibliography-online-dialog .bibliography-list {
-  min-height: 80px;
-}
-.bibliography-online-dialog .panel-error {
+.bibliography-online-error {
   white-space: pre-line;
 }
 .bibliography-online-notice {

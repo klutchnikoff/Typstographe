@@ -182,6 +182,39 @@ async fn author_search_and_successful_zbmath_lookup_never_call_the_doi_fallback(
     task.abort();
 }
 #[tokio::test]
+async fn natural_author_year_search_keeps_records_with_only_a_numeric_id() {
+    let (url, task) = server(|s| {
+        let path = s.split_whitespace().nth(1).unwrap();
+        let url = reqwest::Url::parse(&format!("http://localhost{path}")).unwrap();
+        assert_eq!(url.path(), "/zbmath");
+        let params: std::collections::BTreeMap<_, _> = url.query_pairs().collect();
+        assert_eq!(params["search_string"], "klutchnikoff 2025");
+        assert_eq!(params["results_per_page"], "9");
+        let data: serde_json::Value = serde_json::from_str(ZBMATH).unwrap();
+        let mut numbered = data["result"][0].clone();
+        numbered["year"] = json!("2025");
+        let mut pending = numbered.clone();
+        pending["identifier"] = serde_json::Value::Null;
+        pending["id"] = json!(8110214);
+        ok(&json!({"result": [numbered, pending]}).to_string())
+    })
+    .await;
+    let mut search = request("klutchnikoff 2025", vec![Provider::Zbmath]);
+    search.limit = 9;
+    let result = Client::testing(&url).search(search).await;
+    assert!(result.issues.is_empty());
+    assert_eq!(result.candidates.len(), 2);
+    let pending = &result.candidates[1];
+    assert_eq!(pending.year, Some(2025));
+    assert_eq!(
+        pending.source_url,
+        "https://api.zbmath.org/v1/document/8110214"
+    );
+    assert_eq!(pending.doi.as_deref(), Some("10.2307/2118559"));
+    task.abort();
+}
+
+#[tokio::test]
 async fn a_successful_specialised_doi_lookup_does_not_request_generic_metadata() {
     let (url, task) = server(|s| {
         assert!(s.contains("GET /zbmath?"));

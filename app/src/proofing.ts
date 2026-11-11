@@ -1,5 +1,3 @@
-import { focusEditorSelection } from './editor-focus'
-import { navigationGroup } from './keyboard-navigation'
 import { tr } from './i18n'
 import { Extension, type Editor } from '@tiptap/core'
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state'
@@ -7,8 +5,8 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import type { Transport, Provider } from './provider'
 import { settingsFor } from './state'
-import type { BandHost } from './band-layout'
-import { contextPanel } from './context-panel'
+import { editorRangeRect, type ObjectMenu, type ObjectMenuGroup } from './object-menu'
+import { editingAvailability } from './command-availability'
 import { replaceText } from './text-edits'
 import { inlineTarget } from './object-commands'
 import { executeStructured } from './structured-commands'
@@ -147,10 +145,14 @@ export function correctionAtCursor(editor: Editor) {
     editor.state.selection.$from.parent.type.spec.code
   )
     return
-  const position = editor.state.selection.from
+  return correctionAtPosition(editor, editor.state.selection.from)
+}
+export function correctionAtPosition(editor: Editor, position: number, word?: string) {
   return proofingKey
     .getState(editor.state)
-    ?.issues.find((issue) => issue.from <= position && position <= issue.to)
+    ?.issues.find(
+      (issue) => issue.from <= position && position <= issue.to && (!word || word === issue.word),
+    )
 }
 export function navigateSpelling(editor: Editor, backwards = false) {
   const hits = proofingKey.getState(editor.state)?.issues || []
@@ -166,15 +168,13 @@ export function navigateSpelling(editor: Editor, backwards = false) {
     .scrollIntoView()
     .run()
 }
-export function openCorrection(editor: Editor) {
-  const issue = correctionAtCursor(editor)
-  if (!issue) return false
-  document.dispatchEvent(new CustomEvent('proofing:open', { detail: issue }))
-  return true
+const correctionMenus = new WeakMap<Editor, (issue: Hit) => boolean>()
+export function openCorrection(editor: Editor, issue = correctionAtCursor(editor)) {
+  return !!issue && (correctionMenus.get(editor)?.(issue) ?? false)
 }
 export function mountProofing(
   editor: Editor,
-  bands: BandHost,
+  menu: ObjectMenu,
   provider: Provider,
   transport: Transport,
   preferences: () => { personal: Record<string, string[]>; spelling_enabled: boolean },
@@ -230,160 +230,106 @@ export function mountProofing(
   }
   editor.on('update', check)
   document.addEventListener('proofing:changed', check)
-  editor.on('destroy', () => {
-    document.removeEventListener('proofing:changed', check)
-    clearTimeout(timer)
-    version++
-  })
-  provider.doc.getMap('settings').observe(check)
+  const settings = provider.doc.getMap('settings')
+  settings.observe(check)
   check()
-  let requestTicket = 0
-  const open = (event: Event) => {
-    const issue = (event as CustomEvent<Hit>).detail
+
+  const documentLanguage = () => String(settingsFor(provider).metadata.fields.options.language)
+  correctionMenus.set(editor, (issue) => {
     if (
-      editor.view.composing ||
+      !editingAvailability(editor, false).enabled ||
+      !provider.online ||
       issue.to > editor.state.doc.content.size ||
       editor.state.doc.textBetween(issue.from, issue.to) !== issue.word
     )
-      return
-    const ticket = ++requestTicket
-    let pending = false
-    const language = String(settingsFor(provider).metadata.fields.options.language)
-    const close = () => {
-      if (bands.forPanel(panel.element)) bands.close()
-    }
-    const panel = contextPanel({
-      id: 'proofing-band',
-      closeLabel: tr('Fermer la correction'),
-      close,
-      canConfirm: () => !pending && !editor.view.composing,
-      tabExit: () => focusEditorSelection(editor),
-    })
-    const band = panel.element
-    const kind = document.createElement('span')
-    kind.className = 'band-kind'
-    kind.textContent = tr('Orthographe')
-    panel.title.append(kind, document.createTextNode(`« ${issue.word} »`))
-    const choices = document.createElement('div')
-    choices.className = 'suggestions'
-    choices.dataset.defaultNavigation = ''
-    navigationGroup(choices, { axis: 'both', roving: true })
-    choices.textContent = tr('Recherche de suggestions…')
-    panel.body.append(choices)
-    const target = () => bands.forPanel(band)
+      return false
+    const language = documentLanguage()
     const valid = () => {
-      const range = target()
-      if (!range) return null
-      if (range.from > range.to || range.to > editor.state.doc.content.size) return null
-      if (
-        String(settingsFor(provider).metadata.fields.options.language) !== language ||
-        editor.state.doc.textBetween(range.from, range.to) !== issue.word
-      ) {
-        panel.error.textContent = tr('Le mot a changé : rouvrez la correction.')
-        return null
-      }
-      return range
+      if (language !== documentLanguage() || !preferences().spelling_enabled)
+        throw new Error(tr('Le document a changé. Réessayez.'))
     }
-    const commit = async (change: (current: () => boolean) => Promise<unknown>) => {
-      if (pending || !valid()) return
-      const current = () => ticket === requestTicket && target() !== null
-      pending = true
-      panel.error.textContent = ''
-      const controls = [
-        ...band.querySelectorAll<HTMLButtonElement>('button:not(.panel-title button)'),
-      ]
-      for (const button of controls) button.disabled = true
-      try {
-        await change(current)
-        if (current()) bands.close(true, editor.state.selection.getBookmark())
-      } catch (reason) {
-        if (current())
-          panel.error.textContent = reason instanceof Error ? reason.message : errorText(reason)
-      } finally {
-        pending = false
-        for (const button of controls) button.disabled = false
-      }
-    }
-    panel.action({
-      label: tr('Ignorer dans ce document'),
-      run: () => {
-        const range = valid()
-        if (!range) return
-        void commit((current) =>
-          executeStructured(
-            editor,
-            provider,
-            transport,
-            [
-              {
-                id: 'spelling.ignore',
-                params: {
-                  target: inlineTarget(editor, range.from, range.to),
-                  language,
-                  word: issue.word,
-                },
-              },
-            ],
-            current,
-          ),
-        )
-      },
+    const label = `${tr('Orthographe')} · « ${issue.word} »`
+    const session = menu.open({
+      label,
+      range: { from: issue.from, to: issue.to },
+      anchor: (range) => editorRangeRect(editor, range),
     })
-    panel.action({
-      label: tr('Ajouter au dictionnaire personnel'),
-      run: () => {
-        if (!valid()) return
-        void savePersonal(issue.word, language)
-          .then(() => {
+    const extras: ObjectMenuGroup = {
+      actions: [
+        {
+          label: tr('Ignorer dans ce document'),
+          async run({ range, current }) {
+            valid()
+            await executeStructured(
+              editor,
+              provider,
+              transport,
+              [
+                {
+                  id: 'spelling.ignore',
+                  params: {
+                    target: inlineTarget(editor, range.from, range.to),
+                    language,
+                    word: issue.word,
+                  },
+                },
+              ],
+              current,
+            )
+          },
+        },
+        {
+          label: tr('Ajouter au dictionnaire personnel'),
+          async run() {
+            valid()
+            await savePersonal(issue.word, language)
             preferences().personal[language] = [
               ...(preferences().personal[language] || []),
               issue.word,
             ]
-            close()
             check()
-          })
-          .catch((reason) => message(errorText(reason), true))
-      },
-    })
-    bands.open(panel, { from: issue.from, to: issue.to, placement: 'text' }, () => band.remove())
+          },
+        },
+      ],
+    }
+    session.show([{ label, note: tr('Recherche de suggestions…'), actions: [] }, extras], true)
     void transport
       .invoke<string[]>('spelling_suggestions', { language, word: issue.word })
       .then((suggestions) => {
-        if (ticket !== requestTicket || !target()) return
-        choices.replaceChildren()
-        const buttons = suggestions.slice(0, 6).map((suggestion) => {
-          return panel.action({
-            label: suggestion,
-            parent: choices,
-            run: () => {
-              const range = valid()
-              if (!range) return
-              void commit((current) =>
-                replaceText(editor, [{ ...range, word: issue.word, text: suggestion }], {
-                  focus: false,
-                  current,
-                }),
-              )
+        session.updateFirstGroup({
+          label,
+          note: suggestions.length ? undefined : tr('Aucune suggestion disponible.'),
+          actions: suggestions.slice(0, 6).map((text) => ({
+            label: text,
+            async run({ range, current }) {
+              valid()
+              const { from, to } = editor.state.selection
+              await replaceText(editor, [{ ...range, word: issue.word, text }], {
+                focus: false,
+                current,
+                installed:
+                  from < range.from || to > range.to
+                    ? () => {
+                        editor.commands.setTextSelection(range.from + text.length)
+                      }
+                    : undefined,
+              })
             },
-          })
+          })),
         })
-        const [preferred, ...others] = buttons
-        if (preferred) {
-          panel.setDefault(preferred)
-          choices.append(...others, preferred)
-        } else choices.textContent = tr('Aucune suggestion disponible.')
       })
-      .catch((reason) => {
-        if (target()) panel.error.textContent = errorText(reason)
+      .catch((error) => {
+        if (!session.current()) return
+        session.updateFirstGroup({ label, actions: [], note: errorText(error) })
+        message(errorText(error), true)
       })
-  }
-  document.addEventListener('proofing:open', open)
+    return true
+  })
   editor.on('destroy', () => {
     clearTimeout(timer)
     version++
-    requestTicket++
-    editor.off('update', check)
-    provider.doc.getMap('settings').unobserve(check)
-    document.removeEventListener('proofing:open', open)
+    settings.unobserve(check)
+    document.removeEventListener('proofing:changed', check)
+    correctionMenus.delete(editor)
   })
 }

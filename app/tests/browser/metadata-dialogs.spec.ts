@@ -179,9 +179,7 @@ test('une affiliation supprimée reste visible dans le brouillon et exige le ret
   await records(peer, 'affiliations')
     .getByRole('button', { name: 'Supprimer · Affiliation', exact: true })
     .click()
-  await records(peer, 'affiliations')
-    .getByRole('button', { name: 'Supprimer', exact: true })
-    .click()
+  await expect(records(peer, 'affiliations')).toHaveCount(0)
   const missing = dialog(page).getByRole('checkbox', {
     name: 'Affiliation · Élément supprimé',
     exact: true,

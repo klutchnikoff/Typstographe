@@ -24,6 +24,7 @@ export async function prepareBibliographyPublication(
   selected?: Draft,
   review?: ImportDraft,
   cite?: CitationDraft,
+  confirmedAcquisition = false,
 ): Promise<StructuredCommand[] | null> {
   const batch: StructuredCommand[] = []
   if (review) {
@@ -50,7 +51,7 @@ export async function prepareBibliographyPublication(
     })
     let citedId = selected.base.id
     if (selected.acquisition) {
-      const acquisition = await planAcquisition(api, selected, prepared)
+      const acquisition = await planAcquisition(api, selected, prepared, confirmedAcquisition)
       batch.push(acquisition.command)
       citedId = acquisition.target
     }

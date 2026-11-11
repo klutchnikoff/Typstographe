@@ -17,6 +17,40 @@ test.beforeEach(async ({ page, request }) => {
   await request.post('/__spike/invoke', { data: { command: 'reset', peer: 'main', args: {} } })
   await ready(page)
 })
+
+test('la frappe reprend au curseur restitué après Ctrl/Cmd+Z', async ({ page }) => {
+  const editor = body(page)
+  const line = editor.locator('p').first()
+  await page.evaluate(async () => {
+    const { editor, provider } = window.__spike!
+    editor.commands.setContent('<p>Avant après</p>')
+    editor.commands.setTextSelection(7)
+    editor.view.focus()
+    await provider.clearHistory()
+  })
+  await page.keyboard.type('X')
+  await expect(line).toHaveText('Avant Xaprès')
+  await snapshot(page)
+
+  let release!: () => void
+  const hold = new Promise<void>((resolve) => (release = resolve))
+  await page.route('**/__spike/invoke', async (route) => {
+    if (route.request().postDataJSON()?.command === 'editing_history') await hold
+    await route.continue()
+  })
+  await page.keyboard.press('ControlOrMeta+z')
+  try {
+    await expect(page.locator('#editor .tiptap')).toHaveAttribute('contenteditable', 'false')
+  } finally {
+    release()
+  }
+  await expect(line).toHaveText('Avant après')
+  await expect(editor).toBeEditable()
+  await expect(editor).toBeFocused()
+  await page.keyboard.type('ok ')
+  await expect(line).toHaveText('Avant ok après')
+})
+
 test('navigation et styles de frappe sont privés, sans révision, historique ni rendu', async ({
   page,
 }) => {

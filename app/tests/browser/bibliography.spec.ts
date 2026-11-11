@@ -8,7 +8,9 @@ const yaml =
   'durand2020:\n  type: Article\n  title: Le travail collectif\n  author: Durand, Camille\n  date: 2020\n  parent:\n    type: Periodical\n    title: Revue exemple\n'
 const tab = (page: Page, id: string) => page.locator(`#metadata-tab-${id}`).click()
 const body = (page: Page) => page.getByRole('textbox', { name: 'Corps du document', exact: true })
-const band = (page: Page) => page.locator('#citation-properties')
+const selector = (page: Page) => page.locator('#citation-properties')
+const citationSearch = (page: Page) =>
+  selector(page).getByRole('combobox', { name: 'Rechercher une référence' })
 const manager = (page: Page) => page.locator('#bibliography-manager')
 const files = (page: Page) => manager(page).getByLabel('Fichiers bibliographiques', { exact: true })
 async function manage(page: Page) {
@@ -16,7 +18,7 @@ async function manage(page: Page) {
   await expect(manager(page)).toBeVisible()
 }
 async function finishManager(page: Page) {
-  await manager(page).getByRole('button', { name: 'Fermer', exact: true }).click()
+  await manager(page).locator('.panel-title button').click()
   await expect(manager(page)).toBeHidden()
 }
 
@@ -24,7 +26,9 @@ async function setFiles(
   page: Page,
   value: Parameters<ReturnType<typeof files>['setInputFiles']>[0],
 ) {
-  await expect(manager(page).getByRole('button', { name: 'Importer…', exact: true })).toBeEnabled()
+  await expect(
+    manager(page).getByRole('button', { name: 'Importer un fichier…', exact: true }),
+  ).toBeEnabled()
   await files(page).setInputFiles(value)
 }
 const file = (name: string, contents: string) => ({
@@ -53,33 +57,37 @@ async function create(page: Page) {
     .locator('#bibliography-manager')
     .getByRole('button', { name: 'Importer', exact: true })
     .click()
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(1)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(1)
   await setFiles(page, file('articles.yaml', yaml))
   await page
     .locator('#bibliography-manager')
     .getByRole('button', { name: 'Importer', exact: true })
     .click()
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(2)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
   await expect(manager(page).getByRole('alert')).toHaveCount(0)
   await finishManager(page)
 }
-async function choose(page: Page, query: string) {
-  const search = band(page).getByRole('combobox', { name: 'Rechercher une référence' })
+async function choose(page: Page, query: string, key = 'Enter') {
+  const search = citationSearch(page)
   await search.fill(query)
-  await expect(band(page).locator('[role=option]:not(:disabled)')).toHaveCount(1)
+  await expect(selector(page).locator('[role=gridcell][data-entry]')).toHaveCount(1)
   await search.press('ArrowDown')
   await expect(search).toBeFocused()
-  await search.press('Enter')
+  await search.press(key)
 }
 async function insert(page: Page) {
   await body(page).fill('Une lecture du travail. ')
   await page.getByRole('button', { name: 'Citer une référence', exact: true }).click()
-  await expect(band(page).getByRole('combobox', { name: 'Rechercher une référence' })).toBeFocused()
-  await choose(page, 'sens bordieu')
-  await band(page).getByLabel('Pages ou chapitre · bourdieu1980', { exact: true }).fill('p. 23–25')
-  await choose(page, 'travail DURAND')
-  await band(page).getByRole('button', { name: 'Valider', exact: true }).click()
-  await expect(band(page)).toBeHidden()
+  await expect(citationSearch(page)).toBeFocused()
+  await choose(page, 'sens bordieu', 'Shift+Enter')
+  await selector(page)
+    .getByLabel('Pages ou chapitre · bourdieu1980', { exact: true })
+    .fill('p. 23–25')
+  await choose(page, 'travail DURAN 20')
+  await expect(body(page).locator('.citation-ref')).toHaveCount(0)
+  await expect(selector(page).getByRole('button', { name: 'Insérer', exact: true })).toBeEnabled()
+  await citationSearch(page).press('ControlOrMeta+Enter')
+  await expect(selector(page)).toBeHidden()
   await expect(body(page).locator('.citation-ref')).toHaveCount(1)
   await expect(body(page).locator('.citation-ref')).toContainText('Bourdieu, 1980')
   await expect(body(page).locator('.citation-ref')).toContainText('Durand, 2020')
@@ -102,10 +110,10 @@ test('bibliothèque multi-format, recherche fuzzy, badge, clavier et rendu natif
   await insert(page)
   await expect(body(page).locator('.citation-ref')).toHaveClass(/inline-object-active/)
   await body(page).press('ControlOrMeta+Enter')
-  await expect(band(page).getByRole('combobox', { name: 'Rechercher une référence' })).toBeFocused()
-  await band(page).getByLabel('Forme de la citation', { exact: true }).selectOption('prose')
-  await band(page).getByRole('button', { name: 'Valider', exact: true }).click()
-  await expect(band(page)).toBeHidden()
+  await expect(citationSearch(page)).toBeFocused()
+  await selector(page).getByLabel('Forme de la citation', { exact: true }).selectOption('prose')
+  await selector(page).getByRole('button', { name: 'Appliquer', exact: true }).click()
+  await expect(selector(page)).toBeHidden()
   await expect(body(page).locator('.inline-object-label')).toHaveText(
     'Bourdieu, 1980 ; Durand, 2020',
   )
@@ -121,13 +129,10 @@ test('bibliothèque multi-format, recherche fuzzy, badge, clavier et rendu natif
   expect(citation.items[0].supplement).toBe('p. 23–25')
   await expectPreviewReady(page)
   await expect(page.locator('#render-status')).not.toHaveClass(/error/)
-  // Cancellation and deletion use the same protected inline object path as footnotes.
+  // Citations use the same two-step deletion as footnotes.
   await body(page).press('Backspace')
-  await expect(page.locator('#property-title')).toHaveText('Supprimer la citation')
-  await page.locator('#cancel-properties').click()
-  await expect(body(page).locator('.citation-ref')).toHaveCount(1)
+  await expect(body(page).locator('.citation-ref')).toHaveClass(/ProseMirror-selectednode/)
   await body(page).press('Backspace')
-  await page.locator('#apply-properties').click()
   await expect(body(page).locator('.citation-ref')).toHaveCount(0)
   await expect(page.locator('#properties')).toBeHidden()
   await page.getByRole('button', { name: 'Annuler', exact: true }).click()
@@ -148,7 +153,7 @@ test('bibliothèque multi-format, recherche fuzzy, badge, clavier et rendu natif
   await expect(page.getByLabel('Afficher le sommaire', { exact: true })).toHaveValue('true')
   await tab(page, 'bibliography')
   await manage(page)
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(2)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
   await finishManager(page)
   await expect(page.getByLabel('Style bibliographique', { exact: true })).toHaveValue('ieee')
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
@@ -165,9 +170,21 @@ test('imports natifs, arbitrage de collision et suppression protégée', async (
   const peer = await context.newPage()
   await ready(peer, `bibliography-peer-${Date.now()}`)
   await manage(page)
-  await setFiles(page, file('doublon.bib', bib))
+  await setFiles(page, file('doublon.bib', bib.replace(/}$/, ', edition={2}}')))
+  const fileReview = manager(page).locator('#bibliography-file-review')
+  await expect(fileReview.locator('table')).toContainText('Champ complété')
+  await expect(
+    manager(page).locator('.bibliography-browser [aria-label="Notices du fichier"]'),
+  ).toBeVisible()
+  await expect(manager(page).locator('#bibliography-list')).toBeHidden()
+  await expect(page.locator('dialog[open]')).toHaveCount(1)
+  const viewport = page.viewportSize()!
+  await page.setViewportSize({ width: 560, height: viewport.height })
+  await expect(manager(page).locator('.bibliography-layout')).toHaveCSS('display', 'block')
+  await expect(fileReview.locator('table')).toContainText('Champ complété')
+  await page.setViewportSize(viewport)
   await manager(page).getByRole('button', { name: 'Importer', exact: true }).click()
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(2)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
   await setFiles(
     page,
     file(
@@ -176,20 +193,21 @@ test('imports natifs, arbitrage de collision et suppression protégée', async (
     ),
   )
   await expect(manager(page).getByRole('alert')).toContainText('décision de rapprochement')
-  await manager(page)
-    .getByLabel('Décision · bourdieu1980', { exact: true })
-    .selectOption('distinct')
+  await manager(page).getByRole('radio', { name: 'Conserver séparément' }).check()
   await manager(page)
     .getByLabel('Clé de citation · bourdieu1980', { exact: true })
     .fill('other1990')
   await expect(manager(page).getByRole('button', { name: 'Importer', exact: true })).toBeEnabled()
   await manager(page).getByRole('button', { name: 'Importer', exact: true }).click()
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(3)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(3)
   const search = manager(page).getByRole('combobox', { name: 'Rechercher une référence' })
   await search.fill('bourdieu')
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(1)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(1)
   await search.press('Enter')
-  await manager(page).getByRole('button', { name: 'Supprimer', exact: true }).click()
+  await manager(page)
+    .locator('.bibliography-detail')
+    .getByRole('button', { name: 'Supprimer', exact: true })
+    .click()
   const confirm = page.locator('#bibliography-remove')
   await confirm.getByRole('button', { name: 'Supprimer', exact: true }).click()
   await expect(confirm.getByRole('alert')).toContainText('Une citation vise une notice absente')
@@ -198,13 +216,76 @@ test('imports natifs, arbitrage de collision et suppression protégée', async (
   await setFiles(page, file('incomplete.yaml', 'draft: {type: book, title: An incomplete record}'))
   await expect(manager(page)).toContainText('Un champ conseillé est manquant.')
   await manager(page).getByRole('button', { name: 'Importer', exact: true }).click()
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(4)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(4)
   await finishManager(page)
   await expect(body(peer).locator('.citation-ref')).toContainText('Bourdieu, 1980')
   await peer.close()
 })
 
-test('citation dans un widget : même bandeau, recherche au clavier et annulation sans édition', async ({
+test('@@ : Échap annule, Entrée écrit les signes ou valide après recherche', async ({ page }) => {
+  await create(page)
+  const editor = body(page)
+  await editor.fill('prenom@exemple.fr et Arts & Métiers')
+  await expect(selector(page)).toBeHidden()
+  const line = editor.locator('p').first()
+  const original = await line.textContent()
+  await page.keyboard.type('@@')
+  await expect(citationSearch(page)).toBeFocused()
+  await citationSearch(page).press('Escape')
+  await expect(selector(page)).toBeHidden()
+  await expect(line).toHaveText(original!)
+  await expect(editor).toBeFocused()
+
+  await page.keyboard.type('@@')
+  await expect(citationSearch(page)).toBeFocused()
+  await expect(selector(page).locator('[data-entry]')).toHaveCount(2)
+  await citationSearch(page).press('Enter')
+  await expect(selector(page)).toBeHidden()
+  await expect(line).toHaveText(`${original}@@`)
+  await expect(editor).toBeFocused()
+  await editor.press('ControlOrMeta+z')
+  await expect(line).toHaveText(original!)
+  await expect(editor).toBeEditable()
+  await expect(editor).toBeFocused()
+
+  await page.keyboard.type('@@')
+  await expect(citationSearch(page)).toBeFocused()
+  await choose(page, 'bourdieu1980')
+  await expect(selector(page)).toBeHidden()
+  await expect(line.locator('.citation-ref')).toHaveText('(Bourdieu, 1980)')
+  await editor.press('ControlOrMeta+z')
+  await expect(line).toHaveText(original!)
+})
+
+test('citation simple : Entrée et clic publient chacun une seule édition annulable', async ({
+  page,
+}) => {
+  await create(page)
+  await body(page).fill('Une lecture du travail. ')
+  const cite = page.getByRole('button', { name: 'Citer une référence', exact: true })
+  const badge = body(page).locator('.citation-ref')
+  await cite.click()
+  await expect(selector(page).getByRole('button', { name: 'Insérer', exact: true })).toBeHidden()
+  await choose(page, 'DURAN 2020')
+  await expect(selector(page)).toBeHidden()
+  await expect(badge).toHaveText('(Durand, 2020)')
+  await expect(body(page)).toBeFocused()
+  await body(page).press('ControlOrMeta+z')
+  await expect(badge).toHaveCount(0)
+  await cite.click()
+  await citationSearch(page).fill('bourdieu1980')
+  await selector(page)
+    .getByRole('button', { name: /Le sens pratique/ })
+    .click()
+  await expect(selector(page)).toBeHidden()
+  await expect(badge).toHaveText('(Bourdieu, 1980)')
+  await expect(body(page)).toBeFocused()
+  await body(page).press('ControlOrMeta+z')
+  await expect(badge).toHaveCount(0)
+  await expect(body(page)).toContainText('Une lecture du travail.')
+})
+
+test('citation groupée dans un widget : souris, réordre et annulation sans édition', async ({
   page,
 }) => {
   await create(page)
@@ -223,23 +304,53 @@ test('citation dans un widget : même bandeau, recherche au clavier et annulatio
       ],
     }),
   )
-  await page.evaluate(() => window.__spike!.editor.commands.setTextSelection(8))
+  await page.evaluate(() => {
+    const { editor } = window.__spike!
+    editor.commands.setTextSelection(8)
+    editor.view.focus()
+  })
   const before = await page.evaluate(() => window.__spike!.editor.getJSON())
-  // Palette and toolbar share the public command; no atom is published before confirmation.
-  await page.getByRole('button', { name: 'Citer une référence', exact: true }).click()
-  await choose(page, 'bourdieu')
-  await band(page).getByRole('combobox', { name: 'Rechercher une référence' }).press('Escape')
+  const cite = page.getByRole('button', { name: 'Citer une référence', exact: true })
+  const quote = body(page).locator('blockquote')
+  const line = await quote.locator('p').boundingBox()
+  await cite.click()
+  await expect(citationSearch(page)).toBeFocused()
+  expect(await quote.locator('p').boundingBox()).toEqual(line)
+  await selector(page).getByRole('button', { name: 'Ajouter au groupe · Bourdieu, 1980' }).click()
+  await selector(page).getByLabel('Pages ou chapitre · bourdieu1980', { exact: true }).fill('p. 42')
+  await selector(page).getByRole('button', { name: 'Créer une notice…', exact: true }).click()
+  await expect(manager(page).getByLabel('Titre', { exact: true })).toBeVisible()
+  await finishManager(page)
+  await expect(
+    selector(page).getByLabel('Pages ou chapitre · bourdieu1980', { exact: true }),
+  ).toHaveValue('p. 42')
+  await citationSearch(page).press('Escape')
+  await expect(selector(page)).toBeHidden()
+  await expect(body(page)).toBeFocused()
   expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
-  await page.getByRole('button', { name: 'Citer une référence', exact: true }).click()
-  await choose(page, 'bourdieu')
-  await band(page).getByRole('button', { name: 'Valider', exact: true }).click()
-  await expect(body(page).locator('blockquote .citation-ref')).toHaveCount(1)
-  await body(page).press('ControlOrMeta+Enter')
-  await expect(band(page).getByRole('combobox', { name: 'Rechercher une référence' })).toBeFocused()
-  const bandBox = await band(page).boundingBox(),
-    widgetBox = await body(page).locator('blockquote').boundingBox()
-  expect(bandBox!.width).toBeLessThanOrEqual(widgetBox!.width + 2)
-  await band(page).getByRole('combobox', { name: 'Rechercher une référence' }).press('Escape')
+  expect(await page.evaluate(() => window.__spike!.editor.state.selection.from)).toBe(8)
+  await cite.click()
+  await selector(page).getByRole('button', { name: 'Ajouter au groupe · Bourdieu, 1980' }).click()
+  await selector(page)
+    .getByRole('button', { name: /Le travail collectif/ })
+    .click()
+  await selector(page).getByRole('button', { name: 'Monter · Durand, 2020' }).click()
+  await selector(page).getByLabel('Pages ou chapitre · bourdieu1980', { exact: true }).fill('p. 42')
+  await selector(page).getByRole('button', { name: 'Insérer', exact: true }).click()
+  await expect(selector(page)).toBeHidden()
+  const badge = quote.locator('.citation-ref')
+  await expect(badge).toHaveText('(Durand, 2020 ; Bourdieu, 1980)')
+  await badge.locator('.inline-object-label').click()
+  await expect(citationSearch(page)).toBeFocused()
+  await expect(
+    selector(page).getByLabel('Pages ou chapitre · bourdieu1980', { exact: true }),
+  ).toHaveValue('p. 42')
+  await selector(page)
+    .getByRole('button', { name: 'Retirer de la citation · Durand, 2020' })
+    .click()
+  await selector(page).getByRole('button', { name: 'Appliquer', exact: true }).click()
+  await expect(selector(page)).toBeHidden()
+  await expect(badge).toHaveText('(Bourdieu, 1980)')
   await expect(body(page)).toBeFocused()
 })
 
@@ -247,17 +358,24 @@ test('notice privée, fermeture protégée, auteurs réordonnés et validation a
   page,
 }) => {
   await create(page)
-  await manage(page)
   await expect(
-    manager(page).getByRole('button', { name: 'Créer une notice', exact: true }),
+    page.locator('.bibliography-settings').getByText('2 notices', { exact: true }),
+  ).toHaveCount(0)
+  await manage(page)
+  await expect(manager(page).getByRole('button', { name: 'Valider', exact: true })).toBeHidden()
+  await manager(page).getByRole('group', { name: 'Notice', exact: true }).locator('summary').click()
+  await expect(manager(page).getByRole('button', { name: 'Valider', exact: true })).toBeHidden()
+  await expect(
+    manager(page).getByRole('button', { name: 'Nouvelle notice', exact: true }),
   ).toBeEnabled()
-  await manager(page).getByRole('button', { name: 'Créer une notice', exact: true }).click()
+  await manager(page).getByRole('button', { name: 'Nouvelle notice', exact: true }).click()
   const title = manager(page).getByLabel('Titre', { exact: true })
   await expect(title).toBeFocused()
   await title.fill('Une notice privée')
-  await title.press('Escape')
+  await manager(page).locator('.panel-title button').click()
   const leave = page.locator('#bibliography-leave')
   await expect(leave).toBeVisible()
+  await expect(page.locator('dialog[open]')).toHaveCount(1)
   await leave.getByRole('button', { name: 'Continuer l’édition', exact: true }).click()
   await expect(title).toHaveValue('Une notice privée')
   const authors = manager(page).getByRole('group', { name: 'Auteurs', exact: true })
@@ -279,22 +397,68 @@ test('notice privée, fermeture protégée, auteurs réordonnés et validation a
   )
   await title.dispatchEvent('compositionstart')
   await title.press('ControlOrMeta+Enter')
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(2)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
   await title.dispatchEvent('compositionend')
   await title.press('ControlOrMeta+Enter')
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(3)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(3)
   await finishManager(page)
   await page.getByRole('button', { name: 'Annuler', exact: true }).click()
   await manage(page)
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(2)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
   await finishManager(page)
+})
+
+test('annuler une nouvelle notice par bouton ou Échap conserve le gestionnaire et le projet', async ({
+  page,
+}) => {
+  await create(page)
+  await manage(page)
+  const references = () =>
+    page.evaluate(() =>
+      (window.__spike!.provider.doc.getMap('settings').get('collections') as any)
+        .get('references')
+        .toJSON(),
+    )
+  const before = await references()
+  for (const edited of [false, true]) {
+    for (const method of ['button', 'escape']) {
+      await manager(page).getByRole('button', { name: 'Nouvelle notice', exact: true }).click()
+      const title = manager(page).getByLabel('Titre', { exact: true })
+      await expect(title).toBeFocused()
+      const cancel = manager(page).locator('.panel-actions').getByRole('button', {
+        name: 'Annuler',
+        exact: true,
+      })
+      await expect(cancel).toBeVisible()
+      await expect(
+        manager(page).getByRole('button', { name: 'Ajouter au projet', exact: true }),
+      ).toBeVisible()
+      if (edited) await title.fill('Brouillon abandonné')
+      if (method === 'button') await cancel.click()
+      else await title.press('Escape')
+      await expect(manager(page)).toBeVisible()
+      await expect(manager(page).locator('#bibliography-leave')).toHaveCount(0)
+      await expect(
+        manager(page).getByRole('button', { name: 'Ajouter au projet', exact: true }),
+      ).toBeHidden()
+      await expect(
+        manager(page).getByRole('combobox', { name: 'Rechercher une référence' }),
+      ).toBeFocused()
+      expect(await references()).toEqual(before)
+    }
+  }
+  await expect(
+    manager(page).getByRole('button', { name: 'Nouvelle notice', exact: true }),
+  ).toBeEnabled()
+  await manager(page).getByRole('combobox', { name: 'Rechercher une référence' }).press('Escape')
+  await expect(manager(page)).toBeHidden()
 })
 
 test('créer et citer publie un seul lot annulable', async ({ page }) => {
   await create(page)
   await body(page).fill('Une citation nouvelle. ')
   await page.getByRole('button', { name: 'Citer une référence', exact: true }).click()
-  await band(page).getByRole('button', { name: 'Créer une notice…', exact: true }).click()
+  await selector(page).getByRole('button', { name: 'Créer une notice…', exact: true }).click()
   const title = manager(page).getByLabel('Titre', { exact: true })
   await expect(title).toBeFocused()
   await title.fill('Nouvelle publication')
@@ -304,7 +468,7 @@ test('créer et citer publie un seul lot annulable', async ({ page }) => {
   await page.getByRole('button', { name: 'Annuler', exact: true }).click()
   await expect(body(page).locator('.citation-ref')).toHaveCount(0)
   await manage(page)
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(2)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
   await finishManager(page)
 })
 
@@ -316,7 +480,7 @@ test('une modification concurrente refuse le formulaire et conserve sa saisie', 
   await manage(page)
   const search = manager(page).getByRole('combobox', { name: 'Rechercher une référence' })
   await search.fill('bourdieu')
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(1)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(1)
   await search.press('Enter')
   const title = manager(page).getByLabel('Titre', { exact: true })
   await expect(title).toHaveValue('Le sens pratique')
@@ -327,7 +491,7 @@ test('une modification concurrente refuse le formulaire et conserve sa saisie', 
   await manage(peer)
   const other = manager(peer).getByRole('combobox', { name: 'Rechercher une référence' })
   await other.fill('bourdieu')
-  await expect(peer.locator('.bibliography-list-row')).toHaveCount(1)
+  await expect(peer.locator('#bibliography-list .bibliography-list-row')).toHaveCount(1)
   await other.press('Enter')
   await manager(peer).getByLabel('Titre', { exact: true }).fill('Version de l’autre fenêtre')
   await manager(peer).getByRole('button', { name: 'Valider', exact: true }).click()
@@ -350,9 +514,9 @@ test('le formulaire bibliographique est récupéré sans publication automatique
   await create(page)
   await manage(page)
   await expect(
-    manager(page).getByRole('button', { name: 'Créer une notice', exact: true }),
+    manager(page).getByRole('button', { name: 'Nouvelle notice', exact: true }),
   ).toBeEnabled()
-  await manager(page).getByRole('button', { name: 'Créer une notice', exact: true }).click()
+  await manager(page).getByRole('button', { name: 'Nouvelle notice', exact: true }).click()
   await manager(page).getByLabel('Titre', { exact: true }).fill('Notice à reprendre')
   await manager(page)
     .getByLabel('Titre de la publication', { exact: true })
@@ -382,9 +546,9 @@ test('le formulaire bibliographique est récupéré sans publication automatique
   await expect(
     manager(page).getByRole('combobox', { name: 'Type de notice', exact: true }),
   ).toHaveValue('book')
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(2)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
   await title.press('ControlOrMeta+Enter')
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(3)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(3)
   await finishManager(page)
   await expect(page.locator('#side-content')).toContainText('Toutes les saisies ont été traitées.')
 })
@@ -401,8 +565,10 @@ test('liste longue et titres tronqués : recherche Unicode et défilements indé
   ).join('\n')
   await setFiles(page, file('collection.yaml', contents))
   await manager(page).getByRole('button', { name: 'Importer', exact: true }).click()
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(92)
-  await expect(manager(page).getByRole('button', { name: 'Importer…', exact: true })).toBeEnabled()
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(92)
+  await expect(
+    manager(page).getByRole('button', { name: 'Importer un fichier…', exact: true }),
+  ).toBeEnabled()
   const geometry = await manager(page).evaluate((root) => {
     const list = root.querySelector<HTMLElement>('.bibliography-list')!,
       right = root.querySelector<HTMLElement>('.bibliography-detail')!,
@@ -424,8 +590,12 @@ test('liste longue et titres tronqués : recherche Unicode et défilements indé
   expect(geometry).toEqual({ scrolls: true, stable: true, confined: true, clipped: true })
   const search = manager(page).getByRole('combobox', { name: 'Rechercher une référence' })
   await search.fill('Étude 89 Auteur89')
-  await expect(page.locator('.bibliography-list-row').first()).toContainText('Étude 89')
-  await expect.poll(() => page.locator('.bibliography-list-row').count()).toBeLessThan(92)
+  await expect(page.locator('#bibliography-list .bibliography-list-row').first()).toContainText(
+    'Étude 89',
+  )
+  await expect
+    .poll(() => page.locator('#bibliography-list .bibliography-list-row').count())
+    .toBeLessThan(92)
   await search.press('ArrowDown')
   await expect(search).toBeFocused()
   await search.press('ArrowUp')
@@ -442,7 +612,7 @@ test('créer depuis une citation groupée conserve les références déjà chois
   await insert(page)
   const before = await page.evaluate(() => window.__spike!.editor.getJSON())
   await body(page).press('ControlOrMeta+Enter')
-  await band(page).getByRole('button', { name: 'Créer une notice…', exact: true }).click()
+  await selector(page).getByRole('button', { name: 'Créer une notice…', exact: true }).click()
   await manager(page).getByLabel('Titre', { exact: true }).fill('Troisième ouvrage')
   await manager(page).getByRole('button', { name: 'Créer et citer', exact: true }).click()
   await expect(manager(page)).toBeHidden()
@@ -463,7 +633,9 @@ async function changeType(page: Page, value: string) {
   const select = manager(page).getByRole('combobox', { name: 'Type de notice', exact: true })
   await select.selectOption(value)
   await expect(select).toHaveValue(value)
-  await expect(manager(page).getByRole('button', { name: 'Valider', exact: true })).toBeEnabled()
+  await expect(
+    manager(page).getByRole('button', { name: /^(Valider|Ajouter au projet)$/ }),
+  ).toBeEnabled()
 }
 
 test('changer de type conserve les champs et conteneurs, puis valide une seule édition', async ({
@@ -472,9 +644,11 @@ test('changer de type conserve les champs et conteneurs, puis valide une seule �
   await create(page)
   await insert(page)
   await manage(page)
+  await expect(manager(page).getByRole('button', { name: /^Voir les citations/ })).toHaveCount(0)
+  await expect(manager(page).getByRole('button', { name: 'Fermer', exact: true })).toHaveCount(0)
   const search = manager(page).getByRole('combobox', { name: 'Rechercher une référence' })
   await search.fill('bourdieu')
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(1)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(1)
   await search.press('Enter')
   await expect(manager(page).getByLabel('Titre', { exact: true })).toHaveValue('Le sens pratique')
   await manager(page).getByLabel('Édition ou version', { exact: true }).fill('Deuxième')
@@ -501,7 +675,7 @@ test('changer de type conserve les champs et conteneurs, puis valide une seule �
     )
   const before = await records()
   await manager(page).getByRole('button', { name: 'Valider', exact: true }).click()
-  await expect(manager(page).getByRole('button', { name: 'Fermer', exact: true })).toBeEnabled()
+  await expect(manager(page).locator('.panel-title button')).toBeEnabled()
   await finishManager(page)
   const after = await records(),
     id = Object.keys(before).find((id) => before[id].key === 'bourdieu1980')!
@@ -521,9 +695,9 @@ test('un champ invalide refuse le changement de type en conservant le brouillon'
   await create(page)
   await manage(page)
   await expect(
-    manager(page).getByRole('button', { name: 'Créer une notice', exact: true }),
+    manager(page).getByRole('button', { name: 'Nouvelle notice', exact: true }),
   ).toBeEnabled()
-  await manager(page).getByRole('button', { name: 'Créer une notice', exact: true }).click()
+  await manager(page).getByRole('button', { name: 'Nouvelle notice', exact: true }).click()
   await manager(page).getByLabel('Titre', { exact: true }).fill('Mon brouillon')
   const date = manager(page).getByLabel('Date de publication', { exact: true })
   await date.fill('not-a-date')
@@ -535,7 +709,7 @@ test('un champ invalide refuse le changement de type en conservant le brouillon'
   await expect(manager(page).getByLabel('Titre', { exact: true })).toHaveValue('Mon brouillon')
   await date.fill('2026')
   await changeType(page, 'book')
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(2)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
   await profile.press('Escape')
   await page
     .locator('#bibliography-leave')
@@ -557,10 +731,12 @@ test('volume et numéro hérités restent visibles et modifiables après un chan
     ),
   )
   await manager(page).getByRole('button', { name: 'Importer', exact: true }).click()
-  await expect(manager(page).getByRole('button', { name: 'Importer…', exact: true })).toBeEnabled()
+  await expect(
+    manager(page).getByRole('button', { name: 'Importer un fichier…', exact: true }),
+  ).toBeEnabled()
   const search = manager(page).getByRole('combobox', { name: 'Rechercher une référence' })
   await search.fill('Volume natif')
-  await expect(page.locator('.bibliography-list-row')).toHaveCount(1)
+  await expect(page.locator('#bibliography-list .bibliography-list-row')).toHaveCount(1)
   await search.press('Enter')
   await expect(manager(page).getByLabel('Volume', { exact: true })).toHaveValue('12')
   await expect(manager(page).getByLabel('Numéro', { exact: true })).toHaveValue('2')
@@ -580,70 +756,4 @@ test('volume et numéro hérités restent visibles et modifiables après un chan
   )
   expect(record.entry).not.toHaveProperty('volume')
   expect(record.entry.parent[0].volume).toBe(13)
-})
-
-test('a late usage error cannot overwrite the next notice or its private input', async ({
-  page,
-}) => {
-  await create(page)
-  let release!: () => void
-  const held = new Promise<void>((resolve) => {
-    release = resolve
-  })
-  let captured!: () => void
-  const started = new Promise<void>((resolve) => {
-    captured = resolve
-  })
-  let delayed = false
-  await page.route('**/__spike/invoke', async (route) => {
-    const request = route.request().postDataJSON()
-    if (
-      !delayed &&
-      request.command === 'bibliography_query' &&
-      request.args?.operation === 'bibliography.usage'
-    ) {
-      delayed = true
-      captured()
-      await held
-      await route.fulfill({ json: { error: 'obsolete usage failure' } })
-    } else await route.continue()
-  })
-  try {
-    await manage(page)
-    await started
-    const rows = page.locator('.bibliography-list-row')
-    await expect(rows).toHaveCount(2)
-    await expect(manager(page).getByLabel('Titre', { exact: true })).toBeEditable()
-    await rows.nth(1).click()
-    await expect(rows.nth(1)).toHaveAttribute('aria-selected', 'true')
-    const title = manager(page).getByLabel('Titre', { exact: true })
-    await title.fill('Private text must survive a late response')
-    const response = page.waitForResponse((response) => {
-      const request = response.request().postDataJSON()
-      return (
-        request?.command === 'bibliography_query' &&
-        request.args?.operation === 'bibliography.usage'
-      )
-    })
-    release()
-    await (await response).finished()
-    await page.unrouteAll({ behavior: 'wait' })
-    // Let fetch/JSON and the manager's rejected-query callback settle before
-    // a negative assertion, which otherwise could pass before the held error.
-    await page.evaluate(
-      () =>
-        new Promise<void>((resolve) =>
-          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-        ),
-    )
-    await expect(title).toHaveValue('Private text must survive a late response')
-    await expect(manager(page)).not.toContainText('obsolete usage failure')
-    await title.press('Escape')
-    await page
-      .locator('#bibliography-leave')
-      .getByRole('button', { name: 'Abandonner', exact: true })
-      .click()
-  } finally {
-    release()
-  }
 })

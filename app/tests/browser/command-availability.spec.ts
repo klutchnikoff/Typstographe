@@ -77,6 +77,9 @@ test('la palette ne détourne pas une commande de texte vers le corps depuis un 
   await expect(page.getByRole('option', { name: 'Gras', exact: true })).toBeDisabled()
   await input.press('Enter')
   expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(before)
+  await input.press('Escape')
+  await expect(input).toBeHidden()
+  await expect(subject).toBeFocused()
 })
 
 test('toolbar and palette follow the active type when switching Courrier → Article → Courrier', async ({

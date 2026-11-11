@@ -49,8 +49,11 @@ par un espace de stockage imposé.
 **Séparation d’interface validée le 27 octobre 2026 :**
 
 - **Projets** : retrouver les fichiers récents ou épinglés, rechercher par nom,
-  créer et ouvrir un projet. Retirer une entrée des récents ne supprime pas
-  le fichier.
+  créer et ouvrir un projet. Dans le prochain lot consacré au catalogue, vérifier les
+  chemins en arrière-plan à l’ouverture de **Projets**. Signaler en rouge les entrées
+  concernées, avec le libellé *Fichier introuvable* ou *Fichier inaccessible*, en
+  conservant l’entrée et son éventuelle épingle. L’action **Retirer de la liste**
+  oubliera le chemin dans les récents et les épingles, en laissant le fichier en place.
 - **Document** : naviguer dans le projet actif, avec son plan, ses références
   bibliographiques, ses ressources, ses versions conservées et ses relectures. Les rubriques
   s’adaptent aux capacités du type ; l’arborescence technique reste masquée.
@@ -415,8 +418,11 @@ D’autres connecteurs spécialisés pourront compléter cette chaîne.
 - Les compléments de publication de Cairn passent aussi par le résolveur DOI.
   Ils complètent le type/contenant, sans remplacer les champs propres de la
   notice OAI. La provenance de cet enrichissement reste explicite.
-- Recherche locale conservée ; appels en ligne explicites, bornés et asynchrones.
-  Une réponse obsolète ne peut remplacer une nouvelle recherche ou un brouillon.
+- Recherche locale conservée. Dans la vue en ligne, la recherche part après une
+  courte pause de frappe. Le même champ accepte les mots du titre, les auteurs
+  et l’année. Les appels sont bornés et
+  asynchrones, et une réponse obsolète ne peut remplacer une nouvelle recherche
+  ou un brouillon. La liste signale si d’autres résultats existent.
 - Collecteurs séparés de la crate bibliographique pure et du cœur documentaire.
   Réutiliser les conversions et validations existantes vers Hayagriva ; conserver
   la source d’import convertie, distincte de la notice corrigée, sans prétendre
@@ -577,9 +583,8 @@ validé sur la recette représentative de chaque modèle livré.
      et retirer le doublon d’alias sur `mathBlock`.
   4. **Désimbrication des modales et harmonisation de l’en-tête** : intégrer la recherche
      bibliographique en ligne et la revue d’acquisition comme vues internes du gestionnaire
-     unique (sans `<dialog>` empilées), supprimer l’étape tremplin vide de l’onglet
-     *Bibliographie*, unifier le modèle d’édition des collections de métadonnées et
-     centrer la palette de commandes.
+     unique, centrer la palette de commandes, puis unifier les cartes et modales des
+     collections de métadonnées. Le panneau **Document** donne accès aux notices.
 - Revoir les parcours réels : accueil, création, en-tête, rédaction, recherche,
   sélection, correction, insertion, sauvegarde et export.
 - Achever l’harmonisation des widgets et bandeaux : même cadre et mêmes règles
@@ -588,12 +593,9 @@ validé sur la recette représentative de chaque modèle livré.
   contrôles via leurs générateurs : listes, menus, boutons, formulaires et bandeaux.
 - Renforcer les parcours clavier, les lecteurs d’écran, les contrastes, l’IME,
   les petits écrans et les états sans document ou sans résultat.
-- Maquetter les deux accès validés **Projets** (catalogue global) et **Document**
-  (navigation dans le projet actif), définis plus haut. Clarifier leur
-  articulation avec bibliothèque globale, préférences et assistance, en
-  conservant la place de l’éditeur et de l’aperçu. Valider la disposition
-  détaillée et les parcours clavier, notamment la consultation d’une ancienne
-  version en lecture seule et le retour explicite au travail courant.
+- Compléter les panneaux **Projets** (catalogue global) et **Document** (navigation dans
+  le projet actif) selon les suites décrites plus haut. Préciser leur articulation
+  avec la bibliothèque globale et l’assistance.
 - Définir l’ouverture de plusieurs documents (fenêtres ou onglets), l’impression
   et l’accès direct aux fichiers/PDF produits.
 - Définir le déplacement/duplication de blocs, le collage structuré et le collage

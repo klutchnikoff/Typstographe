@@ -3,44 +3,66 @@ import type { Node as PMNode } from '@tiptap/pm/model'
 import { TextSelection } from '@tiptap/pm/state'
 import type { BandHost } from './band-layout'
 import { contextPanel } from './context-panel'
+import { floatingEditorPanel } from './floating-editor-panel'
+import type { SelectorTrigger } from './inline-selector-input'
+import type { ObjectMenu } from './object-menu'
 import { navigationGroup } from './keyboard-navigation'
 import { editingAvailability } from './command-availability'
 import { editingProvider } from './editing-history'
 import { documentContent } from './shared-inline-marks'
 import { applyObjectEdit, inlineTarget, treeTarget } from './object-commands'
-import { referenceTargets, referenceLabel, type CrossReference } from './cross-reference-index'
+import { resolvedReference, type CrossReference } from './cross-reference-index'
+import { crossReferenceSearch, type SearchTarget } from './cross-reference-search'
 import { errorText } from './command-error'
 import { icon } from './icons'
 import { tr } from './i18n'
 
-/** Cross-reference content only: placement, focus, navigation, cancellation and recovery are shared. */
-export function crossReferencePanel(editor: Editor, bands: BandHost) {
+export function crossReferencePanel(
+  editor: Editor,
+  bands: BandHost,
+  menu: ObjectMenu,
+  host: HTMLElement,
+) {
   let opened: { node?: PMNode; reference: CrossReference } | undefined
+  let session: ReturnType<ReturnType<typeof floatingEditorPanel>['open']> | undefined
   let pending = false
+  let find = crossReferenceSearch(editor)
+  let matches: SearchTarget[] = []
   const panel = contextPanel({
     id: 'cross-reference-properties',
     closeLabel: tr('Annuler'),
-    close: () => {
-      if (!pending) bands.close()
-    },
-    canConfirm: () => !!opened && valid(),
+    close: () => floating.close(true),
+    canConfirm: valid,
+    tabExit: () => floating.close(true),
   })
+  const floating = floatingEditorPanel(editor, host, panel)
+  panel.element.classList.add('reference-selector')
   const input = document.createElement('input')
   input.type = 'search'
-  input.placeholder = tr('Rechercher un titre ou une légende…')
+  input.placeholder = tr('Titre, label ou numéro…')
   input.setAttribute('aria-label', tr('Rechercher une cible'))
   input.dataset.initialFocus = ''
+  const searchBox = document.createElement('div')
+  searchBox.className = 'floating-editor-search'
+  searchBox.innerHTML = icon('search')
+  const filterHint = document.createElement('span')
+  filterHint.id = 'reference-filter-hint'
+  filterHint.className = 'reference-filter-hint'
+  filterHint.textContent = tr('$ pour les équations')
+  input.setAttribute('aria-describedby', filterHint.id)
+  searchBox.append(input, filterHint)
   const results = document.createElement('div')
-  results.className = 'command-palette-results'
+  results.className = 'floating-editor-results'
   results.setAttribute('aria-label', tr('Cibles du document'))
   const components = document.createElement('fieldset')
   components.className = 'reference-components'
   const legend = document.createElement('legend')
+  legend.className = 'sr-only'
   legend.textContent = tr('Contenu du renvoi')
   components.append(legend)
   const checkbox = (text: string) => {
-    const label = document.createElement('label'),
-      control = document.createElement('input')
+    const label = document.createElement('label')
+    const control = document.createElement('input')
     control.type = 'checkbox'
     label.append(control, document.createTextNode(text))
     components.append(label)
@@ -48,31 +70,45 @@ export function crossReferencePanel(editor: Editor, bands: BandHost) {
   }
   const full = checkbox(tr('Libellé complet')),
     page = checkbox(tr('Page'))
-  const example = document.createElement('p')
-  example.className = 'band-hint'
+  const footer = document.createElement('div')
+  footer.className = 'reference-footer'
+  const example = document.createElement('output')
+  example.className = 'reference-example'
   example.setAttribute('role', 'status')
-  panel.body.append(input, results, components, example)
+  const enter = document.createElement('span')
+  enter.className = 'reference-enter'
+  enter.textContent = `↵ ${tr('Insérer')}`
+  footer.append(example, enter)
+  panel.body.append(searchBox, results, components, footer)
+  const apply = panel.action({
+    label: tr('Appliquer'),
+    primary: true,
+    parent: footer,
+    run: () => panel.submit(),
+  })
   const navigation = navigationGroup(results, {
     input,
     axis: 'vertical',
+    initial: false,
     enter: false,
     onSelect: (item) => {
-      if (opened) {
-        opened.reference.target = item.dataset.target!
-        refreshChoice()
-        panel.draftChanged()
-      }
+      if (!opened) return
+      opened.reference.target = item.dataset.target!
+      refreshChoice()
+      panel.draftChanged()
     },
+    onActivate: () => panel.submit(),
   })
+
   function valid() {
     const r = opened?.reference
     return (
       !pending &&
       !editor.view.composing &&
+      !!session?.current() &&
       !!r &&
       (r.include_label || r.include_page) &&
-      referenceTargets(editor).some((t) => t.id === r.target) &&
-      [...results.children].some((item) => (item as HTMLElement).dataset.target === r.target)
+      matches.some((target) => target.id === r.target)
     )
   }
   function refreshChoice() {
@@ -81,88 +117,89 @@ export function crossReferencePanel(editor: Editor, bands: BandHost) {
     full.checked = r.include_label
     page.checked = r.include_page
     apply.disabled = !valid()
-    example.textContent =
-      !r.include_label && !r.include_page
-        ? tr('Sélectionnez le libellé, la page ou les deux.')
-        : referenceLabel(editor, r)
+    enter.hidden = !!opened.node || apply.disabled
+    const target = matches.find((t) => t.id === r.target)
+    const label = target ? resolvedReference(editor, r) : undefined
+    const hasComponent = r.include_label || r.include_page
+    example.classList.toggle('reference-badge-example', !!label && hasComponent)
+    example.textContent = !hasComponent
+      ? tr('Sélectionnez le libellé, la page ou les deux.')
+      : !target
+        ? r.target
+          ? tr('Cible introuvable')
+          : tr('Aucune cible ne correspond.')
+        : (label ?? (r.include_label && !r.include_page ? target.title : tr('Aperçu en attente…')))
+    floating.place()
   }
-  function search(reset = true) {
+  function search(queryChanged = false) {
     if (!opened) return
-    const normalize = (s: string) =>
-      s
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLocaleLowerCase()
-    const raw = normalize(input.value).trim()
-    const equations = raw.startsWith('$') || raw.startsWith('eq:')
-    const query = raw.replace(/^\$+/, '').trim().split(/\s+/).filter(Boolean)
-    const matches = referenceTargets(editor).filter(
-      (t) =>
-        (!equations || t.kind === 'mathBlock') &&
-        query.every((word) => word === 'eq:' || normalize(t.title).includes(word)),
-    )
-    results.replaceChildren()
-    if (reset && !matches.some((t) => t.id === opened!.reference.target))
-      opened.reference.target = matches[0]?.id || ''
-    for (const t of matches) {
+    const r = opened.reference
+    matches = find(input.value, queryChanged ? undefined : r.target)
+    if (queryChanged || !r.target) r.target = matches[0]?.id || ''
+    let selected: HTMLButtonElement | undefined
+    const rows = matches.map((target) => {
       const button = document.createElement('button')
       button.type = 'button'
-      button.tabIndex = -1
-      button.dataset.target = t.id
-      button.setAttribute('aria-selected', String(t.id === opened.reference.target))
+      button.className = 'reference-result'
+      button.dataset.target = target.id
       button.innerHTML = icon(
-        t.kind === 'mathBlock'
+        target.kind === 'mathBlock'
           ? 'sigma'
-          : t.kind === 'heading'
+          : target.kind === 'heading'
             ? 'heading-1'
-            : t.kind === 'figure'
+            : target.kind === 'figure'
               ? 'image'
               : 'table-2',
       )
-      const text = document.createElement('span')
-      text.textContent = t.title
-      button.append(text)
-      results.append(button)
+      const info = document.createElement('span')
+      const label = document.createElement('strong')
+      label.className = 'floating-editor-result-line'
+      label.textContent = target.label || target.title
+      info.append(label)
+      if (target.label && target.label !== target.title) {
+        const detail = document.createElement('small')
+        detail.className = 'floating-editor-result-line'
+        detail.textContent = target.title
+        info.append(detail)
+      }
+      button.append(info)
+      if (target.page) {
+        const page = document.createElement('small')
+        page.className = 'reference-result-page'
+        page.textContent = target.page
+        button.append(page)
+      }
+      if (target.id === r.target) selected = button
+      return button
+    })
+    results.replaceChildren(...rows)
+    navigation.refresh()
+    navigation.select(selected)
+    if (selected) {
+      const offset = selected.offsetTop
+      if (
+        offset < results.scrollTop ||
+        offset + selected.offsetHeight > results.scrollTop + results.clientHeight
+      )
+        results.scrollTop = offset
     }
-    navigation.refresh(true)
     refreshChoice()
-    if (!matches.some((t) => t.id === opened!.reference.target)) {
-      apply.disabled = true
-      example.textContent = tr('Cible introuvable')
-    }
-    if (!matches.length) example.textContent = tr('Aucune cible ne correspond.')
-    bands.reveal()
   }
   full.onchange = page.onchange = () => {
-    if (opened) {
-      opened.reference.include_label = full.checked
-      opened.reference.include_page = page.checked
-      refreshChoice()
-      panel.draftChanged()
-    }
+    if (!opened) return
+    opened.reference.include_label = full.checked
+    opened.reference.include_page = page.checked
+    refreshChoice()
+    panel.draftChanged()
   }
-  input.oninput = () => search()
-  panel.action({
-    label: tr('Annuler'),
-    run: () => {
-      if (!pending) bands.close()
-    },
-  })
-  const apply = panel.action({ label: tr('Insérer'), primary: true, run: () => panel.submit() })
-  panel.confirm = () => {
-    void confirm()
-  }
+  // Draft hydration replays the saved search after restoring its chosen target.
+  input.oninput = (event) => search(event.isTrusted)
+  panel.confirm = () => void confirm()
   async function confirm() {
     const current = opened,
-      target = bands.target
-    if (!current || !target || !valid()) return
-    const node = editor.state.doc.nodeAt(target.from)
-    if (current.node && (!node || !current.node.eq(node))) {
-      panel.error.textContent = tr(
-        'Ce bloc a été modifié ailleurs. Fermez puis rouvrez ses paramètres.',
-      )
-      return
-    }
+      anchor = session
+    if (!current || !anchor || !valid()) return
+    const target = anchor.range
     const attrs = { ...current.reference }
     const replacement = editor.schema.nodes.crossReference.create(
       attrs,
@@ -189,23 +226,28 @@ export function crossReferencePanel(editor: Editor, bands: BandHost) {
         ]
       : undefined
     pending = true
+    anchor.pending(true)
     apply.disabled = true
-    panel.body.inert = true
+    panel.element.setAttribute('aria-busy', 'true')
     try {
       await applyObjectEdit(editor, transaction, commands, {
         focus: false,
-        current: () => opened === current,
+        current: anchor.current,
       })
-      panel.committed()
-      bands.close(true, editor.state.selection.getBookmark())
+      if (anchor.open()) {
+        panel.committed()
+        floating.close(true, true)
+      }
     } catch (error) {
-      if (opened === current) panel.error.textContent = errorText(error)
+      if (anchor.open()) panel.error.textContent = errorText(error)
     } finally {
       pending = false
-      panel.body.inert = false
-      if (opened === current) refreshChoice()
+      anchor.pending(false)
+      panel.element.removeAttribute('aria-busy')
+      if (anchor.open()) search()
     }
   }
+
   panel.recoveryData = () => (opened ? { new: !opened.node, reference: opened.reference } : null)
   panel.restoreRecoveryData = (data) => {
     if (
@@ -217,18 +259,31 @@ export function crossReferencePanel(editor: Editor, bands: BandHost) {
     )
       return false
     opened.reference = { ...data.reference }
-    search(false)
+    search()
     return true
   }
   editor.on('transaction', ({ transaction }) => {
-    if (opened && (transaction.docChanged || transaction.getMeta('cross-reference-index')))
-      search(false)
+    if (
+      floating.isOpen &&
+      !pending &&
+      (transaction.docChanged || transaction.getMeta('cross-reference-index'))
+    ) {
+      find = crossReferenceSearch(editor)
+      search()
+    }
   })
   return {
-    open(pos?: number) {
-      if (pending || !editingAvailability(editor).enabled) return
+    get isOpen() {
+      return floating.isOpen
+    },
+    focus: floating.focus,
+    close: floating.close,
+    open(pos?: number, trigger?: SelectorTrigger) {
+      if (pending || !editingAvailability(editor).enabled) return false
       const node = pos === undefined ? undefined : editor.state.doc.nodeAt(pos)
-      if (pos !== undefined && node?.type.name !== 'crossReference') return
+      if (pos !== undefined && node?.type.name !== 'crossReference') return false
+      const from = pos ?? editor.state.selection.from,
+        to = node ? from + node.nodeSize : editor.state.selection.to
       const current = {
         node: node || undefined,
         reference: node
@@ -239,19 +294,21 @@ export function crossReferencePanel(editor: Editor, bands: BandHost) {
             }
           : { target: '', include_label: true, include_page: false },
       }
-      const from = pos ?? editor.state.selection.from,
-        to = node ? from + node.nodeSize : editor.state.selection.to
       bands.close(false)
+      menu.close()
+      floating.close()
       opened = current
       input.value = ''
       panel.error.textContent = ''
       panel.title.textContent = node ? tr('Modifier le renvoi') : tr('Insérer un renvoi')
-      apply.textContent = node ? tr('Valider') : tr('Insérer')
-      bands.open(panel, { from, to, placement: 'text' }, () => {
-        opened = undefined
-      })
-      opened = current
+      apply.hidden = !node
+      find = crossReferenceSearch(editor)
+      if (!current.reference.target) current.reference.target = find('')[0]?.id || ''
+      full.checked = current.reference.include_label
+      page.checked = current.reference.include_page
+      session = floating.open({ from, to, object: !!node, trigger })
       search()
+      return floating.isOpen
     },
   }
 }

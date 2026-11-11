@@ -22,6 +22,9 @@ export type WidgetPresentation = { icon: string; settings: WidgetSettings }
 export type WidgetPresentations = Partial<Record<WidgetKind, WidgetPresentation>>
 export const isWidgetKind = (kind: string): kind is WidgetKind => Object.hasOwn(labels, kind)
 export const widgetLabel = (kind: string) => (isWidgetKind(kind) ? tr(labels[kind]) : kind)
+export const hasQuickListMenu = (kind: string) => kind === 'bulletList' || kind === 'orderedList'
+const widgetPositions = new WeakMap<HTMLElement, () => number | undefined>()
+export const widgetPosition = (element: HTMLElement) => widgetPositions.get(element)?.()
 export function widgetPresentations(capabilities: Capability[]): WidgetPresentations {
   return Object.fromEntries(
     capabilities
@@ -43,6 +46,7 @@ export function widgetFrame(
 ) {
   dom.classList.add('content-widget', `widget-${kind}`)
   dom.dataset.editorWidget = kind
+  widgetPositions.set(dom, getPos)
   const slot = document.createElement('div')
   slot.className = 'band-slot'
   slot.contentEditable = 'false'
@@ -50,34 +54,48 @@ export function widgetFrame(
   bar.className = 'widget-bar'
   bar.contentEditable = 'false'
   navigationGroup(bar, { axis: 'horizontal' })
-  const title = document.createElement('span')
+  const title = document.createElement(hasQuickListMenu(kind) ? 'button' : 'span')
   const label = widgetLabel(kind)
   title.title = label
   title.className = 'widget-kind'
   const glyph = presentation?.icon && availableIcon(presentation.icon)
   if (glyph) {
     title.innerHTML = glyph
-    title.setAttribute('role', 'img')
+    if (!(title instanceof HTMLButtonElement)) title.setAttribute('role', 'img')
     title.setAttribute('aria-label', label)
     title.querySelector('svg')?.setAttribute('aria-hidden', 'true')
   } else title.textContent = label
+  if (title instanceof HTMLButtonElement) {
+    title.type = 'button'
+    title.dataset.listMenu = ''
+    title.setAttribute('aria-haspopup', 'menu')
+    title.setAttribute('aria-controls', 'object-menu')
+    title.setAttribute('aria-expanded', 'false')
+    title.onmousedown = (event) => {
+      if (event.button === 0) event.preventDefault()
+    }
+  }
   bar.append(title)
   for (const [name, iconName, remove] of [
     [tr('Supprimer'), 'trash-2', true],
     [tr('Paramètres'), 'settings-2', false],
   ] as const) {
+    if (!remove && (hasQuickListMenu(kind) || !presentation || !hasSettings(presentation.settings)))
+      continue
     const button = document.createElement('button')
     button.type = 'button'
     button.title = `${name} · ${label}`
     button.setAttribute('aria-label', button.title)
-    button.disabled = !remove && (!presentation || !hasSettings(presentation.settings))
-    if (button.disabled) button.title += ` — ${tr('Aucun paramètre supplémentaire à modifier.')}`
+    if (!remove && kind === 'tableFigure') {
+      button.setAttribute('aria-haspopup', 'menu')
+      button.setAttribute('aria-controls', 'object-menu')
+      button.setAttribute('aria-expanded', 'false')
+    }
     button.innerHTML = icon(iconName)
     button.onmousedown = (event) => {
       if (event.button === 0) event.preventDefault()
     }
     button.onclick = () => {
-      if (button.disabled) return
       const pos = getPos()
       if (pos !== undefined) action(pos, kind, remove)
     }

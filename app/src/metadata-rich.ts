@@ -9,15 +9,14 @@ import type { RecordRoot } from './editor-targets'
 import type { Editor } from '@tiptap/core'
 import * as Y from 'yjs'
 import { createRichZone, richZoneProfiles, type EditorialProfile } from './rich-zone'
-import { BandHost } from './band-layout'
-import { propertyPanel } from './properties'
+import { linkPanel } from './link-panel'
 import { icon } from './icons'
 import { navigationGroup } from './keyboard-navigation'
 import { tr } from './i18n'
 import type { Catalogue } from './shell'
 import type { Transport } from './provider'
 
-/** Named rich zone: Yjs binding, shared undo owner, and the existing link band. */
+/** Named rich zone with a Yjs binding and the same link selector as the body. */
 export function metadataRich(
   parent: HTMLElement,
   label: string,
@@ -44,7 +43,7 @@ export function metadataRich(
   root.append(heading, input)
   parent.append(root)
   const history = historyFor(main)
-  let properties: ReturnType<typeof propertyPanel>
+  let links: ReturnType<typeof linkPanel>
   const buttons = new Map<string, HTMLButtonElement>()
   let editor!: Editor
   for (const [mark, text, glyph] of [
@@ -64,7 +63,7 @@ export function metadataRich(
         !capabilityAvailability(editor, `text.${mark}`, mark === 'link' ? 'link' : 'style').enabled
       )
         return
-      if (mark === 'link') properties.open(editor.state.selection.from, 'link')
+      if (mark === 'link') links.open()
       else runFormatting(editor, mark === 'bold' ? 'text.bold' : 'text.italic')
     }
     tools.append(button)
@@ -86,21 +85,20 @@ export function metadataRich(
     label,
     language,
     binding: { kind: 'fragment', fragment, historyOwner: main, target },
-    openLink: (zone) => properties.open(zone.state.selection.from, 'link'),
+    openLink: (pos) => links.open(pos),
     onTransaction: ({ editor: current }) => refresh(current),
   })
   const recoveryOwner = editingProvider(main) || formOwner(main)
   if (recoveryOwner) bindFormOwner(editor, recoveryOwner)
   if (statistics) richFieldStatistics(editor, title, label, statistics)
   const host = parent.closest<HTMLElement>('dialog, #metadata-content') || parent
-  const bands = new BandHost(editor, host, input, main)
-  properties = propertyPanel(editor, bands, catalogue, () => {}, `metadata-${crypto.randomUUID()}-`)
+  links = linkPanel(editor, host, catalogue, undefined, `link-properties-${crypto.randomUUID()}`)
   if (recoveryOwner)
     registerRecoveryOpener(recoveryOwner, editor, (pos, draft) => {
-      bands.close(false)
       const data = (draft.data as any)?.data
-      properties.open(pos, data?.kind || 'link', !!data?.remove)
-      return bands.isOpen
+      if (!draft.form.startsWith('link-properties-') && data?.kind !== 'link') return false
+      const { range } = draft.context as { range: { from: number; to: number } }
+      return links.resume({ from: pos, to: pos + range.to - range.from })
     })
   refresh(editor)
   return {

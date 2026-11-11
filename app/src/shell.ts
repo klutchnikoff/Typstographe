@@ -16,6 +16,7 @@ import {
 } from './shell-menus'
 import { shellMetadata } from './shell-metadata'
 import { sidePanels } from './shell-panels'
+import { registerProjectNavigation } from './shell-navigation'
 import { shellPreferences } from './shell-preferences'
 import { shellRecovered } from './shell-recovered'
 import { shellRecovery } from './shell-recovery'
@@ -102,6 +103,7 @@ export async function mountShell(s: ShellOptions) {
   const registrar = shellCommands(commands, () => state.active)
   const documents = shellDocuments(ctx, layout, panels, metadata)
   documents.register(registrar)
+  const restoreDocumentPanel = registerProjectNavigation(ctx, registrar, panels, documents)
   const preferences = shellPreferences(ctx, panels)
   registerInterfaceCommands(ctx, registrar, panels, preferences, metadata)
 
@@ -132,7 +134,6 @@ export async function mountShell(s: ShellOptions) {
   await recovery.start()
   recovered.track()
   await recovery.refresh()
-  if (provider.recoveredItems.length) recovered.show()
 
   documents.observeChanges()
   await mountWindowEvents(ctx, documents)
@@ -142,7 +143,7 @@ export async function mountShell(s: ShellOptions) {
   layout.side.append(panels.railMode.control)
   mountProofing(
     editor,
-    s.bands,
+    s.objectMenu,
     provider,
     transport,
     preferences.proofing,
@@ -151,4 +152,6 @@ export async function mountShell(s: ShellOptions) {
   )
   metadata.render()
   documents.setActive(state.active)
+  restoreDocumentPanel()
+  if (provider.recoveredItems.length) recovered.show()
 }

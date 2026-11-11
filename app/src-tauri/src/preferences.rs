@@ -17,6 +17,7 @@ pub struct Preferences {
     pub profile: BTreeMap<String, String>,
     pub signature: Option<Resource>,
     pub recent: Vec<String>,
+    pub pinned: Vec<String>,
     pub editor_fraction: f64,
     pub spelling_enabled: bool,
     pub sidebar_expanded: bool,
@@ -32,6 +33,7 @@ impl Default for Preferences {
             profile: Default::default(),
             signature: None,
             recent: vec![],
+            pinned: vec![],
             editor_fraction: 0.5,
             spelling_enabled: true,
             sidebar_expanded: true,
@@ -73,8 +75,23 @@ impl Preferences {
         Ok(())
     }
     fn remember_project(&mut self, path: &Path) {
-        let path = path.to_string_lossy().into_owned();
-        self.recent.retain(|previous| previous != &path);
+        let original = path.to_string_lossy();
+        let path = path
+            .canonicalize()
+            .unwrap_or_else(|_| path.to_path_buf())
+            .to_string_lossy()
+            .into_owned();
+        if path != original
+            && let Some(index) = self.pinned.iter().position(|entry| entry == &original)
+        {
+            if self.pinned.contains(&path) {
+                self.pinned.remove(index);
+            } else {
+                self.pinned[index] = path.clone();
+            }
+        }
+        self.recent
+            .retain(|previous| previous != &path && previous != &original);
         self.recent.insert(0, path);
         self.recent.truncate(12);
     }
@@ -103,11 +120,10 @@ pub fn root(app: &tauri::AppHandle) -> Result<PathBuf, CommandError> {
     }
     app.path().app_config_dir().map_err(CommandError::from)
 }
-pub fn remember(app: &tauri::AppHandle, path: &Path) -> Result<(), CommandError> {
-    let root = root(app)?;
-    let mut preferences = Preferences::load(&root)?;
+pub(crate) fn remember(root: &Path, path: &Path) -> Result<(), CommandError> {
+    let mut preferences = Preferences::load(root)?;
     preferences.remember_project(path);
-    preferences.save(&root)
+    preferences.save(root)
 }
 #[tauri::command]
 pub fn preferences_load(app: tauri::AppHandle) -> Result<Preferences, CommandError> {

@@ -96,9 +96,10 @@ export function mathExtensions(properties: WidgetAction, presentations: WidgetPr
             contentDOM.setAttribute('spellcheck', 'false')
             let alias: ReturnType<typeof nodeAttributeField> | undefined
             const action: WidgetAction = (pos, kind, remove) => {
-              if (remove) alias?.cancel()
-              if (!alias) properties(pos, kind, remove)
-              else
+              if (remove || !alias) {
+                if (remove) alias?.cancel()
+                properties(pos, kind, remove)
+              } else
                 void alias.commit().then((ok) => {
                   const current = getPos()
                   if (ok && current !== undefined && !editor.isDestroyed)
@@ -113,9 +114,7 @@ export function mathExtensions(properties: WidgetAction, presentations: WidgetPr
             const language = document.createElement('span')
             language.className = 'math-language'
             if (widget) widget.dom.querySelector('.widget-kind')?.after(language)
-            const aliasField = presentations.mathBlock?.settings.fields.find(
-              (field) => field.attribute === 'alias',
-            )
+            const aliasField = presentations.mathBlock?.settings.headerField
             if (widget && aliasField) {
               const done = () => {
                 const pos = getPos()

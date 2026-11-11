@@ -146,45 +146,33 @@ test('Retour arrière dans une liste rejoint le texte précédent sans désassem
   await page.keyboard.type(' précédent')
   await expect(page.locator('.tiptap > p')).toHaveText(['Avant précédent', ''])
 })
-test('bandeau commun : paramètres de liste intégrés, brouillon, validation, annulation et suppression', async ({
-  page,
-}, info) => {
-  const before = await contents(page)
-  const button = page.getByRole('button', { name: 'Paramètres · Liste à puces', exact: true })
-  await button.click()
+test('le réglage de numérotation reste un brouillon que l’on peut annuler', async ({ page }) => {
+  const menu = page.locator('#object-menu')
+  await page.getByRole('button', { name: 'Liste à puces', exact: true }).click()
+  await menu.getByRole('menuitemradio', { name: 'Liste numérotée', exact: true }).click()
+  const widget = page.locator('.widget-orderedList')
+  await expect(widget).toBeVisible()
+  await expect(menu).toBeHidden()
   const form = page.locator('#properties')
-  await expect(form).toBeVisible()
-  await expect(page.getByRole('radio', { name: 'Liste à puces', exact: true })).toBeFocused()
-  const widget = await page.locator('.widget-bulletList').boundingBox(),
-    band = await form.boundingBox()
-  expect(Math.abs(band!.x - widget!.x - 1)).toBeLessThan(2)
-  const header = await page.locator('.widget-bulletList > .widget-bar').boundingBox()
-  expect(Math.abs(band!.y - header!.y - header!.height)).toBeLessThan(2)
-  expect(Math.abs(band!.width - widget!.width + 2)).toBeLessThan(2)
-  await page.keyboard.press('ArrowRight')
-  await expect(page.getByRole('radio', { name: 'Liste numérotée', exact: true })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  )
-  await page.getByLabel('Numéro initial', { exact: true }).fill('3')
+  const button = widget.getByRole('button', { name: 'Liste numérotée', exact: true })
+  const open = async () => {
+    await button.click()
+    await menu.getByRole('menuitem', { name: 'Numéro initial…', exact: true }).click()
+    await expect(form.getByRole('spinbutton', { name: 'Numéro initial' })).toBeFocused()
+  }
+  const before = await contents(page)
+  await open()
+  const field = form.getByRole('spinbutton', { name: 'Numéro initial' })
+  await field.fill('3')
   await expect.poll(() => contents(page)).toBe(before)
-  await page.keyboard.press('Escape')
+  await field.press('Escape')
   await expect(form).toBeHidden()
   await expect.poll(() => contents(page)).toBe(before)
-  await button.click()
-  await expect(page.getByRole('radio', { name: 'Liste à puces', exact: true })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  )
-  await page.getByRole('radio', { name: 'Liste numérotée', exact: true }).click()
-  await page.getByLabel('Numéro initial', { exact: true }).fill('3')
-  await page.keyboard.press('Enter')
+  await open()
+  await field.fill('3')
+  await field.press('Enter')
   await expect(form).toBeHidden()
-  await expect(page.locator('.widget-orderedList ol')).toHaveAttribute('start', '3')
-  await page.getByRole('button', { name: 'Supprimer · Liste numérotée', exact: true }).click()
-  await expect(page.locator('#apply-properties')).toBeFocused()
-  await page.keyboard.press('Escape')
-  await expect(page.locator('.widget-orderedList')).toHaveCount(1)
+  await expect(widget.locator('ol')).toHaveAttribute('start', '3')
 })
 test('image : bandeau intégré, focus et modification annulable du texte alternatif', async ({
   page,
@@ -220,7 +208,7 @@ test('image : bandeau intégré, focus et modification annulable du texte altern
   await expect(page.locator('#properties .panel-actions')).toBeInViewport()
   await expectPreviewReady(page)
 })
-test('orthographe interligne : pointe vers le mot, largeur du bloc et réponse au redimensionnement', async ({
+test('orthographe flottante : même menu dans la prose et les widgets, ancré après redimensionnement', async ({
   page,
 }, info) => {
   await page.route('**/__spike/invoke', async (route) => {
@@ -264,68 +252,37 @@ test('orthographe interligne : pointe vers le mot, largeur du bloc et réponse a
     await expect(page.locator('.tiptap')).toHaveAttribute('spellcheck', 'false')
     const before = await contents(page)
     await page.keyboard.press('Control+Enter')
-    const band = page.locator('#proofing-band')
-    await expect(band).toBeVisible()
-    await expect(band.locator('[data-default]')).toBeVisible()
-    await expect(band.locator(':scope > .panel-title')).toBeVisible()
-    const chrome = await band.evaluate((element) => {
+    const menu = page.locator('#object-menu')
+    const suggestion = menu.getByRole('menuitem', { name: 'courrier', exact: true })
+    await expect(suggestion).toBeFocused()
+    const chrome = await menu.evaluate((element) => {
       const style = getComputedStyle(element)
-      return JSON.stringify([
-        style.backgroundColor,
-        style.color,
-        style.border,
-        style.borderRadius,
-        style.boxShadow,
-        style.padding,
-        style.font,
-      ])
+      return JSON.stringify([style.backgroundColor, style.border, style.borderRadius])
     })
     referenceChrome ??= chrome
     expect(chrome).toBe(referenceChrome)
-    await expect(band).toBeFocused()
-    await page.keyboard.press('ArrowRight')
-    await expect(band.getByRole('button', { name: 'courriers', exact: true })).toBeFocused()
-    await expect.poll(() => contents(page)).toBe(before)
+    await page.keyboard.press('ArrowDown')
+    await expect(menu.getByRole('menuitem', { name: 'courriers', exact: true })).toBeFocused()
+    const word = page.locator('.spelling-error[data-word="courrrier"]')
     for (const width of [1280, 900]) {
       await page.setViewportSize({ width, height: 900 })
       await expect
         .poll(async () => {
-          const word = await page.locator('.spelling-error[data-word="courrrier"]').boundingBox()
-          const rect = await band.boundingBox()
-          return Math.abs(word!.y - (rect!.y + rect!.height))
-        })
-        .toBeLessThan(35)
-      if (inBlock)
-        await expect
-          .poll(() =>
-            page.evaluate(() => {
-              const rect = document.querySelector('#proofing-band')!.getBoundingClientRect()
-              const host = document.querySelector('[data-editor-widget]')!.getBoundingClientRect()
-              return Math.abs(rect.width - host.width + 2)
-            }),
+          const rect = (await menu.boundingBox())!
+          const anchor = (await word.boundingBox())!
+          return Math.min(
+            Math.abs(rect.y - anchor.y - anchor.height),
+            Math.abs(rect.y + rect.height - anchor.y),
           )
-          .toBeLessThan(2)
-      await expect
-        .poll(() =>
-          page.evaluate(() => {
-            const band = document.querySelector('#proofing-band')!
-            const rect = band.getBoundingClientRect()
-            const arrow = parseFloat(getComputedStyle(band, '::after').left)
-            const word = document
-              .querySelector('.spelling-error[data-word="courrrier"]')!
-              .getBoundingClientRect()
-            return Math.abs(rect.x + arrow - word.x - word.width / 2)
-          }),
-        )
-        .toBeLessThan(4)
+        })
+        .toBeLessThan(15)
     }
     await expect.poll(() => contents(page)).toBe(before)
     await page.keyboard.press('Escape')
-    await expect(band).toHaveCount(0)
+    await expect(menu).toBeHidden()
     await expect.poll(() => contents(page)).toBe(before)
     await page.keyboard.press('Control+Enter')
-    await expect(page.locator('#proofing-band [data-default]')).toBeVisible()
-    await expect(page.locator('#proofing-band')).toBeFocused()
+    await expect(suggestion).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(page.locator('.tiptap')).not.toContainText('courrrier')
     await expect(page.locator('.tiptap')).toBeFocused()
@@ -366,14 +323,15 @@ test('un seul brouillon, reprise au raccourci et refus des paramètres périmés
   await page.keyboard.press('Escape')
   await page.getByRole('button', { name: 'Paramètres · Image', exact: true }).click()
   await alt.fill('Brouillon abandonné')
-  await page.getByRole('button', { name: 'Paramètres · Liste à puces', exact: true }).click()
+  await page.getByRole('button', { name: 'Liste à puces', exact: true }).click()
   await expect(page.locator('#properties')).toHaveCount(1)
   await expect(alt).toBeHidden()
+  await expect(page.locator('#object-menu')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.locator('figure img')).toHaveAttribute('alt', 'Modification distante')
 })
 
-test('liens et suppression de tableau utilisent le même placement et le même contrat clavier', async ({
+test('un clic supprime le tableau ciblé et un seul raccourci restaure son contenu', async ({
   page,
 }) => {
   await page.evaluate(() => {
@@ -388,23 +346,26 @@ test('liens et suppression de tableau utilisent le même placement et le même c
   })
   await page.keyboard.press('Control+Enter')
   await expect(page.getByLabel('Adresse du lien', { exact: true })).toBeFocused()
-  await expect(page.locator('#properties')).toHaveClass(/inline-context-band/)
+  await expect(page.locator('#link-properties')).toHaveClass(/floating-editor-panel/)
   await page.getByLabel('Adresse du lien', { exact: true }).fill('https://example.com')
   await page.keyboard.press('Enter')
   await expect(page.locator('.tiptap a')).toHaveAttribute('href', 'https://example.com')
   await expect(
     page.getByRole('button', { name: 'Paramètres · Tableau', exact: true }),
   ).toBeEnabled()
-  await page.locator('td').first().click()
+  const table = page.locator('.widget-tableFigure')
+  await expect(table.locator('td').first()).not.toBeEmpty()
+  await expect(table.locator('figcaption')).not.toBeEmpty()
+  const before = await contents(page)
   await page.getByRole('button', { name: 'Supprimer · Tableau', exact: true }).click()
-  const form = page.locator('#properties')
-  await expect(form).toBeVisible()
-  const host = await page.locator('.widget-tableFigure').boundingBox(),
-    rect = await form.boundingBox()
-  const header = await page.locator('.widget-tableFigure > .widget-bar').boundingBox()
-  expect(Math.abs(rect!.y - header!.y - header!.height)).toBeLessThan(2)
-  await page.keyboard.press('Escape')
-  await expect(form).toBeHidden()
+  await expect(table).toHaveCount(0)
+  await expect(page.locator('#properties')).toBeHidden()
+  await expect(page.locator('#message')).toHaveText('Élément supprimé')
+  await expect(page.locator('.tiptap')).toBeFocused()
+  await expect(page.locator('.tiptap a')).toHaveAttribute('href', 'https://example.com')
+  await page.keyboard.press('Control+z')
+  await expect(table).toHaveCount(1)
+  await expect.poll(() => contents(page)).toBe(before)
 })
 
 test('Retour arrière respecte la frontière terme et définition', async ({ page }) => {

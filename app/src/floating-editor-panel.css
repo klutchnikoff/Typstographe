@@ -1,0 +1,142 @@
+.floating-editor-panel {
+  position: fixed;
+  z-index: 45;
+  box-sizing: border-box;
+  width: min(382px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px #0003;
+  font-size: 0.875rem;
+}
+.floating-editor-panel .panel-title {
+  padding: 0 2px 4px 4px;
+  margin: 0;
+  border: 0;
+}
+.floating-editor-panel .panel-title button {
+  padding: 2px 6px;
+}
+.floating-editor-panel > .panel-actions:empty {
+  display: none;
+}
+.floating-editor-panel [role='alert']:empty {
+  display: none;
+}
+.link-selector .context-panel-body {
+  display: grid;
+  gap: 8px;
+}
+.link-selector label {
+  margin: 0 0 3px;
+}
+.link-selector input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+.link-selector input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+.link-selector .danger {
+  margin-inline-end: auto;
+}
+.floating-literal-hint {
+  padding: 2px 4px;
+  color: var(--muted);
+  font-size: 0.85em;
+}
+.floating-editor-panel:has(.floating-literal-hint:not([hidden]))
+  :is(.citation-hint, .reference-enter) {
+  visibility: hidden;
+}
+.floating-editor-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.floating-editor-search:focus-within {
+  border-color: var(--accent);
+}
+.floating-editor-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+}
+.floating-editor-search svg,
+.reference-result svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+.reference-filter-hint,
+.reference-result small,
+.reference-enter {
+  color: var(--muted);
+  font-size: 0.85em;
+}
+.reference-filter-hint,
+.reference-result-page,
+.reference-enter {
+  white-space: nowrap;
+}
+.floating-editor-results {
+  position: relative;
+  max-height: min(14rem, 38vh);
+  overflow-y: auto;
+  padding-block: 4px;
+}
+.floating-editor-results .reference-result {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+}
+.floating-editor-result-line {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reference-selector .reference-components {
+  margin: 0;
+  padding: 6px 3px 2px;
+  border-top: 1px solid var(--border);
+}
+.reference-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 27px;
+  gap: 6px;
+  padding-inline: 3px;
+}
+.reference-example {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.reference-badge-example {
+  padding: 1px 5px;
+  color: var(--reference-ink);
+  border: 1px solid var(--reference-border);
+  background: var(--reference-surface);
+  border-radius: 5px;
+}

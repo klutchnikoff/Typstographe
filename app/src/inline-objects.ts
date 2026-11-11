@@ -1,6 +1,9 @@
 import type { Editor } from '@tiptap/core'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { NodeSelection, TextSelection } from '@tiptap/pm/state'
+import { editingAvailability } from './command-availability'
+import { editingProvider } from './editing-history'
+import { removeObject } from './object-commands'
 
 const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
 
@@ -30,11 +33,18 @@ export function inlineObjectTarget(editor: Editor, side?: 'before' | 'after') {
   if (side !== 'after' && isInlineObject($from.nodeBefore))
     return { pos: $from.pos - $from.nodeBefore.nodeSize, node: $from.nodeBefore }
 }
-export function inlineObjectKey(
-  editor: Editor,
-  event: KeyboardEvent,
-  properties: (pos: number, kind: string, remove?: boolean) => void,
-) {
+export function deleteInlineObject(editor: Editor, target: { pos: number; node: PMNode }) {
+  if (!editingAvailability(editor, false).enabled) return
+  if (!(editor.state.selection instanceof NodeSelection)) {
+    editor.commands.setNodeSelection(target.pos)
+    editor.view.focus()
+    return
+  }
+  void removeObject(editor, target.pos).catch((error: unknown) =>
+    editingProvider(editor)?.onError(error),
+  )
+}
+export function inlineObjectKey(editor: Editor, event: KeyboardEvent) {
   if (event.isComposing || editor.view.composing) return false
   if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
     if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return false
@@ -66,7 +76,8 @@ export function inlineObjectKey(
   const target = inlineObjectTarget(editor, event.key === 'Backspace' ? 'before' : 'after')
   if (!target) return false
   event.preventDefault()
-  properties(target.pos, target.node.type.name, true)
+  if (!event.repeat || !(editor.state.selection instanceof NodeSelection))
+    deleteInlineObject(editor, target)
   return true
 }
 

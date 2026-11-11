@@ -99,6 +99,17 @@ for (const [collection, label, field] of [
     await expect(names).toHaveText(['Two', 'One', 'Three'])
     await expect.poll(() => publications.length).toBe(2)
     await expect(cards.nth(1).locator('.collection-card-handle')).toBeFocused()
+
+    await cards
+      .nth(1)
+      .getByRole('button', { name: `Supprimer · ${label}`, exact: true })
+      .press('Enter')
+    await expect(names).toHaveText(['Two', 'Three'])
+    await expect(section.locator('.metadata-record-deletion')).toHaveCount(0)
+    await expect(cards.last().locator('[data-record-open]')).toBeFocused()
+    await body.focus()
+    await body.press('ControlOrMeta+z')
+    await expect(names).toHaveText(['Two', 'One', 'Three'])
   })
 }
 

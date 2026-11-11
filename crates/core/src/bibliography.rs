@@ -124,7 +124,7 @@ pub fn search(entries: &[Entry], query: &str) -> Vec<Entry> {
         .iter()
         .filter_map(|entry| {
             query
-                .score(&entry.title, &entry.authors)
+                .score_citation(&entry.title, &entry.authors, &entry.key, &entry.year)
                 .map(|score| (score, entry))
         })
         .collect();
@@ -257,6 +257,9 @@ mod tests {
         let entries = index(&files).unwrap();
         assert_eq!(search(&entries, "sens bordieu")[0].key, "bourdieu1980");
         assert_eq!(search(&entries, "enquete DURAND")[0].key, "durand2020");
+        assert_eq!(search(&entries, "bourdieu1980")[0].key, "bourdieu1980");
+        assert_eq!(search(&entries, "DURAN 20")[0].key, "durand2020");
+        assert_eq!(search(&entries, "sens 1980")[0].key, "bourdieu1980");
         assert!(search(&entries, "introuvable").is_empty());
         let mut collision = files.clone();
         collision.push(

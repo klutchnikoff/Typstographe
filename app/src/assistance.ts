@@ -26,7 +26,7 @@ export function mountAssistance(
   isTauri: boolean,
 ) {
   const button = railButton(tr('Assistance à la rédaction'), 'pen-line', 'ui.assistance')
-  document.querySelector('.side-rail')!.prepend(button)
+  document.querySelector('.side-rail')!.append(button)
   let currentContent: HTMLElement | undefined
   let request = 0
   let viewer: ReturnType<typeof proposalDialog> | undefined

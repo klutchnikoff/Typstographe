@@ -1,3 +1,4 @@
+import { openDocumentVersions } from './document-lifecycle'
 import { expect, test, type Page } from '@playwright/test'
 async function ready(page: Page) {
   await page.request.post('/__spike/invoke', { data: { command: 'reset', peer: 'main', args: {} } })
@@ -16,7 +17,7 @@ async function ready(page: Page) {
   })
 }
 async function versions(page: Page) {
-  await page.locator('.side-rail [data-command="ui.versions"]').click()
+  await openDocumentVersions(page)
 }
 async function capture(page: Page, name: string) {
   await page.getByRole('button', { name: 'Créer une version', exact: true }).click()

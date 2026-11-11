@@ -1,3 +1,4 @@
+import { openDocumentVersions } from './document-lifecycle'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import articleBadges from '../../../fixtures/comparison-article-badges.json' with { type: 'json' }
@@ -39,7 +40,7 @@ test('Versions: guarded local reprise, immutable right column, real independent 
   context,
 }) => {
   await ready(page)
-  await page.locator('.side-rail [data-command="ui.versions"]').click()
+  await openDocumentVersions(page)
   await capture(page, 'Base de travail')
   await writing(page, 'Current one', 'Current two')
   await page.locator('.versions-groups [data-version]').click()
@@ -81,7 +82,9 @@ test('Versions: guarded local reprise, immutable right column, real independent 
   await expect(dialog.locator('.comparison-notice')).toBeVisible()
   await expect(dialog.locator('[data-action="validate-comparison"]')).toBeDisabled()
   await expect(dialog.locator('[data-group="0"] .comparison-side').nth(1)).toHaveText('Current one')
-  await dialog.getByRole('button', { name: 'Fermer', exact: true }).press('Escape')
+  await dialog
+    .getByRole('button', { name: 'Revenir au document courant', exact: true })
+    .press('Escape')
   await expect(dialog).toHaveCount(0)
   await expect(page.locator('.versions-groups [data-version]')).toBeFocused()
   await other.close()
@@ -90,7 +93,7 @@ test('historical composition is reviewed against all current changes before one 
   page,
 }) => {
   await ready(page)
-  await page.locator('.side-rail [data-command="ui.versions"]').click()
+  await openDocumentVersions(page)
   await capture(page, 'Before')
   await writing(page, 'Current one', 'Current two')
   await capture(page, 'After')
@@ -133,14 +136,14 @@ test('historical composition is reviewed against all current changes before one 
   expect(await page.evaluate(() => window.__spike!.editor.getText())).toContain(
     'Only in current two',
   )
-  await dialog.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Revenir au document courant', exact: true }).click()
   await page.locator('.writing .tiptap').click()
   await page.keyboard.press('ControlOrMeta+z')
   await expect.poll(() => page.evaluate(() => window.__spike!.editor.getText())).toBe(current)
 })
 test('neighboring paragraph edits can be resumed and refused independently', async ({ page }) => {
   await ready(page)
-  await page.locator('.side-rail [data-command="ui.versions"]').click()
+  await openDocumentVersions(page)
   await capture(page, 'Paragraphes de départ')
   await page.evaluate(async () => {
     const { editor, provider } = window.__spike!
@@ -172,14 +175,14 @@ test('neighboring paragraph edits can be resumed and refused independently', asy
     return nodes
   })
   expect(paragraphs.slice(0, 2)).toEqual(['Original one', 'New Stable anchor'])
-  await dialog.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Revenir au document courant', exact: true }).click()
 })
 test('selecting a complete version remains provisional, preserves the file binding and undoes in one step', async ({
   page,
 }) => {
   await ready(page)
   const original = await page.evaluate(() => window.__spike!.editor.getText())
-  await page.locator('.side-rail [data-command="ui.versions"]').click()
+  await openDocumentVersions(page)
   await capture(page, 'Original')
   await writing(page, 'Current one', 'Current two')
   await capture(page, 'Saved current')
@@ -215,7 +218,7 @@ test('selecting a complete version remains provisional, preserves the file bindi
   expect(after.filePath).toBe(joined.filePath)
   expect(after.recoveredName).toBeNull()
   expect(await readFile(joined.filePath!)).toEqual(disk)
-  await dialog.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Revenir au document courant', exact: true }).click()
   await expect(page.locator('.versions-groups [data-version]')).toHaveCount(2)
   await expect(page.locator('.recovered-document-line')).toHaveCount(0)
   await page.locator('.writing .tiptap').click()
@@ -229,7 +232,7 @@ test('keeping every green choice leaves writing and undo history unchanged', asy
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await ready(page)
-  await page.locator('.side-rail [data-command="ui.versions"]').click()
+  await openDocumentVersions(page)
   await capture(page, 'Before')
   await writing(page, 'Current one', 'Current two')
   const initial = await page.evaluate(async () => {
@@ -255,7 +258,7 @@ test('keeping every green choice leaves writing and undo history unchanged', asy
   })
   expect(result).toEqual(initial)
   expect(errors).toEqual([])
-  await dialog.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Revenir au document courant', exact: true }).click()
 })
 test('Article snapshots show deleted and inserted words beside a citation in light and dark modes', async ({
   page,
@@ -304,7 +307,7 @@ test('Article snapshots show deleted and inserted words beside a citation in lig
       await provider.flush()
     }, document)
   await content(articleBadges.before)
-  await page.locator('.side-rail [data-command="ui.versions"]').click()
+  await openDocumentVersions(page)
   await capture(page, 'Avant')
   await content(articleBadges.after)
   await capture(page, 'Après')
@@ -379,7 +382,7 @@ test('Article snapshots show deleted and inserted words beside a citation in lig
       expect(style.decoration).toContain(tag === 'del' ? 'line-through' : 'underline')
     }
   }
-  await dialog.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Revenir au document courant', exact: true }).click()
 })
 test('MCP proposals use the same modal, partial decisions and human-only publication', async ({
   page,

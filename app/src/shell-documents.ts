@@ -2,6 +2,7 @@ import * as Y from 'yjs'
 import type { Editor } from '@tiptap/core'
 import { decideClose } from './close-decision'
 import { historyFor } from './editing-history'
+import { inlineSelectorInputKey } from './inline-selector-input'
 import { tr } from './i18n'
 import { newDocumentDialog, newDocumentMetadata } from './new-document-dialog'
 import { privateDrafts } from './private-drafts'
@@ -44,6 +45,7 @@ export function pendingInputs(provider: Provider) {
 }
 
 export type ShellDocuments = ReturnType<typeof shellDocuments>
+const catalogueOpenKey = 'typstographe:catalogue-open'
 
 /** Document lifecycle: create, open, save, export, close, title and dirty state. */
 export function shellDocuments(
@@ -53,6 +55,7 @@ export function shellDocuments(
   metadata: ShellMetadata,
 ) {
   const { editor, provider, transport, catalogue, state, options } = ctx
+  let cleanBeforeSign: Editor['state']['doc'] | undefined
 
   function updateTitle() {
     const title = documentTitle(state.path, provider.recoveredName)
@@ -63,11 +66,14 @@ export function shellDocuments(
     layout.header.dataset.document = title
   }
   function setActive(value: boolean) {
-    panels.dismissVersions()
+    cleanBeforeSign = undefined
+    options.objectMenu.close()
+    options.closeEditorSelectors()
+    panels.dismissDocument()
     state.active = value
     byId('synchronization').hidden = !value
     layout.welcome.hidden = value
-    layout.workspace.hidden = !value
+    layout.workspace.dataset.documentActive = String(value)
     if (value) layout.brand.finish()
     else layout.brand.play()
     if (value) {
@@ -103,10 +109,12 @@ export function shellDocuments(
     }
   }
   async function saveFile(as = false) {
+    cleanBeforeSign = undefined
     await state.recovery?.flush()
     await provider.flush(false)
     if (!options.isTauri) {
       await options.save(false)
+      cleanBeforeSign = undefined
       state.dirty = false
       return true
     }
@@ -139,6 +147,7 @@ export function shellDocuments(
     state.path = destination
     state.savedRevision = persistedRevision
     await remember(destination)
+    cleanBeforeSign = undefined
     state.dirty = provider.revision !== persistedRevision
     provider.recoveredName = null
     document.querySelector('.recovered-document-line')?.remove()
@@ -149,24 +158,30 @@ export function shellDocuments(
   async function remember(file: string) {
     const { preferences } = state
     preferences.recent = [file, ...preferences.recent.filter((p) => p !== file)].slice(0, 12)
+    document.dispatchEvent(new Event('projects:changed'))
     await ctx.persistPreferences()
   }
-  async function open(file?: string) {
+  async function open(file?: string, fromCatalogue = false) {
     const selected = file || (await transport.invoke<string | null>('choose_file', { save: false }))
     if (!selected) return
     await state.recovery?.flush()
     await provider.flush(false)
-    const opened = await ctx.switchDocument((revision) =>
-      transport.invoke<{
-        document: unknown
-        settings: Settings
-        resources: Resource[]
-      }>('open_file', { path: selected, revision }),
-    )
-    if (options.isTauri || provider.nativeEditing) {
-      await remember(selected)
-      return
-    }
+    const reloads = options.isTauri || provider.nativeEditing
+    const opened = await ctx.switchDocument(async (revision) => {
+      // The native owner replaces the web view's document before open_file resolves.
+      if (fromCatalogue && reloads) sessionStorage.setItem(catalogueOpenKey, provider.generation)
+      try {
+        return await transport.invoke<{
+          document: unknown
+          settings: Settings
+          resources: Resource[]
+        }>('open_file', { path: selected, revision })
+      } catch (error) {
+        if (fromCatalogue && reloads) sessionStorage.removeItem(catalogueOpenKey)
+        throw error
+      }
+    })
+    if (reloads) return
     for (const resource of opened.resources) provider.addResource(resource)
     provider.doc.transact(() => {
       setDocument(provider, opened.settings)
@@ -237,13 +252,21 @@ export function shellDocuments(
       },
       () => (state.active ? editor.view.dom : byId('create-document')),
     )
-  const requestOpen = (file?: string) =>
-    file && state.path === file ? Promise.resolve(false) : confirmDiscard(() => open(file))
+  const requestOpen = (file?: string, fromCatalogue = false) =>
+    file && state.path === file
+      ? Promise.resolve(false)
+      : confirmDiscard(() => open(file, fromCatalogue))
+  function consumeCatalogueOpen() {
+    const previous = sessionStorage.getItem(catalogueOpenKey)
+    sessionStorage.removeItem(catalogueOpenKey)
+    return !!previous && previous !== provider.generation && state.active && !!state.path
+  }
   const openChosen = () => void requestOpen()
   const createChosen = () => confirmDiscard(create)
 
   /** Records a save made elsewhere (version, native editing) as the persisted revision. */
   function saved(result: { path: string; revision: number }) {
+    cleanBeforeSign = undefined
     state.path = result.path
     state.savedRevision = result.revision
     state.dirty = provider.revision !== result.revision
@@ -326,31 +349,6 @@ export function shellDocuments(
       }
       panels.refreshVersions()
     }
-    add('ui.versions', tr('Versions'), () => {
-      const api = versionsAPI({
-        creator: state.preferences.profile['sender.name'] || null,
-        provider,
-        transport,
-        destination: async () =>
-          state.path ? undefined : transport.invoke<string | null>('choose_file', { save: true }),
-        saved: async (result) => {
-          saved(result)
-          provider.recoveredName = null
-          updateTitle()
-          try {
-            await remember(result.path)
-          } catch (error) {
-            ctx.reportError(error)
-            return
-          }
-          if (result.warning) options.message(result.warning, true)
-          else options.message(tr('Versions enregistrées.'))
-        },
-      })
-      panels.adoptVersions(
-        versionsPanel(panels.show(tr('Versions'), 'ui.versions'), api, catalogue, ctx.reportError),
-      )
-    })
     void transport.listen<{ document: string; path: string; revision: number }>(
       'web-editor:versions',
       (event) => {
@@ -362,6 +360,30 @@ export function shellDocuments(
     )
   }
 
+  function mountVersions(root: HTMLElement) {
+    const api = versionsAPI({
+      creator: state.preferences.profile['sender.name'] || null,
+      provider,
+      transport,
+      destination: async () =>
+        state.path ? undefined : transport.invoke<string | null>('choose_file', { save: true }),
+      saved: async (result) => {
+        saved(result)
+        provider.recoveredName = null
+        updateTitle()
+        try {
+          await remember(result.path)
+        } catch (error) {
+          ctx.reportError(error)
+          return
+        }
+        if (result.warning) options.message(result.warning, true)
+        else options.message(tr('Versions enregistrées.'))
+      },
+    })
+    panels.adoptVersions(versionsPanel(root, api, catalogue, ctx.reportError))
+  }
+
   /** Marks the document dirty and schedules recovery and preview on every change. */
   function observeChanges() {
     const scheduleRecovery = () => state.recovery?.changed()
@@ -369,11 +391,13 @@ export function shellDocuments(
     document.addEventListener('metadata:draft', () => {
       scheduleRecovery()
       if (metadata.editor.dirty()) {
+        cleanBeforeSign = undefined
         state.dirty = true
         updateTitle()
       }
     })
     ctx.settings.observeDeep(() => {
+      cleanBeforeSign = undefined
       state.dirty = true
       scheduleRecovery()
       if (!metadataRefreshQueued) {
@@ -386,9 +410,14 @@ export function shellDocuments(
       updateTitle()
       options.schedule()
     })
-    editor.on('update', () => {
+    editor.on('update', ({ transaction }) => {
+      const phase = transaction.getMeta(inlineSelectorInputKey)
+      // Only the exact return to a previously clean body can clear the flag.
+      // Any other document or settings change invalidates that comparison.
+      const consumedCleanSign = phase === 'consume' && cleanBeforeSign?.eq(editor.state.doc)
+      cleanBeforeSign = phase === 'start' && !state.dirty ? transaction.before : undefined
+      state.dirty = !consumedCleanSign
       scheduleRecovery()
-      state.dirty = true
       updateTitle()
     })
   }
@@ -399,6 +428,8 @@ export function shellDocuments(
     confirmDiscard,
     open,
     requestOpen,
+    consumeCatalogueOpen,
+    mountVersions,
     register,
     observeChanges,
     /** Welcome screen buttons share the File menu commands. */

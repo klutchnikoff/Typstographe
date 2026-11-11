@@ -101,6 +101,12 @@ export function insertBlock(
   return true
 }
 export function convertList(node: PMNode, kind: ListKind): JSONContent {
+  if (node.type.name !== 'descriptionList' && kind !== 'descriptionList')
+    return {
+      type: kind,
+      ...(kind === 'orderedList' ? { attrs: { start: node.attrs.start || 1 } } : {}),
+      content: node.content.toJSON(),
+    }
   const items: JSONContent[][] = []
   node.forEach((item) => {
     const inline: JSONContent[] = []

@@ -363,7 +363,14 @@ impl Renderer {
                 ]
             })
             .collect();
-        let references = typstographe_core::content::references::resolved(&document);
+        let mut references = typstographe_core::content::references::resolved(&document);
+        if map.is_some() {
+            typstographe_core::content::references::complete_preview(
+                &world,
+                &document,
+                &mut references,
+            );
+        }
         let sync_start = Instant::now();
         check(control, Stage::Synchronization)?;
         let sync = map.map(|map| {

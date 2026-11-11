@@ -1,7 +1,7 @@
 import { focusEditorSelection } from './editor-focus'
 import { editingAvailability } from './command-availability'
 import { navigationGroup } from './keyboard-navigation'
-import { getMarkRange, type Editor } from '@tiptap/core'
+import type { Editor } from '@tiptap/core'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { NodeSelection, Selection, TextSelection } from '@tiptap/pm/state'
 import type { BandHost } from './band-layout'
@@ -14,7 +14,6 @@ import { isWidgetKind, widgetLabel } from './widget-frame'
 import { hasSettings, settingsForNode, type Scalar } from './capability-settings'
 import { ParameterFields } from './parameter-fields'
 import type { StructuredCommand } from './structured-commands'
-import { applyFormatting } from './formatting'
 import { applyObjectEdit, removeObject, treeTarget } from './object-commands'
 import { editingProvider } from './editing-history'
 import { documentContent } from './shared-inline-marks'
@@ -26,14 +25,13 @@ export function propertyPanel(
   bands: BandHost,
   catalogue: Catalogue,
   chooseImage: () => void,
-  idPrefix = '',
 ) {
   let pending = false
   const panel = contextPanel({
-    id: `${idPrefix}properties`,
-    titleId: `${idPrefix}property-title`,
-    closeId: `${idPrefix}close-properties`,
-    errorId: `${idPrefix}property-error`,
+    id: 'properties',
+    titleId: 'property-title',
+    closeId: 'close-properties',
+    errorId: 'property-error',
     closeLabel: tr('Fermer les paramètres'),
     close: () => {
       if (!pending) bands.close()
@@ -43,7 +41,7 @@ export function propertyPanel(
   })
   const form = panel.element
   const group = document.createElement('div')
-  group.id = `${idPrefix}list-options`
+  group.id = 'list-options'
   group.className = 'segmented'
   group.role = 'radiogroup'
   group.setAttribute('aria-label', tr('Type de liste'))
@@ -52,27 +50,26 @@ export function propertyPanel(
   const hint = document.createElement('p')
   hint.className = 'band-hint'
   panel.body.append(group, fieldsRoot, hint)
-  const fields = new ParameterFields(fieldsRoot, chooseImage, idPrefix)
+  const fields = new ParameterFields(fieldsRoot, chooseImage)
   const removeAction = panel.action({
-    id: `${idPrefix}remove-block`,
+    id: 'remove-block',
     label: tr('Supprimer'),
     danger: true,
     run: () => {
       if (!valid()) return
       const target = bands.target
-      if (opened && target && opened.kind !== 'link') api.open(target.from, opened.kind, true)
-      else void remove()
+      if (opened && target) api.open(target.from, opened.kind, true)
     },
   })
   panel.action({
-    id: `${idPrefix}cancel-properties`,
+    id: 'cancel-properties',
     label: tr('Annuler'),
     run: () => {
       if (!pending) bands.close()
     },
   })
   const apply = panel.action({
-    id: `${idPrefix}apply-properties`,
+    id: 'apply-properties',
     label: tr('Valider'),
     primary: true,
     run: () => panel.submit(),
@@ -82,10 +79,10 @@ export function propertyPanel(
         kind: string
         selected: string
         node: PMNode
-        original: string
         remove: boolean
         resource?: ImageResource
         drafts: Record<string, Scalar | undefined>
+        settingsOnly: boolean
       }
     | undefined
   panel.recoveryData = () =>
@@ -94,6 +91,7 @@ export function propertyPanel(
           kind: opened.kind,
           selected: opened.selected,
           remove: opened.remove,
+          settingsOnly: opened.settingsOnly,
           drafts: opened.drafts,
           resource: opened.resource || null,
         }
@@ -133,10 +131,7 @@ export function propertyPanel(
       current = opened
     if (!anchor || !current) return false
     const node = editor.state.doc.nodeAt(anchor.from)
-    const stale =
-      current.kind === 'link'
-        ? editor.state.doc.textBetween(anchor.from, anchor.to) !== current.original
-        : !node?.eq(current.node)
+    const stale = !node?.eq(current.node)
     if (stale)
       panel.error.textContent = tr(
         'Ce bloc a été modifié ailleurs. Fermez puis rouvrez ses paramètres.',
@@ -146,19 +141,15 @@ export function propertyPanel(
   async function remove() {
     if (pending) return
     if (!valid()) return
-    const { from, to } = bands.target!
-    if (opened!.kind === 'link') {
-      await changeLink('text.remove_link', { from, to })
-      return
-    }
+    const { from } = bands.target!
     await commit((current) => removeObject(editor, from, false, current))
   }
   function render() {
     const current = opened!
     const contract = settingsForNode(current.selected, catalogue.entries)
     group.replaceChildren()
-    group.hidden = current.remove || contract.conversions.length < 2
-    for (const [index, capability] of contract.conversions.entries()) {
+    group.hidden = current.remove || current.settingsOnly || contract.conversions.length < 2
+    for (const capability of current.settingsOnly ? [] : contract.conversions) {
       const kind = capability.node!
       const button = document.createElement('button')
       button.type = 'button'
@@ -174,16 +165,19 @@ export function propertyPanel(
       }
       group.append(button)
     }
-    fields.render(contract.fields, current.drafts)
+    // A recovered form may still contain an unsaved alias from the old panel.
+    const header = contract.headerField
+    const recoverHeader =
+      header &&
+      Object.hasOwn(current.drafts, header.name) &&
+      current.drafts[header.name] !==
+        (current.node.attrs[header.attribute] ?? header.schema.default)
+    form.toggleAttribute('data-recovered-header-field', !!recoverHeader)
+    fields.render(recoverHeader ? [...contract.fields, header] : contract.fields, current.drafts)
     hint.textContent =
-      contract.conversions.length > 1 ? tr('Ces paramètres concernent la liste entière.') : ''
-  }
-  async function changeLink(
-    id: 'text.link' | 'text.remove_link',
-    range: { from: number; to: number },
-    url?: string,
-  ) {
-    await commit((current) => applyFormatting(editor, id, { range, url, focus: false, current }))
+      !current.settingsOnly && contract.conversions.length > 1
+        ? tr('Ces paramètres concernent la liste entière.')
+        : ''
   }
   async function commit(change: (current: () => boolean) => Promise<boolean>) {
     const state = opened
@@ -220,74 +214,63 @@ export function propertyPanel(
     }
     const anchor = bands.target!,
       node = editor.state.doc.nodeAt(anchor.from)!
-    if (opened.kind === 'link') {
-      void changeLink('text.link', { from: anchor.from, to: anchor.to }, String(result.attrs.href))
-      return
-    } else {
-      const next =
-        opened.selected !== opened.kind && listKinds.includes(opened.selected as ListKind)
-          ? convertList(node, opened.selected as ListKind)
-          : node.toJSON()
-      next.attrs = { ...next.attrs, ...result.attrs }
-      const replacement = editor.schema.nodeFromJSON(next)
-      const conversion = node.type !== replacement.type
-      const transaction = conversion
-        ? editor.state.tr.replaceWith(anchor.from, anchor.to, replacement)
-        : editor.state.tr.setNodeMarkup(anchor.from, undefined, replacement.attrs)
-      // Attribute changes preserve all positions. ProseMirror implements
-      // setNodeMarkup as replacement for atoms and may otherwise drop a node
-      // selection before the badge, or move a caret out of its caption.
-      if (!conversion) {
-        const selection = editor.state.selection
-        transaction.setSelection(
-          selection instanceof NodeSelection && selection.node.isInline
-            ? TextSelection.create(transaction.doc, selection.to)
-            : Selection.fromJSON(transaction.doc, selection.toJSON()),
-        )
-      }
-      const commands: StructuredCommand[] | undefined = editingProvider(editor)
-        ? [
-            {
-              id: conversion ? 'block.replace' : 'node.set_attrs',
-              params: {
-                target: treeTarget(editor, anchor.from),
-                ...(conversion
-                  ? { node: documentContent(replacement.toJSON()) }
-                  : { attrs: result.attrs }),
-              },
-            },
-          ]
-        : undefined
-      if (commands && opened.resource) commands.unshift(resourceCommand(opened.resource))
-      void commit((current) =>
-        applyObjectEdit(editor, transaction, commands, { focus: false, current }),
+    const next =
+      opened.selected !== opened.kind && listKinds.includes(opened.selected as ListKind)
+        ? convertList(node, opened.selected as ListKind)
+        : node.toJSON()
+    next.attrs = { ...next.attrs, ...result.attrs }
+    const replacement = editor.schema.nodeFromJSON(next)
+    const conversion = node.type !== replacement.type
+    const transaction = conversion
+      ? editor.state.tr.replaceWith(anchor.from, anchor.to, replacement)
+      : editor.state.tr.setNodeMarkup(anchor.from, undefined, replacement.attrs)
+    // Attribute changes preserve all positions. ProseMirror implements
+    // setNodeMarkup as replacement for atoms and may otherwise drop a node
+    // selection before the badge, or move a caret out of its caption.
+    if (!conversion) {
+      const selection = editor.state.selection
+      transaction.setSelection(
+        selection instanceof NodeSelection && selection.node.isInline
+          ? TextSelection.create(transaction.doc, selection.to)
+          : Selection.fromJSON(transaction.doc, selection.toJSON()),
       )
     }
+    const commands: StructuredCommand[] | undefined = editingProvider(editor)
+      ? [
+          {
+            id: conversion ? 'block.replace' : 'node.set_attrs',
+            params: {
+              target: treeTarget(editor, anchor.from),
+              ...(conversion
+                ? { node: documentContent(replacement.toJSON()) }
+                : { attrs: result.attrs }),
+            },
+          },
+        ]
+      : undefined
+    if (commands && opened.resource) commands.unshift(resourceCommand(opened.resource))
+    void commit((current) =>
+      applyObjectEdit(editor, transaction, commands, { focus: false, current }),
+    )
   }
   const api = {
-    open(pos: number, kind: string, remove = false) {
+    open(pos: number, kind: string, remove = false, settingsOnly = false) {
       if (pending || !editingAvailability(editor).enabled) return
       const contract = settingsForNode(kind, catalogue.entries)
       if (!remove && !hasSettings(contract)) return
       const node = editor.state.doc.nodeAt(pos)
-      if (!node || (kind !== 'link' && node.type.name !== kind)) return
-      const selection = editor.state.selection
-      const range =
-        kind === 'link'
-          ? getMarkRange(editor.state.doc.resolve(pos), editor.schema.marks.link) || selection
-          : { from: pos, to: pos + node.nodeSize }
-      const attrs = kind === 'link' ? editor.getAttributes('link') : node.attrs
+      if (!node || node.type.name !== kind) return
       const drafts: Record<string, Scalar | undefined> = {}
       for (const field of contract.fields)
-        drafts[field.name] = attrs[field.attribute] ?? field.schema.default
+        drafts[field.name] = node.attrs[field.attribute] ?? field.schema.default
       bands.close(false)
       opened = {
         kind,
         selected: kind,
         node,
-        original: kind === 'link' ? editor.state.doc.textBetween(range.from, range.to) : '',
         remove,
         drafts,
+        settingsOnly,
       }
       const current = opened
       render()
@@ -299,28 +282,25 @@ export function propertyPanel(
             : tr('Supprimer le bloc')
         : contract.conversions.length > 1
           ? tr('Paramètres de la liste')
-          : kind === 'link'
-            ? tr('Lien')
-            : kind === 'figure'
-              ? tr('Paramètres de l’image')
-              : kind === 'footnote'
-                ? tr('Note de bas de page')
-                : kind === 'mathInline'
-                  ? tr('Formule en ligne')
-                  : widgetLabel(kind)
+          : kind === 'figure'
+            ? tr('Paramètres de l’image')
+            : kind === 'footnote'
+              ? tr('Note de bas de page')
+              : kind === 'mathInline'
+                ? tr('Formule en ligne')
+                : widgetLabel(kind)
       panel.body.hidden = remove
       form.dataset.intent = remove ? 'remove' : 'settings'
       panel.error.textContent = ''
       removeAction.hidden = remove || isWidgetKind(kind)
-      removeAction.textContent = kind === 'link' ? tr('Retirer le lien') : tr('Supprimer')
       apply.textContent = remove ? tr('Supprimer') : tr('Valider')
       apply.classList.toggle('danger', remove)
       apply.toggleAttribute('data-initial-focus', remove)
       bands.open(
         panel,
         {
-          from: range.from,
-          to: range.to,
+          from: pos,
+          to: pos + node.nodeSize,
           placement: isWidgetKind(kind) ? 'widget-header' : 'text',
         },
         () => {

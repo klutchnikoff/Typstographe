@@ -1,0 +1,63 @@
+.object-menu {
+  position: fixed;
+  z-index: 45;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: min(190px, calc(100vw - 16px));
+  max-width: min(320px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 8px 24px #0003;
+  font-size: 0.875rem;
+}
+.object-menu[hidden] {
+  display: none;
+}
+.object-menu-group + .object-menu-group {
+  margin-top: 3px;
+  padding-top: 3px;
+  border-top: 1px solid var(--border);
+}
+.object-menu-label {
+  padding: 3px 8px;
+  color: var(--muted);
+  font-size: 0.8em;
+}
+.object-menu button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+}
+.object-menu button:is(:hover, :focus):not(:disabled) {
+  background: var(--soft);
+}
+.object-menu button:disabled {
+  opacity: 0.5;
+}
+.object-menu button span {
+  display: inline-flex;
+  color: var(--accent);
+}
+.object-menu button svg {
+  width: 14px;
+  height: 14px;
+}
+.widget-bar .widget-kind[data-list-menu] {
+  margin-inline-end: auto;
+  display: inline-flex;
+  align-items: center;
+}
+.widget-bar button[aria-expanded='true'] {
+  color: var(--accent);
+}

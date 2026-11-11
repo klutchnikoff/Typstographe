@@ -1,6 +1,6 @@
 import type { Registry } from './commands'
 import { commandEditor } from './command-context'
-import { interactionAvailability } from './command-availability'
+import { interactionAvailability, unlinkAvailability } from './command-availability'
 import { runFormatting } from './formatting'
 import { tr } from './i18n'
 import { navigateSpelling } from './proofing'
@@ -14,6 +14,7 @@ import { settingsFor } from './state'
 /** Shell commands that only make sense while a document is shown. */
 export const DOCUMENT_COMMANDS = [
   'ui.versions',
+  'ui.document',
   'document.save',
   'document.save_as',
   'document.export',
@@ -84,14 +85,14 @@ export function registerInterfaceCommands(
   add('text.unlink', tr('Supprimer le lien'), () => {
     runFormatting(commandEditor(editor), 'text.remove_link')
   })
-  for (const [id, policy] of [
-    ['text.clear', 'style'],
-    ['text.unlink', 'link'],
+  for (const [id, availability] of [
+    ['text.clear', () => interactionAvailability(commandEditor(editor), 'style')],
+    ['text.unlink', () => unlinkAvailability(commandEditor(editor))],
   ] as const) {
     const original = commands.get(id)!
     commands.set(id, {
       ...original,
-      availability: () => interactionAvailability(commandEditor(editor), policy),
+      availability,
     })
   }
   add(

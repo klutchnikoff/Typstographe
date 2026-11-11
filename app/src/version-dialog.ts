@@ -112,7 +112,7 @@ function stateDialog(options: {
   const remove = button('Supprimer cette version', 'trash-2')
   remove.classList.add('danger')
   remove.hidden = !options.version
-  const done = button('Fermer')
+  const done = button(options.version ? 'Revenir au document courant' : 'Fermer')
   done.className = 'primary'
   footer.append(remove, done)
   const error = document.createElement('p')

@@ -37,6 +37,7 @@ export interface SettingField {
 export interface WidgetSettings {
   fields: SettingField[]
   conversions: Capability[]
+  headerField?: SettingField
 }
 export const hasSettings = (settings: WidgetSettings) =>
   settings.fields.length > 0 || settings.conversions.length > 1
@@ -45,6 +46,7 @@ export const hasSettings = (settings: WidgetSettings) =>
 export function settingsForNode(node: string, capabilities: Capability[]): WidgetSettings {
   const capability = capabilities.find((entry) => entry.node === node || entry.mark === node)
   const fields: SettingField[] = []
+  let headerField: SettingField | undefined
   for (const [name, schema] of Object.entries(capability?.parameters.properties || {})) {
     const hint = schema['x-editor'] || {}
     const required = capability!.parameters.required?.includes(name) || false
@@ -63,18 +65,21 @@ export function settingsForNode(node: string, capabilities: Capability[]): Widge
                 : 'text'
               : undefined)
     if (!control) throw new Error(`Unsupported settings field: ${capability!.id}.${name}`)
-    fields.push({
+    const field: SettingField = {
       name,
       attribute: hint.attribute || name,
       label: schema.title || name,
       schema,
       required,
       control,
-    })
+    }
+    if (node === 'mathBlock' && field.attribute === 'alias') headerField = field
+    else fields.push(field)
   }
   const group = capability?.editor?.conversion_group
   return {
     fields,
+    headerField,
     conversions: group
       ? capabilities.filter((entry) => entry.editor?.conversion_group === group)
       : [],

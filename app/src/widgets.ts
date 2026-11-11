@@ -1,4 +1,5 @@
 import { historyFor, editingProvider } from './editing-history'
+import { editingAvailability } from './command-availability'
 import { removeObject } from './object-commands'
 import { tableCursor } from './table-selection'
 import { tr } from './i18n'
@@ -156,8 +157,9 @@ export function widgetTarget(editor: Editor) {
   const node = editor.state.doc.nodeAt(editor.state.selection.from)
   if (node && isWidgetKind(node.type.name)) return { pos: editor.state.selection.from, node }
 }
-export function removeWidget(editor: Editor, target = widgetTarget(editor)) {
+export function removeWidget(editor: Editor, target = widgetTarget(editor), removed?: () => void) {
   if (
+    !editingAvailability(editor, false).enabled ||
     !target ||
     !isWidgetKind(target.node.type.name) ||
     !editor.state.doc.nodeAt(target.pos)?.eq(target.node)
@@ -165,9 +167,11 @@ export function removeWidget(editor: Editor, target = widgetTarget(editor)) {
     return false
   const manager = historyFor(editor)
   manager?.stopCapturing()
-  void removeObject(editor, target.pos).catch((error: unknown) =>
-    editingProvider(editor)?.onError(error),
-  )
+  void removeObject(editor, target.pos)
+    .then((changed) => {
+      if (changed) removed?.()
+    })
+    .catch((error: unknown) => editingProvider(editor)?.onError(error))
   return true
 }
 /** The continuation slot is an editor policy shared by local and native insertions. */

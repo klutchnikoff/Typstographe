@@ -44,7 +44,12 @@ export async function prepareAcquisition(
   }
 }
 /** Recheck identity matching after field edits, before one atomic project publication. */
-export async function planAcquisition(api: BibliographyQuery, draft: Draft, prepared: Form) {
+export async function planAcquisition(
+  api: BibliographyQuery,
+  draft: Draft,
+  prepared: Form,
+  confirmed: boolean,
+) {
   const old = draft.acquisition!
   const report = await api<Report>(
     'bibliography.prepare_import',
@@ -66,8 +71,16 @@ export async function planAcquisition(api: BibliographyQuery, draft: Draft, prep
     reviewed,
     ready: stableJSON(decisions),
   }
-  const target = plan.items[0]?.target
-  if (plan.blocked || !target) throw new AcquisitionReview(review)
+  const item = plan.items[0]
+  const needsReview = old.report.plan.items[0]?.action !== 'new' || item?.action !== 'new'
+  const sameReview =
+    confirmed &&
+    old.report.library_fingerprint === report.library_fingerprint &&
+    old.ready === stableJSON(decisions) &&
+    stableJSON(old.reviewed) === stableJSON(reviewed) &&
+    stableJSON(old.report.plan) === stableJSON(plan)
+  if (plan.blocked || !item?.target || ((confirmed || needsReview) && !sameReview))
+    throw new AcquisitionReview(review)
   return {
     command: {
       id: 'bibliography.apply',
@@ -82,6 +95,6 @@ export async function planAcquisition(api: BibliographyQuery, draft: Draft, prep
         },
       },
     },
-    target,
+    target: item.target,
   }
 }

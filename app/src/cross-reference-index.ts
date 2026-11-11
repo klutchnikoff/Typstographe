@@ -11,6 +11,8 @@ export interface CrossReferenceTarget {
   id: string
   kind: string
   title: string
+  alias?: string
+  alt?: string
   pos: number
 }
 export interface ResolvedReference extends CrossReference {
@@ -19,7 +21,7 @@ export interface ResolvedReference extends CrossReference {
 const targetsCache = new WeakMap<Editor['state']['doc'], CrossReferenceTarget[]>()
 const indexes = new WeakMap<
   Editor,
-  { generation: string | undefined; entries: ResolvedReference[] }
+  { generation: string | undefined; entries: ResolvedReference[]; labels: Map<string, string> }
 >()
 export function referenceTargets(editor: Editor): CrossReferenceTarget[] {
   const cached = targetsCache.get(editor.state.doc)
@@ -32,30 +34,31 @@ export function referenceTargets(editor: Editor): CrossReferenceTarget[] {
     )
       return
     const content = node.type.name === 'tableFigure' ? node.lastChild! : node
-    const title =
-      (node.type.name === 'mathBlock' && node.attrs.alias ? `eq:${node.attrs.alias} · ` : '') +
-      (content.textContent || node.attrs.alt || tr('Sans intitulé'))
-    result.push({ id: node.attrs.anchor, kind: node.type.name, title, pos })
+    const alias =
+      node.type.name === 'mathBlock' && node.attrs.alias ? `eq:${node.attrs.alias}` : undefined
+    const alt = node.attrs.alt || undefined
+    const title = (alias ? `${alias} · ` : '') + (content.textContent || alt || tr('Sans intitulé'))
+    result.push({ id: node.attrs.anchor, kind: node.type.name, title, alias, alt, pos })
   })
   targetsCache.set(editor.state.doc, result)
   return result
 }
+const labelKey = (reference: CrossReference) =>
+  `${reference.target}:${Number(reference.include_label)}${Number(reference.include_page)}`
+
+export function resolvedReference(editor: Editor, reference: CrossReference) {
+  const index = indexes.get(editor)
+  return index?.generation === editingProvider(editor)?.generation
+    ? index?.labels.get(labelKey(reference))
+    : undefined
+}
 export function referenceLabel(editor: Editor, reference: CrossReference): string {
   const target = referenceTargets(editor).find((t) => t.id === reference.target)
-  const index = indexes.get(editor)
   // Keep the last confirmed layout while its replacement compiles, just like
   // the preview itself. Never invent a number or reuse another target's label.
-  const resolved =
-    target && index?.generation === editingProvider(editor)?.generation
-      ? index?.entries.find(
-          (value) =>
-            value.target === reference.target &&
-            value.include_label === reference.include_label &&
-            value.include_page === reference.include_page,
-        )
-      : undefined
-  if (resolved) return resolved.display
-  return target ? `${tr('Renvoi')} · ${target.title}` : tr('Renvoi')
+  return target
+    ? (resolvedReference(editor, reference) ?? `${tr('Renvoi')} · ${target.title}`)
+    : tr('Renvoi')
 }
 export function setResolvedReferences(editor: Editor, entries: ResolvedReference[]) {
   const generation = editingProvider(editor)?.generation
@@ -74,7 +77,12 @@ export function setResolvedReferences(editor: Editor, entries: ResolvedReference
   )
     return false
   // Keep a value snapshot: callers must not mutate the published index silently.
-  indexes.set(editor, { generation, entries: entries.map((entry) => ({ ...entry })) })
+  const labels = new Map<string, string>()
+  for (const entry of entries) {
+    const key = labelKey(entry)
+    if (!labels.has(key)) labels.set(key, entry.display)
+  }
+  indexes.set(editor, { generation, labels, entries: entries.map((entry) => ({ ...entry })) })
   // An initial empty index cannot change a badge already showing its fallback.
   if (!previous && entries.length === 0) return false
   editor.view.dispatch(editor.state.tr.setMeta('cross-reference-index', true))

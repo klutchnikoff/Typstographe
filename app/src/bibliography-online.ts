@@ -1,6 +1,5 @@
 import type { Transport } from './provider'
-import { formDialog } from './form-dialog'
-import { navigationGroup, actionRow } from './keyboard-navigation'
+import { navigationGroup } from './keyboard-navigation'
 import { labeledField } from './form-field'
 import { tr } from './i18n'
 import { errorText } from './command-error'
@@ -55,41 +54,39 @@ function issueText(issue: OnlineIssue) {
     )[issue.code] || 'Connexion au service impossible.'
   return `${providerLabel(issue.provider)} — ${tr(label)}`
 }
-/** Explicit online acquisition, separate from project search and from publication.
- * Typing only invalidates old results; it never starts a network request.
- */
+const displayedLimit = 8
+const searchDelay = 500
+
+/** Online acquisition, separate from project search and from publication. */
 export function onlineBibliography(options: {
   transport: Transport
   current: () => boolean
+  composing: () => boolean
   query: string
   choose: (candidate: OnlineCandidate) => void
-  closed: () => void
 }) {
-  const initial = document.activeElement as HTMLElement
   let alive = true,
     ticket = 0,
     selected: OnlineCandidate | undefined,
-    results: OnlineCandidate[] = []
+    accepted: string | undefined,
+    results: OnlineCandidate[] = [],
+    timer: number | undefined
   const destroy = () => {
     if (!alive) return
     alive = false
     ticket++
+    window.clearTimeout(timer)
     navigation.destroy()
-    form.destroy()
-    options.closed()
+    element.remove()
   }
-  const form = formDialog({
-    id: 'bibliography-online',
-    title: tr('Rechercher des notices en ligne'),
-    cancel: destroy,
-    returnFocus: () => (initial?.isConnected ? initial : undefined),
-  })
-  form.dialog.classList.add('bibliography-online-dialog')
-  const query = document.createElement('input'),
-    search = document.createElement('button'),
+  const element = document.createElement('section'),
+    query = document.createElement('input'),
     list = document.createElement('div'),
     status = document.createElement('p'),
-    details = document.createElement('p')
+    error = document.createElement('p')
+  element.id = 'bibliography-online'
+  element.className = 'bibliography-source bibliography-online'
+  query.id = 'bibliography-online-query'
   query.type = 'search'
   query.value = options.query
   query.dataset.initialFocus = ''
@@ -97,15 +94,14 @@ export function onlineBibliography(options: {
   query.setAttribute('aria-autocomplete', 'list')
   query.setAttribute('aria-expanded', 'true')
   query.setAttribute('aria-controls', 'bibliography-online-results')
-  query.setAttribute('aria-label', tr('Titre, auteur, DOI ou URL Cairn'))
-  search.type = 'button'
-  search.textContent = tr('Rechercher en ligne')
   list.id = 'bibliography-online-results'
   list.className = 'bibliography-list'
   list.setAttribute('role', 'listbox')
   list.setAttribute('aria-label', tr('Résultats en ligne'))
   status.role = 'status'
-  details.className = 'bibliography-online-notice'
+  status.className = 'sr-only'
+  error.setAttribute('role', 'status')
+  error.className = 'bibliography-online-error'
   const sources = document.createElement('fieldset'),
     legend = document.createElement('legend')
   legend.textContent = tr('Sources')
@@ -124,75 +120,74 @@ export function onlineBibliography(options: {
   }
   const hint = document.createElement('p')
   hint.textContent = tr('Cairn : DOI, identifiant ou URL. Repli DOI automatique si nécessaire.')
-  hint.className = 'bibliography-completeness'
-  const row = actionRow()
-  row.append(search)
-  form.body.append(
-    labeledField(tr('Titre, auteur, DOI ou URL Cairn'), query),
+  hint.className = 'sr-only'
+  hint.id = 'bibliography-online-hint'
+  query.setAttribute('aria-describedby', hint.id)
+  element.append(
+    labeledField(tr('Titre, auteur, année, DOI ou URL Cairn'), query),
     sources,
     hint,
-    row,
     status,
     list,
-    details,
+    error,
   )
-  form.action({ label: tr('Annuler'), run: destroy })
-  const confirm = form.action({ label: tr('Vérifier la notice'), primary: true, run: choose })
   const navigation = navigationGroup(list, {
     axis: 'vertical',
     input: query,
     onSelect: (row) => {
       selected = results.find((c) => c.id === row.dataset.candidate)
-      refreshSelection()
     },
     onActivate: () => choose(),
   })
-  function refreshSelection() {
-    confirm.disabled = !selected
-    details.textContent = selected ? onlineProvenance(selected) : ''
+  function report(text: string, announceOnly = false) {
+    status.classList.toggle('sr-only', !text || announceOnly)
+    status.textContent = text
   }
   function choose() {
     if (!selected || !alive || !options.current()) return
-    const candidate = selected
-    destroy()
-    options.choose(candidate)
+    options.choose(selected)
   }
-  function invalidate() {
+  const enabledSources = () => [...choices].filter(([, check]) => check.checked).map(([p]) => p)
+  function invalidate(composing = false) {
+    window.clearTimeout(timer)
     ticket++
     selected = undefined
+    accepted = undefined
     results = []
     list.replaceChildren()
-    details.textContent = ''
-    status.textContent = ''
-    form.error.textContent = ''
+    report('')
+    error.textContent = ''
     list.removeAttribute('aria-busy')
-    search.disabled = !query.value.trim() || ![...choices.values()].some((c) => c.checked)
     navigation.refresh(true)
-    refreshSelection()
+    if (query.value.trim() && enabledSources().length && !composing && !options.composing())
+      timer = window.setTimeout(() => void run(), searchDelay)
   }
   async function run() {
-    if (!alive || !options.current() || !query.value.trim() || search.disabled || form.composing)
-      return
+    if (!alive || !options.current() || element.inert || options.composing()) return
+    const term = query.value.trim(),
+      sources = enabledSources()
+    if (!term || !sources.length) return
     const id = ++ticket
     selected = undefined
     results = []
     list.replaceChildren()
-    refreshSelection()
+    accepted = undefined
     navigation.refresh(true)
-    search.disabled = true
     list.setAttribute('aria-busy', 'true')
-    status.textContent = tr('Recherche en cours…')
-    form.error.textContent = ''
+    report(tr('Recherche en cours…'))
+    error.textContent = ''
     try {
       const result = await options.transport.invoke<OnlineResults>('bibliography_online', {
         request: {
-          query: query.value,
-          sources: [...choices].filter(([, c]) => c.checked).map(([p]) => p),
-          limit: 8,
+          query: term,
+          sources,
+          // One extra result establishes that the list is incomplete.
+          limit: displayedLimit + 1,
         },
       })
       if (!alive || !options.current() || id !== ticket) return
-      results = result.candidates
+      const truncated = result.candidates.length > displayedLimit
+      results = result.candidates.slice(0, displayedLimit)
       for (const candidate of results) {
         const button = document.createElement('button'),
           heading = document.createElement('span'),
@@ -211,24 +206,26 @@ export function onlineBibliography(options: {
       }
       selected = results[0]
       navigation.refresh(true)
-      refreshSelection()
-      status.textContent = results.length
-        ? tr('{count} notices', { count: results.length })
-        : tr('Aucune notice trouvée.')
-      form.error.textContent = result.issues.map(issueText).join('\n')
-    } catch (error) {
+      if (truncated)
+        report(
+          tr('Seuls les {count} premiers résultats sont affichés. Affinez votre recherche.', {
+            count: displayedLimit,
+          }),
+        )
+      else if (results.length) report(tr('{count} notices', { count: results.length }), true)
+      else report(tr('Aucune notice trouvée.'))
+      error.textContent = result.issues.map(issueText).join('\n')
+    } catch (failure) {
       if (alive && options.current() && id === ticket) {
-        status.textContent = ''
-        form.error.textContent = errorText(error)
+        report('')
+        error.textContent = errorText(failure)
       }
     } finally {
-      if (alive && id === ticket) {
-        list.removeAttribute('aria-busy')
-        search.disabled = false
-      }
+      if (alive && id === ticket) list.removeAttribute('aria-busy')
     }
   }
-  query.oninput = invalidate
+  query.oninput = (event) => invalidate(event instanceof InputEvent && event.isComposing)
+  query.addEventListener('compositionend', () => invalidate())
   query.addEventListener(
     'keydown',
     (event) => {
@@ -242,14 +239,26 @@ export function onlineBibliography(options: {
       ) {
         event.preventDefault()
         event.stopImmediatePropagation()
-        void run()
       }
     },
     true,
   )
-  search.onclick = () => void run()
-  refreshSelection()
-  search.disabled = !query.value.trim()
-  form.open()
-  return { destroy, focus: () => query.focus() }
+  if (query.value.trim()) invalidate()
+  return {
+    element,
+    destroy,
+    focus: () => query.focus(),
+    lock(locked: boolean) {
+      element.inert = locked
+    },
+    accept(id: string) {
+      accepted = id
+    },
+    focusResult() {
+      const row = [...list.querySelectorAll<HTMLButtonElement>('[data-candidate]')].find(
+        (button) => button.dataset.candidate === accepted,
+      )
+      ;(row || query).focus()
+    },
+  }
 }

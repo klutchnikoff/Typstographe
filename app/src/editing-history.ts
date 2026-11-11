@@ -25,7 +25,18 @@ export function bindEditingHistory(editor: Editor, provider: Provider) {
       if (focused && !focused.isDestroyed) restoreHistorySelection(focused, state)
     }
     provider.onHistoryLock = (locked) => {
-      if (locked) focused = [...entries!.keys()].find((zone) => !zone.isDestroyed && zone.isFocused)
+      if (locked) {
+        focused = [...entries!.keys()].find((zone) => !zone.isDestroyed && zone.view.hasFocus())
+      } else if (
+        focused &&
+        !focused.isDestroyed &&
+        entries!.get(focused)?.editable &&
+        focused.view.hasFocus()
+      ) {
+        // A fast lock may leave WebKit's activeElement in place even though its
+        // native text input is no longer active. Refocusing must be a real change.
+        focused.view.dom.blur()
+      }
       for (const [zone, state] of entries!) {
         if (zone.isDestroyed) continue
         if (locked) state.editable = zone.isEditable

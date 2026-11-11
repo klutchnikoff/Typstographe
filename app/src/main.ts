@@ -2,6 +2,7 @@ import { inlineContentTarget } from './inline-objects'
 import { crossReferencePanel } from './cross-reference-panel'
 import { setResolvedReferences } from './cross-reference-index'
 import { registerRecoveryOpener } from './form-recovery'
+import { bindInlineSelectorInput } from './inline-selector-input'
 import { refreshCommandButton } from './public-commands'
 import { draftRecovery } from './draft-recovery'
 import { historyFor } from './editing-history'
@@ -20,7 +21,7 @@ import { Provider, stableJSON, ACCEPTED_PROPOSAL, type Resource, type Transport 
 import { createRegistry, toolbar, refreshCommands, type Registry } from './commands'
 import { widgetTarget, removeWidget } from './widgets'
 import { openCorrection, correctionAtCursor } from './proofing'
-import { widgetPresentations } from './widget-frame'
+import { isWidgetKind, widgetPresentations } from './widget-frame'
 import { hasSettings, settingsForNode } from './capability-settings'
 import { mountShell, type Catalogue } from './shell'
 import { documentType, initializeSettings, settingsFor } from './state'
@@ -33,11 +34,14 @@ import { resizableSeparator } from './resizable-separator'
 import { installMenus } from './menus'
 import { BandHost } from './band-layout'
 import { propertyPanel } from './properties'
+import { linkPanel } from './link-panel'
 import { tablePanel } from './table-panel'
+import { objectMenu } from './object-menu'
+import { editorObjectActions } from './editor-object-actions'
 import { planBlockInsertion } from './editing'
 import { applyObjectEdit, widgetBatch } from './object-commands'
 import { prepareImage, resourceCommand } from './resource-commands'
-import { inlineObjectTarget } from './inline-objects'
+import { deleteInlineObject, inlineObjectTarget } from './inline-objects'
 import { activeInlineObject } from './inline-object-focus'
 import { citationPanel } from './citation-panel'
 import { referenceRecords, setCitationEntries, type ReferenceEntry } from './citation-index'
@@ -96,6 +100,7 @@ if (synchronizationMeter) host.transport = synchronizationMeter.transport
 const provider = new Provider(host.id, host.transport)
 let editor: Editor
 let properties: ReturnType<typeof propertyPanel> | undefined
+let links: ReturnType<typeof linkPanel> | undefined
 let citations: ReturnType<typeof citationPanel> | undefined
 let tables: ReturnType<typeof tablePanel> | undefined
 let crossReferences: ReturnType<typeof crossReferencePanel> | undefined
@@ -127,9 +132,10 @@ function propertyTarget(): { pos: number; kind: string } | undefined {
     : undefined
 }
 function openProperties(pos: number, kind: string, remove = false) {
-  if (kind === 'tableFigure' && !remove) tables?.open(pos)
+  if (kind === 'tableFigure' && !remove) tables?.openHeaders(pos)
   else if (kind === 'crossReference' && !remove) crossReferences?.open(pos)
   else if (kind === 'citation' && !remove) citations?.open(pos)
+  else if (kind === 'link' && !remove) links?.open()
   else properties?.open(pos, kind, remove)
 }
 
@@ -355,10 +361,16 @@ async function start() {
     element: element('editor'),
     label: tr('Corps du document'),
     imageURL: (path) => provider.imageURL(path),
-    properties: openProperties,
+    properties: (pos, kind, remove) => {
+      if (remove && isWidgetKind(kind)) {
+        const node = editor.state.doc.nodeAt(pos)
+        if (node?.type.name === kind)
+          removeWidget(editor, { pos, node }, () => message(tr('Élément supprimé')))
+      } else openProperties(pos, kind, remove)
+    },
     presentations,
     binding: { kind: 'document', document: provider.doc, presence: provider },
-    openLink: (zone) => openProperties(zone.state.selection.from, 'link'),
+    openLink: (pos) => links?.open(pos) ?? false,
     openContext: () => openContext(),
     onTransaction: ({ transaction }) => {
       refresh()
@@ -373,8 +385,11 @@ async function start() {
   if (!editor.isInitialized)
     await new Promise<void>((resolve) => editor.once('create', () => resolve()))
   const bands = new BandHost(editor)
+  const menu = objectMenu(editor, app, (error) => provider.onError(error))
   const openContext = () => {
     if (editor.view.composing) return false
+    if (menu.focus() || crossReferences?.focus() || citations?.focus() || links?.focus())
+      return true
     if (bands.isOpen) {
       bands.focus()
       return true
@@ -387,6 +402,7 @@ async function start() {
     }
     if (openCorrection(editor)) return true
     const target = propertyTarget()
+    if ((!target || isWidgetKind(target.kind)) && objectActions.openWidget()) return true
     if (!target) return false
     openProperties(target.pos, target.kind)
     return true
@@ -400,10 +416,22 @@ async function start() {
     provider,
     host.transport,
     contentCatalogue.entries.find((c) => c.id === 'insert.table')!,
+    menu,
+  )
+  const objectActions = editorObjectActions(
+    editor,
+    menu,
+    bands,
+    () => tables?.openAtCursor() ?? false,
+    (pos) => properties?.open(pos, 'orderedList', false, true),
   )
   preview = previewController(editor, provider, host.transport, () => version)
-  crossReferences = crossReferencePanel(editor, bands)
-  citations = citationPanel(editor, provider, host.transport, bands)
+  crossReferences = crossReferencePanel(editor, bands, menu, app)
+  citations = citationPanel(editor, provider, host.transport, bands, menu, app)
+  links = linkPanel(editor, app, contentCatalogue, () => {
+    bands.close(false)
+    menu.close()
+  })
   let referenceKey = '',
     referenceTicket = 0
   const refreshReferences = () => {
@@ -437,6 +465,12 @@ async function start() {
     () => tables?.open(),
     () => crossReferences?.open(),
   )
+  bindInlineSelectorInput(
+    editor,
+    commands,
+    (trigger) =>
+      (trigger === '@@' ? citations : crossReferences)?.open(undefined, trigger) ?? false,
+  )
   tables.register(commands)
   commands.set('context.open', {
     id: 'context.open',
@@ -444,7 +478,12 @@ async function start() {
     shortcut: 'Mod+Enter',
     enabled: () =>
       !editor.view.composing &&
-      (bands.isOpen || !!correctionAtCursor(editor) || !!propertyTarget()),
+      (bands.isOpen ||
+        !!crossReferences?.isOpen ||
+        !!citations?.isOpen ||
+        !!links?.isOpen ||
+        !!correctionAtCursor(editor) ||
+        !!propertyTarget()),
     run: openContext,
   })
   commands.set('block.remove', {
@@ -455,38 +494,40 @@ async function start() {
     run: () => {
       if (editor.view.composing) return
       const inline = inlineObjectTarget(editor, 'before')
-      if (inline) openProperties(inline.pos, inline.node.type.name, true)
+      if (inline) deleteInlineObject(editor, inline)
       else removeWidget(editor)
     },
   })
   registerRecoveryOpener(provider, editor, (pos, draft) => {
     bands.close(false)
     const details = (draft.data as any)?.data
-    if (draft.form === 'proofing-band') {
-      const context = draft.context as any
-      editor.commands.setTextSelection({
-        from: pos,
-        to: pos + context.range.to - context.range.from,
-      })
-      return openCorrection(editor)
+    if (draft.form === 'link-properties' || details?.kind === 'link') {
+      const { range } = draft.context as { range: { from: number; to: number } }
+      return links?.resume({ from: pos, to: pos + range.to - range.from }) ?? false
     }
-    if (editor.state.doc.nodeAt(pos)?.type.name === 'tableFigure')
+    const selector =
+      draft.form === 'cross-reference-properties'
+        ? crossReferences
+        : draft.form === 'citation-properties'
+          ? citations
+          : undefined
+    if (selector) {
+      if (!details?.new) return selector.open(pos)
+      const { range } = draft.context as { range: { from: number; to: number } }
+      editor.commands.setTextSelection({ from: pos, to: pos + range.to - range.from })
+      return selector.open()
+    }
+    if (!details?.remove && editor.state.doc.nodeAt(pos)?.type.name === 'tableFigure')
       return tables?.resume(pos, details) || false
-    if (
-      details?.new &&
-      (draft.form === 'citation-properties' ||
-        draft.form === 'cross-reference-properties' ||
-        draft.form === 'table-properties')
-    ) {
+    if (details?.new && draft.form === 'table-properties') {
       editor.commands.setTextSelection(pos)
-      if (draft.form === 'citation-properties') citations?.open()
-      else if (draft.form === 'cross-reference-properties') crossReferences?.open()
-      else tables?.open()
+      tables?.open()
       return bands.isOpen
     }
     const kind = details?.kind || editor.state.doc.nodeAt(pos)?.type.name
     if (!kind) return false
-    openProperties(pos, kind, !!details?.remove)
+    if (details?.settingsOnly) properties?.open(pos, kind, false, true)
+    else openProperties(pos, kind, !!details?.remove)
     return bands.isOpen
   })
   toolbar(element('toolbar'), commands, contentCatalogue.entries)
@@ -496,6 +537,12 @@ async function start() {
     transport: host.transport,
     catalogue: contentCatalogue,
     bands,
+    objectMenu: menu,
+    closeEditorSelectors: () => {
+      crossReferences?.close()
+      citations?.close()
+      links?.close()
+    },
     commands,
     save,
     schedule,

@@ -9,6 +9,7 @@ import {
   commandVisible,
   refreshCommandButton,
   runCommand,
+  type CommandSurface,
 } from './public-commands'
 import {
   capabilityAvailability,
@@ -44,7 +45,7 @@ export interface PublicCommand {
   label: string
   icon?: string
   shortcut?: string
-  availability?: () => Availability
+  availability?: (surface?: CommandSurface) => Availability
   enabled?: () => boolean
   visible?: () => boolean
   active?: () => boolean

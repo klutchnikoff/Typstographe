@@ -1,4 +1,5 @@
-import { commandPalette } from './command-palette'
+import { openCommandPalette } from './command-palette'
+import { commandEditor } from './command-context'
 import { keyboardScope } from './keyboard-navigation'
 import { tr } from './i18n'
 import { searchState } from './proofing'
@@ -17,12 +18,13 @@ export type SidePanels = ReturnType<typeof sidePanels>
  */
 export function sidePanels(ctx: ShellContext, layout: Pick<ShellLayout, 'side' | 'panel'>) {
   const { editor, commands } = ctx
-  let palette: ReturnType<typeof commandPalette> | undefined
   let versions: ReturnType<typeof versionsPanel> | undefined
   let releaseRecovered: (() => void) | undefined
+  let releaseNavigation: (() => void) | undefined
+  let section: string | undefined
   const release = () => {
-    palette?.destroy()
-    palette = undefined
+    releaseNavigation?.()
+    releaseNavigation = undefined
     versions?.destroy()
     versions = undefined
     releaseRecovered?.()
@@ -30,9 +32,16 @@ export function sidePanels(ctx: ShellContext, layout: Pick<ShellLayout, 'side' |
     searchState(editor, '')
   }
   const close = () => {
+    const trigger =
+      section === 'ui.projects' || section === 'ui.document'
+        ? layout.side.querySelector<HTMLButtonElement>(`[data-command="${section}"]`)
+        : null
     release()
+    section = undefined
     railMode.close()
-    editor.commands.focus()
+    if (trigger && !trigger.disabled) trigger.focus({ preventScroll: true })
+    else if (ctx.state.active) editor.commands.focus()
+    else byId('create-document').focus()
   }
   const railMode = sideRailMode(layout.side, layout.panel, {
     toggle: () => runCommand(commands.get('ui.sidebar_labels')!),
@@ -45,8 +54,9 @@ export function sidePanels(ctx: ShellContext, layout: Pick<ShellLayout, 'side' |
   byId('close-side').onclick = close
   keyboardScope(layout.panel, { close, priority: 10, tab: true })
   /** Opens the panel on `section` and returns its emptied content element. */
-  function show(title: string, section?: string) {
+  function show(title: string, nextSection?: string) {
     release()
+    section = nextSection
     railMode.show(section)
     byId('side-title').textContent = title
     const content = byId('side-content')
@@ -57,18 +67,22 @@ export function sidePanels(ctx: ShellContext, layout: Pick<ShellLayout, 'side' |
     railMode,
     close,
     show,
+    adoptNavigation(cleanup: () => void) {
+      releaseNavigation = cleanup
+    },
     adoptVersions(panel: ReturnType<typeof versionsPanel>) {
       versions = panel
     },
     refreshVersions() {
       void versions?.refresh()
     },
-    /** Closes the versions view, which belongs to the document being left. */
-    dismissVersions() {
-      if (!versions) return
-      versions.destroy()
-      versions = undefined
-      railMode.close()
+    /** A document switch releases the views tied to the previous project. */
+    dismissDocument() {
+      if (['ui.document', 'ui.find', 'ui.assistance', 'ui.recovered'].includes(section || '')) {
+        release()
+        section = undefined
+        railMode.close()
+      }
     },
     adoptRecovered(next: () => void) {
       releaseRecovered = next
@@ -77,11 +91,9 @@ export function sidePanels(ctx: ShellContext, layout: Pick<ShellLayout, 'side' |
       releaseRecovered?.()
     },
     palette() {
-      palette = commandPalette(show(tr('Commandes'), 'ui.palette'), commands, (command) => {
-        release()
-        railMode.close()
-        runCommand(command)
-      })
+      openCommandPalette(commands, () =>
+        ctx.state.active ? commandEditor(editor).view.dom : byId('create-document'),
+      )
     },
     search() {
       searchPanel(show(tr('Rechercher et remplacer'), 'ui.find'), editor)

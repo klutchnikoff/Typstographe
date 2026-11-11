@@ -349,8 +349,11 @@ D’autres connecteurs spécialisés pourront compléter cette chaîne.
 - Les compléments de publication de Cairn passent aussi par le résolveur DOI.
   Ils complètent le type/contenant, sans remplacer les champs propres de la
   notice OAI. La provenance de cet enrichissement reste explicite.
-- Recherche locale conservée ; appels en ligne explicites, bornés et asynchrones.
+- Recherche locale conservée. Les appels réseau restent dans la vue en ligne :
+  après une pause de frappe, bornés et asynchrones. La recherche libre combine
+  titre, auteur et année dans le même champ et conserve la syntaxe du fournisseur.
   Une réponse obsolète ne peut remplacer une nouvelle recherche ou un brouillon.
+  Demander un résultat de plus que la limite d’affichage pour signaler une liste tronquée.
 - Collecteurs séparés de la crate bibliographique pure et du cœur documentaire.
   Réutiliser les conversions et validations existantes vers Hayagriva ; conserver
   la source d’import convertie, distincte de la notice corrigée, sans prétendre
@@ -495,21 +498,25 @@ interligne unique employé pour toutes les micro-actions :
   `Backspace` supprime) des badges inline, appuyées sur l’historique Yrs (`Cmd/Ctrl+Z`)
   sans bandeau de confirmation ; masquage de la roue dentée sur les blocs sans paramètres
   externes et retrait du doublon `alias` dans les propriétés de `mathBlock`.
-- **Désimbrication des modales et unification des métadonnées** : intégrer la recherche
-  en ligne (`bibliography-online.ts`) et la revue d’acquisition
-  (`bibliography-review-dialog.ts`) comme vues internes de `#bibliography-manager` (aucune
-  `<dialog>` empilée sur une autre `<dialog>`), harmoniser l’édition des collections dans
-  `metadata-collections.ts` et afficher la palette de commandes en overlay centré.
+- **Désimbrication des modales et unification des métadonnées** : la recherche
+  en ligne et la revue d’acquisition sont des vues internes de `#bibliography-manager`.
+  La palette de commandes s’ouvre en haut au centre. Les collections d’en-tête
+  partagent les cartes et les modales d’édition. Le panneau **Document** donne accès
+  directement aux notices.
 
 **Séparation validée le 27 octobre 2026 :** l’accès **Projets** présente le
 catalogue global (récents, épinglés, recherche, création et ouverture) ; l’accès
 **Document** présente le plan, les références, les ressources, les versions et les relectures du
-projet actif, selon son type. Le catalogue référence les fichiers ; retirer une
-entrée ne les supprime pas. Préférences et bibliothèque globales restent
-distinctes des données du projet.
+projet actif, selon son type. Le catalogue référence les fichiers. Un lot ultérieur
+vérifiera les chemins en arrière-plan à l’ouverture de **Projets** et signalera les
+fichiers introuvables ou inaccessibles par une couleur et un libellé. Les entrées
+et leurs épingles seront conservées, notamment si un volume est déconnecté.
+**Retirer de la liste** effacera la référence des récents et des épingles en laissant
+le fichier en place. Préférences et bibliothèque globales restent distinctes des
+données du projet.
 
-Maquetter cette séparation sur la barre verticale existante ; un seul panneau
-ouvert à la fois. **Versions** et **Relectures** sont des entrées distinctes.
+La barre verticale présente un seul panneau ouvert à la fois. Les rubriques de
+**Document**, dont **Versions** et **Relectures**, se déplient indépendamment.
 La consultation de Versions et des propositions MCP partage une modale à 90 %,
 avec onglets Contenu/Aperçu/Comparer et confirmations intégrées ; Relectures
 garde les interactions prévues dans J. Le choix fenêtres/onglets pour

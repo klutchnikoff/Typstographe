@@ -24,6 +24,7 @@ fn context_availability_is_read_only_type_aware_and_distinguishes_forms_from_edi
     for id in [
         "text.bold",
         "text.italic",
+        "text.link",
         "insert.footnote",
         "insert.image",
         "insert.table",
@@ -31,7 +32,6 @@ fn context_availability_is_read_only_type_aware_and_distinguishes_forms_from_edi
     ] {
         assert_eq!(a[id]["enabled"], true, "{id}");
     }
-    assert_eq!(a["text.link"]["reason"], "selection_required");
     assert_eq!(a["insert.citation"]["reason"], "unsupported_document_type");
     // A caret can activate future typing, but cannot style an empty concrete range.
     let concrete = s.query("commands.available", json!({"command":{"id":"text.bold","params":{"target":{"zone":{"kind":"body","path":[0]},"from":0,"to":0}}}})).unwrap();

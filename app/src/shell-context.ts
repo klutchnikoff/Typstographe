@@ -1,6 +1,7 @@
 import * as Y from 'yjs'
 import type { Editor } from '@tiptap/core'
 import type { BandHost } from './band-layout'
+import type { ObjectMenu } from './object-menu'
 import type { CloseChoice } from './close-decision'
 import type { Registry } from './commands'
 import type { Preferences } from './preferences-panel'
@@ -13,6 +14,8 @@ import type { Catalogue } from './shell'
 
 export interface ShellOptions {
   bands: BandHost
+  objectMenu: ObjectMenu
+  closeEditorSelectors: () => void
   editor: Editor
   provider: Provider
   transport: Transport

@@ -89,12 +89,19 @@ test('tous les widgets partagent leur cadre, leur bandeau commun et la suppressi
     const settings = widget.getByRole('button', { name: /^Paramètres ·/ })
     if (kind === 'tableFigure') {
       await settings.click()
-      const table = page.locator('#table-properties')
+      const table = page.locator('#object-menu')
       await expect(table).toBeVisible()
-      expect(await panelChrome(table)).toEqual(referenceChrome)
+      await expect(table.getByRole('menuitemcheckbox')).toHaveCount(2)
       await page.keyboard.press('Escape')
       await expect(table).toBeHidden()
-    } else if (['bulletList', 'orderedList', 'descriptionList', 'figure'].includes(kind)) {
+    } else if (kind === 'bulletList' || kind === 'orderedList') {
+      await expect(settings).toHaveCount(0)
+      await widget.locator('[data-list-menu]').click()
+      const menu = page.locator('#object-menu')
+      await expect(menu.getByRole('menuitemradio')).toHaveCount(2)
+      await page.keyboard.press('Escape')
+      await expect(menu).toBeHidden()
+    } else if (['descriptionList', 'figure'].includes(kind)) {
       await widget.getByRole('button', { name: /^Paramètres ·/ }).click()
       await expect(panel).toBeVisible()
       expect(await panelChrome(panel)).toEqual(referenceChrome)
@@ -126,24 +133,13 @@ test('tous les widgets partagent leur cadre, leur bandeau commun et la suppressi
       await page.keyboard.press('Escape')
       await expect(panel).toBeHidden()
     } else {
-      await expect(settings).toBeDisabled()
-      await expect(settings).toHaveAttribute('title', /Aucun paramètre supplémentaire/)
-      await settings.evaluate((button: HTMLButtonElement) => button.click())
+      await expect(settings).toHaveCount(0)
       await expect(panel).toBeHidden()
     }
     await widget.getByRole('button', { name: /^Supprimer ·/ }).click()
-    expect(await panelChrome(panel)).toEqual(referenceChrome)
-    await expect(panel.locator(':scope > .panel-title')).toBeVisible()
-    await expect(panel.locator('.panel-actions button:visible')).toHaveText([
-      'Annuler',
-      'Supprimer',
-    ])
-    await expect(panel.locator('.context-panel-body')).toBeHidden()
-    await expect(page.locator('#apply-properties')).toBeFocused()
-    await page.keyboard.press('Enter')
     await expect(widget).toHaveCount(0)
-    // The owner installs the deletion before the awaiting band closes and unlocks history.
     await expect(panel).toBeHidden()
+    await expect(page.locator('#message')).toHaveText('Élément supprimé')
     await page
       .getByRole('navigation', { name: 'Mise en forme', exact: true })
       .getByRole('button', { name: 'Annuler', exact: true })
@@ -152,10 +148,7 @@ test('tous les widgets partagent leur cadre, leur bandeau commun et la suppressi
     await expect
       .poll(() => page.evaluate(() => JSON.stringify(window.__spike!.editor.getJSON())))
       .toBe(before)
-    // The direct shortcut uses the same removal operation as the confirmed band.
-    await widget.getByRole('button', { name: /^Supprimer ·/ }).click()
-    await page.keyboard.press('Escape')
-    await widget.locator('.widget-bar > span').click()
+    // The direct shortcut uses the same removal operation as the trash button.
     await page.evaluate((kind) => {
       const e = window.__spike!.editor
       e.state.doc.descendants((node, pos) => {
@@ -187,7 +180,7 @@ test('tous les widgets partagent leur cadre, leur bandeau commun et la suppressi
   }
 })
 
-test('une réponse orthographique tardive ne remplace pas le panneau ouvert ensuite', async ({
+test('une réponse orthographique tardive ne remplace pas le menu ouvert ensuite', async ({
   page,
 }) => {
   let release!: () => void
@@ -212,17 +205,18 @@ test('une réponse orthographique tardive ne remplace pas le panneau ouvert ensu
   })
   await page.keyboard.press('Control+Enter')
   await expect.poll(() => requested).toBe(true)
-  await expect(page.locator('#proofing-band .context-panel-body')).toBeVisible()
-  await page.getByRole('button', { name: 'Paramètres · Liste à puces', exact: true }).click()
-  await expect(page.locator('#proofing-band')).toHaveCount(0)
+  await expect(page.locator('#object-menu').getByRole('status')).toContainText('suggestions')
+  await page.getByRole('button', { name: 'Liste à puces', exact: true }).click()
+  await expect(page.locator('#object-menu')).toHaveAccessibleName('Type de liste')
   const response = page.waitForResponse(
     (response) => response.request().postDataJSON()?.command === 'spelling_suggestions',
   )
   release()
   await response
-  await expect(page.locator('.context-band:visible')).toHaveCount(1)
-  await expect(page.locator('#properties')).toBeVisible()
-  await expect(page.getByRole('radio', { name: 'Liste à puces', exact: true })).toBeFocused()
+  await expect(page.locator('.context-band:visible')).toHaveCount(0)
+  await expect(
+    page.getByRole('menuitemradio', { name: 'Liste à puces', exact: true }),
+  ).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(page.locator('.tiptap')).toContainText('courrrier')
 })

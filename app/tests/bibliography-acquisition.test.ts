@@ -138,3 +138,26 @@ it('requests explicit reconciliation and never silently reuses decisions from an
   })
   expect(draft.acquisition!.decisions[0]).toMatchObject({ target: 'old-target' })
 })
+
+it('requires the matching plan shown in the review before publishing an enrichment', async () => {
+  const { api, current } = setup('already-in-project')
+  current.plan.items[0].action = 'enrich'
+  current.plan.items[0].added_fields = ['/serial-number/doi']
+  const draft = await prepareAcquisition(api, origin)
+  const first = await prepareBibliographyPublication(api, draft).catch((error) => error)
+  expect(first).toBeInstanceOf(AcquisitionReview)
+  draft.acquisition = first.review
+  current.plan.items[0].differing_fields = ['/title']
+  const changed = await prepareBibliographyPublication(
+    api,
+    draft,
+    undefined,
+    undefined,
+    true,
+  ).catch((error) => error)
+  expect(changed).toBeInstanceOf(AcquisitionReview)
+  draft.acquisition = changed.review
+  await expect(
+    prepareBibliographyPublication(api, draft, undefined, undefined, true),
+  ).resolves.toHaveLength(1)
+})

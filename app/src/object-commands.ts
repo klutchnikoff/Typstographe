@@ -1,5 +1,5 @@
 import type { Editor, JSONContent } from '@tiptap/core'
-import { TextSelection, type Transaction } from '@tiptap/pm/state'
+import { Selection, TextSelection, type Transaction } from '@tiptap/pm/state'
 import { documentContent } from './shared-inline-marks'
 import { normalizeWhitespace } from './document-whitespace'
 import { editingProvider } from './editing-history'
@@ -81,6 +81,11 @@ export function removeObject(editor: Editor, pos: number, focus = true, current?
   const node = editor.state.doc.nodeAt(pos)
   if (!node) return Promise.resolve(false)
   const transaction = normalizeWhitespace(editor.state.tr.deleteRange(pos, pos + node.nodeSize))
+  if (!node.isInline) {
+    const boundary = transaction.doc.resolve(transaction.mapping.map(pos, -1))
+    const caret = Selection.findFrom(boundary, 1, true) ?? Selection.findFrom(boundary, -1, true)
+    if (caret) transaction.setSelection(caret)
+  }
   const commands = editingProvider(editor)
     ? [
         node.isInline

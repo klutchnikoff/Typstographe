@@ -10,7 +10,7 @@ import { tr } from './i18n'
 
 export const NODE_ATTRIBUTE_COMMITTED = 'node-attribute:committed'
 let nextId = 0
-/** One header field, bound to the same attribute/schema as the settings panel.
+/** One header field, bound to its catalogue parameter.
  * A local draft commits on Enter/blur, cancels on Escape and never overwrites a
  * concurrent attribute change. Native input keys stay outside ProseMirror.
  */
@@ -26,18 +26,7 @@ export function nodeAttributeField(
   dom.className = 'widget-attribute-field'
   dom.contentEditable = 'false'
   const fields = new ParameterFields(dom, () => {}, `widget-${++nextId}-`)
-  fields.render(
-    [
-      {
-        ...field,
-        schema: {
-          ...field.schema,
-          'x-editor': { ...field.schema['x-editor'], label_visibility: 'accessible' },
-        },
-      },
-    ],
-    { [field.name]: initial.attrs[field.attribute] ?? field.schema.default },
-  )
+  fields.render([field], { [field.name]: initial.attrs[field.attribute] ?? field.schema.default })
   const input = dom.querySelector('input')
   if (!input) throw new Error('A header attribute requires a single-line text field.')
   if (field.schema.pattern) input.spellcheck = false

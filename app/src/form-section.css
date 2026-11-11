@@ -1,0 +1,19 @@
+.form-section {
+  min-width: 0;
+  margin: 0;
+}
+.form-section + .form-section {
+  margin-top: 12px;
+}
+.form-section > summary {
+  padding: 6px 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.form-section-fields {
+  display: grid;
+  gap: 9px;
+  padding-top: 6px;
+}
