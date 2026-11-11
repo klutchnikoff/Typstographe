@@ -23,7 +23,7 @@ pub use import::{
 };
 pub use keys::suggest_key;
 pub use model::{FieldPatch, Fingerprint, Library, Provenance, Record, RecordId};
-pub use plan::{Action, Decision, ImportPlan, PlanItem};
+pub use plan::{Action, Decision, ImportMatch, ImportPlan, PlanItem};
 pub use profile::{FieldDescriptor, FieldKind, Profile, ProfileDescriptor, profiles};
 pub use search::{EntrySummary, SearchQuery, normalize_text, search, summarize};
 

@@ -936,7 +936,7 @@ summary svg {
   font-size: 13px;
   margin-bottom: 6px;
 }
-.dialog-form input:not([type='checkbox']),
+.dialog-form input:not([type='checkbox'], [type='radio']),
 .dialog-form textarea {
   width: 100%;
   padding: 8px 10px;
@@ -950,7 +950,7 @@ summary svg {
   min-height: 105px;
   resize: vertical;
 }
-.dialog-form input[type='checkbox'] {
+.dialog-form input:is([type='checkbox'], [type='radio']) {
   flex-shrink: 0;
   accent-color: var(--accent);
 }
@@ -2380,6 +2380,10 @@ li:has(.interline-band-gap[data-marker])::marker {
   justify-content: flex-start;
   margin: 0;
 }
+.bibliography-import-status {
+  color: var(--muted);
+  margin: 0;
+}
 .bibliography-toolbar svg {
   width: 15px;
   height: 15px;
@@ -2526,6 +2530,7 @@ li:has(.interline-band-gap[data-marker])::marker {
 }
 .bibliography-import-item label:has(input[type='radio']) {
   display: flex;
+  align-items: baseline;
   gap: 6px;
 }
 .bibliography-import-comparison {
@@ -2546,6 +2551,9 @@ li:has(.interline-band-gap[data-marker])::marker {
 .bibliography-import-comparison small {
   display: block;
   color: var(--muted);
+}
+.bibliography-comparison-difference > td {
+  background: var(--soft);
 }
 .bibliography-confirmation {
   display: grid;

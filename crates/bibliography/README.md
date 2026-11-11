@@ -10,7 +10,7 @@ and own persistence, undo history, recovery and publication.
   conversion diagnostics, nonblocking completeness hints and form descriptors.
 - Unicode-aware fuzzy title/author search, summaries and available-key suggestions.
 - Candidate evidence separate from contradictions and whole-group coherence.
-- Immutable reconciliation plans, explicit same/distinct/skip decisions,
+- Immutable reconciliation plans, explicit keep/same/distinct/skip decisions,
   gap-only enrichment, full-library guards and all-or-nothing application in memory.
 - Deterministic Hayagriva projection retaining supported native fields and parents.
 

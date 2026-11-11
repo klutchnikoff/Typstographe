@@ -52,6 +52,15 @@ export type Decision =
   | { kind: 'skip'; incoming: string }
   | { kind: 'distinct'; incoming: string; key: string }
   | { kind: 'same'; incoming: string; target: string }
+  | { kind: 'keep'; incoming: string; target: string }
+export interface ImportMatch {
+  target: string
+  in_project: boolean
+  identical: boolean
+  signals: string[]
+  added_fields: string[]
+  differing_fields: string[]
+}
 export interface Report {
   summaries?: { record_id: string; title: string; authors: string; year: string }[]
   fingerprint: string
@@ -66,7 +75,8 @@ export interface Report {
       action: string
       added_fields: string[]
       differing_fields: string[]
-      conflicts: unknown[]
+      conflicts: string[]
+      matches: ImportMatch[]
     }[]
   }
 }

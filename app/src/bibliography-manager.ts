@@ -10,7 +10,13 @@ import { metadataCommands } from './metadata-commands'
 import { formDialog } from './form-dialog'
 import { bibliographyRequests } from './bibliography-requests'
 import { diagnosticText } from './bibliography-fields'
-import { importReview, reviewImport, type ImportDraft } from './bibliography-import'
+import {
+  importNeedsDecision,
+  importReview,
+  importSummary,
+  reviewImport,
+  type ImportDraft,
+} from './bibliography-import'
 import type { Browse, Form, Draft, Notice, Source, Report } from './bibliography-types'
 import { referenceRecords } from './citation-index'
 import { documentContent } from './shared-inline-marks'
@@ -152,21 +158,28 @@ export function openBibliography(
     save.disabled =
       save.hidden ||
       locked ||
-      (!!plan && (plan.report.plan.blocked || plan.ready !== stableJSON(plan.decisions)))
+      (!!plan &&
+        (plan.report.plan.blocked ||
+          importNeedsDecision(plan) ||
+          plan.ready !== stableJSON(plan.decisions)))
     save.textContent = tr(
       imported
         ? 'Importer'
         : !acquisitionReviewOpen && draft?.acquisition && action !== 'new'
-          ? 'Vérifier le rapprochement'
-          : cite
-            ? draft?.acquisition
-              ? 'Ajouter et citer'
+          ? 'Comparer les notices'
+          : acquisitionReviewOpen
+            ? cite
+              ? 'Appliquer le choix et citer'
+              : 'Appliquer le choix'
+            : cite
+              ? draft?.acquisition
+                ? 'Ajouter et citer'
+                : draft?.creating
+                  ? 'Créer et citer'
+                  : 'Valider et citer'
               : draft?.creating
-                ? 'Créer et citer'
-                : 'Valider et citer'
-            : draft?.creating
-              ? 'Ajouter au projet'
-              : 'Valider',
+                ? 'Ajouter au projet'
+                : 'Valider',
     )
     cancel.textContent = tr(imported ? 'Annuler l’import' : 'Annuler')
     cancel.disabled = backToResults.disabled = backToNotice.disabled = locked
@@ -411,6 +424,8 @@ export function openBibliography(
   }
   async function acquire(candidate: OnlineCandidate) {
     if (busy || !current()) return
+    let shortcut = false
+    browser.reportImport()
     busy = true
     right.inert = true
     refreshActions()
@@ -419,9 +434,10 @@ export function openBibliography(
       if (!current()) return
       clear()
       draft = prepared
-      show()
+      shortcut = prepared.acquisition?.report.plan.items[0]?.action === 'duplicate'
+      if (!shortcut) show()
       baseline = stableJSON(draft)
-      track()
+      if (!shortcut) track()
       online?.accept(candidate.id)
     } catch (error) {
       message(error)
@@ -429,7 +445,14 @@ export function openBibliography(
       busy = false
       right.inert = false
       refreshActions()
-      if (current()) focusNotice()
+      if (current() && !shortcut) focusNotice()
+    }
+    if (shortcut && current() && !(await publish()) && current()) {
+      const error = form.error.textContent
+      if (!acquisitionReviewOpen) show()
+      track()
+      form.error.textContent = error
+      if (!acquisitionReviewOpen) focusNotice()
     }
   }
   async function create(profile = 'journal_article') {
@@ -517,14 +540,14 @@ export function openBibliography(
     refreshActions()
     form.error.textContent = ''
     try {
-      const batch = await prepareBibliographyPublication(
+      const publication = await prepareBibliographyPublication(
         api,
         structuredClone(selected),
         structuredClone(review),
         structuredClone(citation),
         confirming,
       )
-      if (!batch) return false
+      if (!publication) return false
       if (
         citation &&
         stableJSON(documentContent(editor.getJSON())) !== stableJSON(citation.document)
@@ -534,7 +557,7 @@ export function openBibliography(
         )
       if (!current() || draft !== selected || imported !== review) return false
       await metadataCommands(editor, provider).run(
-        batch,
+        publication.batch,
         () =>
           current() &&
           stableJSON({ draft, imported, cite }) === frozen &&
@@ -545,17 +568,14 @@ export function openBibliography(
       )
       form.committed()
       recovered = undefined
-      const id = selected
-          ? selected.acquisition?.report.plan.items[0]?.target || selected.base.id
-          : review?.report.plan.items.find((item) => item.action === 'new')?.target ||
-            review?.report.plan.items.find((item) => item.target)?.target,
-        position = citation?.position
+      const position = citation?.position
       const fromOnline = !!online
       if (finish || citation) {
         online?.destroy()
         online = undefined
       }
       clear()
+      browser.reportImport(publication.summary)
       busy = false
       if (citation) {
         destroy()
@@ -563,7 +583,7 @@ export function openBibliography(
         options.done?.()
         editor.view.focus()
       } else if (finish) {
-        await browse(id || undefined)
+        await browse(publication.target)
         if (!draft) show()
         if (fromOnline && current()) search.focus({ preventScroll: true })
       }
@@ -573,8 +593,6 @@ export function openBibliography(
         selected.acquisition = error.review
         acquisitionReviewOpen = true
         show()
-        if (error.review.report.plan.blocked)
-          form.error.textContent = tr('Cet import nécessite une décision de rapprochement.')
         changed()
       } else message(error)
       return false
@@ -651,9 +669,7 @@ export function openBibliography(
         selected.report.plan = result.plan
         reviewing?.update()
         selected.ready = stableJSON(selected.decisions)
-        form.error.textContent = result.plan.blocked
-          ? tr('Cet import nécessite une décision de rapprochement.')
-          : ''
+        form.error.textContent = ''
         changed()
       }
     } catch (error) {
@@ -664,6 +680,7 @@ export function openBibliography(
     const selected = file.files?.[0]
     file.value = ''
     if (!selected || busy) return
+    browser.reportImport()
     busy = true
     refreshActions()
     try {
@@ -690,12 +707,15 @@ export function openBibliography(
           .then((report) => {
             if (current()) {
               clear()
+              const items = report.plan.items
+              if (items.length && items.every((item) => item.action === 'duplicate')) {
+                browser.reportImport(importSummary(report.plan))
+                void browse(items[0].target || undefined)
+                return
+              }
               imported = { source, report, decisions: [], ready: stableJSON([]) }
               show()
               track()
-              form.error.textContent = report.plan.blocked
-                ? tr('Cet import nécessite une décision de rapprochement.')
-                : ''
               queueMicrotask(() => {
                 if (current()) reviewing?.focus()
               })

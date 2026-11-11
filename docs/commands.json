@@ -2,7 +2,7 @@
   "entries": [
     {
       "batch_step": true,
-      "description": "Publish one guarded native-library change in memory, never save. expected is the library fingerprint from bibliography.inspect. Edit, replace, rename and remove also require the record fingerprint from bibliography.record. Edit profile changes native type/parents; no independent genre is stored. Replace accepts a prepared native record while preserving identity/provenance, including retained inactive parents. Import requires the original preparation fingerprint and explicit same/distinct/skip decisions; optional reviewed records carry private form corrections while preserving the entire prepared identity/provenance set; unresolved plans are refused. Use one atomic batch with inline.replace for create-and-cite. Undo restores notices, citations and provenance together.",
+      "description": "Publish one guarded native-library change in memory, never save. expected is the library fingerprint from bibliography.inspect. Edit, replace, rename and remove also require the record fingerprint from bibliography.record. Edit profile changes native type/parents; no independent genre is stored. Replace accepts a prepared native record while preserving identity/provenance, including retained inactive parents. Import requires the original preparation fingerprint and explicit keep/same/distinct/skip decisions. keep reuses the target without modifying it; same fills missing fields; optional reviewed records carry private form corrections while preserving the entire prepared identity/provenance set; unresolved plans are refused. Use one atomic batch with inline.replace for create-and-cite. Undo restores notices, citations and provenance together.",
       "family": "edit",
       "id": "bibliography.apply",
       "params_schema": {
@@ -195,6 +195,23 @@
                   },
                   "kind": {
                     "const": "same",
+                    "type": "string"
+                  },
+                  "target": {
+                    "$ref": "#/$defs/RecordId"
+                  }
+                },
+                "required": ["kind", "incoming", "target"],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "incoming": {
+                    "$ref": "#/$defs/RecordId"
+                  },
+                  "kind": {
+                    "const": "keep",
                     "type": "string"
                   },
                   "target": {
@@ -754,7 +771,7 @@
     },
     {
       "batch_step": false,
-      "description": "Resolve explicit decisions against the frozen library fingerprint; return the reviewed plan without publication. No silent rebase of import decisions.",
+      "description": "Resolve explicit decisions against the frozen library fingerprint; return the reviewed plan and the identified comparison targets without publication. No silent rebase of import decisions.",
       "family": "query",
       "id": "bibliography.review_import",
       "params_schema": {
@@ -802,6 +819,23 @@
                   },
                   "kind": {
                     "const": "same",
+                    "type": "string"
+                  },
+                  "target": {
+                    "$ref": "#/$defs/RecordId"
+                  }
+                },
+                "required": ["kind", "incoming", "target"],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "incoming": {
+                    "$ref": "#/$defs/RecordId"
+                  },
+                  "kind": {
+                    "const": "keep",
                     "type": "string"
                   },
                   "target": {
@@ -2516,6 +2550,23 @@
                   "incoming": {
                     "$ref": "#/$defs/RecordId"
                   },
+                  "kind": {
+                    "const": "keep",
+                    "type": "string"
+                  },
+                  "target": {
+                    "$ref": "#/$defs/RecordId"
+                  }
+                },
+                "required": ["kind", "incoming", "target"],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "incoming": {
+                    "$ref": "#/$defs/RecordId"
+                  },
                   "key": {
                     "type": "string"
                   },
@@ -3179,6 +3230,23 @@
                       },
                       "kind": {
                         "const": "same",
+                        "type": "string"
+                      },
+                      "target": {
+                        "$ref": "#/$defs/RecordId"
+                      }
+                    },
+                    "required": ["kind", "incoming", "target"],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "incoming": {
+                        "$ref": "#/$defs/RecordId"
+                      },
+                      "kind": {
+                        "const": "keep",
                         "type": "string"
                       },
                       "target": {
