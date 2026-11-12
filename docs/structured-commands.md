@@ -221,10 +221,16 @@ Images et tableaux sont toujours enveloppés dans une `figure` Typst, même sans
 légende. La génération partage la légende facultative et la politique
 de placement ; chaque contenu garde son édition spécialisée. L’éditeur
 présente un seul widget, avec l’en-tête et les bandeaux communs existants.
-Le modèle définit la présentation, la numérotation et les valeurs de placement,
-sans réglage de placement par objet dans ce lot. Les références croisées restent
-à réaliser. Les deux modèles fournis rendent les figures de tableaux sécables
-pour les tableaux longs, sans modifier le comportement des images.
+Le panneau commun expose le placement (`model`, `in-flow`, `auto`, `top`,
+`bottom`) et la largeur (`model`, `column`, `full`). Ils sont conservés par
+objet et modifiables par `node.set_attrs`. Les légendes, les ancres de renvoi et
+le texte alternatif restent indépendants de ces choix.
+
+Le modèle définit la présentation et la numérotation. Pour réaliser la pleine
+largeur, le modèle peut appeler `layout-figures(body, column-count: ...)`.
+En plusieurs colonnes, une figure pleine largeur utilise un flottant natif.
+Un tableau trop haut passe dans le flux, dans une zone pleine largeur si
+demandée. Typst découpe alors le tableau et répète ses en-têtes de colonnes.
 
 La grille conserve les lignes, colonnes, cellules et rôles sémantiques des
 en-têtes. Un bandeau de création demande les dimensions et la présence d’une

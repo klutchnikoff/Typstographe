@@ -1226,6 +1226,17 @@ type-picker-preview-unavailable = Preview unavailable
 type-picker-enlarged-preview = Enlarged preview · { "{name}" }
 
 web-follow-model = Follow the model
+web-figure-placement = Placement
+web-figure-width = Width
+web-figure-in-flow = In text
+web-figure-float-auto = Floating, automatic
+web-figure-float-top = At the top
+web-figure-float-bottom = At the bottom
+web-figure-column = Current column
+web-figure-full-width = Full width
+web-figure-placement-menu = Placement…
+web-figure-full-width-hint = In a multi-column layout, full-width objects float where possible.
+web-figure-long-table-hint = Tables too tall to float stay in the text.
 web-model-option-substituted = The model uses its default for some settings. Your choices are retained.
 web-no = No
 web-yes = Yes

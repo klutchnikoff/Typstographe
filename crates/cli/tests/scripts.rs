@@ -170,3 +170,50 @@ fn checked_letter_example_uses_the_public_contract_and_is_ready_for_export() {
     assert!(rendered_source.contains("#postscript[Vous pouvez me répondre par courrier"));
     response(cli().arg("check").arg(project).arg("--for-export"), 0);
 }
+
+#[test]
+fn model_switch_keeps_math_and_reference_dependencies_in_a_reopened_export() {
+    use typstographe_core::content::project::Project;
+
+    let dir = tempfile::tempdir().unwrap();
+    let mut example: Value = serde_json::from_str(include_str!(
+        "../../../examples/cli/article-mathematics.json"
+    ))
+    .unwrap();
+    example["save"]["path"] = json!("original.typsto");
+    response(cli().arg("script").arg(job(dir.path(), example)), 0);
+    let original = Project::read(&dir.path().join("original.typsto")).unwrap();
+    let before = original.current();
+    let switch = script(
+        json!([{"id":"document.set_model","params":{
+            "model_id":"article.working-copy",
+            "source":before.template,
+            "manifest":before.model_manifest,
+        }}]),
+        json!({"kind":"current"}),
+    );
+    response(cli().arg("script").arg(job(dir.path(), switch)), 0);
+
+    let path = dir.path().join("original.typsto");
+    let reopened = Project::read(&path).unwrap();
+    assert_eq!(reopened.current().model_id, "article.working-copy");
+    assert_eq!(reopened.current().document, before.document);
+    assert_eq!(reopened.current().metadata, before.metadata);
+    let export = dir.path().join("export");
+    response(
+        cli()
+            .arg("export")
+            .arg(&path)
+            .args(["--format", "both", "--output"])
+            .arg(&export),
+        0,
+    );
+    for file in [
+        "article.pdf",
+        "capabilities/mathematics.typ",
+        "capabilities/cross-references.typ",
+        "packages/mitex-0.2.7/lib.typ",
+    ] {
+        assert!(export.join(file).is_file(), "missing export file {file}");
+    }
+}

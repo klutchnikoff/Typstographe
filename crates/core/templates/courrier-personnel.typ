@@ -6,6 +6,7 @@
 
 #import "capabilities/dates.typ": format-date
 #import "capabilities/correspondence.typ": postscript, attachment, letter-notes
+#import "capabilities/figures.typ": layout-figures
 
 #let courrier(
   expediteur: "",
@@ -150,7 +151,7 @@
   if objet != "" { block(below: 3mm, strong[#labels.subject : #objet]) }
   if reference != "" { block(below: 3mm, text(size: 10pt)[#labels.reference : #reference]) }
   v(5mm)
-  body
+  layout-figures(body)
   // Même sans image, réserver la même place pour une signature manuscrite.
   // La signature et le nom restent ensemble ; la signature n'est pas un flottant.
   let elements = ()

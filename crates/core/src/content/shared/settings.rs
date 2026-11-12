@@ -6,6 +6,7 @@ use crate::{
         commands::{Command, OptionName},
         contract::{Error, State},
     },
+    packages,
 };
 use serde_json::{Value, json};
 use yrs::{Any, Doc, Map, Transact};
@@ -139,14 +140,14 @@ pub(super) fn apply(doc: &Doc, state: &State, command: &Command) -> Result<(), E
 }
 pub(super) fn validate_model(state: &State, assets: &Assets) -> Result<(), Error> {
     let template = &state.settings.template;
-    let dependencies = crate::packages::for_template(template);
-    crate::packages::validate(template, &dependencies).map_err(|e| Error::InvalidSettings {
+    let dependencies = packages::for_template(template);
+    packages::validate(template, &dependencies).map_err(|e| Error::InvalidSettings {
         reason: e.to_string(),
     })?;
     let source = state.validate(assets)?;
     let mut world = crate::rendering::TypstWorld::default();
     world.set_assets(assets);
-    world.set_dependencies(&dependencies);
+    world.set_dependencies(&packages::including_source(&dependencies, &source));
     world
         .validate_with_model(
             &source,

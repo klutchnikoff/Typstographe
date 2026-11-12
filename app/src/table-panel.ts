@@ -46,6 +46,7 @@ export function tablePanel(
   transport: Transport,
   capability: Capability,
   menu: ObjectMenu,
+  openPlacement: (pos: number) => void,
 ) {
   const operations = capability.editor?.actions || []
   const rowSpec = capability.parameters.properties!.rows
@@ -430,6 +431,18 @@ export function tablePanel(
         ...(axis === 'row' ? [] : [headerAction('row_headers', 'rows', left)]),
       ],
     })
+    if (mode === 'headers')
+      groups.push({
+        actions: [
+          {
+            label: tr('Placement…'),
+            run({ range, dismiss }) {
+              dismiss()
+              openPlacement(range.from)
+            },
+          },
+        ],
+      })
     session.show(groups)
     return true
   }

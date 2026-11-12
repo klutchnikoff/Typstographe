@@ -222,13 +222,14 @@ fn block(
             }
             let alt = typst_string(node.string("alt")?);
             figure(
+                node,
                 &format!("image({}, alt: {alt})", typst_string(path)),
                 &node.content,
                 mapped,
                 keys,
             )?
         }
-        "table" => table_figure(node, &[], assets, mapped, keys)?,
+        "table" => figure(node, &table(node, assets, mapped, keys)?, &[], mapped, keys)?,
         "tableFigure" => {
             if node.content.len() != 2
                 || node.content[0].kind != "table"
@@ -236,10 +237,10 @@ fn block(
             {
                 return Err("Tableau et légende attendus.".into());
             }
-            table_figure(
-                &node.content[0],
+            figure(
+                node,
+                &table(&node.content[0], assets, mapped, keys)?,
                 &node.content[1].content,
-                assets,
                 mapped,
                 keys,
             )?
@@ -302,35 +303,22 @@ fn block(
         result
     })
 }
-fn table_figure(
-    node: &Node,
-    caption: &[Node],
-    assets: &Assets,
-    mapped: bool,
-    keys: &CitationKeys,
-) -> Result<String, String> {
-    let grid = table(node, assets, mapped, keys)?;
-    figure(
-        grid.strip_prefix('#').expect("table expression"),
-        caption,
-        mapped,
-        keys,
-    )
-}
 /// Common native figure envelope; accessibility descriptions remain on the image body.
 fn figure(
+    node: &Node,
     body: &str,
     caption: &[Node],
     mapped: bool,
     keys: &CitationKeys,
 ) -> Result<String, String> {
     let caption = inline_resolved(caption, mapped, keys)?;
-    let option = if caption.is_empty() {
+    let mut options = if caption.is_empty() {
         String::new()
     } else {
         format!(", caption: [{caption}]")
     };
-    Ok(format!("#figure({body}{option})"))
+    let marker = super::figures::options(node, &mut options)?;
+    Ok(format!("{marker}#figure({body}{options})"))
 }
 
 fn table(
@@ -390,7 +378,7 @@ fn table(
             content.join(", ")
         });
     }
-    Ok(format!("#table(columns: {width}, {})", cells.join(", ")))
+    Ok(format!("table(columns: {width}, {})", cells.join(", ")))
 }
 fn inline_resolved(nodes: &[Node], mapped: bool, keys: &CitationKeys) -> Result<String, String> {
     nodes

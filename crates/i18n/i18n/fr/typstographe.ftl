@@ -1228,6 +1228,17 @@ type-picker-preview-unavailable = Aperçu indisponible
 type-picker-enlarged-preview = Aperçu agrandi · { "{name}" }
 
 web-follow-model = Selon le modèle
+web-figure-placement = Placement
+web-figure-width = Largeur
+web-figure-in-flow = Dans le texte
+web-figure-float-auto = Flottant automatique
+web-figure-float-top = En haut
+web-figure-float-bottom = En bas
+web-figure-column = Colonne courante
+web-figure-full-width = Toute la largeur
+web-figure-placement-menu = Placement…
+web-figure-full-width-hint = Sur plusieurs colonnes, la pleine largeur utilise un flottant si possible.
+web-figure-long-table-hint = Un tableau trop haut pour flotter reste dans le texte.
 web-model-option-substituted = Le modèle utilise son défaut pour certains réglages. Vos choix sont conservés.
 web-no = Non
 web-yes = Oui

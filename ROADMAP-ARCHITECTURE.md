@@ -85,6 +85,22 @@ sans écrasement ; un choix imposé reste temporaire tant que ce modèle est act
 Vérifier notamment brouillon → revue à style imposé → brouillon : les citations
 restent intactes et le choix initial redevient effectif s’il est autorisé.
 
+**Extension du contrat Article pour la publication.** Ajouter un groupe
+d’en-tête facultatif aux données typées du document. Définir les champs,
+leurs validations et la liaison Typst en commun pour l’interface, la CLI et
+MCP. Distinguer le DOI de l’article des DOI des notices bibliographiques.
+Réutiliser les dates structurées pour les étapes éditoriales et préserver les
+valeurs absentes. Vérifier la conservation des données lors d’un aller-retour
+entre un modèle de travail et un modèle de revue.
+
+Prévoir un numéro de première page facultatif, entier positif avec `1` par
+défaut. Initialiser le compteur de pages Typst au début de l’article. La
+pagination affichée, les renvois de page et le sommaire utilisent ce compteur.
+L’aperçu conserve l’index physique pour la navigation et la synchronisation.
+Qualifier un article dont le premier folio est `217`, avec des renvois sur
+plusieurs pages. Dans un pied de page affichant aussi un total, distinguer
+le nombre de pages de l’article du dernier folio du compteur.
+
 ### Extensions du socle déclaratif — différées
 
 B.1 est clôturé ; les extensions suivantes ne sont pas des critères de sortie
@@ -227,6 +243,16 @@ la livraison de tous les types de B n’est pas un prérequis.
   **Différé explicitement :** macros LaTeX et fonctions Typst personnalisées.
   Préciser ultérieurement leur définition, leur portée, leur disponibilité au
   rendu et leur conservation autonome dans le projet et les exports.
+  Les énoncés mathématiques et les preuves constituent une extension distincte
+  du contrat Article. Définir d’abord les genres, le contenu riche et les
+  paramètres utiles du contrat public. Réutiliser les ancres de C.1 pour les
+  énoncés. Le document appelle l’interface Typst stable des capacités. L’auteur
+  du modèle peut l’implémenter en Typst directement ou l’adapter à un paquet
+  de son choix, par exemple [theorion](https://typst.app/universe/package/theorion/).
+  Inventorier et embarquer les versions utilisées par le modèle. Examiner les
+  idées de theorion en partant des usages retenus. Vérifier sur un article avec
+  équations, énoncés, preuves et renvois que les ancres survivent au changement
+  de modèle et que les exports compilent hors ligne.
   **Ajustement du 5 novembre 2026 :** `language` est un paramètre de création
   stocké comme attribut, exclu des propriétés et des écritures `node.set_attrs`.
   Le champ de label dans l’en-tête réutilise schéma, attribut et commande du
@@ -366,7 +392,6 @@ D’autres connecteurs spécialisés pourront compléter cette chaîne.
   recherche par auteur, provenance, clavier, conflits, récupération et export.
   Le DOI Cairn `10.3917/dbu.jorro.2022.01.0155` distingue « Émancipation »
   (Cairn) du titre d’ouvrage erroné fourni par le service DOI générique.
-- Commits locaux uniquement ; aucune poussée et aucun déclenchement de CI GitHub.
 
 La révision est **implémentée et vérifiée localement le 7 novembre 2026** :
 20 tests des collecteurs, tests frontend et Fluent, recettes Chromium/WebKit,
@@ -374,6 +399,13 @@ essais réels Cairn, zbMATH et repli vers DataCite. Le connecteur Crossref et
 la résolution de catalogue par ISBN sont retirés. Les opérations de
 publication CLI/MCP restent sur le contrat commun, sans nouveau collecteur réseau
 exposé par ces adaptateurs. Le schéma d’état CAS 16/17 est inchangé ; C.4 personnel demeure différé.
+
+**C.5 est clôturé le 11 novembre 2026.** La recette dans l’application sur
+`test-nicolas.typsto` est validée. Le comparateur, le traitement des doublons
+exacts et le bilan d’import groupé sont fusionnés dans
+[la PR #29](https://github.com/klutchnikoff/Typstographe/pull/29).
+Les 26 scénarios bibliographiques ont été vérifiés dans chacun des deux moteurs,
+Chromium et WebKit. La [CI du dernier `main`](https://github.com/klutchnikoff/Typstographe/actions/runs/43098980180) est passée.
 Voir le [contrat et la qualification](docs/c5-online-bibliography.md).
 
 ### Consolidation frontend et E.1 — 6 novembre 2026
@@ -433,12 +465,26 @@ sans promettre toutes les fonctionnalités de chaque paquet.
 - Séparer noyau Typst et adaptation MyST ; évaluer l’appel direct du noyau avant
   toute intégration de la chaîne MyST. Épingler sources, paquets et ressources,
   inventorier licences et polices, puis compiler sans accès réseau.
-- Tester les résumés multilingues et dates éditoriales de LaPreprint, les
-  contraintes du modèle IEEE, les conventions anglaises de Letterloom et les
-  structures de documents longs de Quire/Plain Typst Book. Pour Quire, qualifier
+- Tester les conventions anglaises de Letterloom et les structures de documents
+  longs de Quire et Plain Typst Book. Pour Quire, qualifier
   français, polices, dates via notre wrapper Datify et les éventuelles capacités
   theorion/codly ; les signatures multiples ou pièces incorporées de Letterloom
   restent des extensions à décider, distinctes de nos P.J. par mentions.
+
+Le [bilan de LaPreprint](docs/lapreprint-evaluation.md) qualifie le contrat
+Article et les exports locaux. La validation de `document.set_model` inclut
+les dépendances du corps, comme la compilation courante. La recette commune
+vérifie l’aller-retour entre les deux modèles, notamment avec les équations,
+les renvois et les en-têtes de lignes de tableaux. L’intégration au catalogue
+s’appuie sur le contrat actuel. L’extension des données de publication est
+planifiée dans le chantier B.
+
+L’[essai IEEE pour MyST](docs/ieee-myst-evaluation.md) qualifie le changement
+vers un modèle aux réglages imposés et le rétablissement des choix au retour.
+La recette à deux colonnes qualifie aussi les flottants sur toute la largeur
+et la pagination des tableaux longs avec le helper commun. Le
+[relevé des capacités](docs/capabilities-inventory.md) consigne les règles de
+placement, l’habillage latéral à étudier et les rôles de section à préciser.
 
 **Accessibilité des exports (C/D) :** partager les diagnostics de description
 d’image entre les adaptateurs ; conserver et récupérer les brouillons incomplets,

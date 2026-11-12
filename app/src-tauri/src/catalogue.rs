@@ -91,6 +91,13 @@ pub fn content_catalogue() -> Value {
                     if let Some(key) = parameter["x-editor"]["label_key"].as_str() {
                         parameter["title"] = json!(text(key));
                     }
+                    if let Some(keys) = parameter["x-editor"]["option_label_keys"].as_object() {
+                        let labels = keys
+                            .iter()
+                            .map(|(value, key)| (value.clone(), json!(text(key.as_str().unwrap()))))
+                            .collect::<serde_json::Map<_, _>>();
+                        parameter["x-editor"]["option_labels"] = Value::Object(labels);
+                    }
                 }
             }
             value["editor"] = catalogue::editor(capability.id);
@@ -254,6 +261,17 @@ mod tests {
                 if let Some(key) = parameter["x-editor"]["label_key"].as_str() {
                     assert_eq!(parameter["title"], text(key));
                     parameter.as_object_mut().unwrap().remove("title");
+                }
+                if let Some(labels) = parameter["x-editor"]
+                    .as_object_mut()
+                    .and_then(|hint| hint.remove("option_labels"))
+                {
+                    for (value, key) in parameter["x-editor"]["option_label_keys"]
+                        .as_object()
+                        .unwrap()
+                    {
+                        assert_eq!(labels[value], text(key.as_str().unwrap()));
+                    }
                 }
             }
             assert_eq!(localized, catalogue::parameters(id));

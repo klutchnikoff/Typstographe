@@ -5,9 +5,7 @@
       "id": "dates",
       "entrypoint": "capabilities/dates.typ",
       "signature": "format-date(value: none | datetime | str, lang: \"fr\", format: \"long\" | \"short\" | \"iso\") -> content",
-      "packages": [
-        "datify"
-      ]
+      "packages": ["datify"]
     },
     {
       "id": "correspondence",
@@ -40,6 +38,12 @@
       "packages": []
     },
     {
+      "id": "figures",
+      "entrypoint": "capabilities/figures.typ",
+      "signature": "layout-figures(body, column-count: 1, gutter: 12pt) -> content",
+      "packages": []
+    },
+    {
       "id": "cross-references",
       "entrypoint": "capabilities/cross-references.typ",
       "signature": "cross-reference(target: label, include-label: bool, include-page: bool) -> content; reference-style(label: auto, page: auto, combine: auto) -> content",
@@ -49,9 +53,7 @@
       "id": "mathematics",
       "entrypoint": "capabilities/mathematics.typ",
       "signature": "math-formula(source: str, language: \"typst\" | \"latex\", block: bool, alt: str) -> content",
-      "packages": [
-        "mitex"
-      ]
+      "packages": ["mitex"]
     }
   ],
   "packages": [
@@ -63,9 +65,7 @@
       "license": "MIT",
       "archive": "https://packages.typst.org/preview/datify-1.3.0.tar.gz",
       "sha256": "43f313ea6b463469080cfa61e404d51a2d70d7aead6e5365f9b4dc7163519ac6",
-      "dependencies": [
-        "datify-core"
-      ]
+      "dependencies": ["datify-core"]
     },
     {
       "name": "datify-core",

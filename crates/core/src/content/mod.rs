@@ -12,6 +12,7 @@ pub mod comparison;
 pub mod contract;
 pub mod editing;
 pub mod editorial;
+mod figures;
 mod mapping;
 pub mod mathematics;
 pub mod project;

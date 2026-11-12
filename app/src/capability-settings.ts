@@ -19,6 +19,7 @@ export interface Parameter {
     control?: 'image'
     multiline?: boolean
     label_key?: string
+    option_labels?: Record<string, string>
     label_visibility?: 'visible' | 'accessible'
   }
 }
