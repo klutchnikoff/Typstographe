@@ -63,23 +63,51 @@
   }
 }
 
+#let prefix-first-paragraph(body, prefix) = {
+  let parts = if body.func() == [].func() { body.children } else { (body,) }
+  let first = parts.position(part => part.func() == par)
+  if first == none { return prefix + body }
+  let fields = parts.at(first).fields()
+  let text = fields.remove("body")
+  parts.at(first) = par(prefix + text, ..fields)
+  parts.join()
+}
+
 #let render-abstract(entry, primary: false) = {
+  if (entry.abstract == [] and entry.keywords.len() == 0
+    and (primary or (entry.title == [] and entry.subtitle == []))) {
+    return []
+  }
   set text(lang: entry.language, weight: "bold", size: 9pt)
-  set par(first-line-indent: 0pt)
+  set par(first-line-indent: 0pt, leading: 0.7em)
   let labels = abstract-labels(entry.language)
-  if not primary {
-    if entry.title != [] { block(above: 4pt, below: 2pt, entry.title) }
-    if entry.subtitle != [] { block(below: 2pt, emph(entry.subtitle)) }
-  }
-  if entry.abstract != [] {
-    let label = emph(labels.abstract)
-    block(sticky: true, below: 2pt)[#label#sym.dash.em]
-    entry.abstract
-  }
-  if entry.keywords.len() > 0 {
-    let label = if entry.language == "en" { "Index terms" } else { labels.keywords }
-    block(above: 3pt, below: 6pt)[#emph(label)#sym.dash.em#entry.keywords.join(", ")]
-  }
+  let dash = if entry.language == "fr" {
+    [#sym.space.nobreak#sym.dash.em#sym.space.nobreak]
+  } else { sym.dash.em }
+  let title-gap = 7pt
+  block(width: 100%, above: 0pt, below: 12pt, {
+    if not primary {
+      if entry.title != [] {
+        block(above: 0pt, below: title-gap, sticky: true, text(size: 11pt, entry.title))
+      }
+      if entry.subtitle != [] {
+        block(
+          above: title-gap,
+          below: title-gap,
+          sticky: true,
+          text(size: 10pt, weight: "regular", emph(entry.subtitle)),
+        )
+      }
+    }
+    if entry.abstract != [] {
+      let abstract = prefix-first-paragraph(entry.abstract, emph(labels.abstract) + dash)
+      block(width: 100%, above: 0pt, below: 0pt, abstract)
+    }
+    if entry.keywords.len() > 0 {
+      let label = if entry.language == "en" { "Index terms" } else { labels.keywords }
+      block(above: 9pt, below: 0pt)[#emph(label)#dash#entry.keywords.join(", ")]
+    }
+  })
 }
 
 #let article(

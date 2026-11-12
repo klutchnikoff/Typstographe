@@ -23,7 +23,10 @@ titres et Libertinus Serif, déjà embarquée, à la place de STIX Two Text.
   officielles restent en texte libre, avec toutes les affiliations associées
   à chaque auteur, son courriel, l’ORCID et le rôle d’auteur correspondant.
   Le port MyST ne sélectionne que la première affiliation de chaque auteur.
-  Les résumés et mots-clés multilingues utilisent notre fonction commune.
+  L’amont reçoit un seul titre, un seul résumé et une liste de mots-clés.
+  Notre adaptation compose les traductions avec la fonction commune de
+  Typstographe. Dans la colonne, le titre traduit est en 11 pt et son
+  sous-titre en italique en 10 pt, au-dessus du résumé en 9 pt.
   Le titre court est conservé dans les données et le modèle d’essai, comme
   le modèle amont, compose le document sans titre courant.
 - Le manifeste d’essai impose Letter portrait, les citations numériques IEEE
