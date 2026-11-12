@@ -145,6 +145,15 @@ ils ne sont pas diffusés ni sauvegardés avant confirmation. La
 [décision détaillée](docs/types-modeles-libertes.md#interface-de-len-tête--décision-du-27-octobre-2026)
 et le [contrat Article](docs/article-contract.md) servent de référence.
 
+**Article et publication.** Ajouter au contrat un groupe d’en-tête facultatif
+pour les données éditoriales de l’article. Préciser avec un parcours de revue ou
+de plateforme le jeu de champs utile, dont le DOI de l’article, la revue ou la
+plateforme, le genre éditorial, les dates de soumission, d’acceptation et de
+publication, et le statut d’accès. Permettre aussi de renseigner le numéro de
+la première page pour la pagination continue d’un numéro de revue. Les données
+renseignées suivent le projet quand on change de modèle. Chaque modèle choisit
+leur présentation.
+
 ### Extensions des contrats — différées
 
 B.1 est clôturé. Les extensions suivantes restent à examiner selon les besoins,
@@ -435,7 +444,6 @@ D’autres connecteurs spécialisés pourront compléter cette chaîne.
   recherche par auteur, provenance, clavier, conflits, récupération et export.
   Le DOI Cairn `10.3917/dbu.jorro.2022.01.0155` distingue « Émancipation »
   (Cairn) du titre d’ouvrage erroné fourni par le service DOI générique.
-- Commits locaux uniquement ; aucune poussée et aucun déclenchement de CI GitHub.
 
 La révision est **implémentée et vérifiée localement le 7 novembre 2026** :
 20 tests des collecteurs, tests frontend et Fluent, recettes Chromium/WebKit,
@@ -443,6 +451,13 @@ essais réels Cairn, zbMATH et repli vers DataCite. Le connecteur Crossref et
 la résolution de catalogue par ISBN sont retirés. Les opérations de
 publication CLI/MCP restent sur le contrat commun, sans nouveau collecteur réseau
 exposé par ces adaptateurs. Le schéma d’état CAS 16/17 est inchangé ; C.4 personnel demeure différé.
+
+**C.5 est clôturé le 11 novembre 2026.** La recette dans l’application sur
+`test-nicolas.typsto` est validée. Le comparateur, le traitement des doublons
+exacts et le bilan d’import groupé sont fusionnés dans
+[la PR #29](https://github.com/klutchnikoff/Typstographe/pull/29).
+Les 26 scénarios bibliographiques ont été vérifiés dans chacun des deux moteurs,
+Chromium et WebKit. La [CI du dernier `main`](https://github.com/klutchnikoff/Typstographe/actions/runs/43098980180) est passée.
 Voir le [contrat et la qualification](docs/c5-online-bibliography.md).
 
 ### Consolidation frontend et E.1 — 6 novembre 2026
@@ -504,13 +519,14 @@ leurs fonctionnalités.
 | Projet | Usage et points à examiner |
 | --- | --- |
 | [LaPreprint](https://github.com/myst-templates/lapreprint-typst) | Premier candidat pour Article : auteurs/affiliations, ORCID, résumés multiples, titre court, mots-clés et bibliographie ; examiner les besoins en DOI, dates éditoriales et informations marginales. |
-| [IEEE pour MyST](https://github.com/myst-templates/ieee-typst-template) | Article sous contraintes éditoriales : inspecter les signatures et la mise en page, puis qualifier les options imposées et le changement de modèle depuis un article de travail. |
+| [IEEE pour MyST](https://github.com/myst-templates/ieee-typst-template) | [Essai réalisé](docs/ieee-myst-evaluation.md). Aller-retour avec des réglages imposés, placement sur deux colonnes et tableau long vérifiés. Rôles de section à cadrer. |
 | [Plain Typst Book](https://github.com/myst-templates/plain_typst_book) | Référence pour Livre et Mémoire/thèse : couverture, préface, sommaire, chapitres et numérotation des figures/équations par chapitre. |
 | [Letterloom pour MyST](https://github.com/stefanv/myst-typst-letterloom), fondé sur [Letterloom](https://typst.app/universe/package/letterloom/) | Courrier de présentation anglaise ; comparer les champs expéditeur/destinataire, date, signature et pièces jointes. Examiner séparément les signatures multiples et l’incorporation de pièces, au-delà de nos mentions de P.J. actuelles. |
 | [Quire](https://typst.app/universe/package/quire), [sources](https://github.com/mariovagomarzal/quire) | Candidat prioritaire à évaluer pour les documents longs, également utilisable pour articles et rapports : parties/chapitres/sections, modes papier/écran, pages liminaires, résumés multilingues, annexes ; examiner les environnements scientifiques et le code via theorion/codly. |
 
-Commencer l’évaluation par LaPreprint pour Article, puis Letterloom et IEEE ;
-comparer Quire et Plain Typst Book pour préparer les types de documents longs.
+Les essais LaPreprint et IEEE couvrent Article. Évaluer Letterloom pour
+Courrier et comparer Quire et Plain Typst Book pour préparer les types de
+documents longs.
 Pour chacun, distinguer présentation relevant du modèle, données nécessitant
 une structure du type et contenus nécessitant une capacité commune. Étendre
 ces contrats ensemble avant de développer les fonctions manquantes.
@@ -800,6 +816,14 @@ un document utile et retrouve son travail, sans lire le dépôt ni installer Rus
 - Éditeur mathématique visuel, macros LaTeX et fonctions Typst personnalisées
   (saisie mathématique en ligne/bloc livrée en C.2), code, diagrammes et graphiques de données ;
   glossaire, acronymes et index selon les besoins des types livrés.
+- **Énoncés mathématiques et preuves dans Article.** Définir les capacités
+  à partir d’un article représentatif. Préciser les genres d’énoncés utiles,
+  leur titre facultatif, le contenu riche et les cibles de renvoi. Ce contrat
+  est indépendant des paquets Typst. Chaque auteur de modèle choisit son
+  implémentation de la présentation et de la numérotation. Il peut utiliser
+  [theorion](https://typst.app/universe/package/theorion/) ou un autre paquet
+  via un adaptateur Typst qui respecte le contrat. Examiner aussi les idées
+  de theorion qui répondent aux usages retenus.
 - Import de contenus externes et exports supplémentaires justifiés par les usages.
 
 La reformulation par petit LLM local n’est pas réactivée par ce plan. Un créateur
@@ -862,11 +886,9 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 ## Prochain lot engagé
 
-**C.5 — Recette utilisateur de l’acquisition vérifiée de notices.** Implémentation
-locale et vérifications automatisées terminées pour zbMATH, Cairn ciblé et le
-repli DOI générique ; valider le parcours dans l’application. C.4 reste
-différé. C.3/CAS 16 et E.1 fournissent le gestionnaire, le moteur et les garanties
-à réutiliser. Commits locaux uniquement tant que la CI GitHub est indisponible.
-
-La suite (modèles de D, autres besoins C/E ou maquette ACP de F) sera choisie
-ensemble. Les tests locaux ne remplacent pas la qualification CI avant fusion.
+**D — Deuxième modèle Article.** Le [bilan de LaPreprint](docs/lapreprint-evaluation.md)
+valide l’interchangeabilité avec le contrat Article actuel. La marge gauche
+de LaPreprint est conservée. Décider de l’intégration au catalogue et localiser
+la pagination et les renvois de section. L’extension d’en-tête pour la
+publication est planifiée en B. Les énoncés et preuves suivent leur propre lot.
+C.4 reste différé.

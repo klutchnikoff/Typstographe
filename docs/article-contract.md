@@ -56,6 +56,15 @@ les affiliations ajoutées, ainsi que des identifiants uniques et associations
 valides. La suppression d’une affiliation utilisée nécessite de traiter
 explicitement ses associations, jamais de laisser des références pendantes.
 
+## Extensions planifiées
+
+Un groupe d’en-tête facultatif pour la publication conservera les données
+éditoriales propres à l’article, dont le numéro de première page. Les énoncés
+mathématiques et les preuves feront l’objet d’un contrat de capacités
+indépendant des paquets Typst. Le modèle pourra implémenter ces capacités
+directement ou via un paquet de son choix. Les champs, signatures et validations
+seront précisés dans les lots de la [feuille de route](../ROADMAP.md).
+
 ## Bibliothèque commune
 
 Signatures cibles :
