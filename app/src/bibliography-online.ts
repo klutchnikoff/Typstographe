@@ -39,7 +39,8 @@ function issueText(issue: OnlineIssue) {
     (
       {
         invalid_query: 'Précisez un titre, un auteur, un DOI ou une URL Cairn.',
-        unsupported_query: 'Cairn attend un DOI, une URL d’article ou un identifiant de notice.',
+        unsupported_query:
+          'Activez Crossref pour rechercher dans les notices Cairn, ou saisissez un DOI, une URL ou un identifiant Cairn.',
         network: 'Connexion au service impossible.',
         timeout: 'Le service n’a pas répondu à temps.',
         rate_limited: 'Le service demande de patienter avant une nouvelle recherche.',
@@ -107,7 +108,7 @@ export function onlineBibliography(options: {
   legend.textContent = tr('Sources')
   sources.append(legend)
   const choices = new Map<OnlineProvider, HTMLInputElement>()
-  for (const provider of ['zbmath', 'cairn'] as const) {
+  for (const provider of ['zbmath', 'cairn', 'crossref'] as const) {
     const check = document.createElement('input'),
       label = document.createElement('label')
     check.type = 'checkbox'
@@ -119,7 +120,9 @@ export function onlineBibliography(options: {
     check.onchange = () => invalidate()
   }
   const hint = document.createElement('p')
-  hint.textContent = tr('Cairn : DOI, identifiant ou URL. Repli DOI automatique si nécessaire.')
+  hint.textContent = tr(
+    'Crossref peut trouver des notices Cairn par titre, auteur ou année. Repli DOI automatique si nécessaire.',
+  )
   hint.className = 'sr-only'
   hint.id = 'bibliography-online-hint'
   query.setAttribute('aria-describedby', hint.id)
