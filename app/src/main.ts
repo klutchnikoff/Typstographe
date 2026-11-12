@@ -417,6 +417,7 @@ async function start() {
     host.transport,
     contentCatalogue.entries.find((c) => c.id === 'insert.table')!,
     menu,
+    (pos) => properties?.open(pos, 'tableFigure', false, true),
   )
   const objectActions = editorObjectActions(
     editor,
@@ -517,7 +518,10 @@ async function start() {
       editor.commands.setTextSelection({ from: pos, to: pos + range.to - range.from })
       return selector.open()
     }
-    if (!details?.remove && editor.state.doc.nodeAt(pos)?.type.name === 'tableFigure')
+    if (
+      draft.form === 'table-properties' &&
+      editor.state.doc.nodeAt(pos)?.type.name === 'tableFigure'
+    )
       return tables?.resume(pos, details) || false
     if (details?.new && draft.form === 'table-properties') {
       editor.commands.setTextSelection(pos)

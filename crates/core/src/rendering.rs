@@ -394,8 +394,8 @@ mod asset_tests {
     fn pruning_preserves_model_dependencies_computed_paths_and_shared_images() {
         let metadata = Metadata::demo(DocumentType::Courrier);
         let template = DocumentType::Courrier.default_model().replace(
-            "  body\n",
-            "  image(\"images/\" + \"shared\" + \".svg\", width: 12pt)\n  body\n",
+            "  layout-figures(body)\n",
+            "  image(\"images/\" + \"shared\" + \".svg\", width: 12pt)\n  layout-figures(body)\n",
         ) + "\n// Ancienne image : \"images/obsolete.svg\"\n#let future-logo = \"images/future.svg\"\n";
         assert!(
             template.contains("image(\"images/\" + \"shared\""),

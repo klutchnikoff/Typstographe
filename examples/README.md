@@ -1,5 +1,12 @@
 # Exemples
 
+## Placement des figures et tableaux avec IEEE
+
+[article-ieee-placement.typsto](article-ieee-placement.typsto) contient une image
+et deux tableaux en pleine largeur dans un article sur deux colonnes. Le tableau
+long s’étend sur deux pages. Voir la
+[recette de vérification](../docs/ieee-myst-evaluation.md#placement-et-tableaux-longs).
+
 ## Bibliographie et profils natifs — exemple compatible
 
 [article-bibliography-profiles.typsto](article-bibliography-profiles.typsto)

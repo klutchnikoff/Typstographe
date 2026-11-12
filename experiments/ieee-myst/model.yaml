@@ -1,0 +1,9 @@
+contract-version: 1
+document-type: article
+languages: [fr, en, de, es, it, pt, nl]
+options:
+  paper: { regime: imposed, value: us-letter }
+  landscape: { regime: imposed, value: false }
+  bullet-marker: { regime: imposed, value: auto }
+  citation-style: { regime: imposed, value: ieee }
+  outline: { regime: imposed, value: false }

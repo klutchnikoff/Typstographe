@@ -34,6 +34,37 @@ function publications(page: Page) {
   })
   return commands
 }
+test('l’image et le tableau partagent les réglages de placement et de largeur', async ({
+  page,
+}) => {
+  const commands = publications(page)
+  await page.getByRole('button', { name: 'Paramètres · Image', exact: true }).click()
+  const placement = page.getByLabel('Placement', { exact: true })
+  const width = page.getByLabel('Largeur', { exact: true })
+  await placement.selectOption({ label: 'En bas' })
+  await width.selectOption({ label: 'Toute la largeur' })
+  await page.locator('#apply-properties').click()
+  await expect(page.locator('#apply-properties')).toBeHidden()
+  expect(commands.at(-1)).toMatchObject({
+    id: 'node.set_attrs',
+    params: { attrs: { placement: 'bottom', width: 'full' } },
+  })
+
+  await page.getByRole('button', { name: 'Paramètres · Tableau', exact: true }).click()
+  const entry = page.getByRole('menuitem', { name: 'Placement…', exact: true })
+  await entry.focus()
+  await page.keyboard.press('Enter')
+  await expect(placement).toBeVisible()
+  await placement.selectOption({ label: 'En haut' })
+  await width.selectOption({ label: 'Toute la largeur' })
+  await page.locator('#apply-properties').focus()
+  await page.keyboard.press('Enter')
+  await expect(page.locator('#apply-properties')).toBeHidden()
+  expect(commands.at(-1)).toMatchObject({
+    id: 'node.set_attrs',
+    params: { attrs: { placement: 'top', width: 'full' } },
+  })
+})
 test('remplacer un bandeau annule sa préparation sans modifier l’ancien objet ni fermer le nouveau', async ({
   page,
 }) => {

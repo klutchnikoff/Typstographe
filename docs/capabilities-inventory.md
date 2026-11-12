@@ -52,18 +52,51 @@ activation par type et leur ordre précis restent à valider avant de coder.
 | Citations bibliographiques et bibliographie | P2 déjà prévu. Choisir une référence et, si nécessaire, une page ou un complément ; conserver les données bibliographiques. | `cite`, `bibliography` ; fichiers BibLaTeX ou Hayagriva, styles CSL. |
 | Références croisées | P2 déjà prévu. Choisir une cible : titre, figure, tableau, équation ou autre élément identifiable. | Labels et `ref` ; numérotation et libellés produits sans saisie manuelle. |
 | Table des matières et listes des figures/tableaux | P2 déjà prévu. Contenu calculé à partir des éléments du document. | `outline`. Leur présence et leur emplacement peuvent relever du modèle. |
-| Annexes | P2 à instruire avec les documents longs. Titres, numérotation et renvois cohérents. | Structure de titres et règles du type/modèle à définir. |
+| Rôles de section | P2 à instruire avec les articles de revue et les documents longs. Annexes et remerciements, avec titres, numérotation et renvois cohérents. | Structure de titres et règles du type/modèle à définir. [Essai IEEE](ieee-myst-evaluation.md#ce-que-lessai-révèle) |
 | Saut de page explicite | P2/P3 déjà repéré. Possibilité ponctuelle à exposer avec parcimonie. | `pagebreak`. Les débuts de chapitres ou d'annexes sur une nouvelle page relèvent d'abord du modèle. |
 | Multicolonne | P2/P3 à instruire. Distinguer la composition du document entier d'un passage particulier en colonnes. | Réglage de page ou `columns`, selon le besoin ; interactions avec les notes et la pagination à vérifier. |
+| Placement des figures et tableaux | Panneau commun de placement et de largeur, vérifié avec IEEE sur deux colonnes. Habillage latéral à instruire. | `figure(placement: ..., scope: ...)`. [Essai IEEE](ieee-myst-evaluation.md#placement-et-tableaux-longs) |
 | Code en ligne et blocs de code | P3. Langage facultatif pour un bloc ; présentation littérale et coloration éventuelle. | `raw` natif ; Codly si des fonctions supplémentaires sont utiles. |
 | Équations en ligne et en bloc | P3. Première piste : champ de saisie mathématique Typst avec aperçu. Évaluer séparément une saisie visuelle. | Mathématiques Typst ; MathLive avec MiTeX comme autre piste, sans choix d'intégration arrêté. |
 | Diagrammes | P3. Définir d'abord les familles utiles : organigrammes, processus, arbres, schémas… | Fletcher et CeTZ à examiner ; l'interface de création reste à concevoir. |
 | Graphiques de données | P3, distinct des diagrammes. Courbes, barres, nuages de points ; données saisies ou importées, par exemple en CSV. | Lilaq à examiner ; décider de la conservation des données et de leur édition. |
 | Glossaire, acronymes et index | P3, selon les besoins des types de documents longs. | Fonctions natives et paquets Universe à inventorier avant tout choix. |
 
-Les légendes d'images existent déjà. L'extension porte notamment sur les légendes
-de tableaux et de graphiques, la numérotation et les renvois ; elle doit réutiliser
-les interactions communes plutôt que recréer plusieurs mécanismes indépendants.
+Les images et les tableaux ont déjà des légendes et des renvois. Les futures
+figures, notamment les graphiques, réutiliseront les mêmes interactions.
+
+### Placement des figures et tableaux
+
+Deux réglages sont disponibles dans le panneau commun. **Placement** propose « Selon
+le modèle », « Dans le texte », « Flottant automatique », « En haut » et
+« En bas ». **Largeur** propose « Selon le modèle », « Colonne courante » et « Toute
+la largeur ». Le document conserve les choix et l’ancre de l’objet. Le modèle
+détermine leur valeur effective, la largeur physique et l’alignement.
+
+Dans un flux multicolonne continu, une figure pleine largeur doit flotter.
+Typst 0.15.1 refuse `scope: "parent"` avec `placement: none`. Le modèle IEEE
+utilise le flottant automatique dans ce cas et le panneau indique la règle.
+Les choix enregistrés restent disponibles au changement de modèle. Dans une
+zone à une seule colonne, le placement dans le texte reste compatible avec
+la pleine largeur. [Portée de figure dans Typst](https://typst.app/docs/reference/model/figure/#parameters-scope)
+
+Un flottant plus haut que la page peut se superposer au texte. Le helper
+`layout-figures` mesure les tableaux flottants et compose les tableaux trop
+hauts dans le flux. Pour un tableau sur toute la largeur, il ouvre une zone
+à une colonne et rétablit ensuite les colonnes. Le
+[tableau natif](https://typst.app/docs/guides/tables/) assure par défaut la
+pagination et la répétition de l’en-tête. Un modèle peut choisir
+[tablex](https://typst.app/universe/package/tablex/) pour des règles de
+répétition plus fines, en déclarant ce paquet parmi ses dépendances et en
+respectant le contrat commun des tableaux.
+
+L’habillage latéral est un chantier distinct du placement natif. Avec
+Typst 0.15.1, un essai simple à gauche a compilé avec
+[wrap-it](https://typst.app/universe/package/wrap-it/) et
+[meander](https://typst.app/universe/package/meander/). Les deux ont conservé
+la légende et une cible native de renvoi. Étudier d’abord quelle portion de
+texte habille la figure, puis vérifier la pagination, les renvois et l’ordre
+de lecture accessible. Les modèles pourront choisir leur implémentation.
 
 ## 4. Typst et Universe : premier repérage
 

@@ -63,7 +63,12 @@ export class ParameterFields {
       } else {
         if (field.schema.default === undefined) input.add(new Option('—', ''))
         for (const value of field.schema.enum || [])
-          input.add(new Option(String(value), JSON.stringify(value)))
+          input.add(
+            new Option(
+              field.schema['x-editor']?.option_labels?.[String(value)] || String(value),
+              JSON.stringify(value),
+            ),
+          )
       }
       if (field.control === 'checkbox') (input as HTMLInputElement).checked = !!drafts[field.name]
       else

@@ -173,12 +173,36 @@ export function propertyPanel(
       current.drafts[header.name] !==
         (current.node.attrs[header.attribute] ?? header.schema.default)
     form.toggleAttribute('data-recovered-header-field', !!recoverHeader)
-    fields.render(recoverHeader ? [...contract.fields, header] : contract.fields, current.drafts)
-    hint.textContent =
+    const attributes = contract.fields.filter(
+      (field) => field.schema['x-editor']?.storage !== 'structure',
+    )
+    fields.render(recoverHeader ? [...attributes, header] : attributes, current.drafts)
+    renderHint(
       !current.settingsOnly && contract.conversions.length > 1
         ? tr('Ces paramètres concernent la liste entière.')
-        : ''
+        : '',
+    )
   }
+  function renderHint(fallback = '') {
+    const current = opened
+    if (!current || current.remove || !['figure', 'tableFigure'].includes(current.kind)) {
+      hint.textContent = fallback
+      return
+    }
+    const { placement, width } = current.drafts
+    const text = []
+    if (width === 'full' && (placement === 'model' || placement === 'in-flow'))
+      text.push(tr('Sur plusieurs colonnes, la pleine largeur utilise un flottant si possible.'))
+    if (
+      current.kind === 'tableFigure' &&
+      (width === 'full' || ['auto', 'top', 'bottom'].includes(String(placement)))
+    )
+      text.push(tr('Un tableau trop haut pour flotter reste dans le texte.'))
+    hint.textContent = text.join(' ')
+  }
+  fieldsRoot.addEventListener('change', () => {
+    if (opened && ['figure', 'tableFigure'].includes(opened.kind)) renderHint()
+  })
   async function commit(change: (current: () => boolean) => Promise<boolean>) {
     const state = opened
     const current = () => opened === state && bands.forPanel(form) !== null
@@ -261,8 +285,10 @@ export function propertyPanel(
       const node = editor.state.doc.nodeAt(pos)
       if (!node || node.type.name !== kind) return
       const drafts: Record<string, Scalar | undefined> = {}
-      for (const field of contract.fields)
-        drafts[field.name] = node.attrs[field.attribute] ?? field.schema.default
+      for (const field of contract.fields) {
+        if (field.schema['x-editor']?.storage !== 'structure')
+          drafts[field.name] = node.attrs[field.attribute] ?? field.schema.default
+      }
       bands.close(false)
       opened = {
         kind,
