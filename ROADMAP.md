@@ -809,6 +809,46 @@ un document utile et retrouve son travail, sans lire le dépôt ni installer Rus
   besoin réel de catalogue personnel et de réutilisation entre projets, selon le
   périmètre et les choix encore ouverts consignés dans C.4.
 
+- **Extension de la recherche bibliographique par discipline.**
+
+  ```mermaid
+  flowchart TD
+      A{"Type de recherche"}
+      A -->|Texte| T["Chercher dans les bases spécialisées compatibles"]
+      A -->|DOI saisi| D["Traiter chaque DOI normalisé une seule fois"]
+      T -->|Notices trouvées| R["Réunir et dédoublonner les notices"]
+      T -->|Pour compléter| X["Chercher des DOI candidats dans Crossref"]
+      X -->|DOI trouvés| D
+      D --> S["Réutiliser ou chercher une notice spécialisée"]
+      S -->|Trouvée| R
+      S -->|Aucune| C["Réutiliser ou chercher la notice Crossref"]
+      C -->|Exploitable| R
+      C -->|Absente ou inexploitable| O["Demander la notice à doi.org"]
+      O -->|Trouvée| R
+  ```
+
+  La recherche textuelle porte sur le titre, l’auteur et l’année. Crossref
+  peut compléter les résultats directs ou donner un DOI à soumettre à une base
+  qui exige un identifiant. Le parcours DOI réutilise les notices déjà trouvées
+  pendant la recherche, y compris une notice Crossref exploitable.
+
+  **Dédoublonnage.** Pendant une même recherche, interroger chaque source
+  spécialisée au plus une fois par DOI normalisé. Afficher une seule notice
+  par DOI, avec priorité à la notice spécialisée. Pour les notices sans DOI,
+  utiliser leur identifiant de référence, par exemple un PMID. Soumettre les
+  rapprochements incertains au contrôle existant lors de l’import.
+
+  Évaluer d’abord [Europe PMC](https://www.ebi.ac.uk/training/online/courses/embl-ebi-programmatically/europe-pmc-programmatically/)
+  pour le biomédical et [INSPIRE-HEP](https://github.com/inspirehep/rest-api-doc)
+  pour la physique des hautes énergies. Garder comme pistes
+  [SciX](https://scixplorer.org/scixhelp/api-scix/) pour l’astronomie et les
+  sciences de la Terre, la [Biodiversity Heritage Library](https://about.biodiversitylibrary.org/tools-and-services/)
+  pour la biodiversité historique et [AGRIS](https://www.fao.org/agris/search-and-browse)
+  pour l’agronomie. En chimie, évaluer la couverture de Crossref et d’OpenAlex.
+  Comparer la pertinence des résultats et la qualité des notices, notamment
+  pour les publications repérables par un identifiant propre à la base, comme
+  un PMID. Réserver les prépublications à un lot ultérieur.
+
 - Correction grammaticale locale : orientation LanguageTool avec runtime Java
   embarqué, processus persistant et API HTTP officielle sur la boucle locale ;
   mesurer mémoire, démarrage et pertinence avant intégration.
