@@ -6927,6 +6927,7 @@ dependencies = [
 name = "typstographe-bibliography-sources"
 version = "0.1.0"
 dependencies = [
+ "futures-util",
  "regex",
  "reqwest",
  "roxmltree 0.21.1",

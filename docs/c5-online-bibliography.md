@@ -1,17 +1,22 @@
 # Recherche et acquisition bibliographiques en ligne — C.5
 
-Organisation révisée le **7 novembre 2026** : sources spécialisées d’abord,
-négociation DOI générique en repli, retrait du connecteur Crossref.
+La recherche par texte combine zbMATH Open et Crossref. La résolution d’un DOI
+saisi reste spécialisée en priorité, avec la négociation DOI générique en repli.
 
 ## Utilisation
 
 Dans un Article, ouvrir **Bibliographie → Gérer les références → Rechercher en
 ligne** (globe). La même action est disponible dans le bandeau d’une citation.
-Choisir les sources spécialisées puis saisir la recherche. Elle part après une
+Choisir les sources puis saisir la recherche. Elle part après une
 courte pause de frappe.
 
-- **Auteur, titre, année ou requête zbMATH** : recherche dans zbMATH Open. Le mécanisme DOI
-  ne sait pas rechercher un texte sans identifiant.
+- **Auteur, titre, année** : recherche dans zbMATH Open et Crossref en parallèle
+  lorsque ces sources sont cochées. Crossref recherche tous les préfixes.
+  Une année en fin de requête filtre la date de publication, et les requêtes
+  courtes compatibles avec un nom bénéficient aussi du champ auteur.
+  Avec Cairn activé, un DOI convertible en identifiant Cairn est vérifié auprès
+  de Cairn OAI. La notice Cairn prime si elle est disponible. Sinon, le résultat
+  reste attribué à Crossref. Un même DOI apparaît une fois, avec priorité à zbMATH.
 - **DOI** : récupération par les sources spécialisées appropriées et cochées
   (Cairn OAI, zbMATH). Si aucune notice n’est obtenue, interrogation de `doi.org`
   avec `Accept: application/vnd.citationstyles.csl+json`.
@@ -20,10 +25,8 @@ courte pause de frappe.
   bibliographiques explicites pour retrouver son DOI. Si la page est inaccessible
   ou ne fournit pas un DOI unique, demander le DOI ou l’identifiant Cairn.
 
-Le précédent détour par une recherche Crossref filtrée par ISBN est supprimé.
-Une URL moderne Cairn pouvait fonctionner par ce détour et nécessiter désormais
-son DOI si ses métadonnées publiques sont inaccessibles. Il n’y a ni index local
-du catalogue, ni recherche générale Cairn, ni contournement d’une protection.
+La recherche textuelle utilise l’API de Crossref. L’accès à Cairn reste ciblé,
+par DOI convertible, URL exploitable ou identifiant OAI.
 
 Les flèches parcourent les résultats sans déplacer le focus du champ de recherche.
 Entrée, un clic ou **Vérifier la notice** ouvre le formulaire commun. Vérifier le
@@ -43,23 +46,26 @@ opérations documentaires, sans nouveau collecteur réseau exposé dans ce lot.
   automatiquement par une notice générique.
 - Le repli s’applique aussi après erreur ou réponse invalide d’un spécialiste.
   Son résultat porte l’origine **DOI** ; les erreurs spécialisées restent visibles.
-- Crossref n’est plus un connecteur ni un choix d’interface. Il peut répondre
-  derrière `doi.org`, comme DataCite ou une autre agence compatible.
-- Les compléments de publication Cairn utilisent aussi la négociation DOI :
-  ouvrage/revue contenant puis, si nécessaire, structure de publication de la
-  notice. Ils ne remplacent jamais ses propres champs OAI (titre, auteurs, date,
-  pages). Le formulaire indique cet enrichissement via DOI.
+- Crossref propose ses métadonnées pour les résultats de recherche textuelle.
+  Pour un DOI saisi, `doi.org` continue à déléguer à l’agence concernée,
+  notamment Crossref ou DataCite.
+- Les compléments de publication Cairn proviennent de la notice Crossref déjà
+  reçue lors d’une recherche textuelle, ou de la négociation DOI lors d’une
+  consultation directe. Les champs OAI propres à la notice (titre, auteurs,
+  date et pages) restent prioritaires.
 - Le DOI reçu doit correspondre au DOI demandé, chez les spécialistes comme
   dans le repli. Une réponse erronée ne peut produire une citation d’un autre travail.
 - La saisie dans l’éditeur et la recherche locale du projet restent hors ligne.
   Une réponse devenue obsolète ne remplace ni une nouvelle recherche ni une saisie.
 
 Le client partage les connexions HTTPS, les certificats et le proxy système.
-Bornes : 512 octets de requête, 1–20 résultats par source (8 dans l’interface),
+Bornes : 512 octets de requête, 1–20 résultats demandés (8 affichés dans l’interface),
 2 Mio par réponse, trois requêtes simultanées, intervalle DOI de 400 ms, cinq
 redirections au maximum, connexion limitée à 5 s et requête à 12 s. Chaque
 parcours de fournisseur est limité à 30 s ; la résolution préalable d’une URL
-et le repli ont chacun leur propre borne. Aucune relance automatique.
+et le repli ont chacun leur propre borne. Crossref est interrogé une requête à
+la fois, avec 250 ms entre deux départs. L’enrichissement Cairn de chaque
+résultat de recherche est limité à 3 s. Aucune relance automatique.
 
 Les redirections DOI n’atteignent que les services de métadonnées HTTPS reconnus.
 Une redirection vers une page éditeur ou un service non pris en charge est

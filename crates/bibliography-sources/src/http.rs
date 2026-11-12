@@ -8,6 +8,7 @@ pub(crate) const CSL: &str = "application/vnd.citationstyles.csl+json";
 pub(crate) struct Http {
     client: reqwest::Client,
     doi_clock: Mutex<Option<Instant>>,
+    crossref_clock: Mutex<Option<Instant>>,
     slots: Semaphore,
     #[cfg(test)]
     origin: Option<Url>,
@@ -23,6 +24,7 @@ impl Http {
                 .build()
                 .map_err(|_| Error::new(Provider::Doi, ErrorCode::Network))?,
             doi_clock: Mutex::new(None),
+            crossref_clock: Mutex::new(None),
             slots: Semaphore::new(3),
             #[cfg(test)]
             origin: None,
@@ -46,14 +48,19 @@ impl Http {
         mut url: Url,
         accept: &str,
     ) -> Result<Option<String>> {
+        // The public Crossref pool allows a single request at a time.
+        let mut crossref = if provider == Provider::Crossref {
+            Some(self.crossref_clock.lock().await)
+        } else {
+            None
+        };
         let _permit = self.slots.acquire().await.unwrap();
+        if let Some(last) = crossref.as_deref_mut() {
+            pace(last, Duration::from_millis(250)).await;
+        }
         if provider == Provider::Doi {
             let mut last = self.doi_clock.lock().await;
-            if let Some(previous) = *last {
-                tokio::time::sleep(Duration::from_millis(400).saturating_sub(previous.elapsed()))
-                    .await;
-            }
-            *last = Some(Instant::now());
+            pace(&mut last, Duration::from_millis(400)).await;
         }
         for hop in 0..=5 {
             let mut response = self
@@ -141,9 +148,17 @@ impl Http {
             Provider::Doi => doi_host(url),
             Provider::Cairn => crate::input::cairn_host(url),
             Provider::Zbmath => url.host_str() == Some("api.zbmath.org"),
+            Provider::Crossref => url.host_str() == Some("api.crossref.org"),
         }
     }
 }
+async fn pace(last: &mut Option<Instant>, interval: Duration) {
+    if let Some(previous) = *last {
+        tokio::time::sleep(interval.saturating_sub(previous.elapsed())).await;
+    }
+    *last = Some(Instant::now());
+}
+
 pub(crate) fn doi_host(url: &Url) -> bool {
     url.scheme() == "https"
         && url.username().is_empty()

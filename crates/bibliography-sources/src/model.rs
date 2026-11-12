@@ -10,6 +10,7 @@ pub enum Provider {
     Doi,
     Zbmath,
     Cairn,
+    Crossref,
 }
 impl Provider {
     pub fn label(self) -> &'static str {
@@ -17,6 +18,7 @@ impl Provider {
             Self::Doi => "DOI",
             Self::Zbmath => "zbMATH Open",
             Self::Cairn => "Cairn.info",
+            Self::Crossref => "Crossref",
         }
     }
 }

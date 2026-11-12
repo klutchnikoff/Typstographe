@@ -196,6 +196,7 @@ async fn natural_author_year_search_keeps_records_with_only_a_numeric_id() {
         let mut pending = numbered.clone();
         pending["identifier"] = serde_json::Value::Null;
         pending["id"] = json!(8110214);
+        pending["links"] = json!([]);
         ok(&json!({"result": [numbered, pending]}).to_string())
     })
     .await;
@@ -210,7 +211,7 @@ async fn natural_author_year_search_keeps_records_with_only_a_numeric_id() {
         pending.source_url,
         "https://api.zbmath.org/v1/document/8110214"
     );
-    assert_eq!(pending.doi.as_deref(), Some("10.2307/2118559"));
+    assert!(pending.doi.is_none());
     task.abort();
 }
 
@@ -225,11 +226,111 @@ async fn a_successful_specialised_doi_lookup_does_not_request_generic_metadata()
     let r = Client::testing(&url)
         .search(request(
             "10.2307/2118559",
-            vec![Provider::Zbmath, Provider::Doi],
+            vec![
+                Provider::Zbmath,
+                Provider::Cairn,
+                Provider::Doi,
+                Provider::Crossref,
+            ],
         ))
         .await;
     assert_eq!(r.candidates[0].provider, Provider::Zbmath);
     assert!(r.issues.is_empty());
+    task.abort();
+}
+
+#[tokio::test]
+async fn crossref_discovers_openedition_by_author_and_year_with_no_cairn_lookup() {
+    let (url, task) = server(|s| {
+        let path = s.split_whitespace().nth(1).unwrap();
+        let url = reqwest::Url::parse(&format!("http://localhost{path}")).unwrap();
+        assert_eq!(url.path(), "/crossref");
+        let params: std::collections::BTreeMap<_, _> = url.query_pairs().collect();
+        assert_eq!(params["query.bibliographic"], "stephane laurens");
+        assert_eq!(params["query.author"], "stephane laurens");
+        assert_eq!(params["filter"], "from-pub-date:2024-01-01,until-pub-date:2024-12-31");
+        assert_eq!(params["rows"], "8");
+        ok(&json!({"message":{"items":[
+            {"DOI":"10.4000/unrelated","type":"journal-article","title":["Compte rendu"],
+             "author":[{"family":"Laurens","given":"Céline"}]},
+            {"DOI":"10.4000/11p5s","type":"journal-article",
+             "title":["Les étranges présentations de résultats de l’expérience de Milgram"],
+             "subtitle":["La mise en scène d’un coup de théâtre"],
+             "author":[{"family":"Laurens","given":"Stéphane"}],
+             "published":{"date-parts":[[2024]]}, "container-title":["Revue européenne des sciences sociales"],
+             "page":"165-188"}
+        ]}}).to_string())
+    })
+    .await;
+    let r = Client::testing(&url)
+        .search(request(
+            "stephane laurens 2024",
+            vec![Provider::Crossref, Provider::Cairn],
+        ))
+        .await;
+    assert!(r.issues.is_empty());
+    assert_eq!(r.candidates.len(), 2);
+    let candidate = &r.candidates[0];
+    assert_eq!(candidate.provider, Provider::Crossref);
+    assert_eq!(candidate.doi.as_deref(), Some("10.4000/11p5s"));
+    assert_eq!(candidate.year, Some(2024));
+    assert!(
+        candidate
+            .title
+            .ends_with("La mise en scène d’un coup de théâtre")
+    );
+    assert_eq!(candidate.entry["type"], "article");
+    assert_eq!(candidate.entry["page-range"], "165-188");
+    task.abort();
+}
+
+#[tokio::test]
+async fn text_discovery_prefers_zbmath_and_cairn_and_keeps_crossref_when_cairn_fails() {
+    let (url, task) = server(|s| {
+        if s.starts_with("GET /zbmath?") {
+            return ok(ZBMATH);
+        }
+        if s.starts_with("GET /crossref?") {
+            assert!(s.contains("query.bibliographic=Milgram+et+les+relations+sociales"));
+            assert!(!s.contains("query.author"));
+            let chapter: serde_json::Value = serde_json::from_str(CHAPTER).unwrap();
+            return ok(&json!({"message":{"items":[
+                {"DOI":"10.2307/2118559","type":"journal-article","title":["Wiles in Crossref"]},
+                chapter,
+                chapter,
+                {"DOI":"10.3917/test.unavailable","type":"journal-article","title":["Crossref fallback"]}
+            ]}}).to_string());
+        }
+        assert!(s.starts_with("GET /cairn?"), "{s}");
+        if s.contains("identifier=DBU_JORRO_2022_01_0155") {
+            ok(CAIRN)
+        } else {
+            assert!(s.contains("identifier=TEST_UNAVAILABLE"), "{s}");
+            (503, String::new(), String::new())
+        }
+    })
+    .await;
+    let r = Client::testing(&url)
+        .search(request(
+            "Milgram et les relations sociales",
+            vec![Provider::Zbmath, Provider::Crossref, Provider::Cairn],
+        ))
+        .await;
+    assert_eq!(
+        r.candidates.iter().map(|c| c.provider).collect::<Vec<_>>(),
+        [Provider::Zbmath, Provider::Cairn, Provider::Crossref]
+    );
+    assert_eq!(r.candidates[1].title, "Émancipation");
+    assert_eq!(r.candidates[1].entry["type"], "chapter");
+    assert_eq!(
+        r.candidates[1].entry["parent"][0]["title"],
+        "Dictionnaire des concepts de la professionnalisation"
+    );
+    assert_eq!(r.candidates[2].title, "Crossref fallback");
+    assert_eq!(
+        r.issues,
+        [Error::new(Provider::Cairn, ErrorCode::Unavailable)]
+    );
     task.abort();
 }
 #[tokio::test]

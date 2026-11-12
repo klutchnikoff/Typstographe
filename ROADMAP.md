@@ -405,17 +405,17 @@ autorisés, saisie, clavier et cibles MCP ; fonctions natives ou paquet externe.
 **Sortie :** insertion, édition, annulation, sauvegarde/réouverture et exports
 vérifiés, avec la même disponibilité dans les interfaces qui exposent la capacité.
 
-### C.5 — Recherche bibliographique en ligne — organisation révisée le 7 novembre 2026
+### C.5 — Recherche bibliographique en ligne
 
-**Priorité P1, indépendante de C.4 différé.** Recherche par auteur/titre via
-les sources spécialisées qui la proposent, d’abord zbMATH Open. Pour un DOI,
-interroger les sources spécialisées appropriées (Cairn OAI, zbMATH), puis utiliser
-la négociation de contenu de `doi.org` seulement si aucune notice n’est obtenue.
-D’autres connecteurs spécialisés pourront compléter cette chaîne.
+**Priorité P1, indépendante de C.4 différé.** Recherche par auteur, titre et
+année dans zbMATH Open et Crossref. Pour un DOI saisi, interroger les sources
+spécialisées appropriées (zbMATH, Cairn OAI), puis utiliser la négociation de
+contenu de `doi.org` si aucune notice spécialisée n’est obtenue.
 
-- Retirer le connecteur Crossref et son choix dans l’interface. Crossref peut
-  répondre derrière le résolveur DOI, au même titre que DataCite ou une autre
-  agence compatible ; aucun endpoint Crossref de recherche n’est conservé.
+- Crossref recherche les DOI tous préfixes confondus. Pour chaque résultat
+  exploitable par Cairn, interroger Cairn OAI et préférer sa notice. En cas
+  d’absence ou d’échec, proposer la notice Crossref. Dédupliquer par DOI,
+  avec priorité à zbMATH.
 - Le repli DOI porte sur un identifiant connu, pas sur une recherche par texte.
   Il intervient après absence, échec ou réponse invalide des sources spécialisées.
   Une notice spécialisée partielle reste vérifiable sans remplacement automatique.
@@ -424,9 +424,10 @@ D’autres connecteurs spécialisés pourront compléter cette chaîne.
   identifiant nécessite un DOI dans ses métadonnées publiques ; à défaut,
   demander le DOI ou l’identifiant Cairn. Aucun contournement d’une page protégée,
   index local du catalogue, moissonnage ni recherche générale Cairn.
-- Les compléments de publication de Cairn passent aussi par le résolveur DOI.
-  Ils complètent le type/contenant, sans remplacer les champs propres de la
-  notice OAI. La provenance de cet enrichissement reste explicite.
+- Les compléments de publication de Cairn viennent des métadonnées Crossref
+  déjà reçues lors d’une recherche ou du résolveur DOI lors d’un accès direct.
+  Le type et le contenant sont complétés, et les champs propres de la notice
+  OAI restent prioritaires.
 - Recherche locale conservée. Dans la vue en ligne, la recherche part après une
   courte pause de frappe. Le même champ accepte les mots du titre, les auteurs
   et l’année. Les appels sont bornés et
@@ -447,8 +448,8 @@ D’autres connecteurs spécialisés pourront compléter cette chaîne.
 
 La révision est **implémentée et vérifiée localement le 7 novembre 2026** :
 20 tests des collecteurs, tests frontend et Fluent, recettes Chromium/WebKit,
-essais réels Cairn, zbMATH et repli vers DataCite. Le connecteur Crossref et
-la résolution de catalogue par ISBN sont retirés. Les opérations de
+essais réels Cairn, zbMATH et repli vers DataCite. Ce premier lot retirait
+la résolution de catalogue par ISBN et l’ancien connecteur Crossref. Les opérations de
 publication CLI/MCP restent sur le contrat commun, sans nouveau collecteur réseau
 exposé par ces adaptateurs. Le schéma d’état CAS 16/17 est inchangé ; C.4 personnel demeure différé.
 
@@ -807,6 +808,46 @@ un document utile et retrouve son travail, sans lire le dépôt ni installer Rus
 - **C.4 — Gestion bibliographique personnelle : différée.** Réexaminer avec un
   besoin réel de catalogue personnel et de réutilisation entre projets, selon le
   périmètre et les choix encore ouverts consignés dans C.4.
+
+- **Extension de la recherche bibliographique par discipline.**
+
+  ```mermaid
+  flowchart TD
+      A{"Type de recherche"}
+      A -->|Texte| T["Chercher dans les bases spécialisées compatibles"]
+      A -->|DOI saisi| D["Traiter chaque DOI normalisé une seule fois"]
+      T -->|Notices trouvées| R["Réunir et dédoublonner les notices"]
+      T -->|Pour compléter| X["Chercher des DOI candidats dans Crossref"]
+      X -->|DOI trouvés| D
+      D --> S["Réutiliser ou chercher une notice spécialisée"]
+      S -->|Trouvée| R
+      S -->|Aucune| C["Réutiliser ou chercher la notice Crossref"]
+      C -->|Exploitable| R
+      C -->|Absente ou inexploitable| O["Demander la notice à doi.org"]
+      O -->|Trouvée| R
+  ```
+
+  La recherche textuelle porte sur le titre, l’auteur et l’année. Crossref
+  peut compléter les résultats directs ou donner un DOI à soumettre à une base
+  qui exige un identifiant. Le parcours DOI réutilise les notices déjà trouvées
+  pendant la recherche, y compris une notice Crossref exploitable.
+
+  **Dédoublonnage.** Pendant une même recherche, interroger chaque source
+  spécialisée au plus une fois par DOI normalisé. Afficher une seule notice
+  par DOI, avec priorité à la notice spécialisée. Pour les notices sans DOI,
+  utiliser leur identifiant de référence, par exemple un PMID. Soumettre les
+  rapprochements incertains au contrôle existant lors de l’import.
+
+  Évaluer d’abord [Europe PMC](https://www.ebi.ac.uk/training/online/courses/embl-ebi-programmatically/europe-pmc-programmatically/)
+  pour le biomédical et [INSPIRE-HEP](https://github.com/inspirehep/rest-api-doc)
+  pour la physique des hautes énergies. Garder comme pistes
+  [SciX](https://scixplorer.org/scixhelp/api-scix/) pour l’astronomie et les
+  sciences de la Terre, la [Biodiversity Heritage Library](https://about.biodiversitylibrary.org/tools-and-services/)
+  pour la biodiversité historique et [AGRIS](https://www.fao.org/agris/search-and-browse)
+  pour l’agronomie. En chimie, évaluer la couverture de Crossref et d’OpenAlex.
+  Comparer la pertinence des résultats et la qualité des notices, notamment
+  pour les publications repérables par un identifiant propre à la base, comme
+  un PMID. Réserver les prépublications à un lot ultérieur.
 
 - Correction grammaticale locale : orientation LanguageTool avec runtime Java
   embarqué, processus persistant et API HTTP officielle sur la boucle locale ;

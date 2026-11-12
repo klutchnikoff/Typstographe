@@ -1,6 +1,7 @@
 //! Explicit, read-only network acquisition. No project state or publication authority.
 mod cairn;
 mod client;
+mod crossref;
 mod csl_json;
 mod http;
 mod input;

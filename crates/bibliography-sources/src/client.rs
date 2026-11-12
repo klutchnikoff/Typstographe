@@ -1,14 +1,17 @@
 use crate::http::{CSL, Http};
 use crate::{Candidate, Error, ErrorCode, Provider, Result, Results, Search, Warning};
+use futures_util::{StreamExt, stream};
 use reqwest::Url;
+use serde_json::Value;
 use std::{collections::BTreeSet, time::Duration};
 
-/// Specialised discovery first; DOI negotiation only recovers an otherwise missing record.
+/// Text discovery and targeted resolution share the specialised notice collectors.
 pub struct Client {
     http: Http,
     doi: String,
     zbmath: String,
     cairn: String,
+    crossref: String,
 }
 impl Client {
     pub fn new() -> Result<Self> {
@@ -17,6 +20,7 @@ impl Client {
             doi: "https://doi.org/".into(),
             zbmath: "https://api.zbmath.org/v1/document/_search".into(),
             cairn: "https://oai.cairn.info/oai.php".into(),
+            crossref: "https://api.crossref.org/works".into(),
         })
     }
     #[cfg(test)]
@@ -26,6 +30,7 @@ impl Client {
             doi: format!("{base}/doi/"),
             zbmath: format!("{base}/zbmath"),
             cairn: format!("{base}/cairn"),
+            crossref: format!("{base}/crossref"),
         }
     }
     pub async fn search(&self, request: Search) -> Results {
@@ -34,7 +39,7 @@ impl Client {
             || query.len() > 512
             || query.chars().any(char::is_control)
             || request.sources.is_empty()
-            || request.sources.len() > 3
+            || request.sources.len() > 4
             || !(1..=20).contains(&request.limit)
         {
             return Results {
@@ -102,19 +107,68 @@ impl Client {
                 Err(error) => (vec![], Some(error)),
             }
         };
-        let (a, b) = tokio::join!(run(Provider::Cairn), run(Provider::Zbmath));
+        let discover = async {
+            if exact.is_none() && !targeted && sources.contains(&Provider::Crossref) {
+                let provider = Provider::Crossref;
+                let query = crate::crossref::Query::new(&query);
+                self.bounded(provider, async {
+                    let url = query.url(&self.crossref, request.limit);
+                    match self.http.get(provider, url, "application/json").await? {
+                        Some(body) => query.parse(&body),
+                        None => Ok(vec![]),
+                    }
+                })
+                .await
+            } else {
+                Ok(vec![])
+            }
+        };
+        let (zbmath, cairn, crossref) =
+            tokio::join!(run(Provider::Zbmath), run(Provider::Cairn), discover);
         let mut result = Results::default();
-        for (candidates, issue) in [a, b] {
+        let mut seen = BTreeSet::new();
+        for (candidates, issue) in [zbmath, cairn] {
+            let candidates = candidates
+                .into_iter()
+                .filter(|candidate| unique_doi(&mut seen, candidate));
             result.candidates.extend(candidates);
             result.issues.extend(issue);
         }
+        match crossref {
+            Ok(candidates) => {
+                let candidates = candidates
+                    .into_iter()
+                    .filter(|candidate| unique_doi(&mut seen, candidate))
+                    .take(request.limit.saturating_sub(result.candidates.len()));
+                if sources.contains(&Provider::Cairn) {
+                    let mut enriched = stream::iter(candidates)
+                        .map(|candidate| self.prefer_cairn(candidate))
+                        .buffered(3);
+                    while let Some((candidate, issue)) = enriched.next().await {
+                        result.candidates.push(candidate);
+                        if let Some(issue) = issue
+                            && !result.issues.contains(&issue)
+                        {
+                            result.issues.push(issue);
+                        }
+                    }
+                } else {
+                    result.candidates.extend(candidates);
+                }
+            }
+            Err(error) => result.issues.push(error),
+        }
+        result.candidates.truncate(request.limit);
         if result.candidates.is_empty() {
             if let Some(doi) = exact {
                 match self.bounded(Provider::Doi, self.resolve_doi(&doi)).await {
                     Ok(candidate) => result.candidates.extend(candidate),
                     Err(e) => result.issues.push(e),
                 }
-            } else if !targeted && !sources.contains(&Provider::Zbmath) {
+            } else if !targeted
+                && !sources.contains(&Provider::Zbmath)
+                && !sources.contains(&Provider::Crossref)
+            {
                 result
                     .issues
                     .push(Error::new(Provider::Cairn, ErrorCode::UnsupportedQuery));
@@ -164,10 +218,31 @@ impl Client {
                 }
                 Ok(records)
             }
-            Provider::Cairn => self.cairn(query).await,
-            Provider::Doi => {
-                unreachable!("generic resolution is a fallback, not a search provider")
+            Provider::Cairn => self.cairn(query, None).await,
+            Provider::Doi | Provider::Crossref => {
+                unreachable!("only specialised providers use targeted lookup")
             }
+        }
+    }
+    async fn prefer_cairn(&self, fallback: Candidate) -> (Candidate, Option<Error>) {
+        let Some(doi) = fallback
+            .doi
+            .as_deref()
+            .filter(|doi| crate::cairn_identifier(doi).is_some())
+        else {
+            return (fallback, None);
+        };
+        let provider = Provider::Cairn;
+        // Keep interactive discovery responsive if the optional enrichment stalls.
+        let notice = tokio::time::timeout(
+            Duration::from_secs(3),
+            self.cairn(doi, Some(&fallback.entry)),
+        )
+        .await
+        .unwrap_or_else(|_| Err(Error::new(provider, ErrorCode::Timeout)));
+        match notice {
+            Ok(candidates) => (candidates.into_iter().next().unwrap_or(fallback), None),
+            Err(error) => (fallback, Some(error)),
         }
     }
     async fn resolve_doi(&self, doi: &str) -> Result<Option<Candidate>> {
@@ -181,7 +256,7 @@ impl Client {
         };
         crate::csl_json::parse(&body, doi).map(Some)
     }
-    async fn cairn(&self, query: &str) -> Result<Vec<Candidate>> {
+    async fn cairn(&self, query: &str, publication_hint: Option<&Value>) -> Result<Vec<Candidate>> {
         let id = crate::cairn_identifier(query)
             .ok_or_else(|| Error::new(Provider::Cairn, ErrorCode::UnsupportedQuery))?;
         let mut url = Url::parse(&self.cairn).unwrap();
@@ -209,7 +284,12 @@ impl Client {
         let mut entry = serde_json::json!({"type":"misc"});
         let mut warnings = vec![];
         // Parent metadata is auxiliary. It never overwrites the OAI record's own fields.
-        if let Some(parent) = &notice.parent_doi
+        if let Some(publication) = publication_hint {
+            entry["type"] = publication["type"].clone();
+            if let Some(parent) = publication.get("parent") {
+                entry["parent"] = parent.clone();
+            }
+        } else if let Some(parent) = &notice.parent_doi
             && let Ok(Some(publication)) = self.resolve_doi(parent).await
         {
             let p = publication.entry;
@@ -224,6 +304,7 @@ impl Client {
             }
         }
         if entry.get("parent").is_none()
+            && publication_hint.is_none()
             && let Some(doi) = notice.entry["serial-number"]["doi"].as_str()
             && let Ok(Some(publication)) = self.resolve_doi(doi).await
             && publication.entry.get("parent").is_some()
@@ -231,7 +312,9 @@ impl Client {
             entry["type"] = publication.entry["type"].clone();
             entry["parent"] = publication.entry["parent"].clone();
         }
-        if entry.get("parent").is_none() {
+        if entry.get("parent").is_none()
+            && matches!(entry["type"].as_str(), Some("article" | "chapter" | "misc"))
+        {
             warnings.push(Warning::ParentUnavailable);
         }
         for (key, value) in notice.entry.as_object().unwrap() {
@@ -247,4 +330,12 @@ impl Client {
             warnings,
         )?])
     }
+}
+
+fn unique_doi(seen: &mut BTreeSet<String>, candidate: &Candidate) -> bool {
+    candidate
+        .doi
+        .as_deref()
+        .and_then(crate::doi)
+        .is_none_or(|doi| seen.insert(doi.to_ascii_lowercase()))
 }

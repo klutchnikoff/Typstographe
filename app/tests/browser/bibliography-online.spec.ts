@@ -102,8 +102,8 @@ test('generic fallback remains editable and reconciles with a later specialised 
   })
   await manage(page)
   await search(page)
-  await expect(online(page).getByRole('checkbox')).toHaveCount(2)
-  await expect(online(page).getByRole('checkbox', { name: 'Crossref', exact: true })).toHaveCount(0)
+  await expect(online(page).getByRole('checkbox')).toHaveCount(3)
+  await expect(online(page).getByRole('checkbox', { name: 'Crossref', exact: true })).toBeChecked()
   await expect(online(page)).toContainText('Repli DOI automatique')
   await expect(manager(page).locator('#bibliography-list .bibliography-list-row')).toHaveCount(0)
   await choose(page, 'DOI')
@@ -237,7 +237,8 @@ test('la recherche combine auteur, année ou titre dans le même champ', async (
   await page.route('**/__spike/invoke', async (route) => {
     const request = route.request().postDataJSON()
     if (request.command !== 'bibliography_online') return route.fallback()
-    const { query, limit } = request.args.request
+    const { query, limit, sources } = request.args.request
+    expect(sources).toEqual(['zbmath', 'cairn', 'crossref'])
     queries.push(query)
     const candidates = Array.from(
       { length: Math.min(limit, query.endsWith('2025') ? 4 : 9) },
@@ -245,6 +246,7 @@ test('la recherche combine auteur, année ou titre dans le même champ', async (
         ...response.candidates[0],
         id: `candidate-${i}`,
         title: `Notice ${i + 1}`,
+        provider: i === 1 ? 'crossref' : 'cairn',
       }),
     )
     await route.fulfill({ json: { result: { candidates, issues: [] } } })
@@ -272,6 +274,7 @@ test('la recherche combine auteur, année ou titre dans le même champ', async (
   await query(page).fill('klutchnikoff 2025')
   await page.clock.runFor(550)
   await expect(rows).toHaveCount(4)
+  await expect(rows.filter({ hasText: 'Crossref' })).toHaveCount(1)
   await expect(hint).toHaveCount(0)
   expect(queries).toEqual(['klutchnikoff Minimax', 'klutchnikoff 2025'])
   await expect(query(page)).toBeFocused()

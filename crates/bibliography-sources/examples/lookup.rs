@@ -5,12 +5,13 @@ async fn main() {
     let mut args = std::env::args().skip(1);
     let query = args
         .next()
-        .expect("Usage: lookup QUERY [doi|zbmath|cairn|all]");
+        .expect("Usage: lookup QUERY [doi|zbmath|cairn|crossref|all]");
     let sources = match args.next().as_deref().unwrap_or("all") {
         "doi" => vec![Provider::Doi],
         "zbmath" => vec![Provider::Zbmath],
         "cairn" => vec![Provider::Cairn],
-        "all" => vec![Provider::Zbmath, Provider::Cairn],
+        "crossref" => vec![Provider::Crossref],
+        "all" => vec![Provider::Zbmath, Provider::Cairn, Provider::Crossref],
         _ => panic!("Unknown provider"),
     };
     let result = Client::new()
