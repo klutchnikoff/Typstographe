@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, writeFile, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
@@ -37,6 +37,62 @@ test.beforeEach(async ({ page, request }) => {
   await request.post('/__spike/invoke', { data: { command: 'reset', peer: 'main', args: {} } })
   await ready(page)
 })
+test('a recovered Article offers the current catalogue and can switch models', async ({
+  page,
+  request,
+}) => {
+  const { root, revision } = await page.evaluate(() => ({
+    root: window.__spike!.provider.sessionPath,
+    revision: window.__spike!.provider.revision,
+  }))
+  await mkdir(root, { recursive: true })
+  const project = path.join(root, 'article-to-resume.typsto')
+  await copyFile(
+    new URL('../../../fixtures/projects/article-working.typsto', import.meta.url),
+    project,
+  )
+  await Promise.all([
+    page.waitForEvent('domcontentloaded'),
+    request
+      .post('/__spike/invoke', {
+        data: { command: 'open_file', peer: 'main', args: { path: project, revision } },
+      })
+      .then(async (response) => expect((await response.json()).error).toBeUndefined()),
+  ])
+  await restored(page)
+  const body = page.getByRole('textbox', { name: 'Corps du document', exact: true })
+  await body.click()
+  await body.press('Home')
+  await page.keyboard.insertText('Brouillon à reprendre. ')
+  await expect(body).toContainText('Brouillon à reprendre.')
+  await page.locator('[data-command="insert.footnote"]').click()
+  await page.getByLabel('Texte de la note', { exact: true }).fill('Note encore ouverte.')
+  await closeAndKeep(page)
+  await ready(page)
+  const resume = page
+    .locator('.recovery-work-list')
+    .getByRole('button', { name: 'Reprendre', exact: true })
+  await expect(resume).toHaveCount(1)
+  await Promise.all([page.waitForEvent('domcontentloaded'), resume.click()])
+  await restored(page)
+  await expect(page.locator('.recovered-document-line')).toBeVisible()
+  await expect(body).toContainText('Brouillon à reprendre.')
+
+  await page.locator('#metadata-tab-general').click()
+  const model = page.getByRole('combobox', { name: 'Modèle', exact: true })
+  await expect(model.locator('option:not([disabled])')).toHaveText([
+    'Article de travail',
+    'LaPreprint',
+    'IEEE pour MyST',
+  ])
+  await model.selectOption('article.model.ieee')
+  await page.evaluate(() => window.__spike!.provider.flush())
+  const preview = page.locator('#pages .preview-page svg').first()
+  await expect(preview).toHaveAttribute('viewBox', '0 0 612 792', { timeout: 15_000 })
+  await expect(model).toHaveValue('article.model.ieee')
+  await expect(body).toContainText('Brouillon à reprendre.')
+})
+
 test(
   'un auteur non validé revient dans son formulaire sans publication ni consommation à l’annulation',
   { tag: '@smoke' },

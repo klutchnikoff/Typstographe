@@ -1,3 +1,6 @@
+import { copyFileSync, mkdirSync } from 'node:fs'
+import { join } from 'node:path'
+import { expectPreviewReady } from './preview-assertions'
 import { openRecordCard, confirmRecordDialog } from './record-dialog-controls'
 import { confirmNewDocument } from './document-lifecycle'
 import { recordSelection } from './selection-diagnostic'
@@ -57,6 +60,67 @@ test.afterEach(async ({ page }, info) => {
     )
 })
 
+test('an opened Article switches bundled models and refreshes the preview', async ({
+  page,
+  request,
+}) => {
+  page.setDefaultTimeout(8_000)
+  await ready(page)
+  const { root, revision } = await page.evaluate(() => ({
+    root: window.__spike!.provider.sessionPath,
+    revision: window.__spike!.provider.revision,
+  }))
+  const path = join(root, 'model-switch.typsto')
+  mkdirSync(root, { recursive: true })
+  copyFileSync(new URL('../../../fixtures/projects/article-working.typsto', import.meta.url), path)
+  const reloaded = page.waitForEvent('domcontentloaded')
+  const opened = await request.post('/__spike/invoke', {
+    data: { command: 'open_file', peer: 'main', args: { path, revision } },
+  })
+  expect((await opened.json()).error).toBeUndefined()
+  await reloaded
+  await page.waitForFunction(() => window.__spike?.ready)
+  await expectPreviewReady(page, undefined, 15_000)
+  const source = await page.evaluate(() => window.__spike!.editor.getJSON())
+  const preview = page.locator('#pages .preview-page svg').first()
+  const originalSize = await preview.getAttribute('viewBox')
+
+  await tab(page, 'general')
+  const model = page.getByRole('combobox', { name: 'Modèle', exact: true })
+  await expect(model.locator('option:not([disabled])')).toHaveText([
+    'Article de travail',
+    'LaPreprint',
+    'IEEE pour MyST',
+  ])
+  await tab(page, 'publication')
+  const doi = page.getByRole('textbox', { name: 'DOI', exact: true })
+  await doi.fill('https://doi.org/10.1234/EXAMPLE')
+  const access = page.getByRole('combobox', { name: 'Statut d’accès', exact: true })
+  await access.selectOption('open')
+  const firstPage = page.getByRole('textbox', { name: 'Numéro de première page', exact: true })
+  await firstPage.fill('37')
+  await page.evaluate(() => window.__spike!.provider.flush())
+  await expect(doi).toHaveValue('10.1234/example')
+  await expect(firstPage).toHaveValue('37')
+
+  await tab(page, 'general')
+  await model.selectOption({ label: 'IEEE pour MyST' })
+  await page.evaluate(() => window.__spike!.provider.flush())
+  await expect(preview).toHaveAttribute('viewBox', '0 0 612 792', { timeout: 15_000 })
+
+  await model.selectOption({ label: 'LaPreprint' })
+  await page.evaluate(() => window.__spike!.provider.flush())
+  await expect(preview).toHaveAttribute('viewBox', originalSize!, { timeout: 15_000 })
+  await expectPreviewReady(page)
+  await expect(model).toHaveValue('article.model.lapreprint')
+  await tab(page, 'publication')
+  await expect(doi).toHaveValue('10.1234/example')
+  await expect(access).toHaveValue('open')
+  await expect(firstPage).toHaveValue('37')
+  expect(await page.evaluate(() => window.__spike!.provider.rejected)).toBeFalsy()
+  expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(source)
+})
+
 test('Article : onglets, auteurs partagés, langues, annulation et fichier autonome', async ({
   page,
   context,
@@ -82,6 +146,13 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   const affiliations = section(page, 'affiliations')
   await add(page, 'Affiliation')
   await draft(page).getByLabel('Signature officielle', { exact: true }).fill(official)
+  const affiliationDetails = {
+    Département: 'Département de mathématiques',
+    Établissement: 'Université Rennes 2',
+    Lieu: 'Rennes, France',
+  }
+  for (const [label, value] of Object.entries(affiliationDetails))
+    await draft(page).getByLabel(label, { exact: true }).fill(value)
   await confirm(page)
   await tab(page, 'authors')
   const authors = section(page, 'authors')
@@ -219,6 +290,14 @@ test('Article : onglets, auteurs partagés, langues, annulation et fichier auton
   await confirmRecordDialog(page)
   await tab(page, 'authors')
   await expect(authors.locator('.collection-card')).toHaveCount(2)
+  await tab(page, 'affiliations')
+  await affiliations.locator('[data-record-open]').click()
+  await expect(draft(page).getByLabel('Signature officielle', { exact: true })).toHaveValue(
+    official + ' (signature officielle)',
+  )
+  for (const [label, value] of Object.entries(affiliationDetails))
+    await expect(draft(page).getByLabel(label, { exact: true })).toHaveValue(value)
+  await page.keyboard.press('Escape')
   await page.getByRole('button', { name: 'Fichier', exact: true }).click()
   await page.locator('[data-command="document.export"]').click()
   await expect(page.locator('#message')).toContainText('sources Typst exportés', {
@@ -324,6 +403,7 @@ test('les ajouts par + restent provisoires et Échap restaure le focus sans annu
     'Affiliations',
     'Auteurs',
     'Bibliographie',
+    'Publication',
   ])
   await tab(page, 'authors')
   const authors = section(page, 'authors')

@@ -18,6 +18,7 @@ Example Article manifest:
 ```yaml
 contract-version: 1
 document-type: article
+publication: true
 languages: [fr, en]
 options:
   paper: { regime: restricted, allowed: [a4, a5], default: a4 }
@@ -58,6 +59,11 @@ null. Imposed options cannot be edited. Incoming Yjs settings deltas receive
 the same policy check for changed choices; unchanged inactive choices remain
 valid. Undo/redo and version composition retain their documentary semantics.
 Model source and manifest switch in one guarded, undoable operation.
+
+An Article manifest declares `publication: true` when its Typst composition
+accepts the optional named argument `publication: (:)`. Source generation
+passes only the fields with documentary values. Projects with an older pinned
+model keep their publication metadata available for future model changes.
 
 The document language is author-owned and never substituted. A manifest lists
 its supported languages; incompatible model or language changes fail before

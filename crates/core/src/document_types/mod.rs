@@ -124,9 +124,14 @@ impl Metadata {
             .expect("default model options")
             .main_source()
     }
-    pub(crate) fn raw_main_source(&self) -> String {
+    pub(crate) fn raw_main_source(&self, publication: bool) -> String {
         let data = serde_json::to_value(self).expect("typed metadata");
-        runtime::source(self.document_type(), &data["fields"], self.options())
+        runtime::source(
+            self.document_type(),
+            &data["fields"],
+            self.options(),
+            publication,
+        )
     }
     pub fn editor_groups(&self) -> &'static [FieldGroup] {
         &runtime::get(self.document_type()).groups
@@ -200,6 +205,9 @@ pub enum FieldKind {
     ResourceReference,
     Records,
     Text,
+    Doi,
+    Choice,
+    PositiveInteger,
     Date,
 }
 #[cfg(test)]

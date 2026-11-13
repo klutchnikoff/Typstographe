@@ -252,7 +252,8 @@ la livraison de tous les types de B n’est pas un prérequis.
   Inventorier et embarquer les versions utilisées par le modèle. Examiner les
   idées de theorion en partant des usages retenus. Vérifier sur un article avec
   équations, énoncés, preuves et renvois que les ancres survivent au changement
-  de modèle et que les exports compilent hors ligne.
+  de modèle et que les exports compilent hors ligne. Reprendre LaPreprint et
+  IEEE pour MyST lors de l’intégration des théorèmes, lemmes et preuves.
   **Ajustement du 5 novembre 2026 :** `language` est un paramètre de création
   stocké comme attribut, exclu des propriétés et des écritures `node.set_attrs`.
   Le champ de label dans l’en-tête réutilise schéma, attribut et commande du
@@ -477,8 +478,9 @@ Article et les exports locaux. La validation de `document.set_model` inclut
 les dépendances du corps, comme la compilation courante. La recette commune
 vérifie l’aller-retour entre les deux modèles, notamment avec les équations,
 les renvois et les en-têtes de lignes de tableaux. L’intégration au catalogue
-s’appuie sur le contrat actuel. L’extension des données de publication est
-planifiée dans le chantier B.
+s’appuie sur le contrat Article. Le groupe typé [Publication](docs/article-contract.md#publication)
+conserve les valeurs dans le projet et les transmet aux modèles qui déclarent
+ce paramètre.
 
 L’[essai IEEE pour MyST](docs/ieee-myst-evaluation.md) qualifie le changement
 vers un modèle aux réglages imposés et le rétablissement des choix au retour.
@@ -486,6 +488,11 @@ La recette à deux colonnes qualifie aussi les flottants sur toute la largeur
 et la pagination des tableaux longs avec le helper commun. Le
 [relevé des capacités](docs/capabilities-inventory.md) consigne les règles de
 placement, l’habillage latéral à étudier et les rôles de section à préciser.
+
+**Remerciements — différé.** Définir une capacité dont le document conserve
+l’intention et le contenu. Prévoir dans la recette une section dédiée et une
+note de bas de page, avec placement et composition par le modèle. La signature
+et l’interface de saisie restent à préciser.
 
 **Accessibilité des exports (C/D) :** partager les diagnostics de description
 d’image entre les adaptateurs ; conserver et récupérer les brouillons incomplets,

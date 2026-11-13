@@ -4,7 +4,8 @@
 #import "capabilities/abstracts.typ": show-abstracts, abstract-labels
 #import "capabilities/references.typ": reference-list
 #import "capabilities/figures.typ": layout-figures
-#let article(localizations: (), authors: (), affiliations: (), references: (), citation-style: "chicago-author-date", show-outline: false, options: (
+#import "capabilities/article-layout.typ": start-page-number
+#let article(localizations: (), authors: (), affiliations: (), references: (), citation-style: "chicago-author-date", show-outline: false, publication: (:), options: (
   paper: "a4", landscape: false, language: "fr", bullet-marker: auto,
 ), body) = {
   let primary = localizations.find(l => l.language == options.language)
@@ -23,13 +24,14 @@
     paper: options.paper, flipped: options.landscape,
     margin: if compact { (x: 17mm, top: 21mm, bottom: 19mm) } else { (x: 28mm, top: 29mm, bottom: 25mm) },
     header-ascent: 50%,
-    header: context if counter(page).get().first() > 1 {
+    header: context if here().page() > 1 {
       set text(size: 8.5pt, fill: secondary)
       set par(justify: false)
       block(width: 100%, inset: (bottom: 2mm), stroke: (bottom: hairline), running-title)
     },
     footer: context align(center, text(size: 9pt, fill: secondary, counter(page).display("1"))),
   )
+  start-page-number(publication)
   set par(justify: true, leading: 0.65em, spacing: 1.05em, first-line-indent: 0pt)
   set heading(numbering: none)
   set math.equation(numbering: "(1)")

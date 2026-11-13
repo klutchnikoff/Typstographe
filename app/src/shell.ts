@@ -51,6 +51,7 @@ export interface Field {
   multiline: boolean
   kind: string
   required_for_export: boolean
+  choices?: { value: string; label: string }[]
 }
 export interface MetadataGroup {
   id: string

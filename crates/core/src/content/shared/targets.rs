@@ -138,6 +138,12 @@ pub(in crate::content) fn field<T: ReadTxn>(
                 "resource-reference"
             } else if descriptor.kind == crate::document_types::FieldKind::Date {
                 "date"
+            } else if descriptor.kind == crate::document_types::FieldKind::PositiveInteger {
+                "positive_integer"
+            } else if descriptor.kind == crate::document_types::FieldKind::Doi {
+                "doi"
+            } else if descriptor.kind == crate::document_types::FieldKind::Choice {
+                "choice"
             } else if descriptor.value.is_string() {
                 "text"
             } else if descriptor.value.is_boolean() {
@@ -162,6 +168,7 @@ pub(in crate::content) fn field<T: ReadTxn>(
             let value = match map.get(tx, field) {
                 Some(Out::YText(text)) => Value::String(text.get_string(tx)),
                 Some(Out::Any(value)) => serde_json::to_value(value).expect("value"),
+                None if descriptor["omit_empty"] == true => descriptor["default"].clone(),
                 _ => Value::Null,
             };
             Ok((
@@ -213,11 +220,12 @@ pub(in crate::content) fn resolve(
             path,
         } => {
             let (map, descriptor) = record(doc, &tx, state, collection, id, field)?;
-            let value = map
-                .get(&tx, field)
-                .ok_or_else(|| invalid(TargetReason::MissingField))?;
+            let value = map.get(&tx, field);
+            if value.is_none() && descriptor["omit_empty"] != true {
+                return Err(invalid(TargetReason::MissingField));
+            }
             if matches!(descriptor["kind"].as_str(), Some("rich" | "rich_inline")) {
-                let Out::YXmlFragment(root) = value else {
+                let Some(Out::YXmlFragment(root)) = value else {
                     return Err(invalid(TargetReason::NotTextZone));
                 };
                 return rich(element(root, &tx, path)?);
@@ -232,11 +240,19 @@ pub(in crate::content) fn resolve(
                 return Err(invalid(TargetReason::NotTextZone));
             }
             match value {
-                Out::YText(value) => Ok(Resolved::Text(value)),
-                Out::Any(yrs::Any::String(value)) => Ok(Resolved::Scalar {
+                Some(Out::YText(value)) => Ok(Resolved::Text(value)),
+                Some(Out::Any(yrs::Any::String(value))) => Ok(Resolved::Scalar {
                     map,
                     key: field.clone(),
                     text: value.to_string(),
+                }),
+                None => Ok(Resolved::Scalar {
+                    map,
+                    key: field.clone(),
+                    text: descriptor["default"]
+                        .as_str()
+                        .ok_or_else(|| invalid(TargetReason::MissingField))?
+                        .into(),
                 }),
                 _ => Err(invalid(TargetReason::NotTextZone)),
             }

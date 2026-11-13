@@ -37,35 +37,22 @@
         }
       },
       "additionalProperties": false
+    },
+    "publication": {
+      "type": "boolean",
+      "default": false
     }
   },
   "additionalProperties": false,
-  "required": [
-    "contract-version",
-    "document-type",
-    "languages",
-    "options"
-  ],
+  "required": ["contract-version", "document-type", "languages", "options"],
   "$defs": {
     "DocumentLanguage": {
       "type": "string",
-      "enum": [
-        "fr",
-        "en",
-        "de",
-        "es",
-        "it",
-        "pt",
-        "nl"
-      ]
+      "enum": ["fr", "en", "de", "es", "it", "pt", "nl"]
     },
     "DocumentType": {
       "type": "string",
-      "enum": [
-        "article",
-        "courrier",
-        "compte-rendu"
-      ]
+      "enum": ["article", "courrier", "compte-rendu"]
     },
     "Policy": {
       "oneOf": [
@@ -79,10 +66,7 @@
             }
           },
           "additionalProperties": false,
-          "required": [
-            "regime",
-            "default"
-          ]
+          "required": ["regime", "default"]
         },
         {
           "type": "object",
@@ -98,11 +82,7 @@
             }
           },
           "additionalProperties": false,
-          "required": [
-            "regime",
-            "allowed",
-            "default"
-          ]
+          "required": ["regime", "allowed", "default"]
         },
         {
           "type": "object",
@@ -114,10 +94,7 @@
             "value": true
           },
           "additionalProperties": false,
-          "required": [
-            "regime",
-            "value"
-          ]
+          "required": ["regime", "value"]
         }
       ]
     }

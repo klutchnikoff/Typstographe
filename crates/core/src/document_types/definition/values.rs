@@ -20,6 +20,23 @@ fn valid_text(text: &str, max: usize, multiline: bool) -> bool {
             .chars()
             .any(|c| c.is_control() && !(c == '\n' && multiline))
 }
+pub(crate) fn normalize_optional_doi(value: &str) -> Option<String> {
+    if value.is_empty() {
+        return Some(String::new());
+    }
+    if !valid_text(value, 2048, false) {
+        return None;
+    }
+    let doi = typstographe_bibliography::normalize_doi(value)?;
+    let (prefix, suffix) = doi.split_once('/')?;
+    let registrant = prefix.strip_prefix("10.")?;
+    (!registrant.is_empty()
+        && registrant
+            .split('.')
+            .all(|part| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_digit()))
+        && !suffix.is_empty())
+    .then_some(doi)
+}
 fn valid_id(id: &str) -> bool {
     !id.is_empty() && valid_text(id, 128, false)
 }
@@ -219,6 +236,9 @@ fn validate_fields(
     for field in fields {
         let at = format!("{path}/{}", super::validation::pointer(field.id()));
         let Some(v) = value.get(field.id()) else {
+            if field.omit_empty() {
+                continue;
+            }
             issues.push(issue(
                 DiagnosticCode::MissingValue,
                 at,
@@ -236,6 +256,14 @@ fn validate_fields(
             Field::ResourceReference { .. } => {
                 serde_json::from_value::<Option<crate::resources::ResourceReference>>(v.clone())
                     .is_ok()
+            }
+            Field::Doi { .. } => v
+                .as_str()
+                .is_some_and(|value| normalize_optional_doi(value).is_some()),
+            Field::PositiveInteger { .. } => {
+                v.is_null()
+                    || v.as_u64()
+                        .is_some_and(|n| (1..=u32::MAX.into()).contains(&n))
             }
             Field::Date { .. } => {
                 serde_json::from_value::<Option<crate::dates::DateValue>>(v.clone()).is_ok()

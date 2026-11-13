@@ -141,9 +141,20 @@ impl Check {
                     );
                 }
             }
-            if record && matches!(field, Field::Date { .. } | Field::ResourceReference { .. }) {
-                self.issue(DiagnosticCode::UnsupportedPolicy, &at,
-                    "date/resource fields are supported in root forms; their record controls are not registered yet");
+            if record
+                && matches!(
+                    field,
+                    Field::Date { .. }
+                        | Field::ResourceReference { .. }
+                        | Field::PositiveInteger { .. }
+                        | Field::Doi { .. }
+                )
+            {
+                self.issue(
+                    DiagnosticCode::UnsupportedPolicy,
+                    &at,
+                    "field is supported in root forms; its record control is not registered yet",
+                );
             }
             if record && field.id() == "id" {
                 self.issue(
@@ -161,8 +172,21 @@ impl Check {
             }
             match field {
                 Field::Choice {
-                    choices, default, ..
+                    choices,
+                    choice_labels,
+                    default,
+                    ..
                 } => {
+                    if !choice_labels.is_empty() && choice_labels.len() != choices.len() {
+                        self.issue(
+                            DiagnosticCode::InvalidDefault,
+                            format!("{at}/choice-labels"),
+                            "provide a label for each choice",
+                        );
+                    }
+                    for (index, label) in choice_labels.iter().enumerate() {
+                        self.name(label, format!("{at}/choice-labels/{index}"));
+                    }
                     if choices.is_empty()
                         || choices.len() > 100
                         || choices.iter().any(|v| {
@@ -190,6 +214,15 @@ impl Check {
                     self.issue(DiagnosticCode::InvalidDefault, format!("{at}/default"),
                         "resource defaults must be null; profile initialization is explicit in the host");
                 }
+                Field::Doi { default, .. }
+                    if super::normalize_optional_doi(default).as_ref() != Some(default) =>
+                {
+                    self.issue(
+                        DiagnosticCode::InvalidDefault,
+                        format!("{at}/default"),
+                        "expected a canonical DOI or an empty default",
+                    );
+                }
                 Field::Date {
                     default: Some(value),
                     ..
@@ -201,8 +234,20 @@ impl Check {
                     );
                 }
                 Field::Text {
-                    default, multiline, ..
+                    default,
+                    multiline,
+                    omit_empty,
+                    ..
                 } => {
+                    if *omit_empty
+                        && (!record || !default.is_empty() || field.required_for_export())
+                    {
+                        self.issue(
+                            DiagnosticCode::InvalidDefault,
+                            format!("{at}/default"),
+                            "omittable record text must default to empty and be optional for export",
+                        );
+                    }
                     if default.len() > 16000
                         || default
                             .chars()
@@ -438,6 +483,12 @@ fn check_bindings(definition: &Definition, check: &mut Check) {
     let mut sources = BTreeSet::new();
     let mut parameters = BTreeSet::new();
     let mut metadata_keys = BTreeSet::new();
+    let top_level: BTreeSet<_> = definition
+        .bindings
+        .iter()
+        .filter(|binding| binding.typst_group().is_none())
+        .map(Binding::parameter)
+        .collect();
     for (i, binding) in definition.bindings.iter().enumerate() {
         let at = format!("/bindings/{i}");
         let (id, exists) = match binding {
@@ -452,7 +503,17 @@ fn check_bindings(definition: &Definition, check: &mut Check) {
         if !exists {
             check.issue(DiagnosticCode::UnknownReference, &at, id);
         }
-        if !sources.insert(id.as_str()) || !parameters.insert(binding.parameter()) {
+        let group = binding.typst_group();
+        if let Some(group) = group
+            && (!typst_identifier(group) || group == "options" || top_level.contains(group))
+        {
+            check.issue(
+                DiagnosticCode::InvalidIdentifier,
+                format!("{at}/typst-group"),
+                group,
+            );
+        }
+        if !sources.insert(id.as_str()) || !parameters.insert((group, binding.parameter())) {
             check.issue(
                 DiagnosticCode::DuplicateIdentifier,
                 &at,

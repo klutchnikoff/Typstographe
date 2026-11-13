@@ -22,6 +22,12 @@ pub(super) fn build(loaded: &LoadedDefinition) -> (Vec<RootField>, Vec<FieldGrou
                         FieldKind::ResourceReference
                     } else if matches!(f, Field::Date { .. }) {
                         FieldKind::Date
+                    } else if matches!(f, Field::Doi { .. }) {
+                        FieldKind::Doi
+                    } else if matches!(f, Field::PositiveInteger { .. }) {
+                        FieldKind::PositiveInteger
+                    } else if matches!(f, Field::Choice { .. }) && f.presentation().is_none() {
+                        FieldKind::Choice
                     } else if matches!(f, Field::Text { .. } | Field::Choice { .. }) {
                         FieldKind::Text
                     } else {
@@ -89,6 +95,27 @@ pub(super) fn build(loaded: &LoadedDefinition) -> (Vec<RootField>, Vec<FieldGrou
             label_key: label.into(),
             group: group.into(),
             multiline,
+            choices: def
+                .fields
+                .iter()
+                .find_map(|f| match f {
+                    Field::Choice {
+                        choices,
+                        choice_labels,
+                        ..
+                    } if f.id() == binding.source() => Some(
+                        choices
+                            .iter()
+                            .zip(choice_labels)
+                            .map(|(value, label_key)| super::super::fields::FieldChoice {
+                                value: value.clone(),
+                                label_key: label_key.clone(),
+                            })
+                            .collect(),
+                    ),
+                    _ => None,
+                })
+                .unwrap_or_default(),
             kind,
             required_for_export: required,
         });
@@ -226,6 +253,8 @@ fn record_field(field: &Field) -> Value {
         Field::Text { .. } => "text",
         Field::ResourceReference { .. } => "resource-reference",
         Field::Date { .. } => "date",
+        Field::Doi { .. } => "doi",
+        Field::PositiveInteger { .. } => "positive_integer",
         Field::Boolean { .. } => "boolean",
         Field::Choice { .. } => "choice",
         Field::Language { .. } => "language",
@@ -249,6 +278,9 @@ fn record_field(field: &Field) -> Value {
     }
     if field.statistics() {
         value["statistics"] = json!(true);
+    }
+    if field.omit_empty() {
+        value["omit_empty"] = json!(true);
     }
     value
 }

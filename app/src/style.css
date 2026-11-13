@@ -693,6 +693,9 @@ summary svg {
 }
 #metadata-tabs {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
   gap: 4px;
 }
 #metadata-content {
@@ -789,6 +792,7 @@ summary svg {
   gap: 6px;
 }
 .metadata-field-controls input,
+.metadata-field-controls select,
 .metadata-field-controls textarea {
   min-width: 0;
   flex: 1;
@@ -854,6 +858,7 @@ summary svg {
 }
 .metadata-section-inline input,
 .metadata-section-compact input,
+.metadata-section-compact select,
 .metadata-section-compact textarea {
   padding: 4px 8px;
 }

@@ -34,19 +34,16 @@
               "type": "string"
             },
             "metadata-key": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
+            },
+            "typst-group": {
+              "type": ["string", "null"]
             },
             "typst-parameter": {
               "type": "string"
             }
           },
-          "required": [
-            "field",
-            "typst-parameter"
-          ],
+          "required": ["field", "typst-parameter"],
           "type": "object"
         },
         {
@@ -56,19 +53,13 @@
               "type": "string"
             },
             "metadata-key": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             },
             "typst-parameter": {
               "type": "string"
             }
           },
-          "required": [
-            "collection",
-            "typst-parameter"
-          ],
+          "required": ["collection", "typst-parameter"],
           "type": "object"
         }
       ]
@@ -99,10 +90,7 @@
           "type": "string"
         },
         "language-key": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "max-items": {
           "format": "uint32",
@@ -111,10 +99,7 @@
           "type": "integer"
         },
         "removal-notice-key": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "summary": {
           "default": [],
@@ -160,9 +145,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "function"
-      ],
+      "required": ["function"],
       "type": "object"
     },
     "DateValue": {
@@ -180,10 +163,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "kind",
-            "iso"
-          ],
+          "required": ["kind", "iso"],
           "type": "object"
         },
         {
@@ -199,30 +179,17 @@
               "x-max-utf8-bytes": 16000
             }
           },
-          "required": [
-            "kind",
-            "text"
-          ],
+          "required": ["kind", "text"],
           "type": "object"
         }
       ]
     },
     "DocumentLanguage": {
-      "enum": [
-        "fr",
-        "en",
-        "de",
-        "es",
-        "it",
-        "pt",
-        "nl"
-      ],
+      "enum": ["fr", "en", "de", "es", "it", "pt", "nl"],
       "type": "string"
     },
     "Editing": {
-      "enum": [
-        "dialog"
-      ],
+      "enum": ["dialog"],
       "type": "string"
     },
     "ExportRequirement": {
@@ -244,12 +211,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "kind",
-            "collection",
-            "language-field",
-            "value-field"
-          ],
+          "required": ["kind", "collection", "language-field", "value-field"],
           "type": "object"
         }
       ]
@@ -287,6 +249,9 @@
               "default": false,
               "type": "boolean"
             },
+            "omit-empty": {
+              "type": "boolean"
+            },
             "presentation": {
               "anyOf": [
                 {
@@ -306,11 +271,107 @@
               "type": "boolean"
             }
           },
-          "required": [
-            "kind",
-            "id",
-            "label-key"
-          ],
+          "required": ["kind", "id", "label-key"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
+              "default": "",
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "doi",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": ["kind", "id", "label-key"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FieldControl"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 1,
+              "type": ["integer", "null"]
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "positive-integer",
+              "type": "string"
+            },
+            "label-key": {
+              "type": "string"
+            },
+            "presentation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/OptionId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required-for-export": {
+              "default": false,
+              "type": "boolean"
+            },
+            "statistics": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": ["kind", "id", "label-key"],
           "type": "object"
         },
         {
@@ -366,11 +427,7 @@
               "type": "boolean"
             }
           },
-          "required": [
-            "kind",
-            "id",
-            "label-key"
-          ],
+          "required": ["kind", "id", "label-key"],
           "type": "object"
         },
         {
@@ -439,12 +496,7 @@
               "type": "boolean"
             }
           },
-          "required": [
-            "kind",
-            "id",
-            "label-key",
-            "resource-kind"
-          ],
+          "required": ["kind", "id", "label-key", "resource-kind"],
           "type": "object"
         },
         {
@@ -493,16 +545,18 @@
               "type": "boolean"
             }
           },
-          "required": [
-            "kind",
-            "id",
-            "label-key"
-          ],
+          "required": ["kind", "id", "label-key"],
           "type": "object"
         },
         {
           "additionalProperties": false,
           "properties": {
+            "choice-labels": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
             "choices": {
               "items": {
                 "type": "string"
@@ -520,10 +574,7 @@
               ]
             },
             "default": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             },
             "id": {
               "type": "string"
@@ -554,12 +605,7 @@
               "type": "boolean"
             }
           },
-          "required": [
-            "kind",
-            "id",
-            "label-key",
-            "choices"
-          ],
+          "required": ["kind", "id", "label-key", "choices"],
           "type": "object"
         },
         {
@@ -608,11 +654,7 @@
               "type": "boolean"
             }
           },
-          "required": [
-            "kind",
-            "id",
-            "label-key"
-          ],
+          "required": ["kind", "id", "label-key"],
           "type": "object"
         },
         {
@@ -664,11 +706,7 @@
               "type": "boolean"
             }
           },
-          "required": [
-            "kind",
-            "id",
-            "label-key"
-          ],
+          "required": ["kind", "id", "label-key"],
           "type": "object"
         },
         {
@@ -727,12 +765,7 @@
               "type": "boolean"
             }
           },
-          "required": [
-            "kind",
-            "id",
-            "label-key",
-            "profile"
-          ],
+          "required": ["kind", "id", "label-key", "profile"],
           "type": "object"
         },
         {
@@ -807,9 +840,7 @@
     },
     "FieldControl": {
       "description": "Registered controls change editing, not the stored value or Typst formatting.",
-      "enum": [
-        "outline"
-      ],
+      "enum": ["outline"],
       "type": "string"
     },
     "Header": {
@@ -826,15 +857,11 @@
       "type": "object"
     },
     "HeaderStructure": {
-      "enum": [
-        "authorship"
-      ],
+      "enum": ["authorship"],
       "type": "string"
     },
     "Identity": {
-      "enum": [
-        "stable-id"
-      ],
+      "enum": ["stable-id"],
       "type": "string"
     },
     "Mark": {
@@ -845,9 +872,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "type": "object"
     },
     "Node": {
@@ -867,18 +892,13 @@
           "type": "array"
         },
         "text": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "type": {
           "type": "string"
         }
       },
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "type": "object"
     },
     "OptionId": {
@@ -892,21 +912,15 @@
       "type": "string"
     },
     "ProfileDefault": {
-      "enum": [
-        "signature"
-      ],
+      "enum": ["signature"],
       "type": "string"
     },
     "ReferenceRemoval": {
-      "enum": [
-        "restrict"
-      ],
+      "enum": ["restrict"],
       "type": "string"
     },
     "ResourceKind": {
-      "enum": [
-        "image"
-      ],
+      "enum": ["image"],
       "type": "string"
     },
     "ResourceReference": {
@@ -916,10 +930,7 @@
       "type": "string"
     },
     "RichProfile": {
-      "enum": [
-        "inline-text",
-        "rich-text"
-      ],
+      "enum": ["inline-text", "rich-text"],
       "type": "string"
     },
     "Section": {
@@ -942,19 +953,11 @@
           "default": "compact"
         }
       },
-      "required": [
-        "id",
-        "label-key",
-        "fields"
-      ],
+      "required": ["id", "label-key", "fields"],
       "type": "object"
     },
     "SectionLayout": {
-      "enum": [
-        "compact",
-        "inline",
-        "editorial"
-      ],
+      "enum": ["compact", "inline", "editorial"],
       "type": "string"
     },
     "Tab": {
@@ -979,12 +982,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "view",
-            "id",
-            "label-key",
-            "sections"
-          ],
+          "required": ["view", "id", "label-key", "sections"],
           "type": "object"
         },
         {
@@ -1007,10 +1005,7 @@
               "type": "string"
             },
             "item-label-key": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             },
             "label-key": {
               "type": "string"
@@ -1053,13 +1048,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "view",
-            "id",
-            "label-key",
-            "collection",
-            "style-field"
-          ],
+          "required": ["view", "id", "label-key", "collection", "style-field"],
           "type": "object"
         }
       ]
@@ -1132,10 +1121,7 @@
       "$ref": "#/$defs/AssemblyOrder"
     },
     "settings-heading-key": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": ["string", "null"]
     },
     "structures": {
       "items": {

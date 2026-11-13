@@ -17,4 +17,10 @@ pub struct Author {
 pub struct Affiliation {
     pub id: String,
     pub text: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub department: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub institution: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub location: String,
 }

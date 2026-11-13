@@ -5,6 +5,7 @@ mod schema;
 mod structures;
 mod validation;
 mod values;
+pub(crate) use values::normalize_optional_doi;
 
 pub use fields::{Field, FieldControl, ReferenceRemoval, RichProfile};
 pub(crate) use loader::decode_yaml;
@@ -105,6 +106,8 @@ pub enum Binding {
         field: String,
         typst_parameter: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        typst_group: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         metadata_key: Option<String>,
     },
     Collection {
@@ -126,6 +129,12 @@ impl Binding {
             Self::Field { metadata_key, .. } | Self::Collection { metadata_key, .. } => {
                 metadata_key.as_deref().unwrap_or_else(|| self.parameter())
             }
+        }
+    }
+    pub fn typst_group(&self) -> Option<&str> {
+        match self {
+            Self::Field { typst_group, .. } => typst_group.as_deref(),
+            Self::Collection { .. } => None,
         }
     }
     pub fn parameter(&self) -> &str {

@@ -22,6 +22,7 @@ pub(super) struct RootField {
     pub label_key: String,
     pub group: String,
     pub multiline: bool,
+    pub choices: Vec<super::fields::FieldChoice>,
     pub kind: FieldKind,
     pub required_for_export: bool,
     pub resource: Option<crate::resources::ResourceDescriptor>,
@@ -127,6 +128,7 @@ pub(super) fn fields(kind: DocumentType, raw: &Value) -> Vec<FieldValue> {
             parameter: &f.parameter,
             group: &f.group,
             multiline: f.multiline,
+            choices: f.choices.clone(),
             kind: f.kind,
             required_for_export: f.required_for_export,
             label_key: &f.label_key,
@@ -134,8 +136,13 @@ pub(super) fn fields(kind: DocumentType, raw: &Value) -> Vec<FieldValue> {
         .collect()
 }
 
-pub(super) fn source(kind: DocumentType, raw: &Value, options: &DocumentOptions) -> String {
-    source::main(kind.definition(), raw, options)
+pub(super) fn source(
+    kind: DocumentType,
+    raw: &Value,
+    options: &DocumentOptions,
+    publication: bool,
+) -> String {
+    source::main(kind.definition(), raw, options, publication)
 }
 
 #[cfg(test)]

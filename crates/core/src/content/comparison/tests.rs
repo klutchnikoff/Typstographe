@@ -472,6 +472,7 @@ fn article_frontmatter_citations_and_bibliography_are_published_and_undone_as_on
         .push(crate::document_types::authorship::Affiliation {
             id: "official".into(),
             text: "Official free-text affiliation".into(),
+            ..Default::default()
         });
     metadata.localizations[0].summary = RichText::plain("A revised abstract é😀");
     metadata.references.push(crate::bibliography::test_record(

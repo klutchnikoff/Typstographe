@@ -2,7 +2,12 @@
 
 LaPreprint valide le test d’un deuxième modèle pour le contrat Article actuel.
 L’adaptation a été réalisée en Typst et qualifiée par la CLI avec les structures
-d’en-tête et les capacités existantes. L’intégration au catalogue reste à décider.
+d’en-tête et les capacités existantes. Le [modèle LaPreprint](../crates/core/templates/article-lapreprint.typ)
+et son [manifeste](../crates/core/templates/article-lapreprint.model.yaml)
+sont raccordés au catalogue Article.
+
+L’[audit de fidélité](article-model-fidelity.md) détaille les règles Typst
+amont, la comparaison pixel à pixel et les extensions documentaires encore à décider.
 
 ## Sources et adaptation
 
@@ -16,7 +21,7 @@ d’en-tête et les capacités existantes. L’intégration au catalogue reste �
   La [licence MIT](https://github.com/myst-templates/lapreprint-typst/blob/b7496d369fa6b143621afbebed0e87406f276bd2/LICENSE)
   permet de reprendre la mise en page en conservant la notice de Rowan Cockett.
 
-L’essai fournit la signature `article(...)` existante. Il réutilise
+Le modèle fournit la signature `article(...)` et reçoit le dictionnaire `publication` du type Article. Il réutilise
 `authorship`, `abstracts` et `references` pour les auteurs, les affiliations
 officielles en texte libre, la correspondance, l’ORCID, les résumés et
 mots-clés multilingues et la bibliographie Hayagriva. Le titre de la langue
@@ -24,7 +29,7 @@ active et son titre court alimentent le PDF et l’en-tête courant. Le manifest
 d’essai reprend les options existantes, dont le format, l’orientation, la
 langue, les puces, le style CSL et le sommaire optionnel. La mise en page
 adaptée tient dans un fichier Typst et utilise Libertinus Serif, déjà embarquée.
-Elle fonctionne sans la chaîne MyST et sans nouveau paquet Typst.
+Elle fonctionne sans la chaîne MyST. Les dates localisées passent par le wrapper Datify déjà embarqué.
 
 ## Correspondance avec le contrat Article
 
@@ -58,17 +63,11 @@ avec les variantes décrites ci-dessous.
 | Bibliographie, style CSL et sommaire | LaPreprint reçoit un chemin bibliographique et un style. Typstographe fournit la bibliographie du projet et le style choisi, puis insère le sommaire facultatif. La provenance d’import et les identités internes des notices restent gérées par le projet. |
 | Langue, papier, orientation et puces | LaPreprint accepte le format papier et fixe les retraits des listes. L’essai applique aussi la langue, l’orientation et la règle de puces du contrat Article. |
 
-Les options LaPreprint sans champ Article correspondant concernent surtout la
-publication de l’article lui-même. DOI, revue ou lieu de publication, genre
-éditorial, statut d’accès ouvert et dates éditoriales pourraient rejoindre
-l’en-tête s’ils doivent suivre le document lors d’un changement de modèle.
-Les blocs de marge fournis par l’auteur demanderaient aussi une représentation
-dans le projet. Un logo fourni par le modèle, le thème et les règles de
-numérotation relèvent de la présentation. La citation courte de l’article est
-une information distincte du titre court. L’essai conserve le titre court et
-laisse cette citation de côté, car la calculer comme le fait LaPreprint
-supposerait de déduire le nom de famille du dernier mot du nom de publication
-et de disposer d’une année éditoriale.
+Le groupe [Publication](article-contract.md#publication) renseigne le DOI,
+l’accès ouvert, la revue, le genre et les dates éditoriales, ainsi que la
+citation courte et le premier folio. La citation courte est explicite, ce
+qui préserve les noms composés et les conventions de signature. Le logo
+éditorial relève du modèle. Les blocs libres dans la marge restent à évaluer.
 
 ## Recette commune après le correctif
 
@@ -111,8 +110,8 @@ Le titre à gauche, la hiérarchie numérotée et le titre courant donnent au
 modèle une identité distincte. La marge gauche de 25 % est conservée sur
 toutes les pages. LaPreprint prévoit d’y placer des informations éditoriales
 sur la première page. Les notes de bas de page restent sous la colonne de
-texte. Dans le PDF français, le pied de page affiche `1 of 3` et un renvoi
-vers une section numérotée affiche « Chapitre 2 ».
+texte. Après intégration, le pied de page français affiche `1 sur 3` et
+un renvoi vers une section numérotée affiche « Section 2 ».
 
 ## Manques réels et décision de périmètre
 
@@ -120,7 +119,7 @@ vers une section numérotée affiche « Chapitre 2 ».
   mise en page avec toutes les familles de contenu prises en charge. Elle
   n’a révélé aucun champ d’en-tête à ajouter pour le périmètre de rédaction
   actuel. Conserver les structures et les capacités existantes pour le deuxième
-  modèle. Un lot distinct ajoutera les métadonnées éditoriales au contrat Article.
+  modèle. Les métadonnées éditoriales retenues sont désormais disponibles dans Publication.
 - **Rédaction mathématique.** LaPreprint règle la présentation des équations.
   Le type Article couvre les formules, les équations et leurs renvois. Pour un
   véritable article de mathématiques, il manque des blocs sémantiques pour
@@ -129,7 +128,6 @@ vers une section numérotée affiche « Chapitre 2 ».
   Les modèles détermineront leur rendu et les règles de numérotation. Le
   contrat sera défini à partir d’un exemple représentatif, indépendamment des
   paquets Typst que les modèles pourront employer pour le rendu.
-- **Finitions du modèle.** Localiser la pagination et le libellé des renvois
-  vers les sections numérotées. Lors de l’intégration, vérifier le choix du
-  modèle dans l’application et rendre la recette de changement reproductible
-  avec le modèle livré.
+- **Finitions du modèle.** La pagination et les renvois de section sont
+  localisés. La galerie affiche la vignette de LaPreprint. La recette CLI
+  vérifie le changement de modèle et l’export sur trois documents.

@@ -513,6 +513,7 @@
   "Choix conservé, non disponible": "web-retained-unavailable-choice",
   "Mode de la date": "web-date-mode",
   "Texte personnalisé": "web-date-custom",
+  "Saisissez un numéro de page positif ou laissez le champ vide.": "web-publication-page-invalid",
   "Saisissez une date complète et valide, ou supprimez la date.": "web-date-invalid",
   "Saisissez une date personnalisée sur une seule ligne, ou supprimez la date.": "web-date-custom-invalid",
   "Renseignez la nouvelle date ou annulez.": "web-date-pending",

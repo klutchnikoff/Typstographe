@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use typstographe_core::{
     content::catalogue,
     document::{DocumentLanguage, PaperFormat},
-    document_types::{DocumentType, Metadata, discovery, models::Model},
+    document_types::{DocumentType, Metadata, discovery},
 };
 use typstographe_i18n::text;
 
@@ -16,16 +16,18 @@ fn document_type(kind: DocumentType) -> Value {
             let mut value = serde_json::to_value(&field).expect("metadata field");
             value["parameter"] = json!(field.parameter);
             value["label"] = json!(text(field.label_key));
+            if !field.choices.is_empty() {
+                value["choices"] = json!(field.choices.iter().map(|choice|
+                    json!({"value": choice.value, "label": text(&choice.label_key)})
+                ).collect::<Vec<_>>());
+            }
             value
         })
         .collect();
     let models: Vec<_> = kind
         .models()
         .map(|model| {
-            let label = match model.model {
-                Model::Personal => text("model-personal-letter"),
-                Model::ArticleWorking => text("model-working-article"),
-            };
+            let label = text(model.label_key);
             json!({
                 "id":model.model.id(), "label":label, "description":model.description,
                 "keywords":model.keywords, "source":model.source, "manifest":model.manifest,
