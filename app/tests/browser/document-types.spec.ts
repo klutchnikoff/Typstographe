@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { confirmNewDocument } from './document-lifecycle'
+import { expectPreviewReady } from './preview-assertions'
 
 test.beforeEach(async ({ request, page }) => {
   await request.post('/__spike/invoke', {
@@ -70,9 +71,16 @@ test('real model thumbnails load without altering the document or blocking creat
   page,
 }) => {
   const dialog = page.locator('dialog[open]')
-  const image = dialog.locator('.model-thumbnail img')
-  await expect(image).toHaveAttribute('src', /^data:image\/png;base64,/)
-  await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(512)
+  const cards = dialog.locator('[data-model]')
+  await expect(cards).toHaveText(['Français', 'Britannique', 'Américain'])
+  const sources = new Set<string | null>()
+  for (const card of await cards.all()) {
+    const image = card.locator('img')
+    await expect(image).toHaveAttribute('src', /^data:image\/png;base64,/)
+    await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(512)
+    sources.add(await image.getAttribute('src'))
+  }
+  expect(sources.size).toBe(3)
   await expect(dialog.locator('.model-thumbnail-status')).toHaveCount(0)
   await dialog.locator('[data-type="article"]').click()
   await expect(dialog.locator('[data-model]')).toHaveCount(3)
@@ -84,6 +92,40 @@ test('real model thumbnails load without altering the document or blocking creat
   await dialog.locator('[data-model="article.model.ieee"]').click()
   await confirmNewDocument(page)
   await expect(page.locator('.tiptap')).not.toContainText('L’organisation du travail universitaire')
+})
+
+test('Letter gallery creates a chosen model and switches all three without changing the letter', async ({
+  page,
+}) => {
+  const dialog = page.locator('dialog[open]')
+  await dialog.getByRole('button', { name: 'Américain', exact: true }).click()
+  await confirmNewDocument(page)
+  const body = page.getByRole('textbox', { name: 'Corps du document', exact: true })
+  await body.pressSequentially('Hello Morgan.')
+  await page.locator('#metadata-tab-general').click()
+  const model = page.getByRole('combobox', { name: 'Modèle', exact: true })
+  const paper = page.getByRole('combobox', { name: 'Format', exact: true })
+  const preview = page.locator('#pages .preview-page svg').first()
+  const flush = () => page.evaluate(() => window.__spike!.provider.flush())
+  await flush()
+  await expectPreviewReady(page)
+  await expect(model).toHaveValue('courrier.model.american')
+  await expect(preview).toHaveAttribute('viewBox', '0 0 612 792')
+
+  const original = await page.evaluate(() => window.__spike!.editor.getJSON())
+  for (const [profile, format] of [
+    ['personal', 'A4'],
+    ['british', 'A4'],
+    ['american', 'Lettre US'],
+  ]) {
+    await model.selectOption(`courrier.model.${profile}`)
+    await flush()
+    await expect(model).toHaveValue(`courrier.model.${profile}`)
+    await expect(paper.locator('option:checked')).toHaveText(`Selon le modèle (${format})`)
+    await expectPreviewReady(page)
+    expect(await page.evaluate(() => window.__spike!.editor.getJSON())).toEqual(original)
+  }
+  await expect(body).toHaveText('Hello Morgan.')
 })
 
 test('thumbnail failure leaves the actual model selectable and creation available', async ({
@@ -98,7 +140,9 @@ test('thumbnail failure leaves the actual model selectable and creation availabl
   await page.waitForFunction(() => window.__spike?.ready)
   await page.locator('#create-document').click()
   const dialog = page.locator('dialog[open]')
-  await expect(dialog.locator('.model-thumbnail-status')).toHaveText('Aperçu indisponible')
+  await expect(dialog.locator('.model-thumbnail-status')).toHaveText(
+    Array(3).fill('Aperçu indisponible'),
+  )
   await expect(dialog.getByRole('button', { name: 'Créer', exact: true })).toBeEnabled()
   await confirmNewDocument(page)
   await expect(page.locator('.writing')).toBeVisible()
@@ -152,7 +196,8 @@ test('a delayed hover magnifies the page without layout changes and permits poin
   page,
 }) => {
   const dialog = page.locator('dialog[open]')
-  const thumbnail = dialog.locator('.model-thumbnail')
+  const model = dialog.locator('[data-model="courrier.model.personal"]')
+  const thumbnail = model.locator('.model-thumbnail')
   await expect
     .poll(() => thumbnail.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth))
     .toBe(512)
@@ -160,7 +205,7 @@ test('a delayed hover magnifies the page without layout changes and permits poin
   await page.clock.pauseAt(new Date('2026-11-02T12:00:10Z'))
   const footer = dialog.getByRole('button', { name: 'Créer', exact: true })
   const before = await footer.boundingBox()
-  const selection = await dialog.locator('[data-model]').getAttribute('aria-pressed')
+  const selection = await model.getAttribute('aria-pressed')
   await thumbnail.hover()
   const popup = dialog.getByRole('tooltip')
   await page.clock.runFor(599)
@@ -176,7 +221,7 @@ test('a delayed hover magnifies the page without layout changes and permits poin
   await popup.hover()
   await page.clock.runFor(300)
   await expect(popup).toBeVisible()
-  await expect(dialog.locator('[data-model]')).toHaveAttribute('aria-pressed', selection!)
+  await expect(model).toHaveAttribute('aria-pressed', selection!)
   await page.mouse.move(2, 2)
   await page.clock.runFor(150)
   await expect(popup).toBeHidden()
@@ -188,7 +233,7 @@ test('keyboard preview preserves focus, fits the viewport and closes before the 
   await page.setViewportSize({ width: 800, height: 600 })
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   const dialog = page.locator('dialog[open]')
-  const model = dialog.locator('[data-model]')
+  const model = dialog.locator('[data-model="courrier.model.personal"]')
   await expect
     .poll(() => model.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth))
     .toBe(512)
@@ -218,7 +263,7 @@ test('leaving focus or changing type cancels an enlargement before it can reappe
   page,
 }) => {
   const dialog = page.locator('dialog[open]')
-  const model = dialog.locator('[data-model]')
+  const model = dialog.locator('[data-model="courrier.model.personal"]')
   await expect
     .poll(() => model.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth))
     .toBe(512)

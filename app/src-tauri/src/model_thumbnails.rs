@@ -6,19 +6,30 @@ use std::{
     sync::{Mutex, OnceLock},
 };
 use typstographe_core::{
-    document_types::{DocumentType, Metadata, models},
+    dates::DateValue,
+    document::DocumentLanguage,
+    document_types::{
+        Metadata,
+        models::{self, Model},
+    },
     rendering::TypstWorld,
 };
 
 // The catalogue is immutable for this application build. Never cache personal data.
 static THUMBNAILS: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
 
-fn sample(kind: DocumentType) -> &'static str {
-    match kind {
-        DocumentType::Courrier => {
+fn sample(model: &models::Definition) -> &'static str {
+    match model.model {
+        Model::LetterBritish => {
+            "Dear Morgan Taylor,\n\nI am writing to ask whether your meeting room is available on 12 November. Our association is planning a meeting for around 30 people.\n\nCould you confirm availability and let us know how to reserve the room?\n\nYours sincerely,"
+        }
+        Model::LetterAmerican => {
+            "Dear Morgan Taylor:\n\nI am writing to ask whether your meeting room is available on November 12. Our association is planning a meeting for around 30 people.\n\nCould you confirm availability and let us know how to reserve the room?\n\nSincerely,"
+        }
+        Model::Personal => {
             "Madame, Monsieur,\n\nJe vous adresse cette demande afin de préparer notre prochaine rencontre. Elle permettra de faire le point sur les actions menées et de convenir ensemble des prochaines étapes.\n\nPourriez-vous me confirmer votre disponibilité et me transmettre les éléments utiles à la préparation de cette réunion ?\n\nJe vous remercie pour votre retour et vous prie d’agréer, Madame, Monsieur, mes salutations distinguées."
         }
-        DocumentType::Article => {
+        Model::ArticleWorking | Model::ArticleLaPreprint | Model::ArticleIeee => {
             r#"= Introduction
 
 L’organisation du travail universitaire connaît des transformations qui invitent à examiner les pratiques et les conditions de leur évolution. Au-delà des changements institutionnels, les activités quotidiennes reposent sur une multitude d’échanges, d’ajustements et de décisions dont les effets restent souvent peu visibles. Cet article propose d’étudier ces situations ordinaires pour mieux comprendre la manière dont se construit le travail collectif.
@@ -33,15 +44,39 @@ La démarche retenue associe des entretiens et l’observation des activités qu
 
 Ce texte présente un exemple fictif destiné à illustrer la mise en page d’un article de travail. Il montre comment un titre, un résumé et plusieurs paragraphes peuvent partager une même page tout en conservant une hiérarchie lisible. Les sections suivantes pourraient développer la méthode, présenter les résultats et discuter leurs implications. L’objectif est de proposer une composition sobre, adaptée à la rédaction comme à la relecture et à la transmission du document."#
         }
-        DocumentType::CompteRendu => {
-            "= Échanges\n\nLes participants présentent les travaux en cours.\n\n= Décisions\n\nUne nouvelle rencontre permettra de suivre les actions engagées."
-        }
     }
 }
 
-/// Shared specimen metadata for each type, never the user's profile or open work.
-fn sample_metadata(kind: DocumentType) -> Metadata {
-    let mut metadata = Metadata::demo(kind);
+/// Model specimens are independent of the user's profile and open document.
+fn sample_metadata(model: &models::Definition) -> Metadata {
+    let mut metadata = Metadata::demo(model.kind);
+    if matches!(model.model, Model::LetterBritish | Model::LetterAmerican)
+        && let Metadata::Courrier(letter) = &mut metadata
+    {
+        let (address, recipient) = if model.model == Model::LetterBritish {
+            (
+                "24 Willow Lane\nBristol\nBS1 4QA",
+                "8 Market Street\nBristol\nBS1 2AA",
+            )
+        } else {
+            (
+                "24 Willow Lane\nPortland, ME 04101",
+                "8 Market Street\nPortland, ME 04101",
+            )
+        };
+        letter.options.language = DocumentLanguage::English;
+        letter.organisme = "Riverside Arts Association".into();
+        letter.fonction = "Events Coordinator".into();
+        letter.service.clear();
+        letter.email = "camille.martin@example.org".into();
+        letter.adresse_expediteur = address.into();
+        letter.destinataire = "Morgan Taylor".into();
+        letter.adresse = recipient.into();
+        letter.objet = "Meeting room reservation".into();
+        letter.reference = "RES-2026-042".into();
+        letter.lieu.clear();
+        letter.date = DateValue::calendar("2026-10-24");
+    }
     if let Metadata::Article(article) = &mut metadata {
         article.show_outline = Some(false);
         let summary = "Cet article examine les transformations de l’organisation du travail universitaire à partir des activités quotidiennes des équipes. Il s’intéresse aux échanges entre collègues, à la circulation des documents et aux conventions qui soutiennent la coopération. La démarche proposée associe des entretiens et l’observation des pratiques pour comprendre les ajustements entre objectifs individuels et collectifs. Cet exemple fictif met en perspective la diversité des situations et le rôle des outils numériques, sans supposer une évolution uniforme des établissements. Il invite à porter attention aux conditions concrètes dans lesquelles se construisent les pratiques de travail.";
@@ -79,8 +114,8 @@ pub fn model_thumbnail(model_id: String) -> Result<String, CommandError> {
     world.set_dependencies(&typstographe_core::packages::for_template(model.source));
     let document = world
         .compile_with_model(
-            sample(model.kind),
-            &sample_metadata(model.kind),
+            sample(model),
+            &sample_metadata(model),
             model.source,
             model.manifest,
         )

@@ -4,6 +4,8 @@ use super::DocumentType;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Model {
     Personal,
+    LetterBritish,
+    LetterAmerican,
     ArticleWorking,
     ArticleLaPreprint,
     ArticleIeee,
@@ -24,7 +26,7 @@ pub const ALL: &[Definition] = &[
         kind: DocumentType::Courrier,
         source: include_str!("../../templates/courrier-personnel.typ"),
         manifest: include_str!("../../templates/courrier-personnel.model.yaml"),
-        name: "Personal letter",
+        name: "French",
         label_key: "model-personal-letter",
         description: "A restrained personal letter with selectable paper size and orientation; A4 portrait retains the DL window-envelope layout.",
         keywords: &[
@@ -38,6 +40,32 @@ pub const ALL: &[Definition] = &[
             "DL",
             "window envelope",
             "minimal",
+        ],
+    },
+    Definition {
+        model: Model::LetterBritish,
+        kind: DocumentType::Courrier,
+        source: include_str!("../../templates/courrier-british.typ"),
+        manifest: include_str!("../../templates/courrier-british.model.yaml"),
+        name: "British",
+        label_key: "model-british-letter",
+        description: "A Letterloom-inspired letter with sender and date on the right, day-first English dates, and A4 by default.",
+        keywords: &["letter", "British", "UK", "A4", "Letterloom"],
+    },
+    Definition {
+        model: Model::LetterAmerican,
+        kind: DocumentType::Courrier,
+        source: include_str!("../../templates/courrier-american.typ"),
+        manifest: include_str!("../../templates/courrier-american.model.yaml"),
+        name: "American",
+        label_key: "model-american-letter",
+        description: "A left-aligned full-block business letter with month-first English dates and US Letter paper by default.",
+        keywords: &[
+            "letter",
+            "American",
+            "US Letter",
+            "business letter",
+            "full block",
         ],
     },
     Definition {
@@ -81,6 +109,8 @@ impl Model {
     pub const fn id(self) -> &'static str {
         match self {
             Self::Personal => "courrier.model.personal",
+            Self::LetterBritish => "courrier.model.british",
+            Self::LetterAmerican => "courrier.model.american",
             Self::ArticleWorking => "article.model.working",
             Self::ArticleLaPreprint => "article.model.lapreprint",
             Self::ArticleIeee => "article.model.ieee",
@@ -119,7 +149,13 @@ mod tests {
                 assert_eq!(entry.model.definition().kind, kind);
             }
         }
-        assert!(DocumentType::Courrier.can_create());
+        assert_eq!(
+            DocumentType::Courrier
+                .models()
+                .map(|entry| entry.model)
+                .collect::<Vec<_>>(),
+            [Model::Personal, Model::LetterBritish, Model::LetterAmerican],
+        );
         assert!(!DocumentType::CompteRendu.can_create());
         assert!(DocumentType::Article.can_create());
         assert_eq!(

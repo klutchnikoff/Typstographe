@@ -14,6 +14,12 @@
       "packages": []
     },
     {
+      "id": "letter-layout",
+      "entrypoint": "capabilities/letter-layout.typ",
+      "signature": "letter-layout(format-date, layout-figures, letter-notes, british: bool, ..courrier) -> content",
+      "packages": []
+    },
+    {
       "id": "article-layout",
       "entrypoint": "capabilities/article-layout.typ",
       "signature": "layout-body(body), start-page-number(publication)",

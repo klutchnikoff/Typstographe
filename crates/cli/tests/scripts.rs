@@ -219,6 +219,65 @@ fn model_switch_keeps_math_and_reference_dependencies_in_a_reopened_export() {
 }
 
 #[test]
+fn bundled_letter_models_keep_the_same_saved_letter_and_signature() {
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    use typstographe_core::{content::project::Project, document_types::models::Model};
+
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("original.typsto");
+    let signature = "images/signature.svg";
+    let bytes = include_bytes!("../../../fixtures/signature.svg");
+    let mut example: Value =
+        serde_json::from_str(include_str!("../../../examples/cli/courrier.json")).unwrap();
+    example["save"]["path"] = json!("original.typsto");
+    example["steps"].as_array_mut().unwrap().extend([
+        json!({"id":"resource.add","params":{"resource":{"path":signature,"data":STANDARD.encode(bytes)}}}),
+        json!({"id":"metadata.set","params":{"target":{"kind":"metadata","field":"sender.signature"},"value":signature}}),
+    ]);
+    response(cli().arg("script").arg(job(dir.path(), example)), 0);
+    let original = Project::read(&path).unwrap();
+    let before = original.current();
+    for (model, paper) in [
+        (Model::LetterBritish, "a4"),
+        (Model::LetterAmerican, "us-letter"),
+        (Model::Personal, "a4"),
+    ] {
+        let model = model.definition();
+        let change = script(
+            json!([{"id":"document.set_model","params":{
+                "model_id":model.model.id(),"source":model.source,"manifest":model.manifest,
+            }}]),
+            json!({"kind":"current"}),
+        );
+        response(cli().arg("script").arg(job(dir.path(), change)), 0);
+
+        let reopened = Project::read(&path).unwrap();
+        let current = reopened.current();
+        assert_eq!(current.model_id, model.model.id());
+        assert_eq!(current.document, before.document);
+        assert_eq!(current.metadata, before.metadata);
+        assert_eq!(current.assets, before.assets);
+        let export = dir.path().join(model.model.id());
+        response(
+            cli()
+                .arg("export")
+                .arg(&path)
+                .args(["--format", "both", "--output"])
+                .arg(&export),
+            0,
+        );
+        let main = std::fs::read_to_string(export.join("main.typ")).unwrap();
+        assert!(main.contains(&format!(r#"paper: "{paper}""#)), "{main}");
+        assert!(main.contains(r#"language: "fr""#), "{main}");
+        assert_eq!(std::fs::read(export.join(signature)).unwrap(), bytes);
+        assert!(export.join("courrier.pdf").is_file());
+        if model.model != Model::Personal {
+            assert!(export.join("capabilities/letter-layout.typ").is_file());
+        }
+    }
+}
+
+#[test]
 fn bundled_article_models_roundtrip_the_same_documents_and_export() {
     use typstographe_core::{content::project::Project, document_types::models::Model};
 
