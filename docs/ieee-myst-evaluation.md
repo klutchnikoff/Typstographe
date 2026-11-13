@@ -3,7 +3,11 @@
 L’essai valide le changement entre un modèle de travail et un modèle à
 réglages imposés. Le [modèle Typst](../experiments/ieee-myst/model.typ) et
 son [manifeste](../experiments/ieee-myst/model.yaml) sont disponibles dans
-les expériences. L’intégration au catalogue reste à décider.
+les expériences. Le [modèle du catalogue](../crates/core/templates/article-ieee.typ)
+reprend cette adaptation.
+
+L’[audit de fidélité](article-model-fidelity.md) détaille les règles Typst
+amont, les écarts de composition et les données encore nécessaires.
 
 ## Adaptation
 
@@ -12,8 +16,10 @@ est une adaptation légère d’un ancien modèle IEEE de Typst. Le fichier
 `main.typ` prépare les données MyST, tandis que `template.typ` porte la
 composition. La [licence Unlicense](https://github.com/myst-templates/ieee-typst-template/blob/e40d10316580912aed84348170b479133acc5622/LICENSE)
 et les crédits sont conservés dans le source de l’essai. L’appel historique
-`locate(fn)` échoue avec Typst 0.15.1. L’essai utilise `context` pour les
-titres et Libertinus Serif, déjà embarquée, à la place de STIX Two Text.
+`locate(fn)` échoue avec Typst 0.15.1. L’expérience initiale utilisait
+Libertinus Serif. Le modèle fourni utilise la police STIX Two Text de l’amont,
+avec ses faces embarquées et leur licence dans l’export Typst si elles servent
+au rendu.
 
 - L’essai reprend le titre et la grille d’auteurs en pleine largeur,
   le corps à deux colonnes, les niveaux de section `I`, `A`, `1` et la
@@ -23,10 +29,12 @@ titres et Libertinus Serif, déjà embarquée, à la place de STIX Two Text.
   officielles restent en texte libre, avec toutes les affiliations associées
   à chaque auteur, son courriel, l’ORCID et le rôle d’auteur correspondant.
   Le port MyST ne sélectionne que la première affiliation de chaque auteur.
-  L’amont reçoit un seul titre, un seul résumé et une liste de mots-clés.
-  Notre adaptation compose les traductions avec la fonction commune de
-  Typstographe. Dans la colonne, le titre traduit est en 11 pt et son
-  sous-titre en italique en 10 pt, au-dessus du résumé en 9 pt.
+  IEEE compose Département et Établissement en italique et Lieu en romain.
+  Quand les trois champs sont vides, il compose la signature officielle en
+  italique. L’amont reçoit un seul titre, un seul résumé et une liste de
+  mots-clés. Notre adaptation compose les traductions avec la fonction
+  commune. Dans la colonne, le titre traduit est en 11 pt et son sous-titre
+  en italique en 10 pt. Résumé et mots-clés reprennent le corps amont de 10 pt.
   Le titre court est conservé dans les données et le modèle d’essai, comme
   le modèle amont, compose le document sans titre courant.
 - Le manifeste d’essai impose Letter portrait, les citations numériques IEEE

@@ -9,7 +9,7 @@ ce contrat ; Typst compose la bibliographie et le sommaire facultatif.
 
 ```typ
 #let article(localizations: (), authors: (), affiliations: (),
-  references: (), citation-style: "chicago-author-date", show-outline: false, options: (
+  references: (), citation-style: "chicago-author-date", show-outline: false, publication: (:), options: (
   paper: "a4", landscape: false, language: "fr", bullet-marker: auto,
 ), body) = { /* présentation du modèle */ }
 ```
@@ -28,8 +28,13 @@ et du déplacement ; ils ne dépendent pas du libellé.
   Le nom de publication est libre. Plusieurs correspondants sont possibles ;
   un courriel ne suffit pas à attribuer ce statut. Aucune affiliation obligatoire.
 - `affiliations` : liste de dictionnaires `id`, `text`. Le texte est une signature
-  officielle libre, préservée exactement, sans décomposition en établissement,
-  laboratoire ou adresse. Plusieurs auteurs peuvent référencer la même entrée.
+  officielle libre, préservée exactement. Plusieurs auteurs peuvent référencer
+  la même entrée. Trois champs facultatifs complètent la signature :
+  `department` (département), `institution` (établissement) et `location`
+  (lieu). Ils sont omis de la source Typst et des données archivées lorsqu’ils
+  sont vides. Les modèles décident de leur emploi. IEEE compose les lignes
+  renseignées dans sa grille et utilise la signature officielle si les trois
+  champs sont vides.
 - `localizations` : liste ordonnée de dictionnaires `id`, `language`, `title`,
   `short-title`, `subtitle`, `abstract`, `keywords` (liste de chaînes).
   Les titres et résumés sont du contenu riche sûr, pas du Typst arbitraire.
@@ -56,14 +61,33 @@ les affiliations ajoutées, ainsi que des identifiants uniques et associations
 valides. La suppression d’une affiliation utilisée nécessite de traiter
 explicitement ses associations, jamais de laisser des références pendantes.
 
+## Publication
+
+L’onglet **Publication** conserve le DOI, la revue ou plateforme, le genre
+éditorial, le statut d’accès, la citation courte, le premier folio et les dates
+de soumission, d’acceptation et de publication. Tous les champs sont facultatifs.
+Le DOI est normalisé à la saisie. Les dates sont fixes ou en texte personnalisé.
+Le premier folio est un entier positif. La valeur effective par défaut est 1.
+
+Le modèle reçoit un dictionnaire `publication` avec les seules valeurs renseignées.
+Les clés sont `doi`, `venue`, `kind`, `access`, `short-citation`, `first-page`,
+`submitted`, `accepted` et `published`. Le statut vaut `open` ou `restricted`
+quand il est renseigné. Une date structurée devient un `datetime` Typst, une date
+personnalisée reste une chaîne. Le [manifeste du modèle](model-options.md)
+annonce la prise en charge de cet argument. L’archive conserve les données
+éditoriales quel que soit le modèle sélectionné.
+
 ## Extensions planifiées
 
-Un groupe d’en-tête facultatif pour la publication conservera les données
-éditoriales propres à l’article, dont le numéro de première page. Les énoncés
-mathématiques et les preuves feront l’objet d’un contrat de capacités
+Les énoncés mathématiques et les preuves feront l’objet d’un contrat de capacités
 indépendant des paquets Typst. Le modèle pourra implémenter ces capacités
 directement ou via un paquet de son choix. Les champs, signatures et validations
 seront précisés dans les lots de la [feuille de route](../ROADMAP.md).
+LaPreprint et IEEE pour MyST seront repris lors de l’intégration des
+théorèmes, lemmes et preuves.
+
+Une capacité **Remerciements** reste à définir. Selon le modèle, son contenu
+pourra être composé en section dédiée ou en note de bas de page.
 
 ## Bibliothèque commune
 
@@ -126,7 +150,7 @@ autres formats sans modifier la recette. Les fichiers générés dans `output/`
 restent hors du dépôt.
 
 L’ordre des onglets est **Général > Titres > Résumés > Affiliations > Auteurs >
-Bibliographie**. Général conserve modèle, papier, orientation et langue principale.
+Bibliographie > Publication**. Général conserve modèle, papier, orientation et langue principale.
 Titres présente une carte par langue, avec son nom et le titre principal sur
 une seule ligne (tronqué avec une ellipse si nécessaire). Un clic ouvre la même
 modale commune pour éditer le titre, le sous-titre et le titre court, avec les

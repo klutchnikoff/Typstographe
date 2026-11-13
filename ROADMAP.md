@@ -864,7 +864,11 @@ un document utile et retrouve son travail, sans lire le dépôt ni installer Rus
   implémentation de la présentation et de la numérotation. Il peut utiliser
   [theorion](https://typst.app/universe/package/theorion/) ou un autre paquet
   via un adaptateur Typst qui respecte le contrat. Examiner aussi les idées
-  de theorion qui répondent aux usages retenus.
+  de theorion qui répondent aux usages retenus. Reprendre LaPreprint et IEEE
+  pour MyST lors de l’intégration des théorèmes, lemmes et preuves.
+- **Remerciements dans Article — différé.** Définir une capacité sémantique
+  dont le contenu pourra être composé par le modèle en section dédiée ou
+  en note de bas de page.
 - Import de contenus externes et exports supplémentaires justifiés par les usages.
 
 La reformulation par petit LLM local n’est pas réactivée par ce plan. Un créateur
@@ -929,7 +933,8 @@ acceptées ou refusées, aperçu corrigé compilé, sans modification directe du
 
 **D — Deuxième modèle Article.** Le [bilan de LaPreprint](docs/lapreprint-evaluation.md)
 valide l’interchangeabilité avec le contrat Article actuel. La marge gauche
-de LaPreprint est conservée. Décider de l’intégration au catalogue et localiser
-la pagination et les renvois de section. L’extension d’en-tête pour la
-publication est planifiée en B. Les énoncés et preuves suivent leur propre lot.
+de LaPreprint est conservée. Le modèle est raccordé localement au catalogue,
+avec la pagination et les renvois localisés. Le groupe [Publication](docs/article-contract.md#publication)
+est raccordé à Article. La prochaine révision de LaPreprint et IEEE pour MyST
+interviendra avec les capacités de théorèmes, lemmes et preuves.
 C.4 reste différé.
