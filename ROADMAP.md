@@ -522,12 +522,12 @@ leurs fonctionnalités.
 | [LaPreprint](https://github.com/myst-templates/lapreprint-typst) | Premier candidat pour Article : auteurs/affiliations, ORCID, résumés multiples, titre court, mots-clés et bibliographie ; examiner les besoins en DOI, dates éditoriales et informations marginales. |
 | [IEEE pour MyST](https://github.com/myst-templates/ieee-typst-template) | [Essai réalisé](docs/ieee-myst-evaluation.md). Aller-retour avec des réglages imposés, placement sur deux colonnes et tableau long vérifiés. Rôles de section à cadrer. |
 | [Plain Typst Book](https://github.com/myst-templates/plain_typst_book) | Référence pour Livre et Mémoire/thèse : couverture, préface, sommaire, chapitres et numérotation des figures/équations par chapitre. |
-| [Letterloom pour MyST](https://github.com/stefanv/myst-typst-letterloom), fondé sur [Letterloom](https://typst.app/universe/package/letterloom/) | Courrier de présentation anglaise ; comparer les champs expéditeur/destinataire, date, signature et pièces jointes. Examiner séparément les signatures multiples et l’incorporation de pièces, au-delà de nos mentions de P.J. actuelles. |
+| [Letterloom pour MyST](https://github.com/stefanv/myst-typst-letterloom), fondé sur [Letterloom](https://typst.app/universe/package/letterloom/) | [Intégré au catalogue Courrier](docs/letterloom-evaluation.md#intégration-au-catalogue). Français, Britannique et Américain partagent le contrat Courrier. Le modèle britannique reprend la composition de Letterloom. |
 | [Quire](https://typst.app/universe/package/quire), [sources](https://github.com/mariovagomarzal/quire) | Candidat prioritaire à évaluer pour les documents longs, également utilisable pour articles et rapports : parties/chapitres/sections, modes papier/écran, pages liminaires, résumés multilingues, annexes ; examiner les environnements scientifiques et le code via theorion/codly. |
 
-Les essais LaPreprint et IEEE couvrent Article. Évaluer Letterloom pour
-Courrier et comparer Quire et Plain Typst Book pour préparer les types de
-documents longs.
+Les essais LaPreprint et IEEE couvrent Article. Les trois modèles Courrier
+sont intégrés au catalogue. Comparer Quire et Plain Typst Book pour préparer
+les types de documents longs.
 Pour chacun, distinguer présentation relevant du modèle, données nécessitant
 une structure du type et contenus nécessitant une capacité commune. Étendre
 ces contrats ensemble avant de développer les fonctions manquantes.
