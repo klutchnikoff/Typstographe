@@ -16,6 +16,11 @@ fn document_type(kind: DocumentType) -> Value {
             let mut value = serde_json::to_value(&field).expect("metadata field");
             value["parameter"] = json!(field.parameter);
             value["label"] = json!(text(field.label_key));
+            if !field.choices.is_empty() {
+                value["choices"] = json!(field.choices.iter().map(|choice|
+                    json!({"value": choice.value, "label": text(&choice.label_key)})
+                ).collect::<Vec<_>>());
+            }
             value
         })
         .collect();

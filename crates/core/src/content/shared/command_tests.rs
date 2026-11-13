@@ -22,6 +22,7 @@ pub(super) fn session(kind: DocumentType) -> SharedSession {
         meta.affiliations.push(Affiliation {
             id: "irmar".into(),
             text: "Univ Rennes, CNRS, IRMAR".into(),
+            ..Default::default()
         });
     }
     let state = State::new(serde_json::from_value(json!({"type":"doc","content":[
@@ -164,6 +165,75 @@ fn text_and_styles_preserve_xml_identity_across_cells_annotations_and_unicode() 
             .unwrap()["text"],
         "Note 日本"
     );
+}
+
+#[test]
+fn new_affiliation_fields_can_edit_records_from_older_checkpoints() {
+    let initial = session(DocumentType::Article);
+    let shared = SharedDocument::from_update(&initial.update()).unwrap();
+    let (record, _) = targets::record(
+        &shared.doc,
+        &shared.doc.transact(),
+        initial.state(),
+        "affiliations",
+        "irmar",
+        "department",
+    )
+    .unwrap();
+    {
+        use yrs::Map;
+        let mut tx = shared.doc.transact_mut();
+        for key in ["department", "institution", "location"] {
+            record.remove(&mut tx, key);
+        }
+    }
+    let mut s =
+        SharedSession::open(initial.guard().clone(), &shared.update(), Assets::default()).unwrap();
+    execute(
+        &mut s,
+        vec![
+            command(
+                "metadata.set",
+                json!({
+                    "target":{"kind":"record","collection":"affiliations","id":"irmar","field":"department"},
+                    "value":"Department of Mathematics"
+                }),
+            ),
+            command(
+                "text.insert",
+                json!({
+                    "target":target(json!({"kind":"record","collection":"affiliations","id":"irmar","field":"location"}),0,0),
+                    "text":"Rennes, France"
+                }),
+            ),
+        ],
+    );
+    use crate::content::commands::TextZone;
+    let edited = SharedDocument::from_update(&s.update()).unwrap();
+    for key in ["department", "location"] {
+        assert!(matches!(
+            targets::resolve(
+                &edited.doc,
+                s.state(),
+                &TextZone::Record {
+                    collection: "affiliations".into(),
+                    id: "irmar".into(),
+                    field: key.into(),
+                    path: vec![],
+                },
+            ),
+            Ok(targets::Resolved::Text(_))
+        ));
+    }
+    let affiliation = &fields(&s)["affiliations"][0];
+    assert_eq!(affiliation["text"], "Univ Rennes, CNRS, IRMAR");
+    assert_eq!(affiliation["department"], "Department of Mathematics");
+    assert_eq!(affiliation["location"], "Rennes, France");
+    assert!(affiliation.get("institution").is_none());
+    let source = s.state().settings.metadata.main_source();
+    assert!(source.contains(r#"department: "Department of Mathematics""#));
+    assert!(source.contains(r#"location: "Rennes, France""#));
+    assert!(!source.contains("institution:"));
 }
 
 #[test]

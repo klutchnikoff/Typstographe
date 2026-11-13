@@ -23,7 +23,7 @@ fn invalid(value: &Value, code: DiagnosticCode) {
 }
 
 #[test]
-fn authorship_shortcut_resolves_to_the_exact_previous_article_contract() {
+fn authorship_shortcut_resolves_to_the_checked_article_contract() {
     let expected: Value = serde_json::from_str(include_str!(
         "../../../../../../fixtures/document-types/article-definition.json"
     ))
@@ -152,7 +152,8 @@ fn explicit_orders_are_complete_permutations_and_cannot_hide_content() {
         "affiliations",
         "titles",
         "abstracts",
-        "bibliography"
+        "bibliography",
+        "publication"
     ]);
     value["order"]["bindings"] = json!([
         "affiliations",
@@ -161,7 +162,16 @@ fn explicit_orders_are_complete_permutations_and_cannot_hide_content() {
         "references",
         "reference_sources",
         "article.citation_style",
-        "article.show_outline"
+        "article.show_outline",
+        "article.publication.doi",
+        "article.publication.venue",
+        "article.publication.kind",
+        "article.publication.access",
+        "article.publication.submitted",
+        "article.publication.accepted",
+        "article.publication.published",
+        "article.publication.short_citation",
+        "article.publication.first_page"
     ]);
     let loaded = load(&value).unwrap();
     assert_eq!(loaded.definition().header.tabs[0].id(), "authors");

@@ -18,6 +18,24 @@ pub enum MetadataField {
     ArticleAffiliations,
     #[serde(rename = "article.localizations")]
     ArticleLocalizations,
+    #[serde(rename = "article.publication.doi")]
+    PublicationDoi,
+    #[serde(rename = "article.publication.venue")]
+    PublicationVenue,
+    #[serde(rename = "article.publication.kind")]
+    PublicationKind,
+    #[serde(rename = "article.publication.access")]
+    PublicationAccess,
+    #[serde(rename = "article.publication.submitted")]
+    PublicationSubmitted,
+    #[serde(rename = "article.publication.accepted")]
+    PublicationAccepted,
+    #[serde(rename = "article.publication.published")]
+    PublicationPublished,
+    #[serde(rename = "article.publication.short_citation")]
+    PublicationShortCitation,
+    #[serde(rename = "article.publication.first_page")]
+    PublicationFirstPage,
     #[serde(rename = "sender.signature")]
     SenderSignature,
     #[serde(rename = "sender.name")]
@@ -72,6 +90,14 @@ pub struct FieldValue {
     pub multiline: bool,
     pub kind: super::FieldKind,
     pub required_for_export: bool,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub choices: Vec<FieldChoice>,
     #[serde(skip)]
     pub label_key: &'static str,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct FieldChoice {
+    pub value: String,
+    pub label_key: String,
 }

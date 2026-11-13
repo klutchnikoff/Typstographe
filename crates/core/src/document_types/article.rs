@@ -46,7 +46,40 @@ pub struct Metadata {
     pub authors: Vec<Author>,
     pub affiliations: Vec<Affiliation>,
     pub localizations: Vec<Localization>,
+    #[serde(default, deserialize_with = "deserialize_doi")]
+    pub publication_doi: String,
+    #[serde(default)]
+    pub publication_venue: String,
+    #[serde(default)]
+    pub publication_kind: String,
+    #[serde(default)]
+    pub publication_access: Access,
+    #[serde(default)]
+    pub publication_submitted: Option<crate::dates::DateValue>,
+    #[serde(default)]
+    pub publication_accepted: Option<crate::dates::DateValue>,
+    #[serde(default)]
+    pub publication_published: Option<crate::dates::DateValue>,
+    #[serde(default)]
+    pub publication_short_citation: String,
+    #[serde(default)]
+    pub publication_first_page: Option<std::num::NonZeroU32>,
 }
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Access {
+    #[default]
+    Unspecified,
+    Open,
+    Restricted,
+}
+
+fn deserialize_doi<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<String, D::Error> {
+    let value = String::deserialize(deserializer)?;
+    super::definition::normalize_optional_doi(&value)
+        .ok_or_else(|| serde::de::Error::custom("invalid publication DOI"))
+}
+
 fn default_citation_style() -> Option<String> {
     None
 }
@@ -115,7 +148,7 @@ mod tests {
         english.summary = RichText::plain("A study of academic work.");
         english.keywords = vec!["academic work".into()];
         meta.localizations.push(english);
-        meta.affiliations.push(Affiliation {id:"irmar".into(),text:"Univ Rennes, CNRS, IRMAR (Institut de Recherche Mathématique de Rennes) - UMR 6625, F-35000 Rennes, France".into()});
+        meta.affiliations.push(Affiliation {id:"irmar".into(),text:"Univ Rennes, CNRS, IRMAR (Institut de Recherche Mathématique de Rennes) - UMR 6625, F-35000 Rennes, France".into(), ..Default::default()});
         meta.authors[0].affiliation_ids.push("irmar".into());
         meta.authors[0].email = "camille@example.org".into();
         meta.authors.push(Author {
@@ -138,7 +171,7 @@ mod tests {
         let descriptor = DocumentType::Article.structured_metadata().unwrap();
         let panels = descriptor["panels"].as_array().unwrap();
         assert_eq!(
-            panels.len() + 1,
+            panels.len() + 2,
             DocumentMetadata::blank(DocumentType::Article)
                 .editor_groups()
                 .len()
@@ -146,7 +179,7 @@ mod tests {
         for group in DocumentMetadata::blank(DocumentType::Article)
             .editor_groups()
             .iter()
-            .filter(|group| group.id != "bibliography")
+            .filter(|group| !matches!(group.id.as_str(), "bibliography" | "publication"))
         {
             assert!(panels.iter().any(|panel| panel["id"] == group.id));
         }

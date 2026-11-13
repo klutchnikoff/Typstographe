@@ -99,6 +99,8 @@ pub struct Manifest {
     pub document_type: DocumentType,
     pub languages: Vec<DocumentLanguage>,
     pub options: BTreeMap<OptionId, Policy>,
+    #[serde(default)]
+    pub publication: bool,
 }
 
 /// Parsing is memoized by source, including invalid input; no per-keystroke YAML parsing.
@@ -145,6 +147,9 @@ impl Manifest {
     fn validate(&self) -> Result<(), String> {
         if self.contract_version != 1 {
             return Err("unsupported_model_manifest_version".into());
+        }
+        if self.publication && self.document_type != DocumentType::Article {
+            return Err("invalid_model_publication".into());
         }
         if self.languages.is_empty()
             || self
@@ -219,6 +224,7 @@ impl Manifest {
             );
         }
         Ok(Resolution {
+            publication: self.publication,
             metadata: serde_json::from_value(raw).map_err(|e| e.to_string())?,
             options,
         })
@@ -245,12 +251,13 @@ pub struct ResolvedOption {
     pub domain: Option<Vec<Value>>,
 }
 pub struct Resolution {
+    publication: bool,
     pub metadata: Metadata,
     pub options: BTreeMap<OptionId, ResolvedOption>,
 }
 impl Resolution {
     pub fn main_source(&self) -> String {
-        self.metadata.raw_main_source()
+        self.metadata.raw_main_source(self.publication)
     }
 }
 

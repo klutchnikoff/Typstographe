@@ -29,6 +29,7 @@ export interface RecordField {
   default: unknown
   references?: string
   statistics?: boolean
+  omit_empty?: boolean
   choices?: string[]
 }
 export interface RecordCollection {
@@ -294,9 +295,12 @@ export function snapshotRecords(
 ) {
   if (!collections(provider)) return
   for (const definition of schema.collections)
-    values[definition.parameter] = recordIds(provider, definition).map((id) =>
-      readRecord(recordMap(provider, definition).get(id)!, definition),
-    )
+    values[definition.parameter] = recordIds(provider, definition).map((id) => {
+      const data = readRecord(recordMap(provider, definition).get(id)!, definition)
+      for (const field of definition.fields)
+        if (field.omit_empty && data[field.key] === '') delete data[field.key]
+      return data
+    })
 }
 export function addRecord(
   provider: RecordStore,

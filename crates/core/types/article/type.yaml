@@ -22,6 +22,7 @@ order:
   - affiliations
   - authors
   - bibliography
+  - publication
 fields:
 - id: article.citation_style
   presentation: citation-style
@@ -36,6 +37,36 @@ fields:
   kind: boolean
   label-key: field-show-outline
   control: outline
+- id: article.publication.doi
+  kind: doi
+  label-key: field-publication-doi
+- id: article.publication.venue
+  kind: text
+  label-key: field-publication-venue
+- id: article.publication.kind
+  kind: text
+  label-key: field-publication-kind
+- id: article.publication.access
+  kind: choice
+  label-key: field-publication-access
+  choices: [unspecified, open, restricted]
+  default: unspecified
+  choice-labels: [publication-access-unspecified, publication-access-open, publication-access-restricted]
+- id: article.publication.submitted
+  kind: date
+  label-key: field-publication-submitted
+- id: article.publication.accepted
+  kind: date
+  label-key: field-publication-accepted
+- id: article.publication.published
+  kind: date
+  label-key: field-publication-published
+- id: article.publication.short_citation
+  kind: text
+  label-key: field-publication-short-citation
+- id: article.publication.first_page
+  kind: positive-integer
+  label-key: field-publication-first-page
 collections:
 - id: references
   kind: bibliographic-records
@@ -122,6 +153,42 @@ bindings:
 - field: article.show_outline
   typst-parameter: show-outline
   metadata-key: show_outline
+- field: article.publication.doi
+  typst-parameter: doi
+  typst-group: publication
+  metadata-key: publication_doi
+- field: article.publication.venue
+  typst-parameter: venue
+  typst-group: publication
+  metadata-key: publication_venue
+- field: article.publication.kind
+  typst-parameter: kind
+  typst-group: publication
+  metadata-key: publication_kind
+- field: article.publication.access
+  typst-parameter: access
+  typst-group: publication
+  metadata-key: publication_access
+- field: article.publication.submitted
+  typst-parameter: submitted
+  typst-group: publication
+  metadata-key: publication_submitted
+- field: article.publication.accepted
+  typst-parameter: accepted
+  typst-group: publication
+  metadata-key: publication_accepted
+- field: article.publication.published
+  typst-parameter: published
+  typst-group: publication
+  metadata-key: publication_published
+- field: article.publication.short_citation
+  typst-parameter: short-citation
+  typst-group: publication
+  metadata-key: publication_short_citation
+- field: article.publication.first_page
+  typst-parameter: first-page
+  typst-group: publication
+  metadata-key: publication_first_page
 header:
   tabs:
   - id: titles
@@ -152,6 +219,27 @@ header:
     view: bibliography
     collection: references
     style-field: article.citation_style
+  - id: publication
+    label-key: group-publication
+    view: form
+    sections:
+    - id: publication-identity
+      label-key: group-publication-identity
+      layout: compact
+      fields:
+      - article.publication.doi
+      - article.publication.venue
+      - article.publication.kind
+      - article.publication.access
+      - article.publication.short_citation
+      - article.publication.first_page
+    - id: publication-dates
+      label-key: group-publication-dates
+      layout: compact
+      fields:
+      - article.publication.submitted
+      - article.publication.accepted
+      - article.publication.published
 export-requirements:
 - kind: primary-language
   collection: localizations

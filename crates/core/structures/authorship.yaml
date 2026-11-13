@@ -44,6 +44,18 @@ collections:
     label-key: field-official-affiliation
     multiline: true
     required-for-export: true
+  - id: department
+    kind: text
+    label-key: field-affiliation-department
+    omit-empty: true
+  - id: institution
+    kind: text
+    label-key: field-affiliation-institution
+    omit-empty: true
+  - id: location
+    kind: text
+    label-key: field-affiliation-location
+    omit-empty: true
 bindings:
 - collection: authors
   typst-parameter: authors

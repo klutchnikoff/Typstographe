@@ -37,8 +37,11 @@ export function settingsFor(provider: Provider): Settings {
     base = structuredClone(map.get('document')) as Settings
   if (!base) return base
   const kind = catalogue.types.find((t) => t.id === base.metadata.type)!
-  for (const field of kind.fields)
+  for (const field of kind.fields) {
     if (map.has(field.field)) base.metadata.fields[field.parameter] = map.get(field.field)
+    else if (!(field.parameter in base.metadata.fields))
+      base.metadata.fields[field.parameter] = structuredClone(field.value)
+  }
   for (const key of ['paper', 'language', 'landscape', 'bullet_marker', 'spelling_ignored'])
     if (map.has(`options.${key}`)) base.metadata.fields.options[key] = map.get(`options.${key}`)
   if (kind.structured) snapshotRecords(provider, kind.structured, base.metadata.fields)

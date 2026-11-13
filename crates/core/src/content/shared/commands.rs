@@ -1,6 +1,6 @@
 use super::{
     super::{
-        commands::{Command, FieldTarget, Style, Switch, TextTarget},
+        commands::{Command, FieldTarget, Style, Switch, TextTarget, TextZone},
         contract::{Error, State, TargetReason, UnavailableReason},
     },
     targets::{self, Resolved},
@@ -8,8 +8,8 @@ use super::{
 use serde_json::Value;
 use yrs::types::Attrs;
 use yrs::{
-    Any, Doc, Map, Out, ReadTxn, Text, Transact, TransactionMut, Xml, XmlElementRef, XmlFragment,
-    XmlOut, XmlTextPrelim,
+    Any, Doc, Map, Out, ReadTxn, Text, TextPrelim, Transact, TransactionMut, Xml, XmlElementRef,
+    XmlFragment, XmlOut, XmlTextPrelim,
 };
 
 fn parameter(name: &str) -> Error {
@@ -126,11 +126,29 @@ fn set_field(
         super::bibliography::check_generic(state, collection)?;
     }
     let (map, key, before, kind) = targets::field(doc, &doc.transact(), state, target)?;
+    let normalized;
+    let value = if kind == "doi" {
+        normalized = Value::String(
+            value
+                .as_str()
+                .and_then(crate::document_types::definition::normalize_optional_doi)
+                .ok_or_else(|| parameter("value"))?,
+        );
+        &normalized
+    } else {
+        value
+    };
     let valid = match kind.as_str() {
-        "text" | "multiline" | "source" | "language" | "choice" => value.is_string(),
+        "text" | "multiline" | "source" | "language" | "choice" | "doi" => value.is_string(),
         "resource-reference" => {
             serde_json::from_value::<Option<crate::resources::ResourceReference>>(value.clone())
                 .is_ok()
+        }
+        "positive_integer" => {
+            value.is_null()
+                || value
+                    .as_u64()
+                    .is_some_and(|n| (1..=u32::MAX.into()).contains(&n))
         }
         "date" => serde_json::from_value::<Option<crate::dates::DateValue>>(value.clone()).is_ok(),
         "boolean" => value.is_boolean(),
@@ -156,15 +174,25 @@ fn set_field(
         return Ok(());
     }
     let mut tx = doc.transact_mut();
-    if let Some(Out::YText(text)) = map.get(&tx, &key) {
-        write_text(
+    match map.get(&tx, &key) {
+        Some(Out::YText(text)) => write_text(
             &text,
             &mut tx,
             before.as_str().ok_or_else(|| parameter("value"))?,
             value.as_str().ok_or_else(|| parameter("value"))?,
-        );
-    } else {
-        map.insert(&mut tx, key, any(value));
+        ),
+        None if matches!(target, FieldTarget::Record { .. })
+            && matches!(kind.as_str(), "text" | "multiline") =>
+        {
+            map.insert(
+                &mut tx,
+                key,
+                TextPrelim::new(value.as_str().ok_or_else(|| parameter("value"))?),
+            );
+        }
+        _ => {
+            map.insert(&mut tx, key, any(value));
+        }
     }
     Ok(())
 }
@@ -302,7 +330,13 @@ fn replace(
             match other {
                 Resolved::Text(text) => write_text(&text, &mut tx, &info.text, &next),
                 Resolved::Scalar { map, key, .. } => {
-                    map.insert(&mut tx, key, next);
+                    if matches!(target.zone, TextZone::Record { .. })
+                        && !map.contains_key(&tx, &key)
+                    {
+                        map.insert(&mut tx, key, TextPrelim::new(next));
+                    } else {
+                        map.insert(&mut tx, key, next);
+                    }
                 }
                 Resolved::Annotation(element) => {
                     element.insert_attribute(&mut tx, "text", next);

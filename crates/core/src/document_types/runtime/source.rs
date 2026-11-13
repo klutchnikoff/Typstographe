@@ -1,11 +1,20 @@
 use super::*;
 use crate::{content::editorial::RichText, document::typst_string};
 
-pub(super) fn main(loaded: &LoadedDefinition, raw: &Value, options: &DocumentOptions) -> String {
+pub(super) fn main(
+    loaded: &LoadedDefinition,
+    raw: &Value,
+    options: &DocumentOptions,
+    publication: bool,
+) -> String {
     let def = loaded.definition();
     let name = &def.composition.function;
     let mut source = format!("#import \"modele.typ\": {name}\n#show: {name}.with(\n");
+    let mut groups = std::collections::BTreeMap::<&str, Vec<String>>::new();
     for binding in &def.bindings {
+        if binding.typst_group() == Some("publication") && !publication {
+            continue;
+        }
         let value = &raw[binding.metadata_key()];
         let text = match binding {
             Binding::Field { field, .. } => {
@@ -43,6 +52,7 @@ pub(super) fn main(loaded: &LoadedDefinition, raw: &Value, options: &DocumentOpt
                             let fields = c
                                 .fields
                                 .iter()
+                                .filter(|field| !omitted(field, &record[field.id()]))
                                 .map(|f| format!("{}: {}", f.id(), render(f, &record[f.id()])))
                                 .collect::<Vec<_>>()
                                 .join(", ");
@@ -56,7 +66,24 @@ pub(super) fn main(loaded: &LoadedDefinition, raw: &Value, options: &DocumentOpt
                 format!("({text})")
             }
         };
-        source.push_str(&format!("  {}: {text},\n", binding.parameter()));
+        if let Some(group) = binding.typst_group() {
+            let field = def
+                .fields
+                .iter()
+                .find(|field| field.id() == binding.source())
+                .unwrap();
+            if value != &field.default_value() {
+                groups
+                    .entry(group)
+                    .or_default()
+                    .push(format!("{}: {text}", binding.parameter()));
+            }
+        } else {
+            source.push_str(&format!("  {}: {text},\n", binding.parameter()));
+        }
+    }
+    for (group, fields) in groups {
+        source.push_str(&format!("  {group}: ({}),\n", fields.join(", ")));
     }
     source.push_str(&format!(
         "  options: (paper: {}, landscape: {}, language: {}, bullet-marker: {}),\n)\n#include \"contenu.typ\"\n",
@@ -65,6 +92,10 @@ pub(super) fn main(loaded: &LoadedDefinition, raw: &Value, options: &DocumentOpt
     ));
     source
 }
+fn omitted(field: &Field, value: &Value) -> bool {
+    field.omit_empty() && (value.is_null() || value.as_str() == Some(""))
+}
+
 fn render(field: &Field, value: &Value) -> String {
     match field {
         Field::RichText { profile, .. } => {
@@ -89,6 +120,9 @@ fn render(field: &Field, value: &Value) -> String {
                 .expect("validated date")
                 .map_or_else(|| "none".into(), |date| date.typst())
         }
+        Field::PositiveInteger { .. } => value
+            .as_u64()
+            .map_or_else(|| "none".into(), |number| number.to_string()),
         Field::Boolean { .. } => value.as_bool().expect("resolved boolean").to_string(),
         _ => typst_string(value.as_str().expect("resolved literal text")),
     }

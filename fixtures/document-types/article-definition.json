@@ -23,11 +23,7 @@
       "required-for-export": false,
       "presentation": "citation-style",
       "statistics": false,
-      "choices": [
-        "chicago-author-date",
-        "apa",
-        "ieee"
-      ]
+      "choices": ["chicago-author-date", "apa", "ieee"]
     },
     {
       "kind": "boolean",
@@ -38,6 +34,87 @@
       "presentation": "outline",
       "statistics": false,
       "default": false
+    },
+    {
+      "kind": "doi",
+      "id": "article.publication.doi",
+      "label-key": "field-publication-doi",
+      "required-for-export": false,
+      "statistics": false,
+      "default": ""
+    },
+    {
+      "kind": "text",
+      "id": "article.publication.venue",
+      "label-key": "field-publication-venue",
+      "required-for-export": false,
+      "statistics": false,
+      "multiline": false,
+      "default": ""
+    },
+    {
+      "kind": "text",
+      "id": "article.publication.kind",
+      "label-key": "field-publication-kind",
+      "required-for-export": false,
+      "statistics": false,
+      "multiline": false,
+      "default": ""
+    },
+    {
+      "kind": "choice",
+      "id": "article.publication.access",
+      "label-key": "field-publication-access",
+      "required-for-export": false,
+      "statistics": false,
+      "choices": ["unspecified", "open", "restricted"],
+      "choice-labels": [
+        "publication-access-unspecified",
+        "publication-access-open",
+        "publication-access-restricted"
+      ],
+      "default": "unspecified"
+    },
+    {
+      "kind": "date",
+      "id": "article.publication.submitted",
+      "label-key": "field-publication-submitted",
+      "required-for-export": false,
+      "statistics": false,
+      "default": null
+    },
+    {
+      "kind": "date",
+      "id": "article.publication.accepted",
+      "label-key": "field-publication-accepted",
+      "required-for-export": false,
+      "statistics": false,
+      "default": null
+    },
+    {
+      "kind": "date",
+      "id": "article.publication.published",
+      "label-key": "field-publication-published",
+      "required-for-export": false,
+      "statistics": false,
+      "default": null
+    },
+    {
+      "kind": "text",
+      "id": "article.publication.short_citation",
+      "label-key": "field-publication-short-citation",
+      "required-for-export": false,
+      "statistics": false,
+      "multiline": false,
+      "default": ""
+    },
+    {
+      "kind": "positive-integer",
+      "id": "article.publication.first_page",
+      "label-key": "field-publication-first-page",
+      "required-for-export": false,
+      "statistics": false,
+      "default": null
     }
   ],
   "collections": [
@@ -73,9 +150,7 @@
       "label-key": "field-article-authors",
       "item-label-key": "article-author",
       "summary-field": "name",
-      "summary": [
-        "corresponding"
-      ],
+      "summary": ["corresponding"],
       "unique-by": [],
       "fields": [
         {
@@ -145,6 +220,36 @@
           "statistics": false,
           "multiline": true,
           "default": ""
+        },
+        {
+          "kind": "text",
+          "id": "department",
+          "label-key": "field-affiliation-department",
+          "required-for-export": false,
+          "statistics": false,
+          "multiline": false,
+          "omit-empty": true,
+          "default": ""
+        },
+        {
+          "kind": "text",
+          "id": "institution",
+          "label-key": "field-affiliation-institution",
+          "required-for-export": false,
+          "statistics": false,
+          "multiline": false,
+          "omit-empty": true,
+          "default": ""
+        },
+        {
+          "kind": "text",
+          "id": "location",
+          "label-key": "field-affiliation-location",
+          "required-for-export": false,
+          "statistics": false,
+          "multiline": false,
+          "omit-empty": true,
+          "default": ""
         }
       ]
     },
@@ -159,9 +264,7 @@
       "summary": [],
       "language-key": "language",
       "removal-notice-key": "article-localization-removal-notice",
-      "unique-by": [
-        "language"
-      ],
+      "unique-by": ["language"],
       "fields": [
         {
           "kind": "language",
@@ -297,6 +400,60 @@
       "field": "article.show_outline",
       "typst-parameter": "show-outline",
       "metadata-key": "show_outline"
+    },
+    {
+      "field": "article.publication.doi",
+      "typst-parameter": "doi",
+      "typst-group": "publication",
+      "metadata-key": "publication_doi"
+    },
+    {
+      "field": "article.publication.venue",
+      "typst-parameter": "venue",
+      "typst-group": "publication",
+      "metadata-key": "publication_venue"
+    },
+    {
+      "field": "article.publication.kind",
+      "typst-parameter": "kind",
+      "typst-group": "publication",
+      "metadata-key": "publication_kind"
+    },
+    {
+      "field": "article.publication.access",
+      "typst-parameter": "access",
+      "typst-group": "publication",
+      "metadata-key": "publication_access"
+    },
+    {
+      "field": "article.publication.submitted",
+      "typst-parameter": "submitted",
+      "typst-group": "publication",
+      "metadata-key": "publication_submitted"
+    },
+    {
+      "field": "article.publication.accepted",
+      "typst-parameter": "accepted",
+      "typst-group": "publication",
+      "metadata-key": "publication_accepted"
+    },
+    {
+      "field": "article.publication.published",
+      "typst-parameter": "published",
+      "typst-group": "publication",
+      "metadata-key": "publication_published"
+    },
+    {
+      "field": "article.publication.short_citation",
+      "typst-parameter": "short-citation",
+      "typst-group": "publication",
+      "metadata-key": "publication_short_citation"
+    },
+    {
+      "field": "article.publication.first_page",
+      "typst-parameter": "first-page",
+      "typst-group": "publication",
+      "metadata-key": "publication_first_page"
     }
   ],
   "header": {
@@ -307,12 +464,7 @@
         "label-key": "group-article-titles",
         "collection": "localizations",
         "summary-field": "title",
-        "fields": [
-          "language",
-          "title",
-          "subtitle",
-          "short-title"
-        ],
+        "fields": ["language", "title", "subtitle", "short-title"],
         "editing": "dialog",
         "item-label-key": "field-article-title"
       },
@@ -322,11 +474,7 @@
         "label-key": "group-article-abstracts",
         "collection": "localizations",
         "summary-field": "language",
-        "fields": [
-          "language",
-          "abstract",
-          "keywords"
-        ],
+        "fields": ["language", "abstract", "keywords"],
         "editing": "dialog",
         "item-label-key": "field-abstract"
       },
@@ -354,6 +502,36 @@
         "label-key": "field-bibliography",
         "collection": "references",
         "style-field": "article.citation_style"
+      },
+      {
+        "view": "form",
+        "id": "publication",
+        "label-key": "group-publication",
+        "sections": [
+          {
+            "id": "publication-identity",
+            "label-key": "group-publication-identity",
+            "fields": [
+              "article.publication.doi",
+              "article.publication.venue",
+              "article.publication.kind",
+              "article.publication.access",
+              "article.publication.short_citation",
+              "article.publication.first_page"
+            ],
+            "layout": "compact"
+          },
+          {
+            "id": "publication-dates",
+            "label-key": "group-publication-dates",
+            "fields": [
+              "article.publication.submitted",
+              "article.publication.accepted",
+              "article.publication.published"
+            ],
+            "layout": "compact"
+          }
+        ]
       }
     ]
   }

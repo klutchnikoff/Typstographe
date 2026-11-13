@@ -55,8 +55,18 @@ fields! {
     Text {
         #[serde(default)]
         multiline: bool,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        omit_empty: bool,
         #[serde(default)]
         default: String,
+    },
+    Doi {
+        #[serde(default)]
+        default: String,
+    },
+    PositiveInteger {
+        #[serde(default)]
+        default: Option<std::num::NonZeroU32>,
     },
     Date {
         #[serde(default)]
@@ -75,6 +85,8 @@ fields! {
     },
     Choice {
         choices: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        choice_labels: Vec<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         default: Option<String>,
     },
@@ -98,6 +110,18 @@ fields! {
         #[serde(default)]
         default: Vec<String>,
     },
+}
+
+impl Field {
+    pub fn omit_empty(&self) -> bool {
+        matches!(
+            self,
+            Self::Text {
+                omit_empty: true,
+                ..
+            }
+        )
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

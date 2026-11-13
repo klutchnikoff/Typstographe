@@ -60,7 +60,16 @@ impl LoadedDefinition {
                     "pattern":r"^[^\u0000-\u001f\u007f-\u009f]+$"
                 }),
             );
-            let required: Vec<_> = props.keys().cloned().collect();
+            let required: Vec<_> = props
+                .keys()
+                .filter(|key| {
+                    !collection
+                        .fields
+                        .iter()
+                        .any(|f| f.id() == *key && f.omit_empty())
+                })
+                .cloned()
+                .collect();
             properties.insert(
                 collection.id.clone(),
                 json!({
@@ -121,6 +130,8 @@ fn field_properties(fields: &[Field]) -> Map<String, Value> {
                     } else { r"^[^\u0000-\u001f\u007f-\u009f]*$" }
                 }),
                 Field::ResourceReference { resource_kind, profile_default, .. } => json!({"$ref":"#/$defs/ResourceReferenceOrNull", "x-resource-kind":resource_kind, "x-profile-default":profile_default}),
+                Field::Doi { .. } => json!({"type":"string","maxLength":2048}),
+                Field::PositiveInteger { .. } => json!({"type":["integer","null"],"minimum":1,"maximum":u32::MAX}),
                 Field::Date { .. } => json!({"$ref":"#/$defs/DateValueOrNull"}),
                 Field::Boolean { .. } => json!({"type":"boolean"}),
                 Field::Choice { choices, .. } => json!({"type":"string","enum":choices}),

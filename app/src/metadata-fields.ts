@@ -1,4 +1,5 @@
 import { labeledField } from './form-field'
+import { tr } from './i18n'
 import type { Field, MetadataGroup } from './shell'
 import type { MetadataCommands } from './metadata-commands'
 import { bindMetadataInput, metadataInputBinding } from './metadata-input'
@@ -38,12 +39,19 @@ function metadataControl(
 ) {
   const controls = document.createElement('div')
   controls.className = 'metadata-field-controls'
-  const input = definition.multiline
-    ? document.createElement('textarea')
-    : document.createElement('input')
+  const input = definition.choices
+    ? document.createElement('select')
+    : definition.multiline
+      ? document.createElement('textarea')
+      : document.createElement('input')
+  if (input instanceof HTMLSelectElement)
+    for (const choice of definition.choices || []) input.add(new Option(choice.label, choice.value))
   input.id = `metadata-field-${definition.field}`
   input.dataset.metadataParameter = definition.parameter
-  if (input instanceof HTMLInputElement) input.type = 'text'
+  if (input instanceof HTMLInputElement) {
+    input.type = 'text'
+    if (definition.kind === 'positive_integer') input.inputMode = 'numeric'
+  }
   if (input instanceof HTMLTextAreaElement) input.rows = 3
   input.value = value
   input.oninput = () => {
@@ -101,13 +109,31 @@ export function metadataFields(
     )
     if (hideLabel) row.querySelector('label')!.classList.add('sr-only')
     container.append(row)
-    if (binding && definition.kind !== 'date' && !definition.resource)
+    if (binding && definition.kind !== 'date' && !definition.resource) {
+      const input = row.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+        'input, textarea, select',
+      )!
+      const numeric = definition.kind === 'positive_integer'
       bindMetadataInput(
-        row.querySelector('input, textarea')!,
+        input,
         binding.commands,
         { kind: 'metadata', field: definition.field },
         () => binding.read(definition),
+        () =>
+          numeric && /^\d+$/.test(input.value)
+            ? Number(input.value)
+            : numeric && input.value === ''
+              ? null
+              : input.value,
+        undefined,
+        numeric
+          ? (value) =>
+              value !== null && (typeof value !== 'number' || value < 1 || value > 4294967295)
+                ? tr('Saisissez un numéro de page positif ou laissez le champ vide.')
+                : undefined
+          : undefined,
       )
+    }
   }
   if (!group.sections.length) {
     for (const definition of definitions.filter((field) => field.group === group.id))
@@ -137,9 +163,9 @@ export function refreshMetadataFields(parent: HTMLElement, values: Record<string
     metadataResourceControl(root)?.refresh(values[root.dataset.metadataResource!])
   for (const root of parent.querySelectorAll<HTMLElement>('[data-metadata-date]'))
     metadataDateControl(root)?.refresh(values[root.dataset.metadataDate!])
-  for (const input of parent.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
-    '[data-metadata-parameter]',
-  )) {
+  for (const input of parent.querySelectorAll<
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  >('[data-metadata-parameter]')) {
     const binding = metadataInputBinding(input)
     if (binding) {
       binding.refresh()
@@ -147,6 +173,10 @@ export function refreshMetadataFields(parent: HTMLElement, values: Record<string
     }
     const value = String(values[input.dataset.metadataParameter!] ?? '')
     if (input.value === value) {
+      continue
+    }
+    if (input instanceof HTMLSelectElement) {
+      input.value = value
       continue
     }
     const start = input.selectionStart,
@@ -166,8 +196,8 @@ export function destroyMetadataFields(parent: HTMLElement) {
     metadataResourceControl(root)?.destroy()
   for (const root of parent.querySelectorAll<HTMLElement>('[data-metadata-date]'))
     metadataDateControl(root)?.destroy()
-  for (const input of parent.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
-    '[data-metadata-parameter]',
-  ))
+  for (const input of parent.querySelectorAll<
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  >('[data-metadata-parameter]'))
     metadataInputBinding(input)?.destroy()
 }
