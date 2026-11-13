@@ -75,8 +75,13 @@ test('real model thumbnails load without altering the document or blocking creat
   await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(512)
   await expect(dialog.locator('.model-thumbnail-status')).toHaveCount(0)
   await dialog.locator('[data-type="article"]').click()
-  await expect(dialog.locator('[data-model]')).toHaveCount(1)
-  await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(512)
+  await expect(dialog.locator('[data-model]')).toHaveCount(3)
+  for (const id of ['article.model.working', 'article.model.lapreprint', 'article.model.ieee']) {
+    const preview = dialog.locator(`[data-model="${id}"] img`)
+    await expect(preview).toHaveAttribute('src', /^data:image\/png;base64,/)
+    await expect.poll(() => preview.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(512)
+  }
+  await dialog.locator('[data-model="article.model.ieee"]').click()
   await confirmNewDocument(page)
   await expect(page.locator('.tiptap')).not.toContainText('L’organisation du travail universitaire')
 })

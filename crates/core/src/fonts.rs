@@ -3,46 +3,86 @@
 use std::{collections::BTreeSet, path::Path, sync::OnceLock};
 use typst::{foundations::Bytes, layout::FrameItem, text::Font};
 
-pub struct Fallback {
-    pub name: &'static str,
-    pub data: &'static [u8],
+struct FontFace {
+    name: &'static str,
+    data: &'static [u8],
 }
 
-pub const CJK: [Fallback; 2] = [
-    Fallback {
+struct FontFamily {
+    faces: &'static [FontFace],
+    license_name: &'static str,
+    license: &'static [u8],
+}
+
+const CJK: [FontFace; 2] = [
+    FontFace {
         name: "NotoSansCJKjp-Regular.otf",
         data: include_bytes!("../assets/fonts/noto-cjk/NotoSansCJKjp-Regular.otf"),
     },
-    Fallback {
+    FontFace {
         name: "NotoSansCJKjp-Bold.otf",
         data: include_bytes!("../assets/fonts/noto-cjk/NotoSansCJKjp-Bold.otf"),
     },
 ];
-const LICENSE: &[u8] = include_bytes!("../assets/fonts/noto-cjk/LICENSE");
+const STIX: [FontFace; 4] = [
+    FontFace {
+        name: "STIXTwoText-Regular.otf",
+        data: include_bytes!("../assets/fonts/stix-two/STIXTwoText-Regular.otf"),
+    },
+    FontFace {
+        name: "STIXTwoText-Italic.otf",
+        data: include_bytes!("../assets/fonts/stix-two/STIXTwoText-Italic.otf"),
+    },
+    FontFace {
+        name: "STIXTwoText-Bold.otf",
+        data: include_bytes!("../assets/fonts/stix-two/STIXTwoText-Bold.otf"),
+    },
+    FontFace {
+        name: "STIXTwoText-BoldItalic.otf",
+        data: include_bytes!("../assets/fonts/stix-two/STIXTwoText-BoldItalic.otf"),
+    },
+];
+const FAMILIES: [FontFamily; 2] = [
+    FontFamily {
+        faces: &CJK,
+        license_name: "LICENSE-Noto-CJK.txt",
+        license: include_bytes!("../assets/fonts/noto-cjk/LICENSE"),
+    },
+    FontFamily {
+        faces: &STIX,
+        license_name: "LICENSE-STIX-Two.txt",
+        license: include_bytes!("../assets/fonts/stix-two/OFL.txt"),
+    },
+];
 
 pub fn typst_fonts() -> Vec<Font> {
     static FONTS: OnceLock<Vec<Font>> = OnceLock::new();
     FONTS
         .get_or_init(|| {
             typst_assets::fonts()
-                .chain(CJK.iter().map(|font| font.data))
+                .chain(
+                    FAMILIES
+                        .iter()
+                        .flat_map(|family| family.faces.iter().map(|font| font.data)),
+                )
                 .flat_map(|data| Font::iter(Bytes::new(data)))
                 .collect()
         })
         .clone()
 }
 
-/// Exporter uniquement les faces de secours effectivement composées. Le PDF
-/// contient déjà ses sous-ensembles ; ces fichiers servent à recompiler le Typst.
+/// Exporter les faces supplémentaires utilisées pour recompiler les sources.
 pub fn export_used(document: &typst_layout::PagedDocument, root: &Path) -> std::io::Result<()> {
-    fn collect(frame: &typst::layout::Frame, used: &mut BTreeSet<usize>) {
+    fn collect(frame: &typst::layout::Frame, used: &mut BTreeSet<(usize, usize)>) {
         for (_, item) in frame.items() {
             match item {
                 FrameItem::Group(group) => collect(&group.frame, used),
                 FrameItem::Text(text) => {
-                    for (index, font) in CJK.iter().enumerate() {
-                        if text.font.data().as_slice() == font.data {
-                            used.insert(index);
+                    for (family_index, family) in FAMILIES.iter().enumerate() {
+                        for (face_index, face) in family.faces.iter().enumerate() {
+                            if text.font.data().as_slice() == face.data {
+                                used.insert((family_index, face_index));
+                            }
                         }
                     }
                 }
@@ -59,17 +99,21 @@ pub fn export_used(document: &typst_layout::PagedDocument, root: &Path) -> std::
     }
     let directory = root.join("fonts");
     std::fs::create_dir(&directory)?;
-    for index in used {
-        let font = &CJK[index];
-        std::fs::write(directory.join(font.name), font.data)?;
+    let mut licenses = BTreeSet::new();
+    for (family_index, face_index) in used {
+        let family = &FAMILIES[family_index];
+        let face = &family.faces[face_index];
+        std::fs::write(directory.join(face.name), face.data)?;
+        if licenses.insert(family_index) {
+            std::fs::write(directory.join(family.license_name), family.license)?;
+        }
     }
-    std::fs::write(directory.join("LICENSE-Noto-CJK.txt"), LICENSE)?;
     std::fs::write(
         directory.join("README.txt"),
-        "Noto Sans CJK 2.004 — SIL Open Font License 1.1\n\n\
-         Compile from the export directory using the included fonts:\n\
+        "Compile from the export directory using the included fonts:\n\n\
          typst compile --font-path fonts main.typ\n\n\
-         Upstream: https://github.com/notofonts/noto-cjk/releases/tag/Sans2.004\n",
+         Upstream Noto Sans CJK: https://github.com/notofonts/noto-cjk/releases/tag/Sans2.004\n\
+         Upstream STIX Two Text: https://github.com/stipub/stixfonts/releases/tag/v2.13b171\n",
     )
 }
 
@@ -126,7 +170,8 @@ mod tests {
             }
             if !expected.is_empty() {
                 assert!(
-                    std::fs::read(directory.join("fonts/LICENSE-Noto-CJK.txt")).unwrap() == LICENSE
+                    std::fs::read(directory.join("fonts/LICENSE-Noto-CJK.txt")).unwrap()
+                        == FAMILIES[0].license
                 );
                 assert!(
                     std::fs::read_to_string(directory.join("fonts/README.txt"))

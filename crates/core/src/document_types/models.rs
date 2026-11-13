@@ -5,6 +5,8 @@ use super::DocumentType;
 pub enum Model {
     Personal,
     ArticleWorking,
+    ArticleLaPreprint,
+    ArticleIeee,
 }
 pub struct Definition {
     pub model: Model,
@@ -12,6 +14,7 @@ pub struct Definition {
     pub source: &'static str,
     pub manifest: &'static str,
     pub name: &'static str,
+    pub label_key: &'static str,
     pub description: &'static str,
     pub keywords: &'static [&'static str],
 }
@@ -22,6 +25,7 @@ pub const ALL: &[Definition] = &[
         source: include_str!("../../templates/courrier-personnel.typ"),
         manifest: include_str!("../../templates/courrier-personnel.model.yaml"),
         name: "Personal letter",
+        label_key: "model-personal-letter",
         description: "A restrained personal letter with selectable paper size and orientation; A4 portrait retains the DL window-envelope layout.",
         keywords: &[
             "personal",
@@ -42,6 +46,7 @@ pub const ALL: &[Definition] = &[
         source: include_str!("../../templates/article-working.typ"),
         manifest: include_str!("../../templates/article-working.model.yaml"),
         name: "Working article",
+        label_key: "model-working-article",
         description: "A readable single-column scientific working article with multilingual frontmatter and shared official affiliations.",
         keywords: &[
             "article",
@@ -51,12 +56,34 @@ pub const ALL: &[Definition] = &[
             "multilingual",
         ],
     },
+    Definition {
+        model: Model::ArticleLaPreprint,
+        kind: DocumentType::Article,
+        source: include_str!("../../templates/article-lapreprint.typ"),
+        manifest: include_str!("../../templates/article-lapreprint.model.yaml"),
+        name: "LaPreprint",
+        label_key: "model-lapreprint",
+        description: "A scientific preprint with numbered sections, a wide left margin and a running title.",
+        keywords: &["article", "preprint", "research", "multilingual"],
+    },
+    Definition {
+        model: Model::ArticleIeee,
+        kind: DocumentType::Article,
+        source: include_str!("../../templates/article-ieee.typ"),
+        manifest: include_str!("../../templates/article-ieee.model.yaml"),
+        name: "IEEE for MyST",
+        label_key: "model-ieee-myst",
+        description: "An IEEE-style two-column article with Letter paper and numeric citations.",
+        keywords: &["article", "IEEE", "MyST", "two-column", "numeric citations"],
+    },
 ];
 impl Model {
     pub const fn id(self) -> &'static str {
         match self {
             Self::Personal => "courrier.model.personal",
             Self::ArticleWorking => "article.model.working",
+            Self::ArticleLaPreprint => "article.model.lapreprint",
+            Self::ArticleIeee => "article.model.ieee",
         }
     }
     #[cfg(test)]
@@ -95,6 +122,16 @@ mod tests {
         assert!(DocumentType::Courrier.can_create());
         assert!(!DocumentType::CompteRendu.can_create());
         assert!(DocumentType::Article.can_create());
-        assert_eq!(ALL.len(), 2);
+        assert_eq!(
+            DocumentType::Article
+                .models()
+                .map(|entry| entry.model)
+                .collect::<Vec<_>>(),
+            [
+                Model::ArticleWorking,
+                Model::ArticleLaPreprint,
+                Model::ArticleIeee
+            ],
+        );
     }
 }

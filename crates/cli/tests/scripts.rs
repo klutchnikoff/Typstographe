@@ -217,3 +217,159 @@ fn model_switch_keeps_math_and_reference_dependencies_in_a_reopened_export() {
         assert!(export.join(file).is_file(), "missing export file {file}");
     }
 }
+
+#[test]
+fn bundled_article_models_roundtrip_the_same_documents_and_export() {
+    use typstographe_core::{content::project::Project, document_types::models::Model};
+
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("original.typsto");
+    let bilingual = include_bytes!("../../../fixtures/projects/article-working.typsto");
+    let placement = include_bytes!("../../../examples/article-ieee-placement.typsto");
+    let mut math: Value = serde_json::from_str(include_str!(
+        "../../../examples/cli/article-mathematics.json"
+    ))
+    .unwrap();
+    math["save"]["path"] = json!("math.typsto");
+    response(cli().arg("script").arg(job(dir.path(), math)), 0);
+    let math = std::fs::read(dir.path().join("math.typsto")).unwrap();
+    for (case, bytes) in [
+        ("bilingual", bilingual.as_slice()),
+        ("placement", placement.as_slice()),
+        ("math", math.as_slice()),
+    ] {
+        std::fs::write(&path, bytes).unwrap();
+        let original = Project::read(&path).unwrap();
+        let before = original.current();
+        for model in [
+            Model::ArticleLaPreprint,
+            Model::ArticleIeee,
+            Model::ArticleWorking,
+        ] {
+            let model = model.definition();
+            let switch = script(
+                json!([{"id":"document.set_model","params":{
+                    "model_id":model.model.id(),
+                    "source":model.source,
+                    "manifest":model.manifest,
+                }}]),
+                json!({"kind":"current"}),
+            );
+            response(cli().arg("script").arg(job(dir.path(), switch)), 0);
+            let reopened = Project::read(&path).unwrap();
+            let current = reopened.current();
+            assert_eq!(current.model_id, model.model.id());
+            assert_eq!(current.document, before.document);
+            assert_eq!(current.metadata, before.metadata);
+            assert_eq!(current.assets, before.assets);
+            let export = dir.path().join(format!("{case}-{}", model.model.id()));
+            response(
+                cli()
+                    .arg("export")
+                    .arg(&path)
+                    .args(["--format", "both", "--output"])
+                    .arg(&export),
+                0,
+            );
+            assert!(export.join("article.pdf").is_file());
+            assert_eq!(
+                std::fs::read_to_string(export.join("modele.typ")).unwrap(),
+                model.source
+            );
+            assert!(export.join("capabilities/figures.typ").is_file());
+            if model.model == Model::ArticleIeee {
+                assert!(export.join("fonts/STIXTwoText-Regular.otf").is_file());
+                assert!(export.join("fonts/LICENSE-STIX-Two.txt").is_file());
+            } else {
+                assert!(!export.join("fonts/LICENSE-STIX-Two.txt").exists());
+            }
+        }
+    }
+}
+
+#[test]
+fn publication_survives_switching_between_models_with_different_signatures() {
+    use typstographe_core::{content::project::Project, document_types::models::Model};
+
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("original.typsto");
+    std::fs::write(
+        &path,
+        include_bytes!("../../../fixtures/projects/article-working.typsto"),
+    )
+    .unwrap();
+    let archived = Project::read(&path).unwrap();
+    let archived = archived.current();
+    let set = |field: &str, value: Value| {
+        json!({"id":"metadata.set","params":{"target":{
+            "kind":"metadata","field":format!("article.publication.{field}"),
+        },"value":value}})
+    };
+    let steps = json!([
+        set("doi", json!("https://doi.org/10.1234/EXAMPLE")),
+        set("access", json!("open")),
+        set("accepted", json!({"kind":"custom","text":"Spring 2026"})),
+        set("published", json!({"kind":"calendar","iso":"2026-09-18"})),
+        set("first_page", json!(37)),
+    ]);
+    response(
+        cli()
+            .arg("script")
+            .arg(job(dir.path(), script(steps, json!({"kind":"current"})))),
+        0,
+    );
+    response(cli().arg("check").arg(&path).arg("--for-export"), 0);
+
+    let lapreprint = Model::ArticleLaPreprint.definition();
+    let switch = |model_id: &str, template: &str, manifest: &str| {
+        script(
+            json!([{"id":"document.set_model","params":{
+                "model_id":model_id,"source":template,"manifest":manifest,
+            }}]),
+            json!({"kind":"current"}),
+        )
+    };
+    let change = switch(
+        lapreprint.model.id(),
+        lapreprint.source,
+        lapreprint.manifest,
+    );
+    response(cli().arg("script").arg(job(dir.path(), change)), 0);
+    let export = dir.path().join("export");
+    response(
+        cli()
+            .arg("export")
+            .arg(&path)
+            .args(["--format", "both", "--output"])
+            .arg(&export),
+        0,
+    );
+    let main = std::fs::read_to_string(export.join("main.typ")).unwrap();
+    for expected in [
+        "publication: (doi: \"10.1234/example\"",
+        "access: \"open\"",
+        "accepted: \"Spring 2026\"",
+        "published: datetime(year: 2026, month: 9, day: 18)",
+        "first-page: 37",
+    ] {
+        assert!(main.contains(expected), "missing {expected} in {main}");
+    }
+
+    let before = Project::read(&path).unwrap().current().metadata.clone();
+    let bytes = std::fs::read(&path).unwrap();
+    let invalid = script(
+        json!([set("first_page", json!(0))]),
+        json!({"kind":"current"}),
+    );
+    response(cli().arg("script").arg(job(dir.path(), invalid)), 1);
+    assert_eq!(std::fs::read(&path).unwrap(), bytes);
+
+    let change = switch(
+        &archived.model_id,
+        &archived.template,
+        &archived.model_manifest,
+    );
+    response(cli().arg("script").arg(job(dir.path(), change)), 0);
+    assert_eq!(Project::read(&path).unwrap().current().metadata, before);
+    response(cli().arg("check").arg(&path).arg("--for-export"), 0);
+}

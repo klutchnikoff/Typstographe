@@ -741,6 +741,8 @@ web-clear-date = Clear date
 
 article-type = Article
 model-working-article = Working article
+model-lapreprint = LaPreprint
+model-ieee-myst = IEEE for MyST
 article-settings-heading = Article settings:
 field-article-authors = Authors
 field-article-affiliations = Affiliations
