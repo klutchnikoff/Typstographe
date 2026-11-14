@@ -356,7 +356,9 @@ spelling-forget-word = Remove
 welcome-help = Create a document or open a .typsto file.
 type-no-model = No template is available for this document type.
 cmd-personal-letter = Use the personal letter template
-model-personal-letter = Personal letter
+model-personal-letter = French
+model-british-letter = British
+model-american-letter = American
 model-fixed-page = This template fixes the paper size and orientation for a window envelope.
 cli-usage-capture-creation = Usage: --capture-new-document IMAGE.png
 

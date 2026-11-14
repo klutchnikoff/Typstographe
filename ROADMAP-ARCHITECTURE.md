@@ -467,11 +467,14 @@ sans promettre toutes les fonctionnalités de chaque paquet.
 - Séparer noyau Typst et adaptation MyST ; évaluer l’appel direct du noyau avant
   toute intégration de la chaîne MyST. Épingler sources, paquets et ressources,
   inventorier licences et polices, puis compiler sans accès réseau.
-- Tester les conventions anglaises de Letterloom et les structures de documents
-  longs de Quire et Plain Typst Book. Pour Quire, qualifier
-  français, polices, dates via notre wrapper Datify et les éventuelles capacités
-  theorion/codly ; les signatures multiples ou pièces incorporées de Letterloom
-  restent des extensions à décider, distinctes de nos P.J. par mentions.
+- Le [bilan de Letterloom](docs/letterloom-evaluation.md) documente les trois
+  modèles Courrier. Français conserve son identifiant. Britannique et Américain
+  partagent la composition Typst et utilisent le même contrat documentaire.
+  Les vignettes sont générées à partir des modèles embarqués. Signatures
+  multiples et pièces incorporées restent des extensions à examiner.
+- Comparer les structures de documents longs de Quire et Plain Typst Book.
+  Pour Quire, qualifier le français, les polices, les dates via le wrapper
+  Datify et les éventuelles capacités theorion/codly.
 
 Le [bilan de LaPreprint](docs/lapreprint-evaluation.md) qualifie le contrat
 Article et les exports locaux. La validation de `document.set_model` inclut

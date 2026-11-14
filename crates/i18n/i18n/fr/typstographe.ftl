@@ -358,7 +358,9 @@ model-contract-missing = Le modèle doit exposer la fonction { $function }.
 welcome-help = Créez un document ou ouvrez un fichier .typsto.
 type-no-model = Aucun modèle disponible pour ce type de document.
 cmd-personal-letter = Utiliser le modèle de courrier personnel
-model-personal-letter = Courrier personnel
+model-personal-letter = Français
+model-british-letter = Britannique
+model-american-letter = Américain
 model-fixed-page = Le format et l’orientation sont imposés par ce modèle pour l’enveloppe à fenêtre.
 cli-usage-capture-creation = Usage : --capture-new-document IMAGE.png
 
