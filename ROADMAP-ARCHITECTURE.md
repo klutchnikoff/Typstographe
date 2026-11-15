@@ -101,6 +101,35 @@ Qualifier un article dont le premier folio est `217`, avec des renvois sur
 plusieurs pages. Dans un pied de page affichant aussi un total, distinguer
 le nombre de pages de l’article du dernier folio du compteur.
 
+### Assemblage des documents longs
+
+Livre et Mémoire/thèse partagent une structure d’ouvrage dans un projet
+`.typsto` unique : `frontmatter` (pages liminaires), `mainmatter` (corps de
+l’ouvrage) et `backmatter` (éléments de fin). Le projet possède des unités
+adressables par des identifiants stables ainsi qu’une bibliothèque, des
+ressources et des cibles de renvoi communes. Les chapitres peuvent être
+rattachés à une partie ou placés directement dans le corps. L’assemblage
+conserve les identifiants des divisions et de leurs cibles internes lors
+d’un déplacement, d’un renommage ou d’un changement de modèle. Le modèle
+compose les trois zones et décide des conventions de pagination, de
+numérotation et de présentation.
+
+Les niveaux de titre **locaux** d’une unité désignent ses sections et
+sous-sections. Lors de l’assemblage, leur niveau **absolu** dépend de la
+hiérarchie effective. Sous Partie et Chapitre, la première section est de
+niveau 3 ; sous Chapitre seul, elle est de niveau 2. Un essai Typst 0.15.1
+avec `heading(offset: …)` a confirmé les balises attendues dans les deux
+exports PDF/UA-1. La recette finale doit contrôler l’arbre des titres sans
+saut de niveau, les signets, le sommaire et les renvois entre unités après
+déplacement. Elle doit également vérifier le cas d’un ouvrage mixte avec
+des chapitres hors partie et sous une partie.
+
+La compilation assemble l’ouvrage entier. Les cartes de synchronisation
+devront permettre de retrouver l’unité et la position locale depuis le
+rendu, et de focaliser l’aperçu sur l’unité ouverte depuis le plan. Maquetter
+ce parcours avant de fixer le stockage interne, les signatures Typst et le
+contrat des opérations sur les unités. Voir le [parcours d’édition prévu](ROADMAP.md#livre-et-mémoirethèse--édition-par-chapitre).
+
 ### Extensions du socle déclaratif — différées
 
 B.1 est clôturé ; les extensions suivantes ne sont pas des critères de sortie
@@ -472,9 +501,16 @@ sans promettre toutes les fonctionnalités de chaque paquet.
   partagent la composition Typst et utilisent le même contrat documentaire.
   Les vignettes sont générées à partir des modèles embarqués. Signatures
   multiples et pièces incorporées restent des extensions à examiner.
-- Comparer les structures de documents longs de Quire et Plain Typst Book.
-  Pour Quire, qualifier le français, les polices, les dates via le wrapper
-  Datify et les éventuelles capacités theorion/codly.
+- Le [bilan Quire / Plain Typst Book](docs/long-form-types-evaluation.md)
+  qualifie la composition Typst et documente l’usage de Datify. Définir
+  les capacités des documents longs à partir de leur structure éditoriale :
+  Partie, Chapitre, Annexe, titres de section et ancres stables. Valider aussi
+  les textes liminaires et la structure académique. Chaque modèle projette
+  ce contrat vers ses règles de composition Typst. La recette doit vérifier
+  les renvois entre chapitres et annexes,
+  y compris leurs badges. Une bibliothèque Hayagriva de projet peut alimenter
+  plusieurs bibliographies natives ; leur portée sera à définir pour les
+  modèles qui offriront cette option.
 
 Le [bilan de LaPreprint](docs/lapreprint-evaluation.md) qualifie le contrat
 Article et les exports locaux. La validation de `document.set_model` inclut
