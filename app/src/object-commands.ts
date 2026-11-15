@@ -1,4 +1,5 @@
 import type { Editor, JSONContent } from '@tiptap/core'
+import type { Attrs, Node as PMNode, NodeType } from '@tiptap/pm/model'
 import { Selection, TextSelection, type Transaction } from '@tiptap/pm/state'
 import { documentContent } from './shared-inline-marks'
 import { normalizeWhitespace } from './document-whitespace'
@@ -98,6 +99,35 @@ export function removeObject(editor: Editor, pos: number, focus = true, current?
     : undefined
   return applyObjectEdit(editor, transaction, commands, { focus, current })
 }
+
+export function editInlineBadge(
+  editor: Editor,
+  { from, to }: { from: number; to: number },
+  type: NodeType,
+  attrs: Attrs,
+  { existing, current }: { existing?: PMNode; current: () => boolean },
+) {
+  const replacement = type.create(attrs, undefined, existing?.marks)
+  const transaction = existing
+    ? editor.state.tr.setNodeMarkup(from, undefined, { ...existing.attrs, ...attrs })
+    : editor.state.tr.replaceWith(from, to, replacement)
+  transaction.setSelection(TextSelection.create(transaction.doc, from + replacement.nodeSize))
+  const commands = editingProvider(editor)
+    ? [
+        existing
+          ? { id: 'node.set_attrs', params: { target: treeTarget(editor, from), attrs } }
+          : {
+              id: 'inline.replace',
+              params: {
+                target: inlineTarget(editor, from, to),
+                node: documentContent(replacement.toJSON()),
+              },
+            },
+      ]
+    : undefined
+  return applyObjectEdit(editor, transaction, commands, { focus: false, current })
+}
+
 export async function insertInlineObject(
   editor: Editor,
   content: JSONContent,

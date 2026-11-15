@@ -1,9 +1,7 @@
 import type { Editor } from '@tiptap/core'
 import type { Node as PMNode } from '@tiptap/pm/model'
-import { TextSelection } from '@tiptap/pm/state'
 import { openBibliography } from './bibliography-manager'
 import { editingAvailability } from './command-availability'
-import { editingProvider } from './editing-history'
 import { contextPanel } from './context-panel'
 import { floatingEditorPanel } from './floating-editor-panel'
 import type { SelectorTrigger } from './inline-selector-input'
@@ -22,7 +20,7 @@ import {
 import { tr } from './i18n'
 import { icon } from './icons'
 import { documentContent } from './shared-inline-marks'
-import { applyObjectEdit, inlineTarget, treeTarget } from './object-commands'
+import { editInlineBadge, inlineTarget } from './object-commands'
 import { errorText } from './command-error'
 import './citation-panel.css'
 
@@ -357,7 +355,6 @@ export function citationPanel(
     const state = opened,
       anchor = session
     if (!state || !anchor || !items.length || !ready()) return
-    const target = anchor.range
     pending = true
     anchor.pending(true)
     panel.error.textContent = ''
@@ -366,28 +363,8 @@ export function citationPanel(
     apply.disabled = true
     try {
       const attrs = { items: items.map((item) => ({ ...item })), form: state.form }
-      const replacement = editor.schema.nodes.citation.create(attrs, undefined, state.node?.marks)
-      const transaction = state.node
-        ? editor.state.tr.setNodeMarkup(target.from, undefined, { ...state.node.attrs, ...attrs })
-        : editor.state.tr.replaceWith(target.from, target.to, replacement)
-      transaction.setSelection(
-        TextSelection.create(transaction.doc, target.from + replacement.nodeSize),
-      )
-      const commands = editingProvider(editor)
-        ? [
-            state.node
-              ? { id: 'node.set_attrs', params: { target: treeTarget(editor, target.from), attrs } }
-              : {
-                  id: 'inline.replace',
-                  params: {
-                    target: inlineTarget(editor, target.from, target.to),
-                    node: documentContent(replacement.toJSON()),
-                  },
-                },
-          ]
-        : undefined
-      await applyObjectEdit(editor, transaction, commands, {
-        focus: false,
+      await editInlineBadge(editor, anchor.range, editor.schema.nodes.citation, attrs, {
+        existing: state.node,
         current: anchor.current,
       })
       if (anchor.open()) {
