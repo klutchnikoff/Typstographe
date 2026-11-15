@@ -528,12 +528,24 @@ impl Session {
         Ok(json!({"publication":publication,"saved":save.is_some(),"path":p.path}))
     }
     pub fn compile(&mut self) -> Result<typst_layout::PagedDocument, CommandError> {
-        let a = self.archive()?;
-        let source = a.validate().map_err(archive_error)?;
-        self.world.set_dependencies(&a.dependencies);
-        self.world.set_assets(&a.assets);
+        let archive = self.archive()?;
+        let source = archive.validate().map_err(archive_error)?;
+        self.compile_archive(&archive, &source)
+    }
+    fn compile_archive(
+        &mut self,
+        archive: &Archive,
+        source: &str,
+    ) -> Result<typst_layout::PagedDocument, CommandError> {
+        self.world.set_dependencies(&archive.dependencies);
+        self.world.set_assets(&archive.assets);
         self.world
-            .compile_with_model(&source, &a.metadata, &a.template, &a.model_manifest)
+            .compile_with_model(
+                source,
+                &archive.metadata,
+                &archive.template,
+                &archive.model_manifest,
+            )
             .map_err(|e| CommandError::with_cause(ErrorCode::Template, "export_compile", e))
     }
     pub fn page_png(&mut self, page: u32) -> Result<Vec<u8>, CommandError> {
@@ -554,28 +566,30 @@ impl Session {
         if !self.state()?.settings.metadata.ready_for_export() {
             return Err(error("export_required_fields"));
         }
-        let a = self.archive()?;
-        let source = a.validate().map_err(archive_error)?;
-        let assets = crate::content::retained_assets(
-            &a.document,
-            &a.metadata,
-            &a.template,
-            &a.assets,
-            &a.dependencies,
-            &a.model_manifest,
+        let archive = self.archive()?;
+        let source = archive.validate().map_err(archive_error)?;
+        let assets = crate::rendering::retained_assets_for_paths(
+            &source,
+            &archive.metadata,
+            &archive.template,
+            &archive.assets,
+            &archive.dependencies,
+            crate::content::figure_paths(&archive.document),
+            &archive.model_manifest,
         )
-        .map_err(|s| {
-            content_error(crate::content::contract::Error::InvalidDocument { reason: s })
+        .map_err(|error| {
+            content_error(crate::content::contract::Error::InvalidDocument {
+                reason: error.to_string(),
+            })
         })?;
-        let document = self.compile()?;
+        let document = self.compile_archive(&archive, &source)?;
         let request = RenderRequest {
             source,
-
-            metadata: a.metadata,
-            template: a.template,
-            model_manifest: a.model_manifest,
+            metadata: archive.metadata,
+            template: archive.template,
+            model_manifest: archive.model_manifest,
             assets,
-            dependencies: a.dependencies,
+            dependencies: archive.dependencies,
         };
         crate::exporting::write_document(&document, &request, directory, format, images)
             .map_err(|e| CommandError::with_cause(ErrorCode::Io, "file_export", e))?;
