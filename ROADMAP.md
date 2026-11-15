@@ -154,6 +154,36 @@ la première page pour la pagination continue d’un numéro de revue. Les donn�
 renseignées suivent le projet quand on change de modèle. Chaque modèle choisit
 leur présentation.
 
+### Livre et Mémoire/thèse — édition par chapitre
+
+Un projet `.typsto` réunit des unités éditables et assemble l’ouvrage pour
+l’aperçu et l’export. Le projet partage ses ressources, sa bibliothèque
+Hayagriva et ses renvois. Son plan comporte trois rubriques : **Pages
+liminaires**, **Corps de l’ouvrage** et **Éléments de fin**. Le premier lot
+couvre les textes liminaires, les parties facultatives, les chapitres, les
+annexes et une bibliographie globale. Les chapitres et annexes ont un titre,
+un corps et une ancre stable. Le titre court et l’épigraphe avec attribution
+sont des champs facultatifs à cadrer dans la maquette. Le modèle compose
+l’ouvrage et décide notamment de la pagination, des compteurs et de l’ordre
+des éléments de fin dans le rendu.
+
+**Interface à maquetter avant de coder.** Le plan dans la barre latérale
+permet d’ouvrir une unité, de la réordonner ou de déplacer un chapitre sous
+une partie. L’éditeur affiche une unité à la fois, situe celle-ci dans
+l’ouvrage et donne accès séparément aux données générales. Sa barre d’outils
+propose Section, Sous-section et Sous-sous-section selon l’unité active.
+L’aperçu à droite reste celui de l’ouvrage assemblé et se cale sur l’unité
+active. La synchronisation inverse ouvre l’unité et le passage visés, y
+compris depuis une autre unité.
+
+**Parcours de la première maquette.** Déplacer un chapitre sous une partie,
+l’ouvrir, modifier son épigraphe et suivre un renvoi vers une annexe. Vérifier
+la navigation au clavier, la stabilité des renvois après déplacement et la
+cohérence du plan, de l’aperçu et du focus.
+
+Voir le [bilan des modèles de documents longs](docs/long-form-types-evaluation.md)
+et les [règles d’assemblage et d’accessibilité](ROADMAP-ARCHITECTURE.md#assemblage-des-documents-longs).
+
 ### Extensions des contrats — différées
 
 B.1 est clôturé. Les extensions suivantes restent à examiner selon les besoins,
@@ -521,13 +551,17 @@ leurs fonctionnalités.
 | --- | --- |
 | [LaPreprint](https://github.com/myst-templates/lapreprint-typst) | Premier candidat pour Article : auteurs/affiliations, ORCID, résumés multiples, titre court, mots-clés et bibliographie ; examiner les besoins en DOI, dates éditoriales et informations marginales. |
 | [IEEE pour MyST](https://github.com/myst-templates/ieee-typst-template) | [Essai réalisé](docs/ieee-myst-evaluation.md). Aller-retour avec des réglages imposés, placement sur deux colonnes et tableau long vérifiés. Rôles de section à cadrer. |
-| [Plain Typst Book](https://github.com/myst-templates/plain_typst_book) | Référence pour Livre et Mémoire/thèse : couverture, préface, sommaire, chapitres et numérotation des figures/équations par chapitre. |
+| [Plain Typst Book](https://github.com/myst-templates/plain_typst_book) | [Évaluation des documents longs](docs/long-form-types-evaluation.md). Point de départ possible pour un premier modèle Livre sobre. |
 | [Letterloom pour MyST](https://github.com/stefanv/myst-typst-letterloom), fondé sur [Letterloom](https://typst.app/universe/package/letterloom/) | [Intégré au catalogue Courrier](docs/letterloom-evaluation.md#intégration-au-catalogue). Français, Britannique et Américain partagent le contrat Courrier. Le modèle britannique reprend la composition de Letterloom. |
-| [Quire](https://typst.app/universe/package/quire), [sources](https://github.com/mariovagomarzal/quire) | Candidat prioritaire à évaluer pour les documents longs, également utilisable pour articles et rapports : parties/chapitres/sections, modes papier/écran, pages liminaires, résumés multilingues, annexes ; examiner les environnements scientifiques et le code via theorion/codly. |
+| [Quire](https://typst.app/universe/package/quire), [sources](https://github.com/mariovagomarzal/quire) | [Évaluation des documents longs](docs/long-form-types-evaluation.md). Référence pour la structure et les pages liminaires de Mémoire/thèse. Français et renvois depuis les annexes à qualifier avant une intégration. |
 
 Les essais LaPreprint et IEEE couvrent Article. Les trois modèles Courrier
-sont intégrés au catalogue. Comparer Quire et Plain Typst Book pour préparer
-les types de documents longs.
+sont intégrés au catalogue. Le [bilan Quire / Plain Typst Book](docs/long-form-types-evaluation.md)
+prépare les contrats Livre et Mémoire/thèse. Définir d’abord les capacités
+communes à partir des usages éditoriaux, notamment Partie, Chapitre et Annexe.
+Adapter ensuite la composition des modèles à ce contrat. Typst 0.15.1 permet
+des bibliographies par chapitre à partir d’une bibliothèque de projet commune ;
+leur intégration reste un lot à cadrer.
 Pour chacun, distinguer présentation relevant du modèle, données nécessitant
 une structure du type et contenus nécessitant une capacité commune. Étendre
 ces contrats ensemble avant de développer les fonctions manquantes.
