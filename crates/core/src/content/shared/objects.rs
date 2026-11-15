@@ -88,8 +88,10 @@ fn inline(doc: &Doc, state: &State, target: &TextTarget, node: &Node) -> Result<
             field,
             ..
         } = &target.zone
-        && targets::record(doc, &doc.transact(), state, collection, id, field)?.1["kind"]
-            == "rich_inline"
+        && targets::record(doc, &doc.transact(), state, collection, id, field)?
+            .1
+            .kind
+            == crate::document_types::ValueKind::RichInline
     {
         return Err(Error::CommandUnavailable {
             command: "inline.replace".into(),

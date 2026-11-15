@@ -159,22 +159,17 @@ fn normalize(doc: &Doc, root: XmlFragmentRef, trailing: bool) -> Result<(), Erro
 pub(super) fn apply(doc: &Doc, state: &State) -> Result<(), Error> {
     let root = doc.transact().get_xml_fragment("default").expect("body");
     normalize(doc, root, true)?;
-    if let Some(schema) = state
-        .settings
-        .metadata
-        .document_type()
-        .structured_metadata()
-    {
+    let definitions = state.settings.metadata.document_type().record_collections();
+    if !definitions.is_empty() {
         let data = serde_json::to_value(&state.settings.metadata).expect("metadata");
-        for definition in schema["collections"].as_array().into_iter().flatten() {
-            let name = definition["parameter"].as_str().unwrap();
-            for field in definition["fields"]
-                .as_array()
-                .into_iter()
-                .flatten()
-                .filter(|f| f["kind"] == "rich" || f["kind"] == "rich_inline")
+        for definition in definitions {
+            let name = definition.parameter.as_str();
+            for field in definition
+                .fields
+                .iter()
+                .filter(|field| field.kind.is_rich())
             {
-                let key = field["key"].as_str().unwrap();
+                let key = field.key.as_str();
                 for record in data["fields"][name].as_array().into_iter().flatten() {
                     let (map, _) = targets::record(
                         doc,
@@ -186,7 +181,7 @@ pub(super) fn apply(doc: &Doc, state: &State) -> Result<(), Error> {
                     )?;
                     let value = map.get(&doc.transact(), key);
                     if let Some(Out::YXmlFragment(root)) = value {
-                        if field["kind"] == "rich" {
+                        if field.kind == crate::document_types::ValueKind::Rich {
                             normalize(doc, root, false)?;
                         } else {
                             spaces(&root, &mut doc.transact_mut());

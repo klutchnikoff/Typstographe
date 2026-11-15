@@ -1,6 +1,10 @@
 //! Supplied declarations are loaded once; all adapters consume these projections.
 mod descriptors;
 mod source;
+mod structured;
+pub(crate) use structured::{RecordCollection, RecordField, ValueKind};
+
+use structured::StructuredMetadata;
 
 use super::{
     DocumentType, FieldGroup, FieldKind, FieldValue, Metadata, MetadataField, definition::*,
@@ -13,7 +17,7 @@ pub(super) struct Runtime {
     pub loaded: LoadedDefinition,
     pub fields: Vec<RootField>,
     pub groups: Vec<FieldGroup>,
-    pub structured: Option<Value>,
+    structured: Option<StructuredMetadata>,
 }
 pub(super) struct RootField {
     pub public: MetadataField,
@@ -52,6 +56,16 @@ pub(super) fn get(kind: DocumentType) -> &'static Runtime {
         .expect("registered type")]
 }
 impl Runtime {
+    pub(super) fn structured_metadata(&self) -> Option<Value> {
+        self.structured.as_ref().map(|value| json!(value))
+    }
+
+    pub(super) fn record_collections(&self) -> &[RecordCollection] {
+        self.structured
+            .as_ref()
+            .map_or(&[], |value| &value.collections)
+    }
+
     fn load(kind: DocumentType, source: &str) -> Self {
         let loaded = load_yaml(source).expect("valid supplied type declaration");
         assert_eq!(
@@ -69,7 +83,8 @@ impl Runtime {
             initial,
             "declaration must cover all domain data"
         );
-        let (fields, groups, structured) = descriptors::build(&loaded);
+        let (fields, groups) = descriptors::build(&loaded);
+        let structured = StructuredMetadata::build(&loaded);
         Self {
             loaded,
             fields,

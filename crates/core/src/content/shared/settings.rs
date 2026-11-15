@@ -59,18 +59,14 @@ pub(super) fn set_option(
     set(doc, &format!("options.{key}"), value);
     if name == OptionName::Language {
         // Changing the primary language adds missing localized records, never replaces existing ones.
-        if let Some(schema) = state
-            .settings
-            .metadata
-            .document_type()
-            .structured_metadata()
-        {
+        let definitions = state.settings.metadata.document_type().record_collections();
+        if !definitions.is_empty() {
             let fields = serde_json::to_value(&state.settings.metadata).expect("metadata");
-            for definition in schema["collections"].as_array().into_iter().flatten() {
-                let Some(key) = definition["language_key"].as_str() else {
+            for definition in definitions {
+                let Some(key) = definition.language_key.as_deref() else {
                     continue;
                 };
-                let name = definition["parameter"].as_str().unwrap();
+                let name = definition.parameter.as_str();
                 let items = fields["fields"][name].as_array().unwrap();
                 if items.iter().any(|item| item[key] == *value) {
                     continue;

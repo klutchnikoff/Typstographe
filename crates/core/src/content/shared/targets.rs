@@ -3,6 +3,7 @@ use super::super::{
     contract::{Error, State, TargetReason},
     zones::TextZoneKind,
 };
+use crate::document_types::{FieldKind, RecordField, ValueKind, model_options::OptionId};
 use serde_json::Value;
 use yrs::{
     Doc, GetString, Map, MapRef, Out, ReadTxn, Transact, Xml, XmlElementRef, XmlFragment,
@@ -57,26 +58,16 @@ pub(in crate::content) fn record<T: ReadTxn>(
     collection: &str,
     id: &str,
     field: &str,
-) -> Result<(MapRef, Value), Error> {
-    let schema = state
+) -> Result<(MapRef, &'static RecordField), Error> {
+    let definition = state
         .settings
         .metadata
         .document_type()
-        .structured_metadata()
+        .record_collection(collection)
         .ok_or_else(|| invalid(TargetReason::MissingCollection))?;
-    let definition = schema["collections"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|c| c["parameter"] == collection)
-        .ok_or_else(|| invalid(TargetReason::MissingCollection))?;
-    let descriptor = definition["fields"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|f| f["key"] == field)
-        .ok_or_else(|| invalid(TargetReason::MissingField))?
-        .clone();
+    let descriptor = definition
+        .field(field)
+        .ok_or_else(|| invalid(TargetReason::MissingField))?;
     let settings = tx
         .get_map("settings")
         .ok_or_else(|| invalid(TargetReason::MissingCollection))?;
@@ -114,7 +105,7 @@ pub(in crate::content) fn field<T: ReadTxn>(
     tx: &T,
     state: &State,
     target: &FieldTarget,
-) -> Result<(MapRef, String, Value, String), Error> {
+) -> Result<(MapRef, String, Value, ValueKind), Error> {
     match target {
         FieldTarget::Option { .. } => Err(invalid(TargetReason::MissingField)),
         FieldTarget::Metadata { field } => {
@@ -130,34 +121,24 @@ pub(in crate::content) fn field<T: ReadTxn>(
                 .as_str()
                 .unwrap()
                 .to_owned();
-            let kind = if let Some(option) = descriptor.presentation {
-                match option {
-                    crate::document_types::model_options::OptionId::Outline => "boolean",
-                    _ => "choice",
-                }
-            } else if descriptor.kind == crate::document_types::FieldKind::ResourceReference {
-                "resource-reference"
-            } else if descriptor.kind == crate::document_types::FieldKind::Date {
-                "date"
-            } else if descriptor.kind == crate::document_types::FieldKind::PositiveInteger {
-                "positive_integer"
-            } else if descriptor.kind == crate::document_types::FieldKind::Doi {
-                "doi"
-            } else if descriptor.kind == crate::document_types::FieldKind::Choice {
-                "choice"
-            } else if descriptor.value.is_string() {
-                "text"
-            } else if descriptor.value.is_boolean() {
-                "boolean"
-            } else {
-                "records"
+            let kind = match (descriptor.presentation, descriptor.kind) {
+                (Some(OptionId::Outline), _) => ValueKind::Boolean,
+                (Some(_), _) => ValueKind::Choice,
+                (None, FieldKind::ResourceReference) => ValueKind::ResourceReference,
+                (None, FieldKind::Date) => ValueKind::Date,
+                (None, FieldKind::PositiveInteger) => ValueKind::PositiveInteger,
+                (None, FieldKind::Doi) => ValueKind::Doi,
+                (None, FieldKind::Choice) => ValueKind::Choice,
+                _ if descriptor.value.is_string() => ValueKind::Text,
+                _ if descriptor.value.is_boolean() => ValueKind::Boolean,
+                _ => ValueKind::Records,
             };
             Ok((
                 tx.get_map("settings")
                     .ok_or_else(|| invalid(TargetReason::MissingField))?,
                 key,
                 descriptor.value,
-                kind.into(),
+                kind,
             ))
         }
         FieldTarget::Record {
@@ -169,15 +150,10 @@ pub(in crate::content) fn field<T: ReadTxn>(
             let value = match map.get(tx, field) {
                 Some(Out::YText(text)) => Value::String(text.get_string(tx)),
                 Some(Out::Any(value)) => serde_json::to_value(value).expect("value"),
-                None if descriptor["omit_empty"] == true => descriptor["default"].clone(),
+                None if descriptor.omit_empty => descriptor.default.clone(),
                 _ => Value::Null,
             };
-            Ok((
-                map,
-                field.clone(),
-                value,
-                descriptor["kind"].as_str().unwrap().into(),
-            ))
+            Ok((map, field.clone(), value, descriptor.kind))
         }
     }
 }
@@ -202,7 +178,7 @@ pub(in crate::content) fn resolve(
         TextZone::Metadata { field: key } => {
             let (map, key, value, kind) =
                 field(doc, &tx, state, &FieldTarget::Metadata { field: *key })?;
-            if matches!(kind.as_str(), "choice" | "resource-reference") {
+            if matches!(kind, ValueKind::Choice | ValueKind::ResourceReference) {
                 return Err(invalid(TargetReason::NotTextZone));
             }
             Ok(Resolved::Scalar {
@@ -222,10 +198,10 @@ pub(in crate::content) fn resolve(
         } => {
             let (map, descriptor) = record(doc, &tx, state, collection, id, field)?;
             let value = map.get(&tx, field);
-            if value.is_none() && descriptor["omit_empty"] != true {
+            if value.is_none() && !descriptor.omit_empty {
                 return Err(invalid(TargetReason::MissingField));
             }
-            if matches!(descriptor["kind"].as_str(), Some("rich" | "rich_inline")) {
+            if descriptor.kind.is_rich() {
                 let Some(Out::YXmlFragment(root)) = value else {
                     return Err(invalid(TargetReason::NotTextZone));
                 };
@@ -234,10 +210,7 @@ pub(in crate::content) fn resolve(
             if !path.is_empty() {
                 return Err(invalid(TargetReason::UnexpectedPath));
             }
-            if !matches!(
-                descriptor["kind"].as_str(),
-                Some("text" | "multiline" | "source")
-            ) {
+            if !descriptor.kind.uses_shared_text() {
                 return Err(invalid(TargetReason::NotTextZone));
             }
             match value {
@@ -250,7 +223,8 @@ pub(in crate::content) fn resolve(
                 None => Ok(Resolved::Scalar {
                     map,
                     key: field.clone(),
-                    text: descriptor["default"]
+                    text: descriptor
+                        .default
                         .as_str()
                         .ok_or_else(|| invalid(TargetReason::MissingField))?
                         .into(),

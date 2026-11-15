@@ -4,6 +4,7 @@ use crate::content::{
     commands::Command,
     contract::{Error, State, TargetReason},
 };
+use crate::document_types::{RecordCollection, ValueKind};
 use serde_json::Value;
 use yrs::{Any, Array, ArrayRef, Doc, Map, MapPrelim, MapRef, Out, ReadTxn, Transact};
 
@@ -16,20 +17,13 @@ fn collection<T: ReadTxn>(
     tx: &T,
     state: &State,
     name: &str,
-) -> Result<(MapRef, ArrayRef, Value), Error> {
-    let schema = state
+) -> Result<(MapRef, ArrayRef, &'static RecordCollection), Error> {
+    let definition = state
         .settings
         .metadata
         .document_type()
-        .structured_metadata()
+        .record_collection(name)
         .ok_or_else(|| targets::invalid(TargetReason::MissingCollection))?;
-    let definition = schema["collections"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|d| d["parameter"] == name)
-        .ok_or_else(|| targets::invalid(TargetReason::MissingCollection))?
-        .clone();
     let settings = tx
         .get_map("settings")
         .ok_or_else(|| targets::invalid(TargetReason::MissingCollection))?;
@@ -90,29 +84,25 @@ pub(super) fn apply(doc: &Doc, state: &State, command: &Command) -> Result<(), E
             {
                 return Err(parameter("id"));
             }
-            let fields = definition["fields"].as_array().unwrap();
-            if values
-                .keys()
-                .any(|key| !fields.iter().any(|f| f["key"] == key.as_str()))
-            {
+            if values.keys().any(|key| definition.field(key).is_none()) {
                 return Err(parameter("values"));
             }
             if after.as_ref().is_some_and(|id| !visible.contains(id)) {
                 return Err(targets::invalid(TargetReason::MissingRecord));
             }
             // Do not allow malformed rich documents to be projected away by the XML writer.
-            for field in fields {
-                let key = field["key"].as_str().unwrap();
-                let value = values.get(key).unwrap_or(&field["default"]);
-                let valid = match field["kind"].as_str() {
-                    Some("text" | "multiline" | "source" | "language" | "choice") => {
-                        value.is_string()
-                    }
-                    Some("boolean") => value.is_boolean(),
-                    Some("tokens" | "references") => value
+            for field in &definition.fields {
+                let value = values.get(&field.key).unwrap_or(&field.default);
+                let valid = match field.kind {
+                    ValueKind::Text
+                    | ValueKind::Multiline
+                    | ValueKind::Language
+                    | ValueKind::Choice => value.is_string(),
+                    ValueKind::Boolean => value.is_boolean(),
+                    ValueKind::Tokens | ValueKind::References => value
                         .as_array()
                         .is_some_and(|v| v.iter().all(Value::is_string)),
-                    Some("rich" | "rich_inline") => {
+                    kind if kind.is_rich() => {
                         serde_json::from_value::<crate::content::editorial::RichText>(value.clone())
                             .is_ok()
                     }
@@ -133,7 +123,7 @@ pub(super) fn apply(doc: &Doc, state: &State, command: &Command) -> Result<(), E
             seed::fill_record(
                 record,
                 &mut tx,
-                &definition,
+                definition,
                 &Value::Object(values.clone()),
                 id,
             )?;

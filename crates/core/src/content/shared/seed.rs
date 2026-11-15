@@ -6,6 +6,7 @@ use super::{
     },
     projection::invalid,
 };
+use crate::document_types::RecordCollection;
 use serde_json::{Value, json};
 use yrs::{
     Any, Array, ArrayPrelim, Doc, Map, MapPrelim, Text, TextPrelim, Transact, TransactionMut, Xml,
@@ -105,19 +106,13 @@ pub(super) fn write_settings(doc: &Doc, state: &State) -> Result<(), Error> {
         "document",
         any(&serde_json::to_value(&state.settings).map_err(|e| invalid(e.to_string()))?)?,
     );
-    if let Some(schema) = state
-        .settings
-        .metadata
-        .document_type()
-        .structured_metadata()
-    {
+    let definitions = state.settings.metadata.document_type().record_collections();
+    if !definitions.is_empty() {
         let fields =
             serde_json::to_value(&state.settings.metadata).map_err(|e| invalid(e.to_string()))?;
         let collections = settings.insert(&mut tx, "collections", MapPrelim::default());
-        for definition in schema["collections"].as_array().into_iter().flatten() {
-            let name = definition["parameter"]
-                .as_str()
-                .ok_or_else(|| invalid("collection_parameter_absent"))?;
+        for definition in definitions {
+            let name = definition.parameter.as_str();
             let map = collections.insert(&mut tx, name, MapPrelim::default());
             let order = settings.insert(&mut tx, format!("order:{name}"), ArrayPrelim::default());
             for (index, value) in fields["fields"][name]
@@ -142,24 +137,22 @@ pub(super) fn write_settings(doc: &Doc, state: &State) -> Result<(), Error> {
 pub(super) fn fill_record(
     record: yrs::MapRef,
     tx: &mut TransactionMut,
-    definition: &Value,
+    definition: &RecordCollection,
     value: &Value,
     id: &str,
 ) -> Result<(), Error> {
     record.insert(tx, "id", id);
-    for field in definition["fields"].as_array().into_iter().flatten() {
-        let key = field["key"]
-            .as_str()
-            .ok_or_else(|| invalid("record_field_absent"))?;
-        let data = value.get(key).unwrap_or(&field["default"]);
-        match field["kind"].as_str() {
-            Some("rich" | "rich_inline") => {
+    for field in &definition.fields {
+        let key = field.key.as_str();
+        let data = value.get(key).unwrap_or(&field.default);
+        match field.kind {
+            kind if kind.is_rich() => {
                 let rich = record.insert(tx, key, XmlFragmentPrelim::default());
                 let node: Node =
                     serde_json::from_value(data.clone()).map_err(|e| invalid(e.to_string()))?;
                 children(rich, tx, &node.content, 0, 1, &mut 0)?;
             }
-            Some("text" | "multiline") => {
+            kind if kind.uses_shared_text() => {
                 record.insert(
                     tx,
                     key,

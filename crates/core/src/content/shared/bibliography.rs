@@ -33,12 +33,7 @@ pub(super) fn apply(
     let before = serde_json::to_value(before).unwrap();
     let after = serde_json::to_value(after).unwrap();
     let settings = doc.get_or_insert_map("settings");
-    let schema = state
-        .settings
-        .metadata
-        .document_type()
-        .structured_metadata()
-        .unwrap();
+    let kind = state.settings.metadata.document_type();
     let mut tx = doc.transact_mut();
     let Some(Out::YMap(collections)) = settings.get(&tx, "collections") else {
         return Err(super::projection::invalid("collections_absent"));
@@ -52,12 +47,9 @@ pub(super) fn apply(
         };
         let old = before[name].as_array().unwrap();
         let new = after[name].as_array().unwrap();
-        let definition = schema["collections"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|c| c["parameter"] == name)
-            .unwrap();
+        let definition = kind
+            .record_collection(name)
+            .expect("bibliographic collection");
         for record in old
             .iter()
             .filter(|r| !new.iter().any(|n| n["id"] == r["id"]))
