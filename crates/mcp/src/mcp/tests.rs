@@ -36,6 +36,65 @@ fn every_advertised_schema_resolves_and_unknown_params_are_rejected() {
     );
     assert!(validation::check(true, "document.save", &json!({})).is_err());
 }
+
+#[test]
+fn open_and_new_advertise_and_enforce_the_current_document_reference() {
+    let tools = catalogue::tools(false);
+    for name in ["document.new", "document.open"] {
+        let tool = tools.iter().find(|tool| tool.name == name).unwrap();
+        assert!(
+            !tool.input_schema["required"]
+                .as_array()
+                .unwrap()
+                .contains(&json!("document"))
+        );
+        let description = tool.description.as_deref().unwrap();
+        assert!(description.contains("If a document is already open"));
+        assert_eq!(
+            crate::discovery::describe(name, false).unwrap()["description"],
+            description
+        );
+    }
+    assert!(validation::check(false, "document.text", &json!({})).is_err());
+
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("letter.typsto");
+    let mut host =
+        host::Host::new(vec![dir.path().into()], vec![dir.path().into()], false).unwrap();
+    let new = json!({"type":"courrier"});
+    let open = json!({"path":path,"read_only":true});
+    let created = run(&mut host, "document.new", new.clone())["document"].clone();
+    let saved = run(
+        &mut host,
+        "document.save_as",
+        json!({"document":created,"path":path}),
+    )["document"]
+        .clone();
+    for (name, params) in [("document.new", new), ("document.open", open.clone())] {
+        assert_eq!(
+            error(&mut host, name, params)["params"]["reason"],
+            "mcp_document_required"
+        );
+    }
+    assert_eq!(
+        run(&mut host, "document.inspect", json!({}))["document"],
+        saved
+    );
+    let replaced = run(
+        &mut host,
+        "document.open",
+        json!({"path":path,"read_only":true,"document":saved}),
+    )["document"]
+        .clone();
+    assert_ne!(replaced["id"], saved["id"]);
+    assert_eq!(
+        error(&mut host, "document.inspect", json!({"document":saved}))["params"]["reason"],
+        "mcp_document_foreign"
+    );
+    run(&mut host, "document.close", json!({"document":replaced}));
+    assert!(run(&mut host, "document.open", open)["document"]["id"].is_string());
+}
+
 #[test]
 fn strict_references_atomic_batches_and_participant_history_share_the_owner() {
     let mut h = host::Host::new(vec![], vec![], false).unwrap();

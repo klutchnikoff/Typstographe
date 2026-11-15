@@ -1,4 +1,4 @@
-use super::types::DocumentRef;
+use super::types::{DocumentRef, DocumentReferencePolicy};
 use rmcp::model::{Tool, ToolAnnotations};
 use serde_json::json;
 use std::sync::{Arc, OnceLock};
@@ -29,17 +29,9 @@ fn build_tools(attached: bool) -> Vec<Tool> {
             doc.as_object_mut().unwrap().remove("$schema");
             doc.as_object_mut().unwrap().remove("$defs");
             schema["$defs"]["DocumentRef"] = doc;
-            if !matches!(
-                id,
-                "document.inspect"
-                    | "document.new"
-                    | "document.open"
-                    | "commands.list"
-                    | "document_types.list"
-                    | "document_types.describe"
-                    | "capabilities.describe"
-                    | "spelling.suggestions"
-            ) {
+            let policy = DocumentReferencePolicy::for_tool(id);
+            // The static schema also serves sessions without an open document.
+            if policy.required(false) {
                 schema
                     .as_object_mut()
                     .unwrap()
@@ -49,9 +41,15 @@ fn build_tools(attached: bool) -> Vec<Tool> {
                     .unwrap()
                     .push(json!("document"));
             }
+            let mut description = spec["description"].as_str().unwrap().to_owned();
+            if matches!(policy, DocumentReferencePolicy::RequiredWhenOpen) {
+                description.push_str(
+                    " If a document is already open, pass its current document reference.",
+                );
+            }
             let mut tool = Tool::new(
                 id.to_owned(),
-                spec["description"].as_str().unwrap().to_owned(),
+                description,
                 Arc::new(schema.as_object().unwrap().clone()),
             );
             tool.annotations = Some(

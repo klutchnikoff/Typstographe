@@ -46,15 +46,6 @@ impl Host {
             .remove("document")
             .map(api::decode::<DocumentRef>)
             .transpose()?;
-        let global = matches!(
-            name,
-            "document.inspect"
-                | "document_types.list"
-                | "document_types.describe"
-                | "commands.list"
-                | "capabilities.describe"
-                | "spelling.suggestions"
-        );
         if let Some(reference) = reference {
             let guard = self
                 .session
@@ -67,9 +58,7 @@ impl Host {
                 ));
             }
             reference.guard.check(guard).map_err(api::content_error)?;
-        } else if !global
-            && (!matches!(name, "document.new" | "document.open") || self.session.is_open())
-        {
+        } else if DocumentReferencePolicy::for_tool(name).required(self.session.is_open()) {
             return Err(CommandError::new(
                 ErrorCode::InvalidParams,
                 "mcp_document_required",
