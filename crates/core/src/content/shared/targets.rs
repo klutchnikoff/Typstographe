@@ -1,6 +1,7 @@
 use super::super::{
     commands::{FieldTarget, TextZone, ZoneInfo},
     contract::{Error, State, TargetReason},
+    zones::TextZoneKind,
 };
 use serde_json::Value;
 use yrs::{
@@ -260,20 +261,7 @@ pub(in crate::content) fn resolve(
     }
 }
 fn rich(value: XmlElementRef) -> Result<Resolved, Error> {
-    if !matches!(
-        value.tag().as_ref(),
-        "paragraph"
-            | "heading"
-            | "figure"
-            | "tableCaption"
-            | "descriptionTerm"
-            | "descriptionDefinition"
-            | "quoteAttribution"
-            | "postscript"
-            | "attachment"
-            | "mathBlock"
-            | "mathInline"
-    ) {
+    if TextZoneKind::of(value.tag().as_ref()).is_none() {
         return Err(invalid(TargetReason::NotTextZone));
     }
     Ok(Resolved::Rich(value))
@@ -301,7 +289,7 @@ impl Resolved {
         Ok(ZoneInfo {
             length: text.encode_utf16().count() as u32,
             text,
-            supports_styles: matches!(self, Self::Rich(e) if !crate::content::mathematics::is_math(e.tag().as_ref())),
+            supports_styles: matches!(self, Self::Rich(e) if TextZoneKind::of(e.tag().as_ref()).is_some_and(TextZoneKind::supports_styles)),
         })
     }
 }

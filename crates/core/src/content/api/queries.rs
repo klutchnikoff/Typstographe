@@ -4,6 +4,7 @@ use crate::content::{
     commands::{Command, TextTarget, TextZone, TreeRoot, TreeTarget},
     contract::{Error, State},
     shared::targets,
+    zones::TextZoneKind,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -25,20 +26,7 @@ fn inline(node: &Node) -> String {
         .collect()
 }
 fn walk(node: &Node, path: &mut Vec<usize>, root: &TreeRoot, out: &mut Vec<Zone>) {
-    if matches!(
-        node.kind.as_str(),
-        "paragraph"
-            | "heading"
-            | "descriptionTerm"
-            | "descriptionDefinition"
-            | "quoteAttribution"
-            | "figure"
-            | "tableCaption"
-            | "postscript"
-            | "attachment"
-            | "mathInline"
-            | "mathBlock"
-    ) {
+    if let Some(kind) = TextZoneKind::of(&node.kind) {
         let text = inline(node);
         let zone = match root {
             TreeRoot::Body => TextZone::Body { path: path.clone() },
@@ -57,7 +45,7 @@ fn walk(node: &Node, path: &mut Vec<usize>, root: &TreeRoot, out: &mut Vec<Zone>
             zone,
             length: text.encode_utf16().count() as u32,
             text,
-            supports_styles: !crate::content::mathematics::is_math(&node.kind),
+            supports_styles: kind.supports_styles(),
         });
     }
     if node.kind == "footnote" {

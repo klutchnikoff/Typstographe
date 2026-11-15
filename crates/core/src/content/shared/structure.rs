@@ -4,6 +4,7 @@ use crate::content::{
     Node,
     commands::{Command, TextTarget, TextZone, TreeRoot, TreeTarget},
     contract::{Error, State, TargetReason, UnavailableReason},
+    zones::TextZoneKind,
 };
 use yrs::{Doc, Map, Out, ReadTxn, Transact, Xml, XmlElementRef, XmlFragment, XmlFragmentRef};
 
@@ -48,15 +49,7 @@ fn shape(node: &Node, depth: usize, count: &mut usize) -> Result<(), Error> {
     let kinds: Vec<_> = node.content.iter().map(|n| n.kind.as_str()).collect();
     let valid = match node.kind.as_str() {
         "doc" => !kinds.is_empty() && kinds.iter().all(|k| block(k)),
-        "paragraph"
-        | "heading"
-        | "figure"
-        | "tableCaption"
-        | "descriptionTerm"
-        | "descriptionDefinition"
-        | "quoteAttribution"
-        | "postscript"
-        | "attachment" => kinds.iter().all(|k| {
+        kind if TextZoneKind::of(kind) == Some(TextZoneKind::Prose) => kinds.iter().all(|k| {
             matches!(
                 *k,
                 "text"

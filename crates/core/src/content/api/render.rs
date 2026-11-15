@@ -4,6 +4,7 @@ use crate::{
         Node,
         commands::{TextTarget, TextZone},
         contract::State,
+        zones::TextZoneKind,
     },
     navigation::{PagePoint, RenderSync},
     protocol::{CommandError, ErrorCode},
@@ -32,20 +33,7 @@ fn ranges(state: &State) -> Vec<(TextZone, usize, usize)> {
             at += visit(child, at, path, out);
             path.pop();
         }
-        if matches!(
-            n.kind.as_str(),
-            "paragraph"
-                | "heading"
-                | "figure"
-                | "tableCaption"
-                | "descriptionTerm"
-                | "descriptionDefinition"
-                | "quoteAttribution"
-                | "postscript"
-                | "attachment"
-                | "mathBlock"
-                | "mathInline"
-        ) {
+        if TextZoneKind::of(&n.kind).is_some() {
             out.push((TextZone::Body { path: path.clone() }, start, at));
         }
         at - pos + usize::from(n.kind != "doc")

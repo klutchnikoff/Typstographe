@@ -21,6 +21,7 @@ pub use mapping::{source_mapped, source_mapped_with_metadata};
 mod schema;
 pub mod shared;
 pub mod tables;
+mod zones;
 pub use schema::{Mark, Node, source, source_with_metadata};
 
 /// Conserver seulement les ressources du contenu, de la signature et du modèle.
