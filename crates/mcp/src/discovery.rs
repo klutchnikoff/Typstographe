@@ -100,6 +100,9 @@ pub fn describe(id: &str, attached: bool) -> Option<Value> {
     }
     if let Some(tool) = tool {
         value["params_schema"] = json!(tool.input_schema);
+        if let Some(description) = tool.description {
+            value["description"] = json!(description);
+        }
     }
     for key in ["params_schema", "parameters", "result_schema"] {
         if let Some(schema) = value.get_mut(key) {

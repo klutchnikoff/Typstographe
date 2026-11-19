@@ -146,63 +146,52 @@ pub(super) fn read(doc: &Doc) -> Result<State, Error> {
         let Out::YMap(collections) = out else {
             return Err(invalid("collections_must_be_shared_map"));
         };
-        if let Some(schema) = base.metadata.document_type().structured_metadata() {
-            for definition in schema["collections"].as_array().into_iter().flatten() {
-                let name = definition["parameter"]
-                    .as_str()
-                    .ok_or_else(|| invalid("collection_parameter_absent"))?;
-                let Some(out) = collections.get(&tx, name) else {
+        for definition in base.metadata.document_type().record_collections() {
+            let name = definition.parameter.as_str();
+            let Some(out) = collections.get(&tx, name) else {
+                continue;
+            };
+            let Out::YMap(records) = out else {
+                return Err(invalid("records_must_be_shared_map"));
+            };
+            let Some(Out::YArray(order)) = root.get(&tx, &format!("order:{name}")) else {
+                return Err(invalid("record_order_absent"));
+            };
+            let mut values = vec![];
+            let mut ids = BTreeSet::new();
+            for id in order.iter(&tx) {
+                let Out::Any(yrs::Any::String(id)) = id else {
+                    return Err(invalid("record_id_must_be_text"));
+                };
+                // Concurrent reordering can leave duplicate or deleted IDs in the order.
+                if !ids.insert(id.to_string()) {
+                    continue;
+                }
+                let Some(out) = records.get(&tx, &id) else {
                     continue;
                 };
-                let Out::YMap(records) = out else {
-                    return Err(invalid("records_must_be_shared_map"));
+                let Out::YMap(record) = out else {
+                    return Err(invalid("record_must_be_shared_map"));
                 };
-                let Some(Out::YArray(order)) = root.get(&tx, &format!("order:{name}")) else {
-                    return Err(invalid("record_order_absent"));
-                };
-                let mut values = vec![];
-                let mut ids = BTreeSet::new();
-                for id in order.iter(&tx) {
-                    let Out::Any(yrs::Any::String(id)) = id else {
-                        return Err(invalid("record_id_must_be_text"));
-                    };
-                    // Concurrent reordering can leave duplicate or deleted IDs in the order.
-                    if !ids.insert(id.to_string()) {
-                        continue;
-                    }
-                    let Some(out) = records.get(&tx, &id) else {
-                        continue;
-                    };
-                    let Out::YMap(record) = out else {
-                        return Err(invalid("record_must_be_shared_map"));
-                    };
-                    let mut item = json!({"id":id.as_ref()});
-                    if record.get(&tx, "id").map(|v| value(v, &tx)).transpose()?
-                        != Some(item["id"].clone())
-                    {
-                        return Err(invalid("record_identity_mismatch"));
-                    }
-                    for field in definition["fields"].as_array().into_iter().flatten() {
-                        let key = field["key"]
-                            .as_str()
-                            .ok_or_else(|| invalid("record_field_absent"))?;
-                        item[key] = match record.get(&tx, key) {
-                            Some(Out::YXmlFragment(fragment))
-                                if matches!(
-                                    field["kind"].as_str(),
-                                    Some("rich" | "rich_inline")
-                                ) =>
-                            {
-                                rich(fragment, &tx)?
-                            }
-                            Some(out) => value(out, &tx)?,
-                            None => field["default"].clone(),
-                        };
-                    }
-                    values.push(item);
+                let mut item = json!({"id":id.as_ref()});
+                if record.get(&tx, "id").map(|v| value(v, &tx)).transpose()?
+                    != Some(item["id"].clone())
+                {
+                    return Err(invalid("record_identity_mismatch"));
                 }
-                fields.insert(name.into(), json!(values));
+                for field in &definition.fields {
+                    let key = field.key.as_str();
+                    item[key] = match record.get(&tx, key) {
+                        Some(Out::YXmlFragment(fragment)) if field.kind.is_rich() => {
+                            rich(fragment, &tx)?
+                        }
+                        Some(out) => value(out, &tx)?,
+                        None => field.default.clone(),
+                    };
+                }
+                values.push(item);
             }
+            fields.insert(name.into(), json!(values));
         }
     }
     let document = Node {

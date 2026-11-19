@@ -4,6 +4,7 @@ use crate::content::{
     Node,
     commands::{Command, TextTarget, TextZone, TreeRoot, TreeTarget},
     contract::{Error, State, TargetReason, UnavailableReason},
+    zones::TextZoneKind,
 };
 use yrs::{Doc, Map, Out, ReadTxn, Transact, Xml, XmlElementRef, XmlFragment, XmlFragmentRef};
 
@@ -48,15 +49,7 @@ fn shape(node: &Node, depth: usize, count: &mut usize) -> Result<(), Error> {
     let kinds: Vec<_> = node.content.iter().map(|n| n.kind.as_str()).collect();
     let valid = match node.kind.as_str() {
         "doc" => !kinds.is_empty() && kinds.iter().all(|k| block(k)),
-        "paragraph"
-        | "heading"
-        | "figure"
-        | "tableCaption"
-        | "descriptionTerm"
-        | "descriptionDefinition"
-        | "quoteAttribution"
-        | "postscript"
-        | "attachment" => kinds.iter().all(|k| {
+        kind if TextZoneKind::of(kind) == Some(TextZoneKind::Prose) => kinds.iter().all(|k| {
             matches!(
                 *k,
                 "text"
@@ -114,18 +107,14 @@ fn shape(node: &Node, depth: usize, count: &mut usize) -> Result<(), Error> {
 }
 pub(super) fn validate(state: &State) -> Result<(), Error> {
     shape(&state.document, 0, &mut 0)?;
-    if let Some(schema) = state
-        .settings
-        .metadata
-        .document_type()
-        .structured_metadata()
-    {
+    let definitions = state.settings.metadata.document_type().record_collections();
+    if !definitions.is_empty() {
         let data = serde_json::to_value(&state.settings.metadata).expect("metadata");
-        for definition in schema["collections"].as_array().into_iter().flatten() {
-            let name = definition["parameter"].as_str().unwrap();
-            for field in definition["fields"].as_array().into_iter().flatten() {
-                if matches!(field["kind"].as_str(), Some("rich" | "rich_inline")) {
-                    let key = field["key"].as_str().unwrap();
+        for definition in definitions {
+            let name = definition.parameter.as_str();
+            for field in &definition.fields {
+                if field.kind.is_rich() {
+                    let key = field.key.as_str();
                     for record in data["fields"][name].as_array().into_iter().flatten() {
                         let node: Node = serde_json::from_value(record[key].clone())
                             .map_err(|_| invalid("invalid_rich_record"))?;
@@ -153,7 +142,7 @@ pub(in crate::content) fn root(
             field,
         } => {
             let (map, descriptor) = targets::record(doc, &tx, state, collection, id, field)?;
-            if !matches!(descriptor["kind"].as_str(), Some("rich" | "rich_inline")) {
+            if !descriptor.kind.is_rich() {
                 return Err(targets::invalid(TargetReason::NotBlockContainer));
             }
             match map.get(&tx, field) {

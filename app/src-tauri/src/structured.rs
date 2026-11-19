@@ -15,24 +15,26 @@ pub struct Request {
     pub update: Vec<u8>,
     pub commands: Vec<Command>,
 }
+fn verify_checkpoint(session: &Session, request: &Request) -> Result<Guard, Error> {
+    let expected = Guard {
+        document: request.generation.clone(),
+        revision: request.revision,
+    };
+    expected.check(&session.guard())?;
+    let confirmed = SharedDocument::from_updates(&session.updates)?;
+    let supplied = SharedDocument::from_update(&request.update)?;
+    if !confirmed.same_history(&supplied) {
+        return Err(Error::InconsistentState {
+            field: "checkpoint".into(),
+        });
+    }
+    confirmed.verify(&supplied.state()?)?;
+    Ok(expected)
+}
+
 pub fn prepare(session: &Session, request: Request) -> Result<Publication, CommandError> {
     let execute = || {
-        let expected = Guard {
-            document: request.generation,
-            revision: request.revision,
-        };
-        expected.check(&Guard {
-            document: session.generation.clone(),
-            revision: session.revision,
-        })?;
-        let confirmed = SharedDocument::from_updates(&session.updates)?;
-        let supplied = SharedDocument::from_update(&request.update)?;
-        if !confirmed.same_history(&supplied) {
-            return Err(Error::InconsistentState {
-                field: "checkpoint".into(),
-            });
-        }
-        confirmed.verify(&supplied.state()?)?;
+        let expected = verify_checkpoint(session, &request)?;
         let mut candidate =
             SharedSession::open(expected.clone(), &request.update, session.assets.clone())?;
         let prepared = candidate.prepare_commands(&expected, &request.commands)?;
@@ -49,8 +51,7 @@ pub fn commit(
 ) -> Result<Publication, CommandError> {
     session.check_peer(peer, &request.generation)?;
     // Full checkpoint verification and final guarded execution share the owning lock.
-    prepare(session, request.clone())?;
-    let guard = session.guard();
+    let guard = verify_checkpoint(session, &request)?;
     let publication = session
         .ensure_owner()?
         .commands(peer, &guard, &request.commands)?;
@@ -148,6 +149,49 @@ mod tests {
                 == Some("stale_revision")
         );
         assert_eq!(session.updates, confirmed);
+    }
+    #[test]
+    fn final_commit_checks_the_supplied_history_and_validates_the_batch_on_the_owner() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut session = Session::fresh(dir.path().into());
+        session.join("main");
+        let initial = request(&session);
+        session.updates.push(initial.update.clone());
+        let confirmed = SharedDocument::from_update(&initial.update)
+            .unwrap()
+            .state()
+            .unwrap();
+        assert!(prepare(&session, initial.clone()).unwrap().changed);
+
+        // The same document and revision with another shared history is insufficient.
+        let mut foreign = initial.clone();
+        foreign.update = request(&session).update;
+        let error = commit(&mut session, "main", foreign).unwrap_err();
+        assert!(matches!(
+            error,
+            CommandError::Content(Error::InconsistentState { field }) if field == "checkpoint"
+        ));
+
+        // Confirmation must validate the actual batch, even when a valid batch was prepared.
+        let mut invalid = initial.clone();
+        invalid.commands.push(Command::RemoveTableColumn {
+            target: TreeTarget {
+                root: TreeRoot::Body,
+                path: vec![0],
+            },
+            index: 99,
+        });
+        assert_eq!(
+            commit(&mut session, "main", invalid)
+                .unwrap_err()
+                .code()
+                .as_deref(),
+            Some("batch_failed")
+        );
+        assert_eq!(session.revision, 0);
+        assert_eq!(session.updates, vec![initial.update]);
+        assert_eq!(session.ensure_owner().unwrap().state(), &confirmed);
+        assert!(session.assets.is_empty());
     }
     #[test]
     fn prepared_images_stay_private_and_stale_commits_cannot_admit_them() {

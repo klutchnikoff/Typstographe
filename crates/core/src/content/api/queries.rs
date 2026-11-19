@@ -4,6 +4,7 @@ use crate::content::{
     commands::{Command, TextTarget, TextZone, TreeRoot, TreeTarget},
     contract::{Error, State},
     shared::targets,
+    zones::TextZoneKind,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -25,20 +26,7 @@ fn inline(node: &Node) -> String {
         .collect()
 }
 fn walk(node: &Node, path: &mut Vec<usize>, root: &TreeRoot, out: &mut Vec<Zone>) {
-    if matches!(
-        node.kind.as_str(),
-        "paragraph"
-            | "heading"
-            | "descriptionTerm"
-            | "descriptionDefinition"
-            | "quoteAttribution"
-            | "figure"
-            | "tableCaption"
-            | "postscript"
-            | "attachment"
-            | "mathInline"
-            | "mathBlock"
-    ) {
+    if let Some(kind) = TextZoneKind::of(&node.kind) {
         let text = inline(node);
         let zone = match root {
             TreeRoot::Body => TextZone::Body { path: path.clone() },
@@ -57,7 +45,7 @@ fn walk(node: &Node, path: &mut Vec<usize>, root: &TreeRoot, out: &mut Vec<Zone>
             zone,
             length: text.encode_utf16().count() as u32,
             text,
-            supports_styles: !crate::content::mathematics::is_math(&node.kind),
+            supports_styles: kind.supports_styles(),
         });
     }
     if node.kind == "footnote" {
@@ -100,42 +88,35 @@ pub fn zones(state: &State) -> Vec<Zone> {
         }
     }
     let metadata = serde_json::to_value(&state.settings.metadata).unwrap();
-    if let Some(schema) = state
-        .settings
-        .metadata
-        .document_type()
-        .structured_metadata()
-    {
-        for collection in schema["collections"].as_array().unwrap() {
-            let name = collection["parameter"].as_str().unwrap();
-            for record in metadata["fields"][name].as_array().into_iter().flatten() {
-                let Some(id) = record["id"].as_str() else {
-                    continue;
+    for collection in state.settings.metadata.document_type().record_collections() {
+        let name = collection.parameter.as_str();
+        for record in metadata["fields"][name].as_array().into_iter().flatten() {
+            let Some(id) = record["id"].as_str() else {
+                continue;
+            };
+            for field in &collection.fields {
+                let key = field.key.as_str();
+                let root = TreeRoot::Record {
+                    collection: name.into(),
+                    id: id.into(),
+                    field: key.into(),
                 };
-                for field in collection["fields"].as_array().unwrap() {
-                    let key = field["key"].as_str().unwrap();
-                    let root = TreeRoot::Record {
-                        collection: name.into(),
-                        id: id.into(),
-                        field: key.into(),
-                    };
-                    if matches!(field["kind"].as_str(), Some("rich" | "rich_inline")) {
-                        if let Ok(node) = serde_json::from_value::<Node>(record[key].clone()) {
-                            walk(&node, &mut vec![], &root, &mut out)
-                        }
-                    } else if let Some(text) = record[key].as_str() {
-                        out.push(Zone {
-                            zone: TextZone::Record {
-                                collection: name.into(),
-                                id: id.into(),
-                                field: key.into(),
-                                path: vec![],
-                            },
-                            length: text.encode_utf16().count() as u32,
-                            text: text.into(),
-                            supports_styles: false,
-                        });
+                if field.kind.is_rich() {
+                    if let Ok(node) = serde_json::from_value::<Node>(record[key].clone()) {
+                        walk(&node, &mut vec![], &root, &mut out)
                     }
+                } else if let Some(text) = record[key].as_str() {
+                    out.push(Zone {
+                        zone: TextZone::Record {
+                            collection: name.into(),
+                            id: id.into(),
+                            field: key.into(),
+                            path: vec![],
+                        },
+                        length: text.encode_utf16().count() as u32,
+                        text: text.into(),
+                        supports_styles: false,
+                    });
                 }
             }
         }

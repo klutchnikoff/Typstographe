@@ -10,6 +10,7 @@ pub mod model_options;
 pub mod models;
 mod runtime;
 pub use fields::{FieldValue, MetadataField};
+pub(crate) use runtime::{RecordCollection, RecordField, ValueKind};
 
 use crate::document::DocumentOptions;
 use serde::{Deserialize, Serialize};
@@ -64,7 +65,17 @@ impl DocumentType {
         self.models().next().is_some()
     }
     pub fn structured_metadata(self) -> Option<serde_json::Value> {
-        runtime::get(self).structured.clone()
+        runtime::get(self).structured_metadata()
+    }
+
+    pub(crate) fn record_collections(self) -> &'static [RecordCollection] {
+        runtime::get(self).record_collections()
+    }
+
+    pub(crate) fn record_collection(self, parameter: &str) -> Option<&'static RecordCollection> {
+        self.record_collections()
+            .iter()
+            .find(|collection| collection.parameter == parameter)
     }
 }
 

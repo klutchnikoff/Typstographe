@@ -5,6 +5,7 @@ use super::{
     },
     targets::{self, Resolved},
 };
+use crate::document_types::ValueKind;
 use serde_json::Value;
 use yrs::types::Attrs;
 use yrs::{
@@ -127,7 +128,7 @@ fn set_field(
     }
     let (map, key, before, kind) = targets::field(doc, &doc.transact(), state, target)?;
     let normalized;
-    let value = if kind == "doi" {
+    let value = if kind == ValueKind::Doi {
         normalized = Value::String(
             value
                 .as_str()
@@ -138,21 +139,27 @@ fn set_field(
     } else {
         value
     };
-    let valid = match kind.as_str() {
-        "text" | "multiline" | "source" | "language" | "choice" | "doi" => value.is_string(),
-        "resource-reference" => {
+    let valid = match kind {
+        ValueKind::Text
+        | ValueKind::Multiline
+        | ValueKind::Language
+        | ValueKind::Choice
+        | ValueKind::Doi => value.is_string(),
+        ValueKind::ResourceReference => {
             serde_json::from_value::<Option<crate::resources::ResourceReference>>(value.clone())
                 .is_ok()
         }
-        "positive_integer" => {
+        ValueKind::PositiveInteger => {
             value.is_null()
                 || value
                     .as_u64()
                     .is_some_and(|n| (1..=u32::MAX.into()).contains(&n))
         }
-        "date" => serde_json::from_value::<Option<crate::dates::DateValue>>(value.clone()).is_ok(),
-        "boolean" => value.is_boolean(),
-        "tokens" | "references" => value
+        ValueKind::Date => {
+            serde_json::from_value::<Option<crate::dates::DateValue>>(value.clone()).is_ok()
+        }
+        ValueKind::Boolean => value.is_boolean(),
+        ValueKind::Tokens | ValueKind::References => value
             .as_array()
             .is_some_and(|v| v.iter().all(Value::is_string)),
         _ => {
@@ -165,7 +172,7 @@ fn set_field(
     if !valid && !(presentation && value.is_null()) {
         return Err(parameter("value"));
     }
-    if kind == "language"
+    if kind == ValueKind::Language
         && serde_json::from_value::<crate::document::DocumentLanguage>(value.clone()).is_err()
     {
         return Err(parameter("value"));
@@ -181,9 +188,7 @@ fn set_field(
             before.as_str().ok_or_else(|| parameter("value"))?,
             value.as_str().ok_or_else(|| parameter("value"))?,
         ),
-        None if matches!(target, FieldTarget::Record { .. })
-            && matches!(kind.as_str(), "text" | "multiline") =>
-        {
+        None if matches!(target, FieldTarget::Record { .. }) && kind.uses_shared_text() => {
             map.insert(
                 &mut tx,
                 key,

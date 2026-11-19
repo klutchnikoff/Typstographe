@@ -1,12 +1,114 @@
 //! Carte structure → octets Typst. Les balises temporaires ne sont jamais conservées.
-use super::{Node, schema};
+use super::{Node, schema, zones::TextZoneKind};
 use crate::{assets::Assets, document::SourceMap};
-use std::ops::Range;
+use std::ops::{Range, RangeInclusive};
 struct Entry {
     position: usize,
     value: String,
     atom: bool,
     width: usize,
+}
+
+pub(super) struct BodyZoneRange {
+    pub path: Vec<usize>,
+    pub positions: RangeInclusive<usize>,
+}
+
+#[derive(Default)]
+struct BodyZones {
+    path: Vec<usize>,
+    ranges: Vec<BodyZoneRange>,
+}
+
+struct PositionWalker<'a> {
+    entries: Vec<Entry>,
+    // The desktop preview only needs the source map. Collect paths for typed render queries.
+    zones: Option<&'a mut BodyZones>,
+}
+
+impl PositionWalker<'_> {
+    fn zone(&mut self, start: usize, end: usize) {
+        if let Some(zones) = &mut self.zones {
+            zones.ranges.push(BodyZoneRange {
+                path: zones.path.clone(),
+                positions: start..=end,
+            });
+        }
+    }
+
+    fn mark(&mut self, node: &mut Node, entry: Entry) {
+        let id = self.entries.len();
+        self.entries.push(entry);
+        node.attrs.get_or_insert_with(|| serde_json::json!({}))["_mapping"] = serde_json::json!(id);
+    }
+
+    fn visit(&mut self, node: &mut Node, position: usize) -> Result<usize, String> {
+        super::attributes::validate(node, false)?;
+        if super::mathematics::is_math(&node.kind) {
+            let size = 2 + super::mathematics::text(node).encode_utf16().count();
+            self.mark(
+                node,
+                Entry {
+                    position,
+                    value: String::new(),
+                    atom: true,
+                    width: size,
+                },
+            );
+            // One Typst span for the equation, with a text zone inside its editor boundaries.
+            self.zone(position + 1, position + size - 1);
+            return Ok(position + size);
+        }
+        match node.kind.as_str() {
+            "softBreak" | "hardBreak" => return Ok(position + 1),
+            "text" | "footnote" | "citation" | "crossReference" => {
+                let atom = node.kind != "text";
+                let value = if atom {
+                    node.attrs
+                        .as_ref()
+                        .and_then(|attrs| attrs.get("text"))
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or_default()
+                        .into()
+                } else {
+                    node.text.clone().unwrap_or_default()
+                };
+                let size = if atom {
+                    1
+                } else {
+                    value.encode_utf16().count()
+                };
+                self.mark(
+                    node,
+                    Entry {
+                        position,
+                        value,
+                        atom,
+                        width: 1,
+                    },
+                );
+                return Ok(position + size);
+            }
+            _ => {}
+        }
+        let edge = usize::from(node.kind != "doc");
+        let start = position + edge;
+        let mut end = start;
+        for (index, child) in node.content.iter_mut().enumerate() {
+            if let Some(zones) = &mut self.zones {
+                zones.path.push(index);
+            }
+            end = self.visit(child, end)?;
+            if let Some(zones) = &mut self.zones {
+                zones.path.pop();
+            }
+        }
+        // Post-order makes the more specific zone win when it overlaps its parent.
+        if self.zones.is_some() && TextZoneKind::of(&node.kind) == Some(TextZoneKind::Prose) {
+            self.zone(start, end);
+        }
+        Ok(end + edge)
+    }
 }
 pub(super) fn literal(value: &str) -> String {
     let mut output = String::with_capacity(value.len());
@@ -33,78 +135,43 @@ fn literal_width(ch: char) -> usize {
     ch.len_utf8() + usize::from(escape)
 }
 pub fn source_mapped(document: &Node, assets: &Assets) -> Result<(String, SourceMap), String> {
-    mapped(document, assets, &Default::default())
+    mapped(document, assets, &Default::default(), None)
 }
 pub fn source_mapped_with_metadata(
     document: &Node,
     assets: &Assets,
     metadata: &crate::document_types::Metadata,
 ) -> Result<(String, SourceMap), String> {
-    mapped(document, assets, &schema::citation_keys(metadata))
+    mapped(document, assets, &schema::citation_keys(metadata), None)
 }
+
+pub(super) fn source_mapped_with_zones(
+    document: &Node,
+    assets: &Assets,
+    metadata: &crate::document_types::Metadata,
+) -> Result<(String, SourceMap, Vec<BodyZoneRange>), String> {
+    let mut zones = BodyZones::default();
+    let (source, map) = mapped(
+        document,
+        assets,
+        &schema::citation_keys(metadata),
+        Some(&mut zones),
+    )?;
+    Ok((source, map, zones.ranges))
+}
+
 fn mapped(
     document: &Node,
     assets: &Assets,
     keys: &schema::CitationKeys,
+    zones: Option<&mut BodyZones>,
 ) -> Result<(String, SourceMap), String> {
     let mut marked = document.clone();
-    let mut entries = vec![];
-    fn visit(node: &mut Node, position: usize, entries: &mut Vec<Entry>) -> Result<usize, String> {
-        super::attributes::validate(node, false)?;
-        if super::mathematics::is_math(&node.kind) {
-            let size = 2 + super::mathematics::text(node).encode_utf16().count();
-            let id = entries.len();
-            entries.push(Entry {
-                position,
-                value: String::new(),
-                atom: true,
-                width: size,
-            });
-            node.attrs.get_or_insert_with(|| serde_json::json!({}))["_mapping"] =
-                serde_json::json!(id);
-            return Ok(size);
-        }
-        if matches!(
-            node.kind.as_str(),
-            "text" | "footnote" | "citation" | "crossReference"
-        ) {
-            let value = if node.kind == "text" {
-                node.text.clone().unwrap_or_default()
-            } else {
-                node.attrs
-                    .as_ref()
-                    .and_then(|v| v.get("text"))
-                    .and_then(serde_json::Value::as_str)
-                    .unwrap_or("")
-                    .into()
-            };
-            let atom = node.kind != "text";
-            let size = if atom {
-                1
-            } else {
-                value.encode_utf16().count()
-            };
-            let id = entries.len();
-            entries.push(Entry {
-                position,
-                value,
-                atom,
-                width: 1,
-            });
-            let attrs = node.attrs.get_or_insert_with(|| serde_json::json!({}));
-            attrs["_mapping"] = serde_json::json!(id);
-            return Ok(size);
-        }
-        if matches!(node.kind.as_str(), "softBreak" | "hardBreak") {
-            return Ok(1);
-        }
-        let mut offset = position + usize::from(node.kind != "doc");
-        for child in &mut node.content {
-            offset += visit(child, offset, entries)?
-        }
-        Ok(offset - position + usize::from(node.kind != "doc"))
-    }
-    let size = visit(&mut marked, 0, &mut entries)?;
+    let mut walker = PositionWalker {
+        entries: Vec::new(),
+        zones,
+    };
+    let size = walker.visit(&mut marked, 0)?;
     let raw = schema::generate_resolved(&marked, assets, true, keys)?;
     let mut output = String::with_capacity(raw.len());
     let mut characters: Vec<Range<usize>> = vec![0..0; size + 1];
@@ -117,7 +184,7 @@ fn mapped(
             .split_once(':')
             .map_or((&after[..end], None), |(id, width)| (id, Some(width)));
         let id: usize = id.parse().map_err(|_| "Identité interne invalide.")?;
-        let entry = entries.get(id).ok_or("Carte interne invalide.")?;
+        let entry = walker.entries.get(id).ok_or("Carte interne invalide.")?;
         let start = output.len();
         // Composite atoms map their whole generated expression. An explicit byte
         // width avoids interpreting marker-like citation keys as our delimiters.
@@ -268,6 +335,63 @@ mod tests {
         assert_eq!(map.characters[2], map.characters[3]);
         assert_eq!(&source[map.characters[2].clone()], "😀");
         assert_eq!(&source[map.characters[5].clone()], "\\#");
+    }
+
+    #[test]
+    fn zone_positions_share_source_offsets_for_math_breaks_and_inline_objects() {
+        let node = serde_json::from_value(serde_json::json!({
+            "type": "doc",
+            "content": [
+                {"type": "paragraph", "content": [
+                    {"type": "text", "text": "A😀"},
+                    {"type": "softBreak"},
+                    {"type": "mathInline", "content": [{"type": "text", "text": "x+1"}]},
+                    {"type": "footnote", "attrs": {"text": "Note"}},
+                    {"type": "hardBreak"},
+                    {"type": "text", "text": "Z"}
+                ]},
+                {"type": "mathBlock", "content": [{"type": "text", "text": "y"}]},
+                {"type": "quote", "content": [
+                    {"type": "paragraph", "content": [{"type": "text", "text": "Fin"}]},
+                    {"type": "quoteAttribution", "content": [{"type": "text", "text": "É"}]}
+                ]}
+            ]
+        }))
+        .unwrap();
+        let assets = Assets::default();
+        let metadata =
+            crate::document_types::Metadata::demo(crate::document_types::DocumentType::Article);
+        let (source, map, zones) = source_mapped_with_zones(&node, &assets, &metadata).unwrap();
+        let (preview_source, preview_map) =
+            source_mapped_with_metadata(&node, &assets, &metadata).unwrap();
+        assert_eq!(
+            source,
+            super::super::source_with_metadata(&node, &assets, &metadata).unwrap()
+        );
+        assert_eq!(source, preview_source);
+        assert_eq!(map.characters, preview_map.characters);
+        let positions: Vec<_> = zones
+            .iter()
+            .map(|zone| (zone.path.as_slice(), zone.positions.clone()))
+            .collect();
+        assert_eq!(
+            positions,
+            [
+                (&[0, 2][..], 6..=9),
+                (&[0][..], 1..=13),
+                (&[1][..], 15..=16),
+                (&[2, 0][..], 19..=22),
+                (&[2, 1][..], 24..=25),
+            ]
+        );
+        assert_eq!(&source[map.characters[2].clone()], "😀");
+        assert_eq!(map.characters[2], map.characters[3]);
+        assert!(source[map.characters[6].clone()].starts_with("#math-formula("));
+        assert_eq!(map.characters[6], map.characters[9]);
+        assert_eq!(&source[map.characters[10].clone()], "Note");
+        assert_eq!(&source[map.characters[12].clone()], "Z");
+        assert_eq!(&source[map.characters[19].clone()], "F");
+        assert_eq!(&source[map.characters[24].clone()], "É");
     }
 
     #[test]

@@ -5,6 +5,7 @@ use super::{
     commands::{TextZone, TreeRoot},
     contract::State,
     editing::Selection,
+    zones::TextZoneKind,
 };
 use serde::Serialize;
 use std::{borrow::Cow, collections::BTreeMap};
@@ -99,20 +100,6 @@ fn zone(zone: &TextZone) -> Option<(TreeRoot, &[usize])> {
 fn at<'a>(root: &'a Node, path: &[usize]) -> Option<&'a Node> {
     path.iter().try_fold(root, |n, i| n.content.get(*i))
 }
-fn inline(node: &Node) -> bool {
-    matches!(
-        node.kind.as_str(),
-        "paragraph"
-            | "heading"
-            | "figure"
-            | "tableCaption"
-            | "descriptionTerm"
-            | "descriptionDefinition"
-            | "quoteAttribution"
-            | "postscript"
-            | "attachment"
-    )
-}
 struct Target<'a> {
     root: Cow<'a, Node>,
     body: bool,
@@ -134,7 +121,9 @@ impl<'a> Target<'a> {
                 let root = root(state, &a)?;
                 let first = at(&root, path)?;
                 let last = at(&root, end)?;
-                if !inline(first) || !inline(last) {
+                if TextZoneKind::of(&first.kind) != Some(TextZoneKind::Prose)
+                    || TextZoneKind::of(&last.kind) != Some(TextZoneKind::Prose)
+                {
                     return None;
                 }
                 Some(Self {

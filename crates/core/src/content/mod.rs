@@ -21,18 +21,10 @@ pub use mapping::{source_mapped, source_mapped_with_metadata};
 mod schema;
 pub mod shared;
 pub mod tables;
+mod zones;
 pub use schema::{Mark, Node, source, source_with_metadata};
 
-/// Conserver seulement les ressources du contenu, de la signature et du modèle.
-#[allow(clippy::too_many_arguments)]
-pub fn retained_assets(
-    document: &Node,
-    metadata: &crate::document_types::Metadata,
-    template: &str,
-    assets: &crate::assets::Assets,
-    dependencies: &crate::packages::Dependencies,
-    manifest: &str,
-) -> Result<crate::assets::Assets, String> {
+fn figure_paths(document: &Node) -> std::collections::BTreeSet<String> {
     fn paths(node: &Node, required: &mut std::collections::BTreeSet<String>) {
         if node.kind == "figure"
             && let Some(path) = node
@@ -49,6 +41,19 @@ pub fn retained_assets(
     }
     let mut required = std::collections::BTreeSet::new();
     paths(document, &mut required);
+    required
+}
+
+/// Conserver seulement les ressources du contenu, de la signature et du modèle.
+#[allow(clippy::too_many_arguments)]
+pub fn retained_assets(
+    document: &Node,
+    metadata: &crate::document_types::Metadata,
+    template: &str,
+    assets: &crate::assets::Assets,
+    dependencies: &crate::packages::Dependencies,
+    manifest: &str,
+) -> Result<crate::assets::Assets, String> {
     let source = source_with_metadata(document, assets, metadata)?;
     crate::rendering::retained_assets_for_paths(
         &source,
@@ -56,7 +61,7 @@ pub fn retained_assets(
         template,
         assets,
         dependencies,
-        required,
+        figure_paths(document),
         manifest,
     )
     .map_err(|e| e.to_string())

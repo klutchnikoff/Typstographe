@@ -1,6 +1,5 @@
 import type { Editor } from '@tiptap/core'
 import type { Node as PMNode } from '@tiptap/pm/model'
-import { TextSelection } from '@tiptap/pm/state'
 import type { BandHost } from './band-layout'
 import { contextPanel } from './context-panel'
 import { floatingEditorPanel } from './floating-editor-panel'
@@ -8,9 +7,7 @@ import type { SelectorTrigger } from './inline-selector-input'
 import type { ObjectMenu } from './object-menu'
 import { navigationGroup } from './keyboard-navigation'
 import { editingAvailability } from './command-availability'
-import { editingProvider } from './editing-history'
-import { documentContent } from './shared-inline-marks'
-import { applyObjectEdit, inlineTarget, treeTarget } from './object-commands'
+import { editInlineBadge } from './object-commands'
 import { resolvedReference, type CrossReference } from './cross-reference-index'
 import { crossReferenceSearch, type SearchTarget } from './cross-reference-search'
 import { errorText } from './command-error'
@@ -199,41 +196,18 @@ export function crossReferencePanel(
     const current = opened,
       anchor = session
     if (!current || !anchor || !valid()) return
-    const target = anchor.range
-    const attrs = { ...current.reference }
-    const replacement = editor.schema.nodes.crossReference.create(
-      attrs,
-      undefined,
-      current.node?.marks,
-    )
-    const transaction = current.node
-      ? editor.state.tr.setNodeMarkup(target.from, undefined, { ...current.node.attrs, ...attrs })
-      : editor.state.tr.replaceWith(target.from, target.to, replacement)
-    transaction.setSelection(
-      TextSelection.create(transaction.doc, target.from + replacement.nodeSize),
-    )
-    const commands = editingProvider(editor)
-      ? [
-          current.node
-            ? { id: 'node.set_attrs', params: { target: treeTarget(editor, target.from), attrs } }
-            : {
-                id: 'inline.replace',
-                params: {
-                  target: inlineTarget(editor, target.from, target.to),
-                  node: documentContent(replacement.toJSON()),
-                },
-              },
-        ]
-      : undefined
     pending = true
     anchor.pending(true)
     apply.disabled = true
     panel.element.setAttribute('aria-busy', 'true')
     try {
-      await applyObjectEdit(editor, transaction, commands, {
-        focus: false,
-        current: anchor.current,
-      })
+      await editInlineBadge(
+        editor,
+        anchor.range,
+        editor.schema.nodes.crossReference,
+        { ...current.reference },
+        { existing: current.node, current: anchor.current },
+      )
       if (anchor.open()) {
         panel.committed()
         floating.close(true, true)
