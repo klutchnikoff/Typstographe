@@ -174,7 +174,9 @@ test('online acquisition preserves a citation group and publishes one undoable b
       ),
     })
   await manager(page).getByRole('button', { name: 'Importer', exact: true }).click()
+  await expect(manager(page).locator('#bibliography-list .bibliography-list-row')).toHaveCount(2)
   await manager(page).locator('.panel-title button').click()
+  await expect(manager(page)).toBeHidden()
   await body(page).fill('Une référence nouvelle. ')
   await page.getByRole('button', { name: 'Citer une référence', exact: true }).click()
   const selector = page.locator('#citation-properties')

@@ -95,8 +95,11 @@ test('raccourcis, titres, styles de saisie privés et retrait de lien au curseur
   await expect(body(page).locator('em')).toHaveText(' suite')
   await select(page, 1, 5)
   await body(page).press('ControlOrMeta+k')
-  await page.locator('#parameter-url').fill('https://example.org')
-  await page.locator('#parameter-url').press('Enter')
+  const address = page
+    .locator('#link-properties')
+    .getByRole('textbox', { name: 'Adresse du lien', exact: true })
+  await address.fill('https://example.org')
+  await address.press('Enter')
   await expect(body(page).locator('a')).toHaveText('A😀é')
   await select(page, 4)
   await page.getByRole('button', { name: 'Édition', exact: true }).click()
